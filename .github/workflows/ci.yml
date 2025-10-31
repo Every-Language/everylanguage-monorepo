@@ -1,0 +1,144 @@
+name: CI
+
+on:
+  # Run CI on feature branches and PRs
+  push:
+    branches-ignore: [main, develop]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    name: Backend Tests & Linting
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run backend linting
+        run: pnpm --filter=backend run lint
+
+      - name: Check backend formatting
+        run: pnpm --filter=backend run format:check
+
+      - name: Backend type check
+        run: pnpm --filter=backend run type-check
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+
+      - name: Type check Edge Functions
+        run: pnpm --filter=backend run type-check:functions
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local development
+        run: cd apps/backend && supabase start
+
+      - name: Wait for Supabase to be ready
+        run: |
+          timeout=60
+          while ! curl -f http://127.0.0.1:54321/rest/v1/ >/dev/null 2>&1; do
+            echo "Waiting for Supabase to start..."
+            sleep 2
+            timeout=$((timeout-2))
+            if [ $timeout -le 0 ]; then
+              echo "Timeout waiting for Supabase"
+              exit 1
+            fi
+          done
+          echo "Supabase is ready!"
+
+      - name: Run backend tests
+        run: pnpm --filter=backend run test
+        env:
+          NODE_ENV: test
+          SUPABASE_URL: http://127.0.0.1:54321
+
+      - name: Stop Supabase
+        if: always()
+        run: cd apps/backend && supabase stop
+
+  frontend:
+    runs-on: ubuntu-latest
+    name: Frontend Tests & Linting
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run frontend linting
+        run: pnpm --filter='./apps/frontend/*' run lint
+
+      - name: Run frontend type checking
+        run: pnpm --filter='./apps/frontend/*' run type-check
+
+      - name: Run frontend tests
+        run: pnpm --filter='./apps/frontend/*' run test:run
+
+      - name: Test frontend builds
+        run: pnpm --filter='./apps/frontend/*' run build
+        env:
+          # Use dummy values for build test
+          VITE_SUPABASE_URL: https://dummy.supabase.co
+          VITE_SUPABASE_ANON_KEY: dummy_key
+
+  security:
+    runs-on: ubuntu-latest
+    name: Security Scan
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run npm audit
+        run: pnpm audit --audit-level high
+

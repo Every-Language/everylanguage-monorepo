@@ -1,0 +1,108 @@
+name: Publish Dev Types Package
+
+on:
+  # Trigger after successful Development deploy
+  workflow_run:
+    workflows: ['Deploy Backend to Development']
+    types:
+      - completed
+    branches: [develop]
+
+  # Allow manual triggering for immediate publishing
+  workflow_dispatch: {}
+
+jobs:
+  publish-dev:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      packages: write
+      contents: read
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+      SUPABASE_DEV_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+      TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+    steps:
+      - name: Verify required secrets present
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || (echo "❌ SUPABASE_ACCESS_TOKEN is missing" && exit 1)
+          test -n "$SUPABASE_DEV_PROJECT_REF" || (echo "❌ SUPABASE_DEV_PROJECT_REF is missing" && exit 1)
+          test -n "$SUPABASE_DEV_DB_PASSWORD" || (echo "❌ SUPABASE_DEV_DB_PASSWORD is missing" && exit 1)
+          echo "✅ Required secrets present"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to Development project
+        run: cd apps/backend && supabase link --project-ref "$SUPABASE_DEV_PROJECT_REF" --password "$SUPABASE_DEV_DB_PASSWORD"
+
+      - name: Generate types from Development
+        run: |
+          echo "🔄 Generating types from development database..."
+          cd apps/backend
+          supabase gen types typescript --linked > ../../packages/shared-types/types/database.ts
+          echo "✅ Types generated successfully"
+
+      - name: Build package artifacts
+        run: cd apps/backend && npm run prepare-package:ci
+
+      - name: Set prerelease dev version (no repo mutations)
+        id: set_version
+        run: |
+          cd packages/shared-types
+          BASE=$(node -p "require('./package.json').version.split('-')[0]")
+          TS=$(date +%Y%m%d.%H%M%S)
+          DEV_VERSION="${BASE}-dev.${TS}.${GITHUB_RUN_NUMBER}"
+          echo "Setting version to $DEV_VERSION"
+          npm version "$DEV_VERSION" --no-git-tag-version
+          echo "version=$DEV_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Publish to NPM as dev tag
+        run: |
+          cd packages/shared-types
+          VERSION="${{ steps.set_version.outputs.version }}"
+          echo "🚀 Publishing @everylanguage/shared-types@$VERSION (tag: dev) to NPM..."
+          # Skip if version already exists on NPM (in case of retries)
+          if npm view @everylanguage/shared-types@$VERSION version >/dev/null 2>&1; then
+            echo "⚠️ Version $VERSION already exists on NPM, skipping publish"
+          else
+            npm publish --access public --tag dev
+            echo "✅ Package published successfully as 'dev'"
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "📦 Dev types published with tag 'dev'."
+          echo "Consumers can install using: npm i @everylanguage/shared-types@dev"
+

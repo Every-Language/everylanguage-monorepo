@@ -1,0 +1,97 @@
+name: Publish Prod Types Package
+
+on:
+  # Trigger after successful Production deploy
+  workflow_run:
+    workflows: ['Deploy Backend to Production']
+    types:
+      - completed
+    branches: [main]
+
+  # Allow manual triggering for immediate publishing
+  workflow_dispatch: {}
+
+jobs:
+  publish-prod:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      packages: write
+      contents: read
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROD_PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+      SUPABASE_PROD_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+      TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+    steps:
+      - name: Verify required secrets present
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || (echo "❌ SUPABASE_ACCESS_TOKEN is missing" && exit 1)
+          test -n "$SUPABASE_PROD_PROJECT_REF" || (echo "❌ SUPABASE_PROD_PROJECT_REF is missing" && exit 1)
+          test -n "$SUPABASE_PROD_DB_PASSWORD" || (echo "❌ SUPABASE_PROD_DB_PASSWORD is missing" && exit 1)
+          echo "✅ Required secrets present"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to Production project
+        run: cd apps/backend && supabase link --project-ref "$SUPABASE_PROD_PROJECT_REF" --password "$SUPABASE_PROD_DB_PASSWORD"
+
+      - name: Generate types from Production
+        run: |
+          echo "🔄 Generating types from production database..."
+          cd apps/backend
+          supabase gen types typescript --linked > ../../packages/shared-types/types/database.ts
+          echo "✅ Types generated successfully"
+
+      - name: Build package artifacts
+        run: cd apps/backend && npm run prepare-package:ci
+
+      - name: Publish to NPM as latest
+        run: |
+          cd packages/shared-types
+          VERSION=$(node -p "require('./package.json').version")
+          echo "🚀 Publishing @everylanguage/shared-types@$VERSION (tag: latest) to NPM..."
+          # Skip if version already exists on NPM (in case of retries)
+          if npm view @everylanguage/shared-types@$VERSION version >/dev/null 2>&1; then
+            echo "⚠️ Version $VERSION already exists on NPM, skipping publish"
+          else
+            npm publish --access public
+            echo "✅ Package published successfully as 'latest'"
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "📦 Production types published with tag 'latest'."
+          echo "Consumers can install using: npm i @everylanguage/shared-types@latest"
+

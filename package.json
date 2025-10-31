@@ -1,0 +1,36 @@
+{
+  "name": "everylanguage-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EverLanguage monorepo - Backend infrastructure and frontend applications",
+  "workspaces": [
+    "apps/backend",
+    "apps/frontend/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "backend:dev": "turbo run dev --filter=backend",
+    "backend:stop": "cd apps/backend && npm run stop",
+    "backend:reset": "cd apps/backend && npm run reset",
+    "backend:generate-types": "cd apps/backend && npm run generate-types",
+    "backend:functions:serve": "cd apps/backend && npm run functions:serve",
+    "backend:functions:deploy": "cd apps/backend && npm run functions:deploy",
+    "frontend:project:dev": "turbo run dev --filter=web-project-dashboard",
+    "frontend:partnership:dev": "turbo run dev --filter=web-partnership-dashboard",
+    "prepare": "cd apps/backend && npm run prepare"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
+
