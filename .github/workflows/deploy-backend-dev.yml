@@ -120,7 +120,7 @@ jobs:
             echo "🚀 Deploying worker in $dir"
             pushd "$dir" >/dev/null
             if [ -f package.json ]; then
-              pnpm install
+              npm install
             fi
             if [ -n "${{ secrets.CDN_SIGNING_SECRET }}" ]; then
               echo "${{ secrets.CDN_SIGNING_SECRET }}" | npx wrangler secret put CDN_SIGNING_SECRET || true

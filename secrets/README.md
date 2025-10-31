@@ -31,14 +31,28 @@ This directory contains template files for managing secrets across GitHub and Ve
 
 4. **Deploy secrets:**
    ```bash
+   # Deploy to all platforms (GitHub, Vercel, Supabase)
    ./secrets/deploy-secrets.sh
+   
+   # Or deploy to individual platforms:
+   ./secrets/deploy-github-secrets.sh   # GitHub Actions only
+   ./secrets/deploy-vercel-secrets.sh   # Vercel only
+   ./secrets/deploy-supabase-secrets.sh # Supabase Edge Functions only
    ```
 
 ## File Structure
 
+### Environment Files
 - `.env.shared` - Repository-level secrets (Supabase, Cloudflare, NPM, Turbo, IP Geo, HubSpot)
 - `.env.development` - Development environment secrets (GitHub + Vercel preview + Supabase Edge Functions)
 - `.env.production` - Production environment secrets (GitHub + Vercel production + Supabase Edge Functions)
+
+### Deployment Scripts
+- `deploy-secrets.sh` - **Master script** that deploys to all platforms
+- `deploy-github-secrets.sh` - Deploys secrets to GitHub Actions (repository + environments)
+- `deploy-vercel-secrets.sh` - Deploys secrets to Vercel projects (preview + production)
+- `deploy-supabase-secrets.sh` - Deploys secrets to Supabase Edge Functions
+- `common.sh` - Shared utilities and functions (sourced by other scripts)
 
 ## Deployment Targets
 
