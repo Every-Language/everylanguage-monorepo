@@ -36,9 +36,35 @@ This directory contains template files for managing secrets across GitHub and Ve
 
 ## File Structure
 
-- `.env.shared` - Repository-level secrets (Supabase, Cloudflare, NPM, Turbo)
-- `.env.development` - Development environment secrets (GitHub + Vercel preview)
-- `.env.production` - Production environment secrets (GitHub + Vercel production)
+- `.env.shared` - Repository-level secrets (Supabase, Cloudflare, NPM, Turbo, IP Geo, HubSpot)
+- `.env.development` - Development environment secrets (GitHub + Vercel preview + Supabase Edge Functions)
+- `.env.production` - Production environment secrets (GitHub + Vercel production + Supabase Edge Functions)
+
+## Deployment Targets
+
+The deployment script automatically deploys secrets to:
+
+1. **GitHub Actions** (repository-level and environment secrets)
+2. **Vercel** (preview and production environments for both frontend projects)
+3. **Supabase Edge Functions** (development and production projects)
+
+### Supabase Edge Function Secrets
+
+The following secrets are deployed to Supabase Edge Functions:
+
+**From `.env.shared`:**
+- R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY (for R2 storage)
+- CDN_SIGNING_SECRET, CDN_BASE_URL (for CDN signed URLs)
+- IP_GEO_PROVIDER, IP_GEO_API_KEY (for analytics geolocation)
+- TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID (for SMS auth)
+- RESEND_API_KEY (for email auth via SMTP)
+- HUBSPOT_PRIVATE_APP_TOKEN (optional, for CRM integration)
+
+**From `.env.development` / `.env.production`:**
+- ENV (environment identifier)
+- SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_DB_URL
+- R2_BUCKET_NAME (environment-specific)
+- STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET (environment-specific)
 
 ## Security
 
