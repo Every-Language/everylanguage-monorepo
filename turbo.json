@@ -3,7 +3,7 @@
   "remoteCache": {
     "enabled": true
   },
-  "pipeline": {
+  "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "types/**/*.js", "types/**/*.d.ts"]
@@ -35,4 +35,3 @@
     }
   }
 }
-

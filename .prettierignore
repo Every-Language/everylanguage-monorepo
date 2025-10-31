@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+coverage/
+.next/
+.turbo/
+
+# Supabase
+apps/backend/supabase/.temp/
+apps/backend/supabase/.branches/
+
+# Generated files
+packages/shared-types/types/database.ts
+packages/shared-types/types/database.d.ts
+packages/shared-types/types/database.js
+
+# GitHub Actions
+.github/workflows/
+
+# Environment files
+.env*
+!.env.example
+!.env.*.example
+
+# Logs
+*.log
+
+# Assets folder (large data files)
+assets/
+

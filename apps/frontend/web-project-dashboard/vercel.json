@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "cd ../../.. && pnpm run build --filter=web-project-dashboard",
   "outputDirectory": "dist",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "devCommand": "pnpm run dev",
+  "installCommand": "pnpm install",
   "framework": "vite",
   "regions": ["iad1"],
   "headers": [
@@ -39,4 +39,4 @@
       "destination": "/index.html"
     }
   ]
-} 
+}

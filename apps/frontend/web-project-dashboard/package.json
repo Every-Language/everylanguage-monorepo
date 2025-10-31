@@ -16,7 +16,6 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "type-check": "tsc --noEmit",
-    "pre-commit": "npm run lint && npm run type-check && npm run test:run",
     "vercel-build": "npm run build",
     "deployment-check": "node scripts/deployment-check.js",
     "list": "node scripts/dev.js list",
@@ -26,6 +25,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@everylanguage/shared-types": "workspace:*",
+    "@everylanguage/shared-ui": "workspace:*",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-accordion": "^1.2.11",

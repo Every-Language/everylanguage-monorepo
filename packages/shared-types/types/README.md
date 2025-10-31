@@ -59,6 +59,6 @@ This package follows [Semantic Versioning](https://semver.org/):
 
 ## 🐛 Issues & Support
 
-- **Backend Issues**: [Backend Repository](https://github.com/every-language/el-backend/issues)
-- **Type Issues**: [Type-specific issues](https://github.com/every-language/el-backend/issues?q=label%3Atypes)
+- **Issues**: [Monorepo Issues](https://github.com/Every-Language/everylanguage-monorepo/issues)
+- **Type Issues**: [Type-specific issues](https://github.com/Every-Language/everylanguage-monorepo/issues?q=label%3Atypes)
 - **Application Integration**: Contact your respective app team

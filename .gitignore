@@ -64,3 +64,16 @@ Thumbs.db
 
 # Turborepo
 .turbo
+
+# IDE files
+.cursor/
+
+# Frontend tasks
+tasks.json
+tasks/
+
+# Backend data (large files)
+assets/
+
+# Schema dump
+schema.sql

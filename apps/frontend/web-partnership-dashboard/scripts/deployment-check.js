@@ -18,41 +18,43 @@ const checks = [
   {
     name: 'GitHub Actions CI/CD workflow',
     path: '.github/workflows/ci.yml',
-    required: true
+    required: true,
   },
   {
     name: 'Vercel configuration',
     path: 'vercel.json',
-    required: true
+    required: true,
   },
   {
     name: 'Package.json build script',
     check: () => {
-      const pkg = JSON.parse(fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
+      const pkg = JSON.parse(
+        fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf8')
+      );
       return pkg.scripts && pkg.scripts.build;
     },
-    required: true
+    required: true,
   },
   {
     name: 'TypeScript configuration',
     path: 'tsconfig.json',
-    required: true
+    required: true,
   },
   {
     name: 'Vite configuration',
     path: 'vite.config.ts',
-    required: true
+    required: true,
   },
   {
     name: 'Environment example file',
     path: 'env.example',
-    required: true
+    required: true,
   },
   {
     name: 'Deployment documentation',
     path: 'DEPLOYMENT.md',
-    required: false
-  }
+    required: false,
+  },
 ];
 
 let allPassed = true;
@@ -60,7 +62,7 @@ let requiredPassed = true;
 
 checks.forEach(check => {
   let passed = false;
-  
+
   if (check.path) {
     passed = fs.existsSync(path.join(projectRoot, check.path));
   } else if (check.check) {
@@ -70,13 +72,13 @@ checks.forEach(check => {
       passed = false;
     }
   }
-  
+
   const icon = passed ? '✅' : '❌';
   const status = passed ? 'PASS' : 'FAIL';
   const requirement = check.required ? '(Required)' : '(Optional)';
-  
+
   console.log(`${icon} ${check.name} ${requirement}: ${status}`);
-  
+
   if (!passed) {
     allPassed = false;
     if (check.required) {
@@ -96,7 +98,9 @@ if (requiredPassed) {
   console.log('4. Deploy!');
   console.log('\nSee DEPLOYMENT.md for detailed instructions.');
 } else {
-  console.log('⚠️  Some required checks failed. Please fix them before deploying.');
+  console.log(
+    '⚠️  Some required checks failed. Please fix them before deploying.'
+  );
   process.exit(1);
 }
 
@@ -105,6 +109,8 @@ if (!allPassed && requiredPassed) {
 }
 
 console.log('\n🔗 Useful commands:');
-console.log('npm run pre-commit  - Run all pre-commit checks');
+console.log('npm run lint        - Run linting checks');
+console.log('npm run type-check  - Run TypeScript checks');
+console.log('npm run test:run    - Run tests');
 console.log('npm run build       - Test local build');
-console.log('npm run preview     - Preview built app locally'); 
+console.log('npm run preview     - Preview built app locally');
