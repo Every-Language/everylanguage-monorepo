@@ -23,6 +23,10 @@ out/
 .env.test.local
 .env.production.local
 *.env
+# Allow example env files
+!.env.example
+!.env.*.example
+!secrets/.env.*.example
 
 # Logs
 logs/
@@ -57,3 +61,6 @@ Thumbs.db
 *.tsbuildinfo
 .cache/
 
+
+# Turborepo
+.turbo

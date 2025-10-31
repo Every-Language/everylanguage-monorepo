@@ -7,10 +7,43 @@ on:
   pull_request:
     branches: [develop, main]
 
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
 jobs:
+  # Detect which parts of the monorepo changed
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      shared-types: ${{ steps.filter.outputs.shared-types }}
+      frontend-project: ${{ steps.filter.outputs.frontend-project }}
+      frontend-partnership: ${{ steps.filter.outputs.frontend-partnership }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'apps/backend/**'
+            shared-types:
+              - 'packages/shared-types/**'
+            frontend-project:
+              - 'apps/frontend/web-project-dashboard/**'
+            frontend-partnership:
+              - 'apps/frontend/web-partnership-dashboard/**'
+
   backend:
     runs-on: ubuntu-latest
     name: Backend Tests & Linting
+    needs: detect-changes
+    # Run if backend or shared-types changed
+    if: needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.shared-types == 'true'
 
     steps:
       - name: Checkout code
@@ -79,9 +112,15 @@ jobs:
         if: always()
         run: cd apps/backend && supabase stop
 
-  frontend:
+  frontend-project:
     runs-on: ubuntu-latest
-    name: Frontend Tests & Linting
+    name: Project Dashboard - Tests & Linting
+    needs: detect-changes
+    # Run if backend, shared-types, or this specific frontend changed
+    if: |
+      needs.detect-changes.outputs.backend == 'true' || 
+      needs.detect-changes.outputs.shared-types == 'true' || 
+      needs.detect-changes.outputs.frontend-project == 'true'
 
     steps:
       - name: Checkout code
@@ -101,17 +140,61 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run frontend linting
-        run: pnpm --filter='./apps/frontend/*' run lint
+      - name: Run linting
+        run: pnpm --filter=web-project-dashboard run lint
 
-      - name: Run frontend type checking
-        run: pnpm --filter='./apps/frontend/*' run type-check
+      - name: Run type checking
+        run: pnpm --filter=web-project-dashboard run type-check
 
-      - name: Run frontend tests
-        run: pnpm --filter='./apps/frontend/*' run test:run
+      - name: Run tests
+        run: pnpm --filter=web-project-dashboard run test:run
 
-      - name: Test frontend builds
-        run: pnpm --filter='./apps/frontend/*' run build
+      - name: Test build
+        run: pnpm --filter=web-project-dashboard run build
+        env:
+          # Use dummy values for build test
+          VITE_SUPABASE_URL: https://dummy.supabase.co
+          VITE_SUPABASE_ANON_KEY: dummy_key
+
+  frontend-partnership:
+    runs-on: ubuntu-latest
+    name: Partnership Dashboard - Tests & Linting
+    needs: detect-changes
+    # Run if backend, shared-types, or this specific frontend changed
+    if: |
+      needs.detect-changes.outputs.backend == 'true' || 
+      needs.detect-changes.outputs.shared-types == 'true' || 
+      needs.detect-changes.outputs.frontend-partnership == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run linting
+        run: pnpm --filter=web-partnership-dashboard run lint
+
+      - name: Run type checking
+        run: pnpm --filter=web-partnership-dashboard run type-check
+
+      - name: Run tests
+        run: pnpm --filter=web-partnership-dashboard run test:run
+
+      - name: Test build
+        run: pnpm --filter=web-partnership-dashboard run build
         env:
           # Use dummy values for build test
           VITE_SUPABASE_URL: https://dummy.supabase.co

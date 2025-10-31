@@ -225,9 +225,42 @@ Both frontend apps deploy to Vercel automatically. Update your Vercel project se
 4. Keep type definitions up to date
 5. Update documentation as needed
 
-## 🔐 Environment Variables
+## 🔐 Secrets Management
 
-Each app maintains its own `.env` files:
+We use an automated secret deployment system with GitHub Environments.
+
+### Quick Setup
+
+```bash
+# 1. Copy template files
+cd secrets/
+cp .env.shared.example .env.shared
+cp .env.development.example .env.development
+cp .env.production.example .env.production
+
+# 2. Fill in your secrets in each file
+
+# 3. Set up Turborepo remote caching
+turbo link
+# Get token from: https://vercel.com/account/tokens
+# Add TURBO_TOKEN and TURBO_TEAM to .env.shared
+
+# 4. Deploy all secrets
+./scripts/deploy-secrets.sh
+```
+
+This will deploy secrets to:
+- **GitHub** - Repository secrets + Environment secrets
+- **Vercel** - Frontend environment variables for both projects
+
+### Documentation
+
+- **Complete Guide**: [`docs/SECRET_MANAGEMENT.md`](./docs/SECRET_MANAGEMENT.md)
+- **Quick Reference**: [`secrets/README.md`](./secrets/README.md)
+
+### Local Development Variables
+
+Each app can also have local `.env` files for development:
 
 ```bash
 apps/backend/.env.local
