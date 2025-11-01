@@ -5,6 +5,7 @@
   "installCommand": "pnpm install",
   "framework": "vite",
   "regions": ["iad1"],
+  "corepack": true,
   "headers": [
     {
       "source": "/assets/(.*)",

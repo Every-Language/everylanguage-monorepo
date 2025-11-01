@@ -1,10 +1,11 @@
 {
-  "buildCommand": "cd ../../.. && pnpm run build --filter=web-partnership-dashboard",
+  "buildCommand": "cd ../../.. && pnpm run build --filter=el-map-portal",
   "outputDirectory": "dist",
   "devCommand": "pnpm run dev",
   "installCommand": "pnpm install",
   "framework": "vite",
   "regions": ["iad1"],
+  "corepack": true,
   "headers": [
     {
       "source": "/assets/(.*)",

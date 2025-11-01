@@ -77,3 +77,6 @@ assets/
 
 # Schema dump
 schema.sql
+
+# Supabase artifacts from CLI (actual supabase folder is in apps/backend/supabase)
+supabase/
