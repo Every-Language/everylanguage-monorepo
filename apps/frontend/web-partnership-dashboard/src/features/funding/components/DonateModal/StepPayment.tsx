@@ -27,6 +27,8 @@ type Flow = {
   next: () => void;
   back: () => void;
   setAmount: (amount: AmountSelection) => void;
+  setCustomerId?: (id: string) => void;
+  setPartnerOrgId?: (id: string) => void;
 };
 
 const Inner: React.FC<{ flow: Flow; clientSecret: string | null }> = ({

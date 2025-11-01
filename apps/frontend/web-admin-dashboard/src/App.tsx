@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -7,6 +7,34 @@ import {
 } from 'react-router-dom';
 import { ThemeProvider } from './shared/theme';
 import { ProtectedRoute, LoginPage, UnauthorizedPage } from './features/auth';
+import { AppLayout } from './shared/components/Layout';
+
+// Lazy load pages
+const DashboardPage = lazy(() =>
+  import('./features/dashboard/pages/DashboardPage').then(m => ({
+    default: m.DashboardPage,
+  }))
+);
+const LanguagesPage = lazy(() =>
+  import('./features/languages/pages/LanguagesPage').then(m => ({
+    default: m.LanguagesPage,
+  }))
+);
+const RegionsPage = lazy(() =>
+  import('./features/regions/pages/RegionsPage').then(m => ({
+    default: m.RegionsPage,
+  }))
+);
+const SponsorshipsPage = lazy(() =>
+  import('./features/sponsorships/pages/SponsorshipsPage').then(m => ({
+    default: m.SponsorshipsPage,
+  }))
+);
+const AllocateSponsorshipsPage = lazy(() =>
+  import('./features/sponsorships/pages/AllocateSponsorshipsPage').then(m => ({
+    default: m.AllocateSponsorshipsPage,
+  }))
+);
 
 function LoadingFallback() {
   return (
@@ -19,45 +47,74 @@ function LoadingFallback() {
   );
 }
 
-// Temporary dashboard placeholder
-function DashboardPlaceholder() {
-  return (
-    <div className='flex items-center justify-center min-h-screen bg-neutral-50'>
-      <div className='text-center'>
-        <h1 className='text-4xl font-bold text-neutral-900'>Admin Dashboard</h1>
-        <p className='mt-4 text-neutral-600'>Building features...</p>
-      </div>
-    </div>
-  );
-}
+// Helper component to reduce repetition
+const ProtectedLayoutRoute = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <AppLayout>{children}</AppLayout>
+  </ProtectedRoute>
+);
 
 function App() {
   return (
     <ThemeProvider>
       <Router>
-        <div className='min-h-screen bg-neutral-50'>
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              {/* Public routes */}
-              <Route path='/login' element={<LoginPage />} />
-              <Route path='/unauthorized' element={<UnauthorizedPage />} />
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            {/* Public routes */}
+            <Route path='/login' element={<LoginPage />} />
+            <Route path='/unauthorized' element={<UnauthorizedPage />} />
 
-              {/* Protected routes */}
-              <Route
-                path='/dashboard'
-                element={
-                  <ProtectedRoute>
-                    <DashboardPlaceholder />
-                  </ProtectedRoute>
-                }
-              />
+            {/* Protected routes with layout */}
+            <Route
+              path='/dashboard'
+              element={
+                <ProtectedLayoutRoute>
+                  <DashboardPage />
+                </ProtectedLayoutRoute>
+              }
+            />
 
-              {/* Default redirect */}
-              <Route path='/' element={<Navigate to='/dashboard' replace />} />
-              <Route path='*' element={<Navigate to='/dashboard' replace />} />
-            </Routes>
-          </Suspense>
-        </div>
+            <Route
+              path='/languages'
+              element={
+                <ProtectedLayoutRoute>
+                  <LanguagesPage />
+                </ProtectedLayoutRoute>
+              }
+            />
+
+            <Route
+              path='/regions'
+              element={
+                <ProtectedLayoutRoute>
+                  <RegionsPage />
+                </ProtectedLayoutRoute>
+              }
+            />
+
+            <Route
+              path='/sponsorships'
+              element={
+                <ProtectedLayoutRoute>
+                  <SponsorshipsPage />
+                </ProtectedLayoutRoute>
+              }
+            />
+
+            <Route
+              path='/sponsorships/allocate'
+              element={
+                <ProtectedLayoutRoute>
+                  <AllocateSponsorshipsPage />
+                </ProtectedLayoutRoute>
+              }
+            />
+
+            {/* Default redirect */}
+            <Route path='/' element={<Navigate to='/dashboard' replace />} />
+            <Route path='*' element={<Navigate to='/dashboard' replace />} />
+          </Routes>
+        </Suspense>
       </Router>
     </ThemeProvider>
   );

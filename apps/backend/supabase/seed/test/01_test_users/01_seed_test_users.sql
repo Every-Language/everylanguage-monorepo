@@ -112,7 +112,12 @@ VALUES
     '660e8400-e29b-41d4-a716-446655440003',
     'Pokhara OMT Lighthouse',
     POINT(83.9856, 28.2096)
-  ) -- Pokhara, Nepal
+  ), -- Pokhara, Nepal
+  (
+    '660e8400-e29b-41d4-a716-446655440004',
+    'Test Base',
+    POINT(0.0, 0.0)
+  ) -- Test Base
 ON CONFLICT (id) DO NOTHING;
 
 
@@ -137,7 +142,16 @@ WHERE
     '880e8400-e29b-41d4-a716-446655440005',
     '880e8400-e29b-41d4-a716-446655440006',
     '880e8400-e29b-41d4-a716-446655440007',
-    '880e8400-e29b-41d4-a716-446655440008'
+    '880e8400-e29b-41d4-a716-446655440008',
+    '880e8400-e29b-41d4-a716-446655440009',
+    '880e8400-e29b-41d4-a716-446655440010',
+    '880e8400-e29b-41d4-a716-446655440011',
+    '880e8400-e29b-41d4-a716-446655440012',
+    '880e8400-e29b-41d4-a716-446655440013',
+    '880e8400-e29b-41d4-a716-446655440014',
+    '880e8400-e29b-41d4-a716-446655440015',
+    '880e8400-e29b-41d4-a716-446655440016',
+    '880e8400-e29b-41d4-a716-446655440017'
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -319,6 +333,192 @@ VALUES
     '',
     '',
     ''
+  ),
+  -- ============================================================================
+  -- NEW TEST USERS FOR RBAC
+  -- ============================================================================
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '880e8400-e29b-41d4-a716-446655440009',
+    'authenticated',
+    'authenticated',
+    'teamleader@everylanguage.com',
+    crypt ('teamleader@everylanguage.com', gen_salt ('bf')),
+    NOW(),
+    NOW(),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    NOW(),
+    NOW(),
+    '',
+    '',
+    '',
+    ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '880e8400-e29b-41d4-a716-446655440010',
+    'authenticated',
+    'authenticated',
+    'teammember@everylanguage.com',
+    crypt ('teammember@everylanguage.com', gen_salt ('bf')),
+    NOW(),
+    NOW(),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    NOW(),
+    NOW(),
+    '',
+    '',
+    '',
+    ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '880e8400-e29b-41d4-a716-446655440011',
+    'authenticated',
+    'authenticated',
+    'projectadmin@everylanguage.com',
+    crypt ('projectadmin@everylanguage.com', gen_salt ('bf')),
+    NOW(),
+    NOW(),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    NOW(),
+    NOW(),
+    '',
+    '',
+    '',
+    ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '880e8400-e29b-41d4-a716-446655440012',
+    'authenticated',
+    'authenticated',
+    'projectviewer@everylanguage.com',
+    crypt (
+      'projectviewer@everylanguage.com',
+      gen_salt ('bf')
+    ),
+    NOW(),
+    NOW(),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    NOW(),
+    NOW(),
+    '',
+    '',
+    '',
+    ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '880e8400-e29b-41d4-a716-446655440013',
+    'authenticated',
+    'authenticated',
+    'projecteditor@everylanguage.com',
+    crypt (
+      'projecteditor@everylanguage.com',
+      gen_salt ('bf')
+    ),
+    NOW(),
+    NOW(),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    NOW(),
+    NOW(),
+    '',
+    '',
+    '',
+    ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '880e8400-e29b-41d4-a716-446655440014',
+    'authenticated',
+    'authenticated',
+    'partneradmin@everylanguage.com',
+    crypt ('partneradmin@everylanguage.com', gen_salt ('bf')),
+    NOW(),
+    NOW(),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    NOW(),
+    NOW(),
+    '',
+    '',
+    '',
+    ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '880e8400-e29b-41d4-a716-446655440015',
+    'authenticated',
+    'authenticated',
+    'partnerleader@everylanguage.com',
+    crypt (
+      'partnerleader@everylanguage.com',
+      gen_salt ('bf')
+    ),
+    NOW(),
+    NOW(),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    NOW(),
+    NOW(),
+    '',
+    '',
+    '',
+    ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '880e8400-e29b-41d4-a716-446655440016',
+    'authenticated',
+    'authenticated',
+    'partnermember@everylanguage.com',
+    crypt (
+      'partnermember@everylanguage.com',
+      gen_salt ('bf')
+    ),
+    NOW(),
+    NOW(),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    NOW(),
+    NOW(),
+    '',
+    '',
+    '',
+    ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '880e8400-e29b-41d4-a716-446655440017',
+    'authenticated',
+    'authenticated',
+    'systemadmin@everylanguage.com',
+    crypt ('systemadmin@everylanguage.com', gen_salt ('bf')),
+    NOW(),
+    NOW(),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    NOW(),
+    NOW(),
+    '',
+    '',
+    '',
+    ''
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -348,6 +548,11 @@ VALUES
     '770e8400-e29b-41d4-a716-446655440004',
     'OMT Pokhara 2',
     'technical'
+  ),
+  (
+    '770e8400-e29b-41d4-a716-446655440005',
+    'Test Team',
+    'translation'
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -390,6 +595,12 @@ VALUES
   (
     '770e8400-e29b-41d4-a716-446655440004',
     '660e8400-e29b-41d4-a716-446655440003',
+    '550e8400-e29b-41d4-a716-446655440402'
+  ),
+  -- Test Team -> Test Base with staff role
+  (
+    '770e8400-e29b-41d4-a716-446655440005',
+    '660e8400-e29b-41d4-a716-446655440004',
     '550e8400-e29b-41d4-a716-446655440402'
   )
 ON CONFLICT (team_id, base_id, role_id) DO NOTHING;
@@ -434,6 +645,14 @@ VALUES
     '990e8400-e29b-41d4-a716-446655440001',
     '990e8400-e29b-41d4-a716-446655440002',
     '880e8400-e29b-41d4-a716-446655440001'
+  ),
+  (
+    'aa0e8400-e29b-41d4-a716-446655440002',
+    'Test Project',
+    'Test project for RBAC testing',
+    '990e8400-e29b-41d4-a716-446655440001',
+    '990e8400-e29b-41d4-a716-446655440002',
+    '880e8400-e29b-41d4-a716-446655440009'
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -447,6 +666,12 @@ VALUES
   (
     'aa0e8400-e29b-41d4-a716-446655440001',
     '770e8400-e29b-41d4-a716-446655440001',
+    '550e8400-e29b-41d4-a716-446655440102',
+    TRUE
+  ),
+  (
+    'aa0e8400-e29b-41d4-a716-446655440002',
+    '770e8400-e29b-41d4-a716-446655440005',
     '550e8400-e29b-41d4-a716-446655440102',
     TRUE
   )
@@ -466,6 +691,12 @@ VALUES
     'Kona Community Church',
     'Seeded partner org for RBAC checks',
     '880e8400-e29b-41d4-a716-446655440001'
+  ),
+  (
+    'bb0e8400-e29b-41d4-a716-446655440002',
+    'Test Partner Org',
+    'Test partner org for RBAC testing',
+    '880e8400-e29b-41d4-a716-446655440014'
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -476,6 +707,10 @@ VALUES
   (
     'aa0e8400-e29b-41d4-a716-446655440001',
     'bb0e8400-e29b-41d4-a716-446655440001'
+  ),
+  (
+    'aa0e8400-e29b-41d4-a716-446655440002',
+    'bb0e8400-e29b-41d4-a716-446655440002'
   )
 ON CONFLICT (project_id, partner_org_id)
 WHERE
@@ -529,9 +764,26 @@ VALUES
     '550e8400-e29b-41d4-a716-446655440301',
     'team',
     '770e8400-e29b-41d4-a716-446655440004'
-  )
+  ),
   -- Lisa Martinez - No team assignment (only base role)
   -- John Doe - No team assignment (only base role)
+  -- ============================================================================
+  -- NEW TEST USERS - TEAM ROLES
+  -- ============================================================================
+  -- teamleader@everylanguage.com - Team Leader in Test Team
+  (
+    '880e8400-e29b-41d4-a716-446655440009',
+    '550e8400-e29b-41d4-a716-446655440302',
+    'team',
+    '770e8400-e29b-41d4-a716-446655440005'
+  ),
+  -- teammember@everylanguage.com - Team Member in Test Team
+  (
+    '880e8400-e29b-41d4-a716-446655440010',
+    '550e8400-e29b-41d4-a716-446655440301',
+    'team',
+    '770e8400-e29b-41d4-a716-446655440005'
+  )
 ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 
 
@@ -597,6 +849,140 @@ VALUES
     '550e8400-e29b-41d4-a716-446655440401',
     'base',
     '660e8400-e29b-41d4-a716-446655440002'
+  ),
+  -- ============================================================================
+  -- NEW TEST USERS - BASE ROLES
+  -- ============================================================================
+  -- All new test users get base member role at Test Base
+  (
+    '880e8400-e29b-41d4-a716-446655440009',
+    '550e8400-e29b-41d4-a716-446655440401',
+    'base',
+    '660e8400-e29b-41d4-a716-446655440004'
+  ),
+  (
+    '880e8400-e29b-41d4-a716-446655440010',
+    '550e8400-e29b-41d4-a716-446655440401',
+    'base',
+    '660e8400-e29b-41d4-a716-446655440004'
+  ),
+  (
+    '880e8400-e29b-41d4-a716-446655440011',
+    '550e8400-e29b-41d4-a716-446655440401',
+    'base',
+    '660e8400-e29b-41d4-a716-446655440004'
+  ),
+  (
+    '880e8400-e29b-41d4-a716-446655440012',
+    '550e8400-e29b-41d4-a716-446655440401',
+    'base',
+    '660e8400-e29b-41d4-a716-446655440004'
+  ),
+  (
+    '880e8400-e29b-41d4-a716-446655440013',
+    '550e8400-e29b-41d4-a716-446655440401',
+    'base',
+    '660e8400-e29b-41d4-a716-446655440004'
+  ),
+  (
+    '880e8400-e29b-41d4-a716-446655440014',
+    '550e8400-e29b-41d4-a716-446655440401',
+    'base',
+    '660e8400-e29b-41d4-a716-446655440004'
+  ),
+  (
+    '880e8400-e29b-41d4-a716-446655440015',
+    '550e8400-e29b-41d4-a716-446655440401',
+    'base',
+    '660e8400-e29b-41d4-a716-446655440004'
+  ),
+  (
+    '880e8400-e29b-41d4-a716-446655440016',
+    '550e8400-e29b-41d4-a716-446655440401',
+    'base',
+    '660e8400-e29b-41d4-a716-446655440004'
+  ),
+  (
+    '880e8400-e29b-41d4-a716-446655440017',
+    '550e8400-e29b-41d4-a716-446655440401',
+    'base',
+    '660e8400-e29b-41d4-a716-446655440004'
+  )
+ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+
+
+-- ============================================================================
+-- USER ROLES - PARTNER ORG ASSIGNMENTS
+-- ============================================================================
+INSERT INTO
+  user_roles (user_id, role_id, context_type, context_id)
+VALUES
+  -- partneradmin@everylanguage.com - Partner Admin in Test Partner Org
+  (
+    '880e8400-e29b-41d4-a716-446655440014',
+    '550e8400-e29b-41d4-a716-446655440503',
+    'partner',
+    'bb0e8400-e29b-41d4-a716-446655440002'
+  ),
+  -- partnerleader@everylanguage.com - Partner Leader in Test Partner Org
+  (
+    '880e8400-e29b-41d4-a716-446655440015',
+    '550e8400-e29b-41d4-a716-446655440502',
+    'partner',
+    'bb0e8400-e29b-41d4-a716-446655440002'
+  ),
+  -- partnermember@everylanguage.com - Partner Member in Test Partner Org
+  (
+    '880e8400-e29b-41d4-a716-446655440016',
+    '550e8400-e29b-41d4-a716-446655440501',
+    'partner',
+    'bb0e8400-e29b-41d4-a716-446655440002'
+  )
+ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+
+
+-- ============================================================================
+-- USER ROLES - PROJECT DIRECT ASSIGNMENTS (not team-based)
+-- ============================================================================
+INSERT INTO
+  user_roles (user_id, role_id, context_type, context_id)
+VALUES
+  -- projectadmin@everylanguage.com - Project Admin in Test Project
+  (
+    '880e8400-e29b-41d4-a716-446655440011',
+    '550e8400-e29b-41d4-a716-446655440103',
+    'project',
+    'aa0e8400-e29b-41d4-a716-446655440002'
+  ),
+  -- projectviewer@everylanguage.com - Project Viewer in Test Project
+  (
+    '880e8400-e29b-41d4-a716-446655440012',
+    '550e8400-e29b-41d4-a716-446655440101',
+    'project',
+    'aa0e8400-e29b-41d4-a716-446655440002'
+  ),
+  -- projecteditor@everylanguage.com - Project Editor in Test Project
+  (
+    '880e8400-e29b-41d4-a716-446655440013',
+    '550e8400-e29b-41d4-a716-446655440102',
+    'project',
+    'aa0e8400-e29b-41d4-a716-446655440002'
+  )
+ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+
+
+-- ============================================================================
+-- USER ROLES - GLOBAL/SYSTEM ADMIN ASSIGNMENTS
+-- ============================================================================
+INSERT INTO
+  user_roles (user_id, role_id, context_type, context_id)
+VALUES
+  -- systemadmin@everylanguage.com - System Admin (global role)
+  (
+    '880e8400-e29b-41d4-a716-446655440017',
+    '550e8400-e29b-41d4-a716-446655440200',
+    'global',
+    NULL
   )
 ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 
@@ -843,6 +1229,21 @@ WHERE
 
 
 -- OMT Pokhara 2
+UPDATE public.teams
+SET
+  created_by = '880e8400-e29b-41d4-a716-446655440009' -- teamleader@everylanguage.com
+WHERE
+  id = '770e8400-e29b-41d4-a716-446655440005';
+
+
+-- Test Team
+UPDATE public.bases
+SET
+  created_by = '880e8400-e29b-41d4-a716-446655440009' -- teamleader@everylanguage.com
+WHERE
+  id = '660e8400-e29b-41d4-a716-446655440004';
+
+
 -- ============================================================================
 -- VERIFICATION QUERIES (run these to verify the seed worked)
 -- ============================================================================

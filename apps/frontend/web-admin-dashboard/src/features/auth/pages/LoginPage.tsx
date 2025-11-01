@@ -36,7 +36,7 @@ export function LoginPage() {
       <div className='max-w-md w-full space-y-8'>
         <div>
           <h2 className='mt-6 text-center text-3xl font-extrabold text-neutral-900'>
-            Admin Dashboard
+            Every Language Admin Dashboard
           </h2>
           <p className='mt-2 text-center text-sm text-neutral-600'>
             Sign in to access the admin dashboard

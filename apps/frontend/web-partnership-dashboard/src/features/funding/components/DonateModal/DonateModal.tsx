@@ -11,6 +11,8 @@ import { StepAmount } from './StepAmount';
 import { StepDetails } from './StepDetails';
 import { StepLanguages } from './StepLanguages';
 import { StepAccount } from './StepAccount';
+import { StepConversion } from './StepConversion';
+import { StepPaymentMethod } from './StepPaymentMethod';
 import { useAuth } from '@/features/auth';
 
 const StepPayment = React.lazy(() => import('./StepPayment'));
@@ -71,6 +73,7 @@ export const DonateModal: React.FC = () => {
                 Complete your donation using a secure form.
               </DialogDescription>
               {state.step === 0 && <StepChooseIntent flow={flow} />}
+              {/* Ops Flow: Intent → Details → Amount → Conversion (if once) → Payment → Account */}
               {state.step === 1 && state.intent === 'ops' && (
                 <StepDetails flow={flow} />
               )}
@@ -78,16 +81,20 @@ export const DonateModal: React.FC = () => {
                 <StepAmount flow={flow} />
               )}
               {state.step === 3 && state.intent === 'ops' && (
+                <StepConversion flow={flow} />
+              )}
+              {state.step === 4 && state.intent === 'ops' && (
                 <React.Suspense
                   fallback={<div className='text-sm'>Loading payment…</div>}
                 >
                   <StepPayment flow={flow} />
                 </React.Suspense>
               )}
-              {state.intent === 'ops' && state.step === 4 && (
+              {state.intent === 'ops' && state.step === 5 && (
                 <StepAccount flow={flow} />
               )}
 
+              {/* Adopt Flow: Intent → Languages → Details (org selector) → PaymentMethod → Payment → Account */}
               {state.intent === 'adopt' && state.step === 1 && (
                 <StepLanguages flow={flow} />
               )}
@@ -95,13 +102,16 @@ export const DonateModal: React.FC = () => {
                 <StepDetails flow={flow} />
               )}
               {state.intent === 'adopt' && state.step === 3 && (
+                <StepPaymentMethod flow={flow} />
+              )}
+              {state.intent === 'adopt' && state.step === 4 && (
                 <React.Suspense
                   fallback={<div className='text-sm'>Loading payment…</div>}
                 >
                   <StepPayment flow={flow} />
                 </React.Suspense>
               )}
-              {state.intent === 'adopt' && state.step === 4 && (
+              {state.intent === 'adopt' && state.step === 5 && (
                 <StepAccount flow={flow} />
               )}
             </div>
