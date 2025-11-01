@@ -202,6 +202,7 @@ Deno.serve(async (req: Request) => {
 
     // Create Subscription for recurring
     let subscriptionId: string | null = null;
+    let subscriptionClientSecret: string | null = null;
     if (purpose === 'adoption' && mode === 'card' && subscriptionItems.length > 0) {
       const sub = await stripe.subscriptions.create({
         customer: customer.id,
@@ -212,6 +213,11 @@ Deno.serve(async (req: Request) => {
         metadata: { purpose: 'adoption', sponsorship_id: sponsorshipId },
       });
       subscriptionId = sub.id;
+      
+      // Extract the subscription's payment intent client secret
+      const latestInvoice = sub.latest_invoice as Stripe.Invoice | null;
+      const paymentIntent = latestInvoice?.payment_intent as Stripe.PaymentIntent | null;
+      subscriptionClientSecret = paymentIntent?.client_secret ?? null;
     }
 
     // Update sponsorship
@@ -233,6 +239,8 @@ Deno.serve(async (req: Request) => {
     return createSuccessResponse({
       customerId: customer.id,
       depositClientSecret: paymentIntentClientSecret,
+      subscriptionClientSecret: subscriptionClientSecret,
+      clientSecret: subscriptionClientSecret ?? paymentIntentClientSecret, // Fallback for adoption flow
       subscriptionId,
       adoptionSummaries,
     });

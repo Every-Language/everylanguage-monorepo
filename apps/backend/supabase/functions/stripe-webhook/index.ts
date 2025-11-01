@@ -45,15 +45,18 @@ Deno.serve(async (req: Request) => {
     switch (event.type) {
       case 'payment_intent.succeeded': {
         const pi = event.data.object as Stripe.PaymentIntent;
-        // Minimal: record a contribution without strong linkage (frontend should map sponsorship_id via metadata in future)
+        const sponsorshipId = pi.metadata?.sponsorship_id || null;
+        const paymentMethod = pi.metadata?.payment_method || 'card';
+
+        // Record contribution with sponsorship linkage
         await supabase.from('contributions').insert({
-          sponsorship_id: null,
+          sponsorship_id: sponsorshipId,
           project_id: null,
           language_adoption_id: null,
           amount_cents: pi.amount_received ?? pi.amount,
           currency_code: (pi.currency || 'usd').toUpperCase(),
           occurred_at: new Date().toISOString(),
-          kind: 'one_time',
+          kind: pi.metadata?.type === 'monthly_subscription' ? 'subscription' : 'one_time',
           fee_cents: null,
           fee_covered_by_donor: null,
           stripe_payment_intent_id: pi.id,
@@ -62,12 +65,40 @@ Deno.serve(async (req: Request) => {
               ? pi.charges.data[0].id
               : null,
         });
+
+        // Handle bank transfer completion
+        if (paymentMethod === 'bank_transfer' && sponsorshipId) {
+          // Update sponsorship status to active
+          const { data: sponsorship } = await supabase
+            .from('sponsorships')
+            .select('language_adoption_id')
+            .eq('id', sponsorshipId)
+            .single();
+
+          await supabase
+            .from('sponsorships')
+            .update({ status: 'active' })
+            .eq('id', sponsorshipId);
+
+          // If linked to language adoption, update adoption status
+          if (sponsorship?.language_adoption_id) {
+            await supabase
+              .from('language_adoptions')
+              .update({
+                status: 'funded',
+                bank_transfer_expiry_at: null,
+              })
+              .eq('id', sponsorship.language_adoption_id);
+          }
+        }
         break;
       }
       case 'invoice.paid': {
         const inv = event.data.object as Stripe.Invoice;
+        const sponsorshipId = inv.subscription_details?.metadata?.sponsorship_id || null;
+
         await supabase.from('contributions').insert({
-          sponsorship_id: null,
+          sponsorship_id: sponsorshipId,
           project_id: null,
           language_adoption_id: null,
           amount_cents: inv.amount_paid ?? inv.amount_due ?? 0,

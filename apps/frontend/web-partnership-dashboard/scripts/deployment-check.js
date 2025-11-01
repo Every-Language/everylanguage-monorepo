@@ -109,8 +109,6 @@ if (!allPassed && requiredPassed) {
 }
 
 console.log('\n🔗 Useful commands:');
-console.log('npm run lint        - Run linting checks');
-console.log('npm run type-check  - Run TypeScript checks');
-console.log('npm run test:run    - Run tests');
+console.log('npm run pre-commit  - Run all pre-commit checks');
 console.log('npm run build       - Test local build');
 console.log('npm run preview     - Preview built app locally');
