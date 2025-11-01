@@ -28,17 +28,17 @@
     "frontend:partnership:dev": "turbo run dev --filter=web-partnership-dashboard"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "prettier": "^3.5.3",
-    "sql-formatter": "^15.6.5"
+    "sql-formatter": "^15.6.5",
+    "turbo": "^2.0.0"
   },
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@8.15.0"
+  "packageManager": "pnpm@10.20.0"
 }

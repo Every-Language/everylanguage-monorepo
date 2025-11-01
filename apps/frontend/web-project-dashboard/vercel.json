@@ -2,7 +2,6 @@
   "buildCommand": "cd ../../.. && pnpm run build --filter=web-project-dashboard",
   "outputDirectory": "dist",
   "devCommand": "pnpm run dev",
-  "installCommand": "pnpm install",
   "framework": "vite",
   "regions": ["iad1"],
   "headers": [
