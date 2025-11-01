@@ -8,7 +8,10 @@ import {
 import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/shared/components/ui/Button';
 import { useAuth } from '@/features/auth';
-import { createSponsorshipCheckout } from '../../api/fundingApi';
+import {
+  createDonationCheckout,
+  createAdoptionCheckout,
+} from '../../api/fundingApi';
 import type { DonateFlowState, AmountSelection } from '../../state/types';
 import { applyFeeCover } from '../../utils/calc';
 
@@ -182,30 +185,26 @@ export const StepPayment: React.FC<{ flow: Flow }> = ({ flow }) => {
     (async () => {
       setInitializing(true);
       try {
-        type OpsPayload = {
-          purpose: 'operations';
-          donor: {
-            firstName: string;
-            lastName: string;
-            email: string;
-            phone?: string;
-          };
-          mode: 'card';
-          donateOnlyCents: number;
+        const meta = (user?.user_metadata ?? {}) as {
+          first_name?: string;
+          last_name?: string;
         };
-        type AdoptPayload = {
-          purpose: 'adoption';
-          donor: {
-            firstName: string;
-            lastName: string;
-            email: string;
-            phone?: string;
-          };
-          mode: 'card';
-          adoptionIds: string[];
-        };
-        let payload: OpsPayload | AdoptPayload;
+        const donorFirst =
+          flow.state.donor?.firstName ??
+          meta.first_name ??
+          user?.email?.split('@')[0] ??
+          'Donor';
+        const donorLast =
+          flow.state.donor?.lastName ?? meta.last_name ?? 'Supporter';
+        const donorEmail = flow.state.donor?.email ?? user?.email ?? '';
+        const donorPhone = flow.state.donor?.phone;
+
+        let cs: string | null = null;
+        let customerId: string | null = null;
+        let partnerOrgId: string | null = null;
+
         if (intent === 'ops') {
+          // Operational Costs Flow - use create-donation-checkout
           const baseCents = flow.state.amount?.amount_cents ?? 0;
           const coverFees = flow.state.amount?.coverFees ?? true;
           const totalCents = coverFees ? applyFeeCover(baseCents) : baseCents;
@@ -215,61 +214,60 @@ export const StepPayment: React.FC<{ flow: Flow }> = ({ flow }) => {
               `Minimum charge is ${(min / 100).toFixed(2)} ${currency.toUpperCase()}.`
             );
           }
-          const meta = (user?.user_metadata ?? {}) as {
-            first_name?: string;
-            last_name?: string;
-          };
-          const donorFirst =
-            flow.state.donor?.firstName ??
-            meta.first_name ??
-            user?.email?.split('@')[0] ??
-            'Donor';
-          const donorLast =
-            flow.state.donor?.lastName ?? meta.last_name ?? 'Supporter';
-          const donorEmail = flow.state.donor?.email ?? user?.email ?? '';
-          payload = {
-            purpose: 'operations' as const,
+
+          const cadence = flow.state.amount?.cadence ?? 'once';
+          const res = await createDonationCheckout({
             donor: {
               firstName: donorFirst,
               lastName: donorLast,
               email: donorEmail,
+              phone: donorPhone,
             },
-            mode: 'card' as const,
-            donateOnlyCents: totalCents,
-          };
+            amountCents: totalCents,
+            cadence: cadence === 'monthly' ? 'monthly' : 'once',
+            currency: flow.state.amount?.currency ?? 'USD',
+          });
+
+          cs = res.clientSecret;
+          customerId = res.customerId;
+          partnerOrgId = res.partnerOrgId;
         } else {
+          // Language Adoption Flow - use create-adoption-checkout
           const ids = flow.state.adopt?.languageIds ?? [];
           if (!ids.length) {
             throw new Error('Select at least one language to continue.');
           }
-          const meta = (user?.user_metadata ?? {}) as {
-            first_name?: string;
-            last_name?: string;
+
+          const orgSelection = flow.state.orgSelection ?? {
+            orgMode: 'individual',
           };
-          const donorFirst =
-            flow.state.donor?.firstName ??
-            meta.first_name ??
-            user?.email?.split('@')[0] ??
-            'Donor';
-          const donorLast =
-            flow.state.donor?.lastName ?? meta.last_name ?? 'Supporter';
-          const donorEmail = flow.state.donor?.email ?? user?.email ?? '';
-          payload = {
-            purpose: 'adoption' as const,
+          const paymentMethod = flow.state.paymentMethod ?? 'card';
+
+          const res = await createAdoptionCheckout({
             donor: {
               firstName: donorFirst,
               lastName: donorLast,
               email: donorEmail,
+              phone: donorPhone,
             },
-            mode: 'card' as const,
             adoptionIds: ids,
-          };
+            orgSelection,
+            paymentMethod,
+          });
+
+          cs =
+            res.depositClientSecret ??
+            res.subscriptionClientSecret ??
+            res.clientSecret;
+          customerId = res.customerId;
+          partnerOrgId = res.partnerOrgId;
         }
-        const res = await createSponsorshipCheckout(payload);
-        const cs: string | null =
-          res.depositClientSecret ?? res.clientSecret ?? null;
+
         if (isMounted) {
           setClientSecret(cs);
+          // Store customerId and partnerOrgId in flow state for later use
+          if (customerId) flow.setCustomerId?.(customerId);
+          if (partnerOrgId) flow.setPartnerOrgId?.(partnerOrgId);
           try {
             sessionStorage.setItem(cacheKey, cs ?? 'null');
           } catch {
