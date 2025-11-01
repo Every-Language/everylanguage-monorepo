@@ -2,6 +2,7 @@
   "buildCommand": "cd ../../.. && pnpm run build --filter=el-map-portal",
   "outputDirectory": "dist",
   "devCommand": "pnpm run dev",
+  "installCommand": "pnpm@10 install",
   "framework": "vite",
   "regions": ["iad1"],
   "headers": [
