@@ -67,12 +67,29 @@ get_vercel_project_id() {
     local team_id=$2
     local token=$3
     
+    # Debug output
+    if [ -n "$DEBUG_VERCEL" ]; then
+        echo "DEBUG: project=$project_name, team=$team_id, token_len=${#token}" >&2
+    fi
+    
     # Use Vercel API to get project info
     local response=$(curl -s -H "Authorization: Bearer $token" \
         "https://api.vercel.com/v9/projects/$project_name?teamId=$team_id")
     
+    # Debug output
+    if [ -n "$DEBUG_VERCEL" ]; then
+        echo "DEBUG: API response length=${#response}" >&2
+        echo "DEBUG: API response start=$(echo "$response" | head -c 100)" >&2
+    fi
+    
     # Extract project ID from response using jq
     local project_id=$(echo "$response" | jq -r '.id // empty')
+    
+    # Debug output
+    if [ -n "$DEBUG_VERCEL" ]; then
+        echo "DEBUG: extracted project_id=$project_id" >&2
+    fi
+    
     echo "$project_id"
 }
 
