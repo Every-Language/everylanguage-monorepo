@@ -3,14 +3,21 @@ import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
 import { createLead } from '../../api/fundingApi';
 import { CustomPhoneInput } from '@/features/auth/components/CustomPhoneInput';
+import { PartnerOrgSelector } from './PartnerOrgSelector';
+import type { OrgSelection } from '../../state/types';
 
 export const StepDetails: React.FC<{ flow: any }> = ({ flow }) => {
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [phone, setPhone] = React.useState('');
+  const [orgSelection, setOrgSelection] = React.useState<OrgSelection>({
+    orgMode: 'individual',
+  });
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  const isAdoptionFlow = flow.state.intent === 'adopt';
 
   const handleSubmit = async () => {
     // simple validation
@@ -19,6 +26,22 @@ export const StepDetails: React.FC<{ flow: any }> = ({ flow }) => {
       setError('Please enter first name, last name, and a valid email.');
       return;
     }
+
+    // Validate org selection for adoption
+    if (isAdoptionFlow) {
+      if (
+        orgSelection.orgMode === 'new' &&
+        !orgSelection.new_partner_org?.name
+      ) {
+        setError('Please enter an organization name.');
+        return;
+      }
+      if (orgSelection.orgMode === 'existing' && !orgSelection.partner_org_id) {
+        setError('Please select an organization.');
+        return;
+      }
+    }
+
     setError(null);
     setLoading(true);
     try {
@@ -35,6 +58,9 @@ export const StepDetails: React.FC<{ flow: any }> = ({ flow }) => {
         languageIds,
       });
       flow.setDonor({ firstName, lastName, email, phone });
+      if (isAdoptionFlow) {
+        flow.setOrgSelection(orgSelection);
+      }
       flow.next();
     } finally {
       setLoading(false);
@@ -65,6 +91,14 @@ export const StepDetails: React.FC<{ flow: any }> = ({ flow }) => {
           <CustomPhoneInput value={phone} onChange={v => setPhone(v || '')} />
         </div>
       </div>
+
+      {/* Only show PartnerOrgSelector for adoption flow */}
+      {isAdoptionFlow && (
+        <div className='pt-2'>
+          <PartnerOrgSelector value={orgSelection} onChange={setOrgSelection} />
+        </div>
+      )}
+
       {error && <div className='text-sm text-error-600'>{error}</div>}
       <div className='pt-2 flex justify-end'>
         <Button onClick={handleSubmit} loading={loading}>

@@ -9,9 +9,11 @@ export default {
       `prettier --write ${filenames.join(' ')}`,
     ];
   },
-  'apps/backend/**/*.sql': [
-    'sql-formatter --config apps/backend/.sqlformatterrc.json --fix',
-  ],
+  'apps/backend/**/*.sql': (filenames) =>
+    filenames.map(
+      (filename) =>
+        `sql-formatter --config apps/backend/.sqlformatterrc.json --fix ${filename}`
+    ),
   'apps/frontend/**/*.{ts,tsx,js,jsx}': ['prettier --write'],
   'packages/shared-ui/**/*.{ts,tsx}': ['prettier --write'],
   '*.{json,md,yml,yaml}': ['prettier --write'],
