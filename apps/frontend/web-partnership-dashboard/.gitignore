@@ -1,2 +1,5 @@
 # Vercel (frontend-specific)
 .vercel
+
+# Local environment files
+.env.remote.dev

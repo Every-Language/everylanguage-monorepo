@@ -1,2 +1,4 @@
 # Vercel (frontend-specific)
 .vercel
+
+.env.remote.dev
