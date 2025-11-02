@@ -153,44 +153,59 @@ Deno.serve(async (req: Request) => {
         paymentIntentId = pi.id;
       } else {
         // Create subscription for monthly recurring
-        const sub = await stripe.subscriptions.create({
-          customer: customer.id,
-          items: [
-            {
-              price_data: {
-                currency: currency,
-                product_data: {
-                  name: 'Monthly Operational Support',
-                  description:
-                    'Recurring monthly donation for operational costs',
+        try {
+          const sub = await stripe.subscriptions.create({
+            customer: customer.id,
+            items: [
+              {
+                price_data: {
+                  currency: currency,
+                  product_data: {
+                    name: 'Monthly Operational Support',
+                    description:
+                      'Recurring monthly donation for operational costs',
+                  },
+                  unit_amount: amount_cents,
+                  recurring: { interval: 'month' },
                 },
-                unit_amount: amount_cents,
-                recurring: { interval: 'month' },
+                quantity: 1,
               },
-              quantity: 1,
+            ],
+            payment_behavior: 'default_incomplete',
+            payment_settings: {
+              save_default_payment_method: 'on_subscription',
             },
-          ],
-          payment_behavior: 'default_incomplete',
-          payment_settings: { save_default_payment_method: 'on_subscription' },
-          expand: ['latest_invoice.payment_intent'],
-          metadata: {
-            purpose: 'operations',
-            type: 'monthly_subscription',
-            sponsorship_id: sponsorshipId,
-          },
-        });
-        subscriptionId = sub.id;
+            expand: ['latest_invoice.payment_intent'],
+            metadata: {
+              purpose: 'operations',
+              type: 'monthly_subscription',
+              sponsorship_id: sponsorshipId,
+            },
+          });
+          subscriptionId = sub.id;
 
-        // Extract the subscription's payment intent client secret
-        // The expand parameter ensures latest_invoice is an object
-        const latestInvoice = sub.latest_invoice;
-        if (latestInvoice && typeof latestInvoice === 'object') {
-          const paymentIntent = (latestInvoice as Stripe.Invoice)
-            .payment_intent;
-          if (paymentIntent && typeof paymentIntent === 'object') {
-            clientSecret =
-              (paymentIntent as Stripe.PaymentIntent).client_secret ?? null;
+          // Extract the subscription's payment intent client secret
+          // The expand parameter ensures latest_invoice is an object
+          const latestInvoice = sub.latest_invoice;
+          if (latestInvoice && typeof latestInvoice === 'object') {
+            const invoice = latestInvoice as any;
+            const paymentIntent = invoice.payment_intent;
+            if (paymentIntent && typeof paymentIntent === 'object') {
+              const pi = paymentIntent as any;
+              clientSecret = pi.client_secret ?? null;
+            }
           }
+
+          if (!clientSecret) {
+            console.error(
+              'No client secret found in subscription',
+              JSON.stringify(sub, null, 2)
+            );
+            throw new Error('Failed to get client secret from subscription');
+          }
+        } catch (subError) {
+          console.error('Subscription creation failed:', subError);
+          throw subError;
         }
       }
     }
