@@ -237,6 +237,12 @@ Deno.serve(async (req: Request) => {
     });
   } catch (e) {
     console.error('create-donation-checkout error', e);
-    return createErrorResponse((e as Error).message, 500);
+    // Return detailed error info to help debug
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    const errorStack = e instanceof Error ? e.stack : undefined;
+    return createErrorResponse('Checkout creation failed', 500, {
+      message: errorMessage,
+      stack: errorStack,
+    });
   }
 });
