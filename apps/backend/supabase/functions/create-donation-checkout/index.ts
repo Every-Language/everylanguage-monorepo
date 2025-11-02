@@ -182,10 +182,16 @@ Deno.serve(async (req: Request) => {
         subscriptionId = sub.id;
 
         // Extract the subscription's payment intent client secret
-        const latestInvoice = sub.latest_invoice as Stripe.Invoice | null;
-        const paymentIntent =
-          latestInvoice?.payment_intent as Stripe.PaymentIntent | null;
-        clientSecret = paymentIntent?.client_secret ?? null;
+        // The expand parameter ensures latest_invoice is an object
+        const latestInvoice = sub.latest_invoice;
+        if (latestInvoice && typeof latestInvoice === 'object') {
+          const paymentIntent = (latestInvoice as Stripe.Invoice)
+            .payment_intent;
+          if (paymentIntent && typeof paymentIntent === 'object') {
+            clientSecret =
+              (paymentIntent as Stripe.PaymentIntent).client_secret ?? null;
+          }
+        }
       }
     }
 
