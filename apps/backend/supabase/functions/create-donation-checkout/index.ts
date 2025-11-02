@@ -153,59 +153,61 @@ Deno.serve(async (req: Request) => {
         paymentIntentId = pi.id;
       } else {
         // Create subscription for monthly recurring
-        try {
-          const sub = await stripe.subscriptions.create({
-            customer: customer.id,
-            items: [
-              {
-                price_data: {
-                  currency: currency,
-                  product_data: {
-                    name: 'Monthly Operational Support',
-                    description:
-                      'Recurring monthly donation for operational costs',
-                  },
-                  unit_amount: amount_cents,
-                  recurring: { interval: 'month' },
+        const sub = await stripe.subscriptions.create({
+          customer: customer.id,
+          items: [
+            {
+              price_data: {
+                currency: currency,
+                product_data: {
+                  name: 'Monthly Operational Support',
+                  description:
+                    'Recurring monthly donation for operational costs',
                 },
-                quantity: 1,
+                unit_amount: amount_cents,
+                recurring: { interval: 'month' },
               },
-            ],
-            payment_behavior: 'default_incomplete',
-            payment_settings: {
-              save_default_payment_method: 'on_subscription',
+              quantity: 1,
             },
-            expand: ['latest_invoice.payment_intent'],
-            metadata: {
-              purpose: 'operations',
-              type: 'monthly_subscription',
-              sponsorship_id: sponsorshipId,
-            },
+          ],
+          payment_behavior: 'default_incomplete',
+          payment_settings: {
+            save_default_payment_method: 'on_subscription',
+          },
+          expand: ['latest_invoice.payment_intent'],
+          metadata: {
+            purpose: 'operations',
+            type: 'monthly_subscription',
+            sponsorship_id: sponsorshipId,
+          },
+        });
+        subscriptionId = sub.id;
+
+        // Extract the subscription's payment intent client secret
+        // Handle both expanded object and string ID cases
+        const latestInvoice = sub.latest_invoice;
+
+        if (typeof latestInvoice === 'string') {
+          // If it's a string, we need to fetch the invoice
+          const invoice = await stripe.invoices.retrieve(latestInvoice, {
+            expand: ['payment_intent'],
           });
-          subscriptionId = sub.id;
-
-          // Extract the subscription's payment intent client secret
-          // The expand parameter ensures latest_invoice is an object
-          const latestInvoice = sub.latest_invoice;
-          if (latestInvoice && typeof latestInvoice === 'object') {
-            const invoice = latestInvoice as any;
-            const paymentIntent = invoice.payment_intent;
-            if (paymentIntent && typeof paymentIntent === 'object') {
-              const pi = paymentIntent as any;
-              clientSecret = pi.client_secret ?? null;
-            }
+          const paymentIntent = invoice.payment_intent;
+          if (typeof paymentIntent === 'object' && paymentIntent !== null) {
+            clientSecret = paymentIntent.client_secret ?? null;
           }
-
-          if (!clientSecret) {
-            console.error(
-              'No client secret found in subscription',
-              JSON.stringify(sub, null, 2)
-            );
-            throw new Error('Failed to get client secret from subscription');
+        } else if (latestInvoice && typeof latestInvoice === 'object') {
+          // If it's already expanded
+          const paymentIntent = (latestInvoice as Stripe.Invoice)
+            .payment_intent;
+          if (typeof paymentIntent === 'object' && paymentIntent !== null) {
+            clientSecret =
+              (paymentIntent as Stripe.PaymentIntent).client_secret ?? null;
           }
-        } catch (subError) {
-          console.error('Subscription creation failed:', subError);
-          throw subError;
+        }
+
+        if (!clientSecret) {
+          throw new Error('Failed to get client secret from subscription');
         }
       }
     }
