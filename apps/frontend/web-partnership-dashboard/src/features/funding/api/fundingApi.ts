@@ -153,9 +153,10 @@ export async function createDonationCheckout(payload: {
     let message = 'Failed to create donation checkout';
     try {
       const j = await res.json();
-      if (j?.message) message = j.message;
+      if (j?.error) message = j.error;
+      if (j?.details) console.error('Error details:', j.details);
     } catch (e) {
-      console.error('Failed to create donation checkout', e);
+      console.error('Failed to parse error response', e);
     }
     throw new Error(message);
   }
@@ -195,9 +196,10 @@ export async function createAdoptionCheckout(payload: {
     let message = 'Failed to create adoption checkout';
     try {
       const j = await res.json();
-      if (j?.message) message = j.message;
+      if (j?.error) message = j.error;
+      if (j?.details) console.error('Error details:', j.details);
     } catch (e) {
-      console.error('Failed to create adoption checkout', e);
+      console.error('Failed to parse error response', e);
     }
     throw new Error(message);
   }

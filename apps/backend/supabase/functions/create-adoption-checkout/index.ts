@@ -72,15 +72,36 @@ Deno.serve(async (req: Request) => {
           email: donor.email,
           limit: 1,
         });
-        return (
-          customers.data[0] ??
-          (await stripe.customers.create({
-            email: donor.email,
-            name: `${donor.firstName} ${donor.lastName}`.trim(),
-            phone: donor.phone,
-            metadata: { source: 'everylanguage', purpose: 'adoption' },
-          }))
-        );
+        const existingCustomer = customers.data[0];
+
+        // Check for currency mismatch with existing customer
+        if (existingCustomer) {
+          // Check if customer has any existing charges/subscriptions
+          const [charges, subs] = await Promise.all([
+            stripe.charges.list({ customer: existingCustomer.id, limit: 1 }),
+            stripe.subscriptions.list({
+              customer: existingCustomer.id,
+              limit: 1,
+            }),
+          ]);
+
+          const existingCurrency =
+            charges.data[0]?.currency || subs.data[0]?.currency;
+          if (existingCurrency && existingCurrency !== 'usd') {
+            throw new Error(
+              `This account has existing transactions in ${existingCurrency.toUpperCase()}. ` +
+                `Please contact support to process donations in a different currency.`
+            );
+          }
+          return existingCustomer;
+        }
+
+        return await stripe.customers.create({
+          email: donor.email,
+          name: `${donor.firstName} ${donor.lastName}`.trim(),
+          phone: donor.phone,
+          metadata: { source: 'everylanguage', purpose: 'adoption' },
+        });
       })(),
       (async () => {
         // Handle partner org creation/selection
@@ -172,6 +193,8 @@ Deno.serve(async (req: Request) => {
       recurringCents: number;
     }[] = [];
 
+    // Create Stripe products for subscriptions if needed
+    const productPromises: Promise<string>[] = [];
     for (const a of adoptions ?? []) {
       const depositPercent = a.deposit_percent ?? globalDeposit;
       const months = a.recurring_months ?? globalMonths;
@@ -191,13 +214,31 @@ Deno.serve(async (req: Request) => {
       });
 
       if (mode === 'card' && recurring > 0) {
+        // Create product for this adoption
+        productPromises.push(
+          stripe.products
+            .create({
+              name: `Adoption: ${(a as any).language_entities?.name ?? a.id}`,
+              metadata: {
+                language_adoption_id: a.id,
+              },
+            })
+            .then(product => product.id)
+        );
+      }
+    }
+
+    // Wait for all products to be created
+    const productIds = await Promise.all(productPromises);
+
+    // Build subscription items with product IDs
+    for (let i = 0; i < adoptionSummaries.length; i++) {
+      if (mode === 'card' && adoptionSummaries[i].recurringCents > 0) {
         subscriptionItems.push({
           price_data: {
             currency: 'usd',
-            product_data: {
-              name: `Adoption: ${(a as any).language_entities?.name ?? a.id}`,
-            },
-            unit_amount: recurring,
+            product: productIds[subscriptionItems.length], // Use the product ID
+            unit_amount: adoptionSummaries[i].recurringCents,
             recurring: { interval: 'month' },
           },
           quantity: 1,
@@ -257,25 +298,29 @@ Deno.serve(async (req: Request) => {
         paymentIntentId = pi.id;
       }
 
-      // Create subscription for recurring
+      // Create subscription for recurring (starts billing next month after deposit)
       if (subscriptionItems.length > 0) {
+        // Calculate billing start date (first day of next month)
+        const billingStart = new Date();
+        billingStart.setMonth(billingStart.getMonth() + 1);
+        billingStart.setDate(1);
+        billingStart.setHours(0, 0, 0, 0);
+
         const sub = await stripe.subscriptions.create({
           customer: customer.id,
           items: subscriptionItems,
-          payment_behavior: 'default_incomplete',
+          // Start billing next month, no immediate payment required
+          billing_cycle_anchor: Math.floor(billingStart.getTime() / 1000),
+          proration_behavior: 'none',
           payment_settings: { save_default_payment_method: 'on_subscription' },
-          expand: ['latest_invoice.payment_intent'],
           metadata: {
             purpose: 'adoption',
             sponsorship_id: primarySponsorshipId,
           },
         });
         subscriptionId = sub.id;
-
-        const latestInvoice = sub.latest_invoice as Stripe.Invoice | null;
-        const paymentIntent =
-          latestInvoice?.payment_intent as Stripe.PaymentIntent | null;
-        subscriptionClientSecret = paymentIntent?.client_secret ?? null;
+        // No subscription client secret needed since we're not charging immediately
+        subscriptionClientSecret = null;
       }
     } else if (mode === 'bank_transfer') {
       // Set adoptions to on_hold with expiry

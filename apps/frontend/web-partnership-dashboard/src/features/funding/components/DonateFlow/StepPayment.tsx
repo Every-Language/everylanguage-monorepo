@@ -154,6 +154,7 @@ export const StepPayment: React.FC<{ flow: Flow; hideButton?: boolean }> = ({
   const currency = (flow.state.amount?.currency ?? 'USD').toLowerCase();
   // Removed strict-mode guard that could leave initializing=true when hot reloading
   const { user } = useAuth();
+  const { coverFees: contextCoverFees } = React.useContext(StepActionsContext);
 
   const minCentsForCurrency = (ccy: string) => {
     switch (ccy) {
@@ -176,7 +177,11 @@ export const StepPayment: React.FC<{ flow: Flow; hideButton?: boolean }> = ({
     const donorEmail = flow.state.donor?.email ?? user?.email ?? '';
     const idsKey = (flow.state.adopt?.languageIds ?? []).join(',');
     const baseCents = flow.state.amount?.amount_cents ?? 0;
-    const coverFees = flow.state.amount?.coverFees ?? true;
+    // Use context coverFees for adopt flow, flow.state.amount.coverFees for ops flow
+    const coverFees =
+      intent === 'adopt'
+        ? contextCoverFees
+        : (flow.state.amount?.coverFees ?? true);
     const totalCents = coverFees ? applyFeeCover(baseCents) : baseCents;
     // Include coverFees in cache key to ensure new checkout when fee coverage changes
     const cacheKey = `${CHECKOUT_CS_CACHE_PREFIX}${intent}:${donorEmail}:${idsKey}:${totalCents}:${coverFees}:${currency}`;
@@ -305,7 +310,7 @@ export const StepPayment: React.FC<{ flow: Flow; hideButton?: boolean }> = ({
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [contextCoverFees]); // Re-run when coverFees changes (for adopt flow)
 
   if (!stripePromise)
     return (

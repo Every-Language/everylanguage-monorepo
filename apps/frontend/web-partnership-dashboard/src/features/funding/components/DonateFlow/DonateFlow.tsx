@@ -22,7 +22,8 @@ const AdoptFlowCart: React.FC<{
 }> = ({ flow, languageContext }) => {
   const { selectedIds, removeLanguage, rows, totals, loading } =
     languageContext;
-  const { submitAction } = React.useContext(StepActionsContext);
+  const { submitAction, coverFees, setCoverFees } =
+    React.useContext(StepActionsContext);
   const selectedLanguages = rows.filter((r: any) => selectedIds.includes(r.id));
   const step = flow.state.step;
 
@@ -49,6 +50,9 @@ const AdoptFlowCart: React.FC<{
       onContinue={handleAction}
       buttonText={getButtonText()}
       allowRemove={false}
+      showCoverFees={step === 4}
+      coverFees={coverFees}
+      onCoverFeesChange={setCoverFees}
     />
   );
 };
@@ -108,57 +112,59 @@ export const DonateFlow: React.FC<DonateFlowProps> = ({
       )}
 
       {/* Step content with animation - key triggers animation on step change */}
-      <div
-        key={`${state.intent}-${state.step}`}
-        className='animate-in fade-in slide-in-from-right-4 duration-300'
-      >
-        {state.step === 0 && <StepChooseIntent flow={flow} />}
+      {/* For adopt flow steps 2-4, don't animate the cart */}
+      {state.intent === 'adopt' &&
+      state.step >= 2 &&
+      state.step <= 4 &&
+      languageContext ? (
+        <AdoptFlowCart flow={flow} languageContext={languageContext} />
+      ) : (
+        <div
+          key={`${state.intent}-${state.step}`}
+          className='animate-in fade-in slide-in-from-right-4 duration-300'
+        >
+          {state.step === 0 && <StepChooseIntent flow={flow} />}
 
-        {/* Ops Flow: Intent → Amount → Details → Conversion (if once) → Payment → ThankYou → Account */}
-        {state.step === 1 && state.intent === 'ops' && (
-          <StepAmount flow={flow} />
-        )}
-        {state.step === 2 && state.intent === 'ops' && (
-          <StepDetails flow={flow} />
-        )}
-        {state.step === 3 && state.intent === 'ops' && (
-          <StepConversion
-            flow={flow}
-            oneTimeAmount={state.amount?.amount_cents ?? 0}
-            currency={state.amount?.currency ?? 'USD'}
-          />
-        )}
-        {state.step === 4 && state.intent === 'ops' && (
-          <React.Suspense
-            fallback={<div className='text-sm'>Loading payment…</div>}
-          >
-            <StepPayment flow={flow} />
-          </React.Suspense>
-        )}
-        {state.intent === 'ops' && state.step === 5 && (
-          <StepThankYou flow={flow} onClose={onClose} />
-        )}
-        {state.intent === 'ops' && state.step === 6 && (
-          <StepAccount flow={flow} />
-        )}
-
-        {/* Adopt Flow: Intent → Languages → Details (org selector) → PaymentMethod → Payment → ThankYou → Account */}
-        {state.intent === 'adopt' && state.step === 1 && (
-          <StepLanguages flow={flow} onClose={onClose} />
-        )}
-        {state.intent === 'adopt' &&
-          state.step >= 2 &&
-          state.step <= 4 &&
-          languageContext && (
-            <AdoptFlowCart flow={flow} languageContext={languageContext} />
+          {/* Ops Flow: Intent → Amount → Details → Conversion (if once) → Payment → ThankYou → Account */}
+          {state.step === 1 && state.intent === 'ops' && (
+            <StepAmount flow={flow} />
           )}
-        {state.intent === 'adopt' && state.step === 5 && (
-          <StepThankYou flow={flow} onClose={onClose} />
-        )}
-        {state.intent === 'adopt' && state.step === 6 && (
-          <StepAccount flow={flow} />
-        )}
-      </div>
+          {state.step === 2 && state.intent === 'ops' && (
+            <StepDetails flow={flow} />
+          )}
+          {state.step === 3 && state.intent === 'ops' && (
+            <StepConversion
+              flow={flow}
+              oneTimeAmount={state.amount?.amount_cents ?? 0}
+              currency={state.amount?.currency ?? 'USD'}
+            />
+          )}
+          {state.step === 4 && state.intent === 'ops' && (
+            <React.Suspense
+              fallback={<div className='text-sm'>Loading payment…</div>}
+            >
+              <StepPayment flow={flow} />
+            </React.Suspense>
+          )}
+          {state.intent === 'ops' && state.step === 5 && (
+            <StepThankYou flow={flow} onClose={onClose} />
+          )}
+          {state.intent === 'ops' && state.step === 6 && (
+            <StepAccount flow={flow} />
+          )}
+
+          {/* Adopt Flow: Intent → Languages → Details (org selector) → PaymentMethod → Payment → ThankYou → Account */}
+          {state.intent === 'adopt' && state.step === 1 && (
+            <StepLanguages flow={flow} onClose={onClose} />
+          )}
+          {state.intent === 'adopt' && state.step === 5 && (
+            <StepThankYou flow={flow} onClose={onClose} />
+          )}
+          {state.intent === 'adopt' && state.step === 6 && (
+            <StepAccount flow={flow} />
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -21,6 +21,9 @@ interface LanguageCartProps {
   onContinue: () => void;
   buttonText?: string;
   allowRemove?: boolean;
+  showCoverFees?: boolean;
+  coverFees?: boolean;
+  onCoverFeesChange?: (value: boolean) => void;
 }
 
 export const LanguageCart: React.FC<LanguageCartProps> = ({
@@ -31,8 +34,17 @@ export const LanguageCart: React.FC<LanguageCartProps> = ({
   onContinue,
   buttonText = 'Continue to details',
   allowRemove = true,
+  showCoverFees = false,
+  coverFees = false,
+  onCoverFeesChange,
 }) => {
   const grandTotal = totals.upfront + totals.monthly * totals.months;
+
+  // Calculate transaction fees (2.9% + $0.30 for Stripe)
+  const transactionFee =
+    showCoverFees && coverFees ? Math.round(grandTotal * 0.029 + 30) : 0;
+
+  const finalTotal = grandTotal + transactionFee;
 
   return (
     <div className='space-y-4'>
@@ -84,18 +96,8 @@ export const LanguageCart: React.FC<LanguageCartProps> = ({
               </div>
             ) : (
               <>
-                {/* Grand Total */}
-                <div className='flex items-center justify-between text-lg font-semibold'>
-                  <span className='text-neutral-900 dark:text-neutral-100'>
-                    Total
-                  </span>
-                  <span className='text-neutral-900 dark:text-neutral-100'>
-                    ${(grandTotal / 100).toLocaleString()}
-                  </span>
-                </div>
-
                 {/* Breakdown */}
-                <div className='space-y-2 pt-2 border-t border-neutral-200 dark:border-neutral-700'>
+                <div className='space-y-2'>
                   <div className='flex items-center justify-between text-sm'>
                     <span className='text-neutral-600 dark:text-neutral-400'>
                       Upfront today
@@ -112,6 +114,43 @@ export const LanguageCart: React.FC<LanguageCartProps> = ({
                       ${(totals.monthly / 100).toLocaleString()}/mo
                     </span>
                   </div>
+                </div>
+
+                {/* Cover Transaction Costs Toggle */}
+                {showCoverFees && onCoverFeesChange && (
+                  <div className='pt-3 border-t border-neutral-200 dark:border-neutral-700'>
+                    <label className='flex items-center gap-3 cursor-pointer group'>
+                      <div className='relative'>
+                        <input
+                          type='checkbox'
+                          checked={coverFees}
+                          onChange={e => onCoverFeesChange(e.target.checked)}
+                          className='sr-only peer'
+                        />
+                        <div className='w-11 h-6 bg-neutral-200 dark:bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[""] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-600'></div>
+                      </div>
+                      <div className='flex-1'>
+                        <div className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                          Cover transaction costs
+                        </div>
+                        {transactionFee > 0 && (
+                          <div className='text-xs text-neutral-500'>
+                            +${(transactionFee / 100).toFixed(2)}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  </div>
+                )}
+
+                {/* Grand Total */}
+                <div className='flex items-center justify-between text-lg font-semibold pt-3 border-t border-neutral-200 dark:border-neutral-700'>
+                  <span className='text-neutral-900 dark:text-neutral-100'>
+                    Total
+                  </span>
+                  <span className='text-neutral-900 dark:text-neutral-100'>
+                    ${(finalTotal / 100).toLocaleString()}
+                  </span>
                 </div>
               </>
             )}

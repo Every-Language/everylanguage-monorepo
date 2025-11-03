@@ -67,30 +67,24 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   const [height, setHeight] = React.useState<number>(snapPoints.collapsed);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
 
-  // Track the committed height (only updates on snap, not during drag)
-  const [committedHeight, setCommittedHeight] = React.useState<number>(
-    snapPoints.collapsed
-  );
-
   const selectionKey = selection ? `${selection.kind}:${selection.id}` : 'none';
 
   // Sync state with height
   React.useEffect(() => {
     const newHeight = snapPoints[state];
     setHeight(newHeight);
-    setCommittedHeight(newHeight); // Update committed height when state changes
   }, [state, snapPoints]);
 
-  // Notify parent of height changes - only use committed height to avoid map refitting during drag
+  // Notify parent of height changes
   React.useEffect(() => {
     if (onHeightChange) {
-      onHeightChange(committedHeight, [
+      onHeightChange(height, [
         snapPoints.collapsed,
         snapPoints.half,
         snapPoints.full,
       ]);
     }
-  }, [committedHeight, snapPoints, onHeightChange]);
+  }, [height, snapPoints, onHeightChange]);
 
   // When entity selected and currently collapsed → open to half
   React.useEffect(() => {
@@ -221,9 +215,6 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 
     setIsTransitioning(true);
     setState(nearest);
-    // Update committed height after snap - this will trigger map padding update
-    const snappedHeight = snapPoints[nearest];
-    setCommittedHeight(snappedHeight);
     setTimeout(() => setIsTransitioning(false), 300);
   }, [height, snapPoints]);
 
@@ -309,34 +300,6 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
     };
   }, [handleDragStart, handleDragMove, handleDragEnd]);
 
-  // Block all touch events on the sheet from reaching the map
-  React.useEffect(() => {
-    const sheet = sheetRef.current;
-    if (!sheet) return;
-
-    const blockTouchPropagation = (e: TouchEvent) => {
-      // Stop propagation to prevent map interaction
-      e.stopPropagation();
-    };
-
-    // Block touchstart, touchmove, and touchend from propagating to map
-    sheet.addEventListener('touchstart', blockTouchPropagation, {
-      passive: true,
-    });
-    sheet.addEventListener('touchmove', blockTouchPropagation, {
-      passive: true,
-    });
-    sheet.addEventListener('touchend', blockTouchPropagation, {
-      passive: true,
-    });
-
-    return () => {
-      sheet.removeEventListener('touchstart', blockTouchPropagation);
-      sheet.removeEventListener('touchmove', blockTouchPropagation);
-      sheet.removeEventListener('touchend', blockTouchPropagation);
-    };
-  }, []);
-
   // Handle header tap when collapsed
   const handleHeaderTap = React.useCallback(() => {
     if (state === 'collapsed') {
@@ -377,7 +340,6 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         <div
           ref={handleRef}
           className='flex items-center justify-center py-2 cursor-grab active:cursor-grabbing flex-shrink-0'
-          style={{ touchAction: 'none' }} // Prevent browser default touch behaviors on handle
           onClick={handleHeaderTap}
         >
           <div className='h-1 w-10 rounded-full bg-neutral-300 dark:bg-neutral-700' />

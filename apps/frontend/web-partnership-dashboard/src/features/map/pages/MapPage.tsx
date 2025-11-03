@@ -25,6 +25,7 @@ export const MapPage: React.FC = () => {
   const layout = DEFAULT_LAYOUT; // Can be made dynamic in future for user preferences
   const [mobileSheetHeight, setMobileSheetHeight] = React.useState<number>();
   const [mobileSnapPoints, setMobileSnapPoints] = React.useState<number[]>();
+  const [mobileSheetDragging, setMobileSheetDragging] = React.useState(false);
 
   const handleMobileSheetHeight = React.useCallback(
     (height: number, snapPoints: number[]) => {
@@ -34,10 +35,15 @@ export const MapPage: React.FC = () => {
     []
   );
 
+  const handleMobileSheetDragging = React.useCallback((isDragging: boolean) => {
+    setMobileSheetDragging(isDragging);
+  }, []);
+
   return (
     <MobileSheetProvider
       height={mobileSheetHeight ?? 80}
       snapPoints={mobileSnapPoints ?? [80, 360, 744]}
+      isDragging={mobileSheetDragging}
     >
       <MapShell countriesEnabled={layers.countries}>
         <RouteSync />
@@ -69,6 +75,7 @@ export const MapPage: React.FC = () => {
             sections={layout.mobilePanel?.sections ?? []}
             selection={selection}
             onHeightChange={handleMobileSheetHeight}
+            onDraggingChange={handleMobileSheetDragging}
           />
         </div>
       </MapShell>

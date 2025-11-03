@@ -24,7 +24,10 @@ export const DonateInfoSection: React.FC<DonateInfoSectionProps> = ({
     if (flowState.step === 1) {
       // Step 1: Languages table
       return (
-        <div className={className}>
+        <div
+          key={`adopt-${flowState.step}`}
+          className={`${className} animate-in fade-in slide-in-from-left-4 duration-300`}
+        >
           <LanguagesTable flow={flow} />
         </div>
       );
@@ -32,7 +35,10 @@ export const DonateInfoSection: React.FC<DonateInfoSectionProps> = ({
     if (flowState.step === 2) {
       // Step 2: Details form
       return (
-        <div className={className}>
+        <div
+          key={`adopt-${flowState.step}`}
+          className={`${className} animate-in fade-in slide-in-from-left-4 duration-300`}
+        >
           <div className='text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
             Your details
           </div>
@@ -45,7 +51,10 @@ export const DonateInfoSection: React.FC<DonateInfoSectionProps> = ({
     if (flowState.step === 3) {
       // Step 3: Payment method selection
       return (
-        <div className={className}>
+        <div
+          key={`adopt-${flowState.step}`}
+          className={`${className} animate-in fade-in slide-in-from-left-4 duration-300`}
+        >
           <div className='text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
             Payment method
           </div>
@@ -58,7 +67,10 @@ export const DonateInfoSection: React.FC<DonateInfoSectionProps> = ({
     if (flowState.step === 4) {
       // Step 4: Payment form
       return (
-        <div className={className}>
+        <div
+          key={`adopt-${flowState.step}`}
+          className={`${className} animate-in fade-in slide-in-from-left-4 duration-300`}
+        >
           <div className='text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
             Payment details
           </div>

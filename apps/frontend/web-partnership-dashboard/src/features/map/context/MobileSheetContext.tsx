@@ -3,21 +3,24 @@ import React from 'react';
 interface MobileSheetContextValue {
   height: number;
   snapPoints: number[];
+  isDragging: boolean;
 }
 
 const MobileSheetContext = React.createContext<MobileSheetContextValue>({
   height: 0,
   snapPoints: [80, 360, 744],
+  isDragging: false,
 });
 
 export const MobileSheetProvider: React.FC<{
   height: number;
   snapPoints: number[];
+  isDragging?: boolean;
   children: React.ReactNode;
-}> = ({ height, snapPoints, children }) => {
+}> = ({ height, snapPoints, isDragging = false, children }) => {
   const value = React.useMemo(
-    () => ({ height, snapPoints }),
-    [height, snapPoints]
+    () => ({ height, snapPoints, isDragging }),
+    [height, snapPoints, isDragging]
   );
   return (
     <MobileSheetContext.Provider value={value}>

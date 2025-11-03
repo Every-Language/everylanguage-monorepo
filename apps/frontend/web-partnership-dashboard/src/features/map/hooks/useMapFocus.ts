@@ -20,6 +20,15 @@ export function useMapFocus(
   const mobileSheet = useMobileSheet();
 
   useEffect(() => {
+    // Skip map updates while the mobile sheet is being dragged
+    // This prevents the map from panning/zooming during sheet drag gestures
+    if (mobileSheet.isDragging) {
+      console.info('[useMapFocus] skipping update during sheet drag', {
+        entityId,
+      });
+      return;
+    }
+
     // Determine if mobile and calculate appropriate padding
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     const padding = isMobile
@@ -59,5 +68,12 @@ export function useMapFocus(
     }
 
     console.info('[useMapFocus] no geometry available for focus', { entityId });
-  }, [bbox, boundary, entityId, fitBounds, mobileSheet.height]);
+  }, [
+    bbox,
+    boundary,
+    entityId,
+    fitBounds,
+    mobileSheet.height,
+    mobileSheet.isDragging,
+  ]);
 }
