@@ -153,20 +153,33 @@ Deno.serve(async (req: Request) => {
         paymentIntentId = pi.id;
       } else {
         // Create subscription for monthly recurring
+        // First, create a product for operational support
+        const product = await stripe.products.create({
+          name: 'Monthly Operational Support',
+          description: 'Recurring monthly donation for operational costs',
+          metadata: {
+            purpose: 'operations',
+            type: 'monthly_donation',
+          },
+        });
+
+        // Create a price for the product
+        const price = await stripe.prices.create({
+          product: product.id,
+          unit_amount: amount_cents,
+          currency: currency,
+          recurring: { interval: 'month' },
+          metadata: {
+            purpose: 'operations',
+          },
+        });
+
+        // Create subscription using the price
         const sub = await stripe.subscriptions.create({
           customer: customer.id,
           items: [
             {
-              price_data: {
-                currency: currency,
-                product_data: {
-                  name: 'Monthly Operational Support',
-                  description:
-                    'Recurring monthly donation for operational costs',
-                },
-                unit_amount: amount_cents,
-                recurring: { interval: 'month' },
-              },
+              price: price.id,
               quantity: 1,
             },
           ],
@@ -184,27 +197,10 @@ Deno.serve(async (req: Request) => {
         subscriptionId = sub.id;
 
         // Extract the subscription's payment intent client secret
-        // Handle both expanded object and string ID cases
-        const latestInvoice = sub.latest_invoice;
-
-        if (typeof latestInvoice === 'string') {
-          // If it's a string, we need to fetch the invoice
-          const invoice = await stripe.invoices.retrieve(latestInvoice, {
-            expand: ['payment_intent'],
-          });
-          const paymentIntent = invoice.payment_intent;
-          if (typeof paymentIntent === 'object' && paymentIntent !== null) {
-            clientSecret = paymentIntent.client_secret ?? null;
-          }
-        } else if (latestInvoice && typeof latestInvoice === 'object') {
-          // If it's already expanded
-          const paymentIntent = (latestInvoice as Stripe.Invoice)
-            .payment_intent;
-          if (typeof paymentIntent === 'object' && paymentIntent !== null) {
-            clientSecret =
-              (paymentIntent as Stripe.PaymentIntent).client_secret ?? null;
-          }
-        }
+        const latestInvoice = sub.latest_invoice as Stripe.Invoice | null;
+        const paymentIntent =
+          latestInvoice?.payment_intent as Stripe.PaymentIntent | null;
+        clientSecret = paymentIntent?.client_secret ?? null;
 
         if (!clientSecret) {
           throw new Error('Failed to get client secret from subscription');
@@ -240,9 +236,10 @@ Deno.serve(async (req: Request) => {
     // Return detailed error info to help debug
     const errorMessage = e instanceof Error ? e.message : String(e);
     const errorStack = e instanceof Error ? e.stack : undefined;
-    return createErrorResponse('Checkout creation failed', 500, {
-      message: errorMessage,
-      stack: errorStack,
-    });
+    return createErrorResponse(
+      'Checkout creation failed',
+      500,
+      errorMessage + (errorStack ? '\n' + errorStack : '')
+    );
   }
 });

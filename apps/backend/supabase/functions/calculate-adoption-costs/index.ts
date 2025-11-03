@@ -97,6 +97,10 @@ Deno.serve(async (req: Request) => {
 
     return createSuccessResponse({
       languages,
+      deposit_total_cents: totalDeposit,
+      monthly_total_cents: totalMonthly,
+      recurring_months: globalMonths,
+      total_commitment_cents: totalDeposit + totalMonthly * globalMonths,
       summary: {
         totalDeposit,
         totalMonthly,
