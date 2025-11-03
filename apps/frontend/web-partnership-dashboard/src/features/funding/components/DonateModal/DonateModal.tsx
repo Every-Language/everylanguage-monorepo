@@ -22,6 +22,19 @@ export const DonateModal: React.FC = () => {
   const { state } = flow;
   const { user } = useAuth();
 
+  // Skip conversion step when user selects monthly
+  React.useEffect(() => {
+    // Ops flow: if at step 3 (conversion) and cadence is monthly, skip to step 4 (payment)
+    if (
+      state.intent === 'ops' &&
+      state.step === 3 &&
+      state.amount?.cadence === 'monthly'
+    ) {
+      flow.next();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.intent, state.step, state.amount?.cadence]);
+
   // Skip details/account when already logged in
   React.useEffect(() => {
     if (!user) return;
@@ -81,7 +94,11 @@ export const DonateModal: React.FC = () => {
                 <StepAmount flow={flow} />
               )}
               {state.step === 3 && state.intent === 'ops' && (
-                <StepConversion flow={flow} />
+                <StepConversion
+                  flow={flow}
+                  oneTimeAmount={state.amount?.amount_cents ?? 0}
+                  currency={state.amount?.currency ?? 'USD'}
+                />
               )}
               {state.step === 4 && state.intent === 'ops' && (
                 <React.Suspense

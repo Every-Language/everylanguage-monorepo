@@ -177,16 +177,26 @@ export async function searchPartnerOrgs(query: string, limit = 10) {
 
 export async function createDonationCheckout(payload: {
   donor: { firstName: string; lastName: string; email: string; phone?: string };
-  amount_cents: number;
+  amountCents: number;
   cadence: 'once' | 'monthly';
   mode: 'card' | 'bank_transfer';
   currency?: string;
 }) {
   const base = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+
+  // Transform payload to match backend's snake_case expectations
+  const backendPayload = {
+    donor: payload.donor,
+    amount_cents: payload.amountCents,
+    cadence: payload.cadence,
+    mode: payload.mode,
+    currency: payload.currency,
+  };
+
   const res = await fetch(`${base}/create-donation-checkout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(backendPayload),
   });
   if (!res.ok) {
     let message = 'Failed to create donation checkout';

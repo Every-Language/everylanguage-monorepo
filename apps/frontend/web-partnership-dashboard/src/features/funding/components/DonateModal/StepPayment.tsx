@@ -227,6 +227,7 @@ export const StepPayment: React.FC<{ flow: Flow }> = ({ flow }) => {
             },
             amountCents: totalCents,
             cadence: cadence === 'monthly' ? 'monthly' : 'once',
+            mode: 'card', // Operational costs always use card payment
             currency: flow.state.amount?.currency ?? 'USD',
           });
 
