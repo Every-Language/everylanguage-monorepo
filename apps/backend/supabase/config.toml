@@ -311,10 +311,47 @@ s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
 
+# =============================================================================
+# EDGE FUNCTIONS CONFIGURATION
+# =============================================================================
+# Note: verify_jwt controls whether Supabase Gateway requires a valid JWT token
+# before invoking the function. Set to false for public endpoints and webhooks.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# PUBLIC ENDPOINTS - No JWT verification required
+# These functions are publicly accessible and use service role key internally
+# -----------------------------------------------------------------------------
+
 [functions.create-sponsorship-checkout]
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/create-sponsorship-checkout/index.ts"
+
+[functions.create-adoption-checkout]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/create-adoption-checkout/index.ts"
+
+[functions.create-donation-checkout]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/create-donation-checkout/index.ts"
+
+[functions.calculate-adoption-costs]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/calculate-adoption-costs/index.ts"
+
+[functions.search-partner-orgs]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/search-partner-orgs/index.ts"
+
+[functions.get-download-urls-by-id]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/get-download-urls-by-id/index.ts"
 
 [functions.stripe-webhook]
 enabled = true
@@ -325,3 +362,38 @@ entrypoint = "./functions/stripe-webhook/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/crm-lead-intake/index.ts"
+
+[functions.refresh-progress]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/refresh-progress/index.ts"
+
+[functions.expire-bank-transfers]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/expire-bank-transfers/index.ts"
+
+# -----------------------------------------------------------------------------
+# AUTHENTICATED ENDPOINTS - JWT verification required
+# These functions require user authentication and use auth middleware
+# -----------------------------------------------------------------------------
+
+[functions.ingest-analytics]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/ingest-analytics/index.ts"
+
+[functions.get-upload-urls-by-id]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/get-upload-urls-by-id/index.ts"
+
+[functions.close-session]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/close-session/index.ts"
+
+[functions.project-financials]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/project-financials/index.ts"

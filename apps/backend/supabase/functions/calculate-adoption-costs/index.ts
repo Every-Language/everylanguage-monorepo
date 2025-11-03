@@ -5,6 +5,7 @@ import {
   createErrorResponse,
   createCorsResponse,
 } from '../_shared/response-utils.ts';
+import { dbToApi } from '../_shared/case-utils.ts';
 
 interface RequestBody {
   adoptionIds: string[];
@@ -95,19 +96,23 @@ Deno.serve(async (req: Request) => {
       totalMonthly += recurring;
     }
 
-    return createSuccessResponse({
+    // Construct response in snake_case (DB convention), then transform to camelCase
+    const response = {
       languages,
       deposit_total_cents: totalDeposit,
       monthly_total_cents: totalMonthly,
       recurring_months: globalMonths,
       total_commitment_cents: totalDeposit + totalMonthly * globalMonths,
       summary: {
-        totalDeposit,
-        totalMonthly,
+        total_deposit: totalDeposit,
+        total_monthly: totalMonthly,
         months: globalMonths,
-        totalCommitment: totalDeposit + totalMonthly * globalMonths,
+        total_commitment: totalDeposit + totalMonthly * globalMonths,
       },
-    });
+    };
+
+    // Transform to camelCase for API response
+    return createSuccessResponse(dbToApi(response));
   } catch (e) {
     console.error('calculate-adoption-costs error', e);
     return createErrorResponse((e as Error).message, 500);

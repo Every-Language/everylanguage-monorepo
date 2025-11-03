@@ -11,11 +11,11 @@ interface RequestBody {
   donor: { firstName: string; lastName: string; email: string; phone?: string };
   adoptionIds: string[];
   mode: 'card' | 'bank_transfer';
-  partner_org_id?: string;
-  new_partner_org?: {
+  partnerOrgId?: string;
+  newPartnerOrg?: {
     name: string;
     description?: string;
-    is_public: boolean;
+    isPublic: boolean;
   };
   orgMode?: 'individual' | 'existing' | 'new';
 }
@@ -33,8 +33,8 @@ Deno.serve(async (req: Request) => {
       donor,
       adoptionIds = [],
       mode,
-      partner_org_id,
-      new_partner_org,
+      partnerOrgId,
+      newPartnerOrg,
       orgMode = 'individual',
     } = body as RequestBody;
 
@@ -84,16 +84,16 @@ Deno.serve(async (req: Request) => {
       })(),
       (async () => {
         // Handle partner org creation/selection
-        if (orgMode === 'existing' && partner_org_id) {
-          return partner_org_id;
-        } else if (orgMode === 'new' && new_partner_org) {
+        if (orgMode === 'existing' && partnerOrgId) {
+          return partnerOrgId;
+        } else if (orgMode === 'new' && newPartnerOrg) {
           const { data: insOrg, error: orgErr } = await supabase
             .from('partner_orgs')
             .insert({
-              name: new_partner_org.name,
-              description: new_partner_org.description ?? '',
+              name: newPartnerOrg.name,
+              description: newPartnerOrg.description ?? '',
               is_individual: false,
-              is_public: new_partner_org.is_public,
+              is_public: newPartnerOrg.isPublic,
               created_by: null,
             })
             .select('id')
@@ -145,7 +145,7 @@ Deno.serve(async (req: Request) => {
 
     const globalDeposit = settingsResult.data?.[0]?.deposit_percent ?? 0.2;
     const globalMonths = settingsResult.data?.[0]?.recurring_months ?? 12;
-    const partnerOrgId = partnerOrgIdResult;
+    const finalPartnerOrgId = partnerOrgIdResult;
 
     // Fetch language adoptions
     const { data: adoptions, error: aErr } = await supabase
@@ -207,7 +207,7 @@ Deno.serve(async (req: Request) => {
 
     // Create sponsorships for each adoption
     const sponsorshipInserts = adoptionIds.map(id => ({
-      partner_org_id: partnerOrgId,
+      partner_org_id: finalPartnerOrgId,
       language_adoption_id: id,
       status: mode === 'bank_transfer' ? 'pending_bank_transfer' : 'interest',
       pledge_one_time_cents: depositTotal,
@@ -309,7 +309,7 @@ Deno.serve(async (req: Request) => {
       customerId: customer.id,
       sponsorshipIds,
       subscriptionId,
-      partnerOrgId,
+      partnerOrgId: finalPartnerOrgId,
       adoptionSummaries,
     });
   } catch (e) {

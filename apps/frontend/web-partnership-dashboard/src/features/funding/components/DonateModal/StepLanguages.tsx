@@ -43,9 +43,9 @@ export const StepLanguages: React.FC<{ flow: any }> = ({ flow }) => {
     calculateAdoptionCosts(selectedIds)
       .then(result => {
         setTotals({
-          upfront: result.deposit_total_cents,
-          monthly: result.monthly_total_cents,
-          months: result.recurring_months,
+          upfront: result.depositTotalCents,
+          monthly: result.monthlyTotalCents,
+          months: result.recurringMonths,
         });
       })
       .catch(err => {

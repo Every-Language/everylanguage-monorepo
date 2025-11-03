@@ -5,6 +5,7 @@ import {
   createErrorResponse,
   createCorsResponse,
 } from '../_shared/response-utils.ts';
+import { dbToApi } from '../_shared/case-utils.ts';
 
 interface RequestBody {
   query: string;
@@ -40,7 +41,9 @@ Deno.serve(async (req: Request) => {
       return createErrorResponse(`Search error: ${error.message}`, 500);
     }
 
-    return createSuccessResponse({ results: data ?? [] });
+    // Convert database results from snake_case to camelCase
+    const results = dbToApi(data ?? []);
+    return createSuccessResponse({ results });
   } catch (e) {
     console.error('search-partner-orgs error', e);
     return createErrorResponse((e as Error).message, 500);

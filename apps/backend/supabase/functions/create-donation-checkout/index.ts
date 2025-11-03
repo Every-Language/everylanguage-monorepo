@@ -9,7 +9,7 @@ import {
 
 interface RequestBody {
   donor: { firstName: string; lastName: string; email: string; phone?: string };
-  amount_cents: number;
+  amountCents: number;
   cadence: 'once' | 'monthly';
   mode: 'card' | 'bank_transfer';
   currency?: string;
@@ -24,7 +24,7 @@ Deno.serve(async (req: Request) => {
     const body = (await req.json()) as Partial<RequestBody>;
     const {
       donor,
-      amount_cents,
+      amountCents,
       cadence,
       mode,
       currency = 'usd',
@@ -34,7 +34,7 @@ Deno.serve(async (req: Request) => {
       return createErrorResponse('Missing donor details', 400);
     }
 
-    if (!amount_cents || amount_cents < 50) {
+    if (!amountCents || amountCents < 50) {
       return createErrorResponse('Amount must be at least 50 cents', 400);
     }
 
@@ -114,8 +114,8 @@ Deno.serve(async (req: Request) => {
         partner_org_id: partnerOrgId,
         language_adoption_id: null,
         status: mode === 'bank_transfer' ? 'pledged' : 'interest',
-        pledge_one_time_cents: cadence === 'once' ? amount_cents : 0,
-        pledge_recurring_cents: cadence === 'monthly' ? amount_cents : 0,
+        pledge_one_time_cents: cadence === 'once' ? amountCents : 0,
+        pledge_recurring_cents: cadence === 'monthly' ? amountCents : 0,
         currency_code: currency.toUpperCase(),
         stripe_customer_id: customer.id,
         payment_method: mode,
@@ -139,7 +139,7 @@ Deno.serve(async (req: Request) => {
       if (cadence === 'once') {
         // Create one-time PaymentIntent
         const pi = await stripe.paymentIntents.create({
-          amount: amount_cents,
+          amount: amountCents,
           currency: currency,
           customer: customer.id,
           automatic_payment_methods: { enabled: true },
@@ -166,7 +166,7 @@ Deno.serve(async (req: Request) => {
         // Create a price for the product
         const price = await stripe.prices.create({
           product: product.id,
-          unit_amount: amount_cents,
+          unit_amount: amountCents,
           currency: currency,
           recurring: { interval: 'month' },
           metadata: {

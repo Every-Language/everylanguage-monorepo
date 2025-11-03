@@ -9,6 +9,7 @@ import {
   isAuthError,
   createAuthErrorResponse,
 } from '../_shared/auth-middleware.ts';
+import { dbToApi } from '../_shared/case-utils.ts';
 
 /**
  * Authenticated endpoint returning financial summaries for a project via the
@@ -63,7 +64,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    return createSuccessResponse({ financials: data });
+    // Convert database results from snake_case to camelCase
+    const financials = dbToApi(data);
+    return createSuccessResponse({ financials });
   } catch (error) {
     return createErrorResponse((error as Error).message, 500);
   }

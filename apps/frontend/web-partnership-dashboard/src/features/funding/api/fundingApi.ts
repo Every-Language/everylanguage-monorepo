@@ -66,52 +66,7 @@ export async function createLead(payload: {
   return { ok: true };
 }
 
-/**
- * @deprecated Use createDonationCheckout or createAdoptionCheckout instead
- */
-export async function createSponsorshipCheckout(payload: {
-  purpose: 'operations' | 'adoption';
-  adoptionIds?: string[];
-  donor: { firstName: string; lastName: string; email: string; phone?: string };
-  mode: 'card' | 'bank_transfer';
-  donateOnlyCents?: number;
-}) {
-  const base = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
-  const res = await fetch(`${base}/create-sponsorship-checkout`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    let message = 'Failed to create checkout';
-    try {
-      const j = await res.json();
-      if (j?.message) message = j.message;
-    } catch (e) {
-      console.error('Failed to create checkout', e);
-    }
-    throw new Error(message);
-  }
-  const json = await res.json();
-  const data =
-    json && typeof json === 'object' && 'data' in json
-      ? (json as any).data
-      : json;
-  return data as {
-    customerId?: string;
-    depositClientSecret?: string | null;
-    clientSecret?: string | null;
-    subscriptionId?: string | null;
-    adoptionSummaries?: Array<{
-      id: string;
-      name: string;
-      depositCents: number;
-      recurringCents: number;
-    }>;
-  };
-}
-
-// New API methods
+// API methods
 
 export async function calculateAdoptionCosts(adoptionIds: string[]) {
   const base = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
@@ -138,6 +93,10 @@ export async function calculateAdoptionCosts(adoptionIds: string[]) {
       totalCents: number;
       months: number;
     }>;
+    depositTotalCents: number;
+    monthlyTotalCents: number;
+    recurringMonths: number;
+    totalCommitmentCents: number;
     summary: {
       totalDeposit: number;
       totalMonthly: number;
@@ -170,7 +129,7 @@ export async function searchPartnerOrgs(query: string, limit = 10) {
       id: string;
       name: string;
       description: string | null;
-      similarity_score: number;
+      similarityScore: number;
     }>;
   };
 }
@@ -184,19 +143,11 @@ export async function createDonationCheckout(payload: {
 }) {
   const base = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
-  // Transform payload to match backend's snake_case expectations
-  const backendPayload = {
-    donor: payload.donor,
-    amount_cents: payload.amountCents,
-    cadence: payload.cadence,
-    mode: payload.mode,
-    currency: payload.currency,
-  };
-
+  // API now uses camelCase - no transformation needed
   const res = await fetch(`${base}/create-donation-checkout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(backendPayload),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     let message = 'Failed to create donation checkout';
@@ -226,11 +177,11 @@ export async function createAdoptionCheckout(payload: {
   donor: { firstName: string; lastName: string; email: string; phone?: string };
   adoptionIds: string[];
   mode: 'card' | 'bank_transfer';
-  partner_org_id?: string;
-  new_partner_org?: {
+  partnerOrgId?: string;
+  newPartnerOrg?: {
     name: string;
     description?: string;
-    is_public: boolean;
+    isPublic: boolean;
   };
   orgMode?: 'individual' | 'existing' | 'new';
 }) {

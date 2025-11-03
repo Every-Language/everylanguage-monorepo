@@ -7,6 +7,11 @@ import {
   createErrorResponse,
   createCorsResponse,
 } from '../_shared/response-utils.ts';
+import {
+  authenticateRequest,
+  isAuthError,
+  createAuthErrorResponse,
+} from '../_shared/auth-middleware.ts';
 
 interface RequestBody {
   mediaFileIds?: string[];
@@ -45,6 +50,14 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // Authenticate the request - only logged-in users can request upload URLs
+    const authCtx = await authenticateRequest(req);
+    if (isAuthError(authCtx)) {
+      return createAuthErrorResponse(authCtx);
+    }
+
+    const { publicUserId } = authCtx;
+
     let body: RequestBody;
     try {
       body = await req.json();
@@ -62,7 +75,8 @@ Deno.serve(async (req: Request) => {
       return createErrorResponse('Provide mediaFileIds and/or imageIds', 400);
     }
 
-    // R2-only storage - no provider switching needed
+    // Use service role key for database operations
+    // The user is authenticated above, but we need elevated privileges to update records
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -98,11 +112,23 @@ Deno.serve(async (req: Request) => {
     if (mediaFileIds.length > 0) {
       const { data, error } = await supabase
         .from('media_files')
-        .select('id, object_key, original_filename, file_type')
+        .select('id, object_key, original_filename, file_type, created_by')
         .in('id', mediaFileIds);
       if (error) {
         return createErrorResponse(`DB error: ${error.message}`, 500);
       }
+
+      // Authorization check: verify all requested media files belong to the authenticated user
+      const unauthorizedFiles = (data ?? []).filter(
+        row => row.created_by !== publicUserId
+      );
+      if (unauthorizedFiles.length > 0) {
+        return createErrorResponse(
+          `Not authorized to upload to ${unauthorizedFiles.length} media file(s)`,
+          403
+        );
+      }
+
       for (const row of data ?? []) {
         try {
           // Use existing object_key if available, otherwise generate new one
@@ -152,11 +178,23 @@ Deno.serve(async (req: Request) => {
     if (imageIds.length > 0) {
       const { data, error } = await supabase
         .from('images')
-        .select('id, object_key, original_filename, file_type')
+        .select('id, object_key, original_filename, file_type, created_by')
         .in('id', imageIds);
       if (error) {
         return createErrorResponse(`DB error: ${error.message}`, 500);
       }
+
+      // Authorization check: verify all requested images belong to the authenticated user
+      const unauthorizedImages = (data ?? []).filter(
+        row => row.created_by !== publicUserId
+      );
+      if (unauthorizedImages.length > 0) {
+        return createErrorResponse(
+          `Not authorized to upload to ${unauthorizedImages.length} image(s)`,
+          403
+        );
+      }
+
       for (const row of data ?? []) {
         try {
           // Use existing object_key if available, otherwise generate new one
