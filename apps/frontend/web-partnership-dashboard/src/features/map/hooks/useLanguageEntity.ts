@@ -20,25 +20,40 @@ type LanguageProperty = {
  * descendants, and primary region.
  */
 export function useLanguageEntity(id: string) {
-  // Fetch entity with aliases
+  // Only enable queries if we have a valid ID
+  const enabled = !!id && id.trim() !== '';
+
+  // Fetch entity (basic info without .single() to avoid 406 errors)
   const entity = useQuery({
     queryKey: ['language_entity', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Use array query without .single() to avoid 406 errors on missing entities
+      const { data: entityData, error: entityError } = await supabase
         .from('language_entities')
-        .select('id,name,level,language_aliases(alias_name)')
+        .select('id,name,level')
         .eq('id', id)
-        .single();
-      if (error) throw error;
-      const row = data as unknown as {
-        id: string;
-        name: string;
-        level: string;
-        language_aliases?: Array<{ alias_name: string | null }>;
-      };
-      const aliases = (row.language_aliases ?? [])
+        .limit(1);
+
+      if (entityError) throw entityError;
+      if (!entityData || entityData.length === 0) {
+        throw new Error(`Language entity not found: ${id}`);
+      }
+
+      const row = entityData[0];
+
+      // Fetch aliases separately
+      const { data: aliasData, error: aliasError } = await supabase
+        .from('language_aliases')
+        .select('alias_name')
+        .eq('language_entity_id', id)
+        .is('deleted_at', null);
+
+      if (aliasError) throw aliasError;
+
+      const aliases = (aliasData ?? [])
         .map(a => a.alias_name)
         .filter((v): v is string => !!v);
+
       return {
         id: row.id,
         name: row.name,
@@ -46,6 +61,8 @@ export function useLanguageEntity(id: string) {
         aliases,
       } as LanguageEntity;
     },
+    enabled,
+    retry: false, // Don't retry on missing entities
   });
 
   // Fetch properties
@@ -59,6 +76,7 @@ export function useLanguageEntity(id: string) {
       if (error) throw error;
       return (data ?? []) as LanguageProperty[];
     },
+    enabled,
   });
 
   // Fetch descendants (for aggregated data)
@@ -93,6 +111,7 @@ export function useLanguageEntity(id: string) {
       arr.sort(); // stabilize
       return arr;
     },
+    enabled,
   });
 
   // Pick primary region based on dominance
@@ -116,6 +135,7 @@ export function useLanguageEntity(id: string) {
       return { regionId };
     },
     staleTime: 10 * 60 * 1000,
+    enabled,
   });
 
   return {

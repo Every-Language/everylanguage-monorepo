@@ -65,6 +65,7 @@ export const HierarchySection: React.FC<HierarchySectionProps> = ({
         }>;
       }
     },
+    enabled: !!entityId && entityId.trim() !== '',
   });
 
   const nodesById = React.useMemo(() => {

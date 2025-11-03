@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguageEntity } from '../hooks/useLanguageEntity';
 import { useRegion } from '../hooks/useRegion';
+import { useMapFocus } from '../hooks/useMapFocus';
 
 type InfoSectionProps = {
   type: 'language' | 'region';
@@ -19,6 +20,26 @@ export const InfoSection: React.FC<InfoSectionProps> = ({ type, entityId }) => {
   const entity = type === 'language' ? languageData.entity : regionData.region;
   const properties =
     type === 'language' ? languageData.properties : regionData.properties;
+
+  // Map focusing: for language, use primary region's bbox/boundary; for region, use direct bbox/boundary
+  const primaryRegionId =
+    type === 'language' ? languageData.primaryRegion.data?.regionId : null;
+  const primaryRegionData = useRegion(primaryRegionId ?? '');
+
+  const bbox =
+    type === 'language'
+      ? primaryRegionId
+        ? primaryRegionData.bbox.data
+        : null
+      : regionData.bbox.data;
+  const boundary =
+    type === 'language'
+      ? primaryRegionId
+        ? primaryRegionData.boundary.data
+        : null
+      : regionData.boundary.data;
+
+  useMapFocus(bbox ?? null, boundary ?? null, entityId);
 
   if (entity.isLoading) return <div>Loading...</div>;
   if (entity.error)

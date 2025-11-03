@@ -39,10 +39,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         .from('regions')
         .select('id,name,level')
         .eq('id', (selection as { id: string }).id)
-        .single();
+        .limit(1);
       if (error) throw error;
-      return data as { id: string; name: string; level: string };
+      if (!data || data.length === 0) return null;
+      return data[0] as { id: string; name: string; level: string };
     },
+    retry: false,
   });
 
   const languageHeader = useQuery({
@@ -53,10 +55,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         .from('language_entities')
         .select('id,name,level')
         .eq('id', (selection as { id: string }).id)
-        .single();
+        .limit(1);
       if (error) throw error;
-      return data as { id: string; name: string; level: string };
+      if (!data || data.length === 0) return null;
+      return data[0] as { id: string; name: string; level: string };
     },
+    retry: false,
   });
 
   const projectHeader = useQuery({
@@ -67,10 +71,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         .from('projects')
         .select('id,name')
         .eq('id', (selection as { id: string }).id)
-        .single();
+        .limit(1);
       if (error) throw error;
-      return data as { id: string; name: string };
+      if (!data || data.length === 0) return null;
+      return data[0] as { id: string; name: string };
     },
+    retry: false,
   });
 
   const isLoading =
@@ -105,12 +111,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     bottom: 'bottom-4 left-4 right-4',
   };
 
-  const maxHeightClass = config.maxHeight ?? 'max-h-[calc(100dvh-2rem)]';
+  // Responsive width: use viewport-relative with max constraint
+  const widthClass = 'w-[50vw] max-w-[600px]';
 
   return (
     <div
-      className={`absolute ${positionClasses[config.position]} flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-xl overflow-hidden`}
-      style={{ width: config.width ? `${config.width}px` : undefined }}
+      className={`absolute ${positionClasses[config.position]} ${widthClass} flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-xl overflow-hidden`}
     >
       {/* Header */}
       <div className='flex-none px-3 py-2 border-b border-neutral-200 dark:border-neutral-800'>
@@ -152,11 +158,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
       </div>
 
       {/* Body with sections */}
-      <div
-        ref={scrollRef}
-        className={`flex-auto overflow-y-auto p-4 space-y-4 ${maxHeightClass}`}
-        style={{ maxHeight: config.maxHeight }}
-      >
+      <div ref={scrollRef} className='flex-auto overflow-y-auto p-4 space-y-4'>
         {isLoading ? (
           <BodySkeleton />
         ) : (

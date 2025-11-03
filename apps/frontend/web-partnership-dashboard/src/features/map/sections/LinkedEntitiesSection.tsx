@@ -75,6 +75,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
       }
     },
     staleTime: 10 * 60 * 1000,
+    enabled: !!parentId && parentId.trim() !== '',
   });
 
   const filtered = React.useMemo(() => {

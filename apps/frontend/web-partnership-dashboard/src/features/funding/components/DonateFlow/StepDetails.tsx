@@ -4,9 +4,14 @@ import { Button } from '@/shared/components/ui/Button';
 import { createLead } from '../../api/fundingApi';
 import { CustomPhoneInput } from '@/features/auth/components/CustomPhoneInput';
 import { PartnerOrgSelector } from './PartnerOrgSelector';
+import { StepActionsContext } from './StepActionsContext';
 import type { OrgSelection } from '../../state/types';
 
-export const StepDetails: React.FC<{ flow: any }> = ({ flow }) => {
+export const StepDetails: React.FC<{ flow: any; hideButton?: boolean }> = ({
+  flow,
+  hideButton = false,
+}) => {
+  const { setSubmitAction } = React.useContext(StepActionsContext);
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
   const [email, setEmail] = React.useState('');
@@ -19,7 +24,7 @@ export const StepDetails: React.FC<{ flow: any }> = ({ flow }) => {
 
   const isAdoptionFlow = flow.state.intent === 'adopt';
 
-  const handleSubmit = async () => {
+  const handleSubmit = React.useCallback(async () => {
     // simple validation
     const emailValid = /.+@.+\..+/.test(email);
     if (!firstName || !lastName || !emailValid) {
@@ -65,7 +70,15 @@ export const StepDetails: React.FC<{ flow: any }> = ({ flow }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [firstName, lastName, email, phone, orgSelection, isAdoptionFlow, flow]);
+
+  // Register submit action when button is hidden (adopt flow)
+  React.useEffect(() => {
+    if (hideButton) {
+      setSubmitAction(() => handleSubmit);
+      return () => setSubmitAction(null);
+    }
+  }, [hideButton, handleSubmit, setSubmitAction]);
 
   return (
     <div className='space-y-3'>
@@ -100,11 +113,13 @@ export const StepDetails: React.FC<{ flow: any }> = ({ flow }) => {
       )}
 
       {error && <div className='text-sm text-error-600'>{error}</div>}
-      <div className='pt-2 flex justify-end'>
-        <Button onClick={handleSubmit} loading={loading}>
-          Continue
-        </Button>
-      </div>
+      {!hideButton && (
+        <div className='pt-2 flex justify-end'>
+          <Button onClick={handleSubmit} loading={loading}>
+            Continue
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

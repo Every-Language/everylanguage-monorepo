@@ -20,25 +20,40 @@ type BBox = [number, number, number, number];
  * Hook for fetching region data including region info, properties, and bbox.
  */
 export function useRegion(id: string) {
-  // Fetch region with aliases
+  // Only enable queries if we have a valid ID
+  const enabled = !!id && id.trim() !== '';
+
+  // Fetch region (avoid .single() to prevent 406 errors)
   const region = useQuery({
     queryKey: ['region', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Use array query without .single() to avoid 406 errors on missing regions
+      const { data: regionData, error: regionError } = await supabase
         .from('regions')
-        .select('id,name,level,region_aliases(alias_name)')
+        .select('id,name,level')
         .eq('id', id)
-        .single();
-      if (error) throw error;
-      const row = data as unknown as {
-        id: string;
-        name: string;
-        level: string;
-        region_aliases?: Array<{ alias_name: string | null }>;
-      };
-      const aliases = (row.region_aliases ?? [])
+        .limit(1);
+
+      if (regionError) throw regionError;
+      if (!regionData || regionData.length === 0) {
+        throw new Error(`Region not found: ${id}`);
+      }
+
+      const row = regionData[0];
+
+      // Fetch aliases separately
+      const { data: aliasData, error: aliasError } = await supabase
+        .from('region_aliases')
+        .select('alias_name')
+        .eq('region_id', id)
+        .is('deleted_at', null);
+
+      if (aliasError) throw aliasError;
+
+      const aliases = (aliasData ?? [])
         .map(a => a.alias_name)
         .filter((v): v is string => !!v);
+
       return {
         id: row.id,
         name: row.name,
@@ -46,6 +61,8 @@ export function useRegion(id: string) {
         aliases,
       } as RegionData;
     },
+    enabled,
+    retry: false, // Don't retry on missing regions
   });
 
   // Fetch properties
@@ -59,6 +76,7 @@ export function useRegion(id: string) {
       if (error) throw error;
       return (data ?? []) as RegionProperty[];
     },
+    enabled,
   });
 
   // Prefer lightweight bbox RPC
@@ -96,11 +114,12 @@ export function useRegion(id: string) {
       }
     },
     staleTime: 30 * 60 * 1000,
+    enabled,
   });
 
   // Fallback: simplified boundary
   const boundary = useQuery({
-    enabled: bbox.isFetched && !bbox.data,
+    enabled: enabled && bbox.isFetched && !bbox.data,
     queryKey: ['region_boundary_simplified', id],
     queryFn: async () => {
       try {

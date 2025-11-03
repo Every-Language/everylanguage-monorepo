@@ -14,6 +14,7 @@ import {
 } from '../../api/fundingApi';
 import type { DonateFlowState, AmountSelection } from '../../state/types';
 import { applyFeeCover } from '../../utils/calc';
+import { StepActionsContext } from './StepActionsContext';
 
 const pk = (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
   import.meta.env.VITE_STRIPE_PK) as string | undefined;
@@ -31,18 +32,19 @@ type Flow = {
   setPartnerOrgId?: (id: string) => void;
 };
 
-const Inner: React.FC<{ flow: Flow; clientSecret: string | null }> = ({
-  flow,
-  clientSecret,
-}) => {
+const Inner: React.FC<{
+  flow: Flow;
+  clientSecret: string | null;
+  hideButton?: boolean;
+}> = ({ flow, clientSecret, hideButton = false }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
-  const [completed, setCompleted] = React.useState(false);
   const intent = flow.state.intent;
+  const { setSubmitAction } = React.useContext(StepActionsContext);
 
-  const handleSubmit = async () => {
+  const handleSubmit = React.useCallback(async () => {
     if (!stripe || !elements) return;
     if (!clientSecret) return;
     setSubmitting(true);
@@ -60,11 +62,21 @@ const Inner: React.FC<{ flow: Flow; clientSecret: string | null }> = ({
         redirect: 'if_required',
       });
       if (confirmed.error) throw confirmed.error;
-      setCompleted(true);
+
+      // Payment successful - advance to thank you step
+      flow.next();
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [stripe, elements, clientSecret, flow]);
+
+  // Register submit action when button is hidden (adopt flow)
+  React.useEffect(() => {
+    if (hideButton) {
+      setSubmitAction(() => handleSubmit);
+      return () => setSubmitAction(null);
+    }
+  }, [hideButton, handleSubmit, setSubmitAction]);
 
   const amountCents =
     intent === 'ops'
@@ -78,69 +90,63 @@ const Inner: React.FC<{ flow: Flow; clientSecret: string | null }> = ({
       : '';
   const currency = flow.state.amount?.currency ?? 'USD';
 
-  if (completed) {
-    return (
-      <div className='space-y-4'>
-        <div className='text-sm text-neutral-700 dark:text-neutral-300'>
-          Payment received.
-        </div>
-        <div className='text-sm'>
-          Total paid:{' '}
-          <span className='font-medium'>
-            ${(totalCents / 100).toLocaleString()} {currency}
-            {cadenceSuffix}
-          </span>
-        </div>
-        <div className='flex justify-end'>
-          <Button onClick={flow.next}>Continue</Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className='space-y-3'>
-      <div className='border rounded-md p-4'>
+    <div className='space-y-4'>
+      {/* Payment Element without border */}
+      <div>
         <PaymentElement options={{ layout: 'accordion' }} />
       </div>
       {formError && <div className='text-sm text-error-600'>{formError}</div>}
-      <label className='flex items-center gap-2 text-sm'>
-        <input
-          type='checkbox'
-          checked={cover}
-          onChange={e => {
-            const current: AmountSelection = flow.state.amount ?? {
-              cadence: 'monthly',
-              amount_cents: 0,
-              currency: 'USD',
-              coverFees: true,
-            };
-            flow.setAmount({ ...current, coverFees: e.target.checked });
-          }}
-        />
-        Cover transaction costs
+
+      {/* Cover transaction costs toggle - styled like LayerToggles */}
+      <label className='flex items-center justify-between text-sm select-none py-1'>
+        <span>Cover transaction costs</span>
+        <span className='relative inline-flex items-center'>
+          <input
+            type='checkbox'
+            checked={cover}
+            onChange={e => {
+              const current: AmountSelection = flow.state.amount ?? {
+                cadence: 'monthly',
+                amount_cents: 0,
+                currency: 'USD',
+                coverFees: true,
+              };
+              flow.setAmount({ ...current, coverFees: e.target.checked });
+            }}
+            className='sr-only peer'
+            aria-label='Cover transaction costs toggle'
+          />
+          <span className='block w-10 h-6 rounded-full bg-neutral-300 dark:bg-neutral-700 peer-checked:bg-primary-600 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary-500 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background' />
+          <span className='absolute left-0.5 top-0.5 h-5 w-5 bg-white rounded-full shadow-sm transform transition peer-checked:translate-x-4' />
+        </span>
       </label>
-      <div className='flex items-center justify-between'>
-        <div className='text-sm text-neutral-700 dark:text-neutral-300'>
-          Total{' '}
-          <span className='font-medium'>
-            ${(totalCents / 100).toLocaleString()} {currency}
-            {cadenceSuffix}
-          </span>
+      {!hideButton && (
+        <div className='flex items-center justify-between'>
+          <div className='text-sm text-neutral-700 dark:text-neutral-300'>
+            Total{' '}
+            <span className='font-medium'>
+              ${(totalCents / 100).toLocaleString()} {currency}
+              {cadenceSuffix}
+            </span>
+          </div>
+          <Button
+            onClick={handleSubmit}
+            loading={submitting}
+            className='h-12 px-6'
+          >
+            Donate
+          </Button>
         </div>
-        <Button
-          onClick={handleSubmit}
-          loading={submitting}
-          className='h-12 px-6'
-        >
-          Donate
-        </Button>
-      </div>
+      )}
     </div>
   );
 };
 
-export const StepPayment: React.FC<{ flow: Flow }> = ({ flow }) => {
+export const StepPayment: React.FC<{ flow: Flow; hideButton?: boolean }> = ({
+  flow,
+  hideButton = false,
+}) => {
   const intent = flow.state.intent;
   const [clientSecret, setClientSecret] = React.useState<string | null>(null);
   const [initializing, setInitializing] = React.useState<boolean>(true);
@@ -172,7 +178,8 @@ export const StepPayment: React.FC<{ flow: Flow }> = ({ flow }) => {
     const baseCents = flow.state.amount?.amount_cents ?? 0;
     const coverFees = flow.state.amount?.coverFees ?? true;
     const totalCents = coverFees ? applyFeeCover(baseCents) : baseCents;
-    const cacheKey = `${CHECKOUT_CS_CACHE_PREFIX}${intent}:${donorEmail}:${idsKey}:${totalCents}:${currency}`;
+    // Include coverFees in cache key to ensure new checkout when fee coverage changes
+    const cacheKey = `${CHECKOUT_CS_CACHE_PREFIX}${intent}:${donorEmail}:${idsKey}:${totalCents}:${coverFees}:${currency}`;
 
     // If cached client secret exists (from prior StrictMode mount), reuse it
     const cached = sessionStorage.getItem(cacheKey);
@@ -242,9 +249,11 @@ export const StepPayment: React.FC<{ flow: Flow }> = ({ flow }) => {
           }
 
           const orgSelection = flow.state.orgSelection ?? {
-            orgMode: 'individual',
+            orgMode: 'individual' as const,
           };
-          const paymentMethod = flow.state.paymentMethod ?? 'card';
+          const mode = (flow.state.paymentMethod ?? 'card') as
+            | 'card'
+            | 'bank_transfer';
 
           const res = await createAdoptionCheckout({
             donor: {
@@ -254,8 +263,16 @@ export const StepPayment: React.FC<{ flow: Flow }> = ({ flow }) => {
               phone: donorPhone,
             },
             adoptionIds: ids,
-            orgSelection,
-            paymentMethod,
+            mode,
+            orgMode: orgSelection.orgMode,
+            partnerOrgId: orgSelection.partner_org_id,
+            newPartnerOrg: orgSelection.new_partner_org
+              ? {
+                  name: orgSelection.new_partner_org.name,
+                  description: orgSelection.new_partner_org.description,
+                  isPublic: orgSelection.new_partner_org.is_public,
+                }
+              : undefined,
           });
 
           cs =
@@ -330,7 +347,7 @@ export const StepPayment: React.FC<{ flow: Flow }> = ({ flow }) => {
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-      <Inner flow={flow} clientSecret={clientSecret} />
+      <Inner flow={flow} clientSecret={clientSecret} hideButton={hideButton} />
     </Elements>
   );
 };

@@ -41,4 +41,5 @@ export interface DonateFlowState {
   paymentMethod?: 'card' | 'bank_transfer';
   customerId?: string;
   partnerOrgId?: string;
+  transactionId?: string;
 }
