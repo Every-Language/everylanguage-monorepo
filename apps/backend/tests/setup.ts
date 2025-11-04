@@ -155,7 +155,17 @@ afterAll(() => {
 jest.setTimeout(30000);
 
 // Mock Supabase client for tests
-export const mockSupabaseClient = {
+export const mockSupabaseClient: {
+  auth: {
+    getUser: ReturnType<typeof jest.fn>;
+    signIn: ReturnType<typeof jest.fn>;
+    signOut: ReturnType<typeof jest.fn>;
+  };
+  from: ReturnType<typeof jest.fn>;
+  storage: {
+    from: ReturnType<typeof jest.fn>;
+  };
+} = {
   auth: {
     getUser: jest.fn(),
     signIn: jest.fn(),

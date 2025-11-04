@@ -264,7 +264,11 @@ export default {
   plugins: [
     require('tailwindcss-animate'),
     // Plugin to add Radix UI data attribute variants
-    function ({ addVariant }) {
+    function ({
+      addVariant,
+    }: {
+      addVariant: (name: string, selector: string) => void;
+    }) {
       addVariant('state-open', '&[data-state="open"]');
       addVariant('state-closed', '&[data-state="closed"]');
       addVariant('state-on', '&[data-state="on"]');

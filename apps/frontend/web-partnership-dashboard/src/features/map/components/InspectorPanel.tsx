@@ -112,7 +112,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   };
 
   // Responsive width: use viewport-relative with max constraint
-  const widthClass = 'w-[50vw] max-w-[600px]';
+  const widthClass = 'w-[50vw] max-w-[480px]';
 
   return (
     <div

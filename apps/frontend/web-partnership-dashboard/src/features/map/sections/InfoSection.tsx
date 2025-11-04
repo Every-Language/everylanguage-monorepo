@@ -16,7 +16,6 @@ export const InfoSection: React.FC<InfoSectionProps> = ({ type, entityId }) => {
   const languageData = useLanguageEntity(entityId);
   const regionData = useRegion(entityId);
 
-  const data = type === 'language' ? languageData : regionData;
   const entity = type === 'language' ? languageData.entity : regionData.region;
   const properties =
     type === 'language' ? languageData.properties : regionData.properties;

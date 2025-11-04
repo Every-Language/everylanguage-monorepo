@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useSearch } from '@/features/search/hooks/useSearch';
 import type { SearchResult } from '@/features/search/types';
 import { Button } from './ui/Button';

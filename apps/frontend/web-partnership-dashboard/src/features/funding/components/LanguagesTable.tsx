@@ -49,7 +49,7 @@ export const LanguagesTable: React.FC<{
     {
       key: 'estimated_budget_cents',
       header: 'Est. budget',
-      render: v => (v ? `$${(v / 100).toLocaleString()}` : '—'),
+      render: v => (v != null ? `$${(Number(v) / 100).toLocaleString()}` : '—'),
       sortable: true,
     },
   ];

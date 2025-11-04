@@ -47,6 +47,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   const sheetRef = React.useRef<HTMLDivElement | null>(null);
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const handleRef = React.useRef<HTMLDivElement | null>(null);
+  const headerRef = React.useRef<HTMLDivElement | null>(null);
 
   // Drag state
   const dragState = React.useRef({
@@ -88,14 +89,24 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
     }
   }, [height, snapPoints, onHeightChange]);
 
-  // When entity selected and currently collapsed → open to half
+  // When entity first selected (transition from no selection to selection) → open to half
+  const prevSelectionRef = React.useRef<string | null>(null);
   React.useEffect(() => {
-    if (selection && state === 'collapsed') {
+    const currentSelectionKey = selection
+      ? `${selection.kind}:${selection.id}`
+      : null;
+    const hadNoSelection = prevSelectionRef.current === null;
+    const nowHasSelection = currentSelectionKey !== null;
+
+    // Only auto-open when transitioning from no selection to having a selection
+    if (hadNoSelection && nowHasSelection && state === 'collapsed') {
       setIsTransitioning(true);
       setState('half');
       setTimeout(() => setIsTransitioning(false), 300);
     }
-  }, [selection]); // Intentionally only depend on selection
+
+    prevSelectionRef.current = currentSelectionKey;
+  }, [selection, state]);
 
   // Fetch header data (avoid .single() to prevent 406 errors)
   const regionHeader = useQuery({
@@ -150,10 +161,18 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 
   // Handle drag gestures
   const handleDragStart = React.useCallback(
-    (clientY: number) => {
+    (clientY: number, target?: EventTarget | null) => {
       // Only allow dragging from handle or header, not when content is scrolled
       const content = contentRef.current;
       if (content && content.scrollTop > 0) return false;
+
+      // Don't start drag if clicking on interactive elements (buttons, links, etc.)
+      if (target instanceof HTMLElement) {
+        const interactiveElement = target.closest(
+          'button, a, input, select, textarea'
+        );
+        if (interactiveElement) return false;
+      }
 
       dragState.current = {
         isDragging: true,
@@ -237,7 +256,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 
     const onTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
-      const started = handleDragStart(touch.clientY);
+      const started = handleDragStart(touch.clientY, e.target);
       if (started) {
         e.stopPropagation(); // Prevent map interaction
       }
@@ -259,8 +278,13 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 
     // Attach to handle and header
     const handle = handleRef.current;
+    const header = headerRef.current;
+
     if (handle) {
       handle.addEventListener('touchstart', onTouchStart, { passive: false });
+    }
+    if (header) {
+      header.addEventListener('touchstart', onTouchStart, { passive: false });
     }
 
     // Global move/end listeners
@@ -270,6 +294,9 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
     return () => {
       if (handle) {
         handle.removeEventListener('touchstart', onTouchStart);
+      }
+      if (header) {
+        header.removeEventListener('touchstart', onTouchStart);
       }
       document.removeEventListener('touchmove', onTouchMove);
       document.removeEventListener('touchend', onTouchEnd);
@@ -282,7 +309,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
     if (!sheet) return;
 
     const onMouseDown = (e: MouseEvent) => {
-      handleDragStart(e.clientY);
+      const started = handleDragStart(e.clientY, e.target);
+      if (started) {
+        e.stopPropagation(); // Prevent event bubbling if drag started
+      }
     };
 
     const onMouseMove = (e: MouseEvent) => {
@@ -296,8 +326,13 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
     };
 
     const handle = handleRef.current;
+    const header = headerRef.current;
+
     if (handle) {
       handle.addEventListener('mousedown', onMouseDown);
+    }
+    if (header) {
+      header.addEventListener('mousedown', onMouseDown);
     }
 
     document.addEventListener('mousemove', onMouseMove);
@@ -306,6 +341,9 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
     return () => {
       if (handle) {
         handle.removeEventListener('mousedown', onMouseDown);
+      }
+      if (header) {
+        header.removeEventListener('mousedown', onMouseDown);
       }
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
@@ -359,7 +397,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 
         {/* Header */}
         <div
-          className='px-4 pb-3 border-b border-neutral-200 dark:border-neutral-800 flex-shrink-0'
+          ref={headerRef}
+          className='px-4 pb-3 border-b border-neutral-200 dark:border-neutral-800 flex-shrink-0 cursor-grab active:cursor-grabbing'
           onClick={handleHeaderTap}
         >
           <FadeSwitch switchKey={selectionKey}>

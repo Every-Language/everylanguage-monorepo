@@ -15,7 +15,7 @@ import { useLanguageEntity } from '../hooks/useLanguageEntity';
 interface SectionRendererProps {
   type: SectionType;
   selection: MapSelection | null;
-  scrollRef?: React.RefObject<HTMLDivElement>;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
   layers?: LayerState;
   onLayersChange?: (next: LayerState) => void;
 }

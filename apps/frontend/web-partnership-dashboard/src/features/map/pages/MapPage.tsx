@@ -6,7 +6,6 @@ import { RouteSync } from '../inspector/components/RouteSync';
 import { MapAnalyticsLayers } from '../analytics/MapAnalyticsLayers';
 import { InspectorPanel } from '../components/InspectorPanel';
 import { MobileBottomSheet } from '../components/MobileBottomSheet';
-import { MapCenterAdjuster } from '../components/MapCenterAdjuster';
 import { MobileSheetProvider } from '../context/MobileSheetContext';
 import { DEFAULT_LAYOUT } from '../config/layouts';
 
@@ -39,22 +38,42 @@ export const MapPage: React.FC = () => {
     setMobileSheetDragging(isDragging);
   }, []);
 
+  // Calculate map padding for desktop inspector panels
+  const mapPadding = React.useMemo(() => {
+    // Only apply padding on desktop when a selection exists
+    if (typeof window === 'undefined') return undefined;
+    const isDesktop = window.innerWidth >= 768; // md breakpoint
+
+    if (!isDesktop || !selection) {
+      return undefined; // No padding on mobile or when no selection
+    }
+
+    // Calculate panel width: 50vw with max of 600px, plus 16px spacing (left-4/right-4)
+    const viewportWidth = window.innerWidth;
+    const panelWidth = Math.min(viewportWidth * 0.5, 480) + 16;
+
+    // Determine which side has a panel
+    const hasLeftPanel = layout.panels.some(p => p.position === 'left');
+    const hasRightPanel = layout.panels.some(p => p.position === 'right');
+
+    return {
+      top: 0,
+      bottom: 0,
+      left: hasLeftPanel ? panelWidth : 0,
+      right: hasRightPanel ? panelWidth : 0,
+    };
+  }, [selection, layout.panels]);
+
   return (
     <MobileSheetProvider
       height={mobileSheetHeight ?? 80}
       snapPoints={mobileSnapPoints ?? [80, 360, 744]}
       isDragging={mobileSheetDragging}
     >
-      <MapShell countriesEnabled={layers.countries}>
+      <MapShell countriesEnabled={layers.countries} padding={mapPadding}>
         <RouteSync />
         <MapOverlayLayers countriesEnabled={layers.countries} />
         <MapAnalyticsLayers show={layers.listening} />
-        <MapCenterAdjuster
-          selection={selection}
-          layout={layout}
-          mobileSheetHeight={mobileSheetHeight}
-          mobileSnapPoints={mobileSnapPoints}
-        />
 
         {/* Desktop panels */}
         <div className='hidden md:block'>

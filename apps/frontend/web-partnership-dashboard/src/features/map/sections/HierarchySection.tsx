@@ -113,9 +113,17 @@ export const HierarchySection: React.FC<HierarchySectionProps> = ({
   const ancestors = data!.filter(r => r.relationship_type === 'ancestor');
   const rootId =
     ancestors.length > 0
-      ? ancestors.reduce((min, r) =>
-          r.generation_distance < min.generation_distance ? r : min
-        )[type === 'language' ? 'hierarchy_entity_id' : 'hierarchy_region_id']
+      ? type === 'language'
+        ? (
+            ancestors.reduce((min, r) =>
+              r.generation_distance < min.generation_distance ? r : min
+            ) as { hierarchy_entity_id: string }
+          ).hierarchy_entity_id
+        : (
+            ancestors.reduce((min, r) =>
+              r.generation_distance < min.generation_distance ? r : min
+            ) as { hierarchy_region_id: string }
+          ).hierarchy_region_id
       : self
         ? type === 'language'
           ? (self as { hierarchy_entity_id: string }).hierarchy_entity_id

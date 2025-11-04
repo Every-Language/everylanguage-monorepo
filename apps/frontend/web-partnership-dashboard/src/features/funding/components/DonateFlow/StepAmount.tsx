@@ -16,7 +16,7 @@ export const StepAmount: React.FC<{ flow: any }> = ({ flow }) => {
   const [cadence, setCadence] = React.useState<'once' | 'monthly'>('once'); // Default to 'once'
   const [currency, setCurrency] = React.useState<'USD' | 'AUD'>('AUD');
   const [amount, setAmount] = React.useState<number>(7500);
-  const [cover, setCover] = React.useState(true);
+  const [cover] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   // Get suggestions based on cadence and currency
