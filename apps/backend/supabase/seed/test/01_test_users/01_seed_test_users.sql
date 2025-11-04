@@ -413,18 +413,17 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 
-INSERT INTO
-  public.partner_orgs_projects (project_id, partner_org_id)
-VALUES
-  (
-    'aa0e8400-e29b-41d4-a716-446655440001',
-    'bb0e8400-e29b-41d4-a716-446655440001'
-  )
-ON CONFLICT (project_id, partner_org_id)
-WHERE
-  (unassigned_at IS NULL) DO NOTHING;
-
-
+-- NOTE: partner_orgs_projects table dropped - relationships now managed via sponsorships/sponsorship_allocations
+-- If test data needs partner org <-> project linkage, add via sponsorship_allocations instead
+-- INSERT INTO
+--   public.partner_orgs_projects (project_id, partner_org_id)
+-- VALUES
+--   (
+--     'aa0e8400-e29b-41d4-a716-446655440001',
+--     'bb0e8400-e29b-41d4-a716-446655440001'
+--   )
+-- ON CONFLICT (project_id, partner_org_id)
+-- WHERE (unassigned_at IS NULL) DO NOTHING;
 -- ============================================================================
 -- USER ROLES - TEAM ASSIGNMENTS
 -- ============================================================================

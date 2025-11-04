@@ -107,6 +107,31 @@ Deno.serve(async (req: Request) => {
 
     const partnerOrgId = partnerOrgResult;
 
+    // Get or create reusable product for operational support
+    // This avoids creating a new product for every monthly donation
+    const getOrCreateOpsProduct = async () => {
+      // Search for existing operational support product
+      const products = await stripe.products.search({
+        query: 'metadata["purpose"]:"operations" AND active:"true"',
+        limit: 1,
+      });
+
+      if (products.data.length > 0) {
+        return products.data[0].id;
+      }
+
+      // Create new operational support product
+      const product = await stripe.products.create({
+        name: 'Monthly Operational Support',
+        description: 'Recurring monthly donation for operational costs',
+        metadata: {
+          purpose: 'operations',
+          type: 'monthly_donation',
+        },
+      });
+      return product.id;
+    };
+
     // Create sponsorship record
     const { data: insSpons, error: sErr } = await supabase
       .from('sponsorships')
@@ -153,24 +178,18 @@ Deno.serve(async (req: Request) => {
         paymentIntentId = pi.id;
       } else {
         // Create subscription for monthly recurring
-        // First, create a product for operational support
-        const product = await stripe.products.create({
-          name: 'Monthly Operational Support',
-          description: 'Recurring monthly donation for operational costs',
-          metadata: {
-            purpose: 'operations',
-            type: 'monthly_donation',
-          },
-        });
+        // Get or create reusable product for operational support
+        const productId = await getOrCreateOpsProduct();
 
-        // Create a price for the product
+        // Create a price for the specific amount (prices are lightweight)
         const price = await stripe.prices.create({
-          product: product.id,
+          product: productId,
           unit_amount: amountCents,
           currency: currency,
           recurring: { interval: 'month' },
           metadata: {
             purpose: 'operations',
+            sponsorship_id: sponsorshipId,
           },
         });
 

@@ -168,11 +168,11 @@ Deno.serve(async (req: Request) => {
     const globalMonths = settingsResult.data?.[0]?.recurring_months ?? 12;
     const finalPartnerOrgId = partnerOrgIdResult;
 
-    // Fetch language adoptions
+    // Fetch language adoptions with stripe_product_id
     const { data: adoptions, error: aErr } = await supabase
       .from('language_adoptions')
       .select(
-        'id, language_entity_id, estimated_budget_cents, deposit_percent, recurring_months, language_entities(name)'
+        'id, language_entity_id, estimated_budget_cents, deposit_percent, recurring_months, stripe_product_id, language_entities(name)'
       )
       .in('id', adoptionIds);
 
@@ -183,7 +183,17 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Calculate costs
+    // Verify all adoptions have stripe_product_id
+    const missingProducts = (adoptions ?? []).filter(a => !a.stripe_product_id);
+    if (missingProducts.length > 0) {
+      const missingIds = missingProducts.map(a => a.id).join(', ');
+      return createErrorResponse(
+        `Some adoptions are missing Stripe products. Please contact support. IDs: ${missingIds}`,
+        500
+      );
+    }
+
+    // Calculate costs and build subscription items using pre-created products
     let depositTotal = 0;
     const subscriptionItems: { price_data: any; quantity: number }[] = [];
     const adoptionSummaries: {
@@ -193,8 +203,6 @@ Deno.serve(async (req: Request) => {
       recurringCents: number;
     }[] = [];
 
-    // Create Stripe products for subscriptions if needed
-    const productPromises: Promise<string>[] = [];
     for (const a of adoptions ?? []) {
       const depositPercent = a.deposit_percent ?? globalDeposit;
       const months = a.recurring_months ?? globalMonths;
@@ -213,32 +221,13 @@ Deno.serve(async (req: Request) => {
         recurringCents: recurring,
       });
 
+      // Build subscription items using pre-created stripe_product_id
       if (mode === 'card' && recurring > 0) {
-        // Create product for this adoption
-        productPromises.push(
-          stripe.products
-            .create({
-              name: `Adoption: ${(a as any).language_entities?.name ?? a.id}`,
-              metadata: {
-                language_adoption_id: a.id,
-              },
-            })
-            .then(product => product.id)
-        );
-      }
-    }
-
-    // Wait for all products to be created
-    const productIds = await Promise.all(productPromises);
-
-    // Build subscription items with product IDs
-    for (let i = 0; i < adoptionSummaries.length; i++) {
-      if (mode === 'card' && adoptionSummaries[i].recurringCents > 0) {
         subscriptionItems.push({
           price_data: {
             currency: 'usd',
-            product: productIds[subscriptionItems.length], // Use the product ID
-            unit_amount: adoptionSummaries[i].recurringCents,
+            product: a.stripe_product_id, // Use pre-created product ID
+            unit_amount: recurring,
             recurring: { interval: 'month' },
           },
           quantity: 1,
@@ -281,21 +270,24 @@ Deno.serve(async (req: Request) => {
     let subscriptionId: string | null = null;
 
     if (mode === 'card') {
+      // Parallelize deposit PaymentIntent and subscription creation
+      const stripeOperations = [];
+
       // Create deposit PaymentIntent
       if (depositTotal > 0) {
-        const pi = await stripe.paymentIntents.create({
-          amount: depositTotal,
-          currency: 'usd',
-          customer: customer.id,
-          automatic_payment_methods: { enabled: true },
-          metadata: {
-            purpose: 'adoption',
-            type: 'deposit',
-            sponsorship_id: primarySponsorshipId,
-          },
-        });
-        depositClientSecret = pi.client_secret ?? null;
-        paymentIntentId = pi.id;
+        stripeOperations.push(
+          stripe.paymentIntents.create({
+            amount: depositTotal,
+            currency: 'usd',
+            customer: customer.id,
+            automatic_payment_methods: { enabled: true },
+            metadata: {
+              purpose: 'adoption',
+              type: 'deposit',
+              sponsorship_id: primarySponsorshipId,
+            },
+          })
+        );
       }
 
       // Create subscription for recurring (starts billing next month after deposit)
@@ -306,20 +298,38 @@ Deno.serve(async (req: Request) => {
         billingStart.setDate(1);
         billingStart.setHours(0, 0, 0, 0);
 
-        const sub = await stripe.subscriptions.create({
-          customer: customer.id,
-          items: subscriptionItems,
-          // Start billing next month, no immediate payment required
-          billing_cycle_anchor: Math.floor(billingStart.getTime() / 1000),
-          proration_behavior: 'none',
-          payment_settings: { save_default_payment_method: 'on_subscription' },
-          metadata: {
-            purpose: 'adoption',
-            sponsorship_id: primarySponsorshipId,
-          },
-        });
+        stripeOperations.push(
+          stripe.subscriptions.create({
+            customer: customer.id,
+            items: subscriptionItems,
+            // Start billing next month, no immediate payment required
+            billing_cycle_anchor: Math.floor(billingStart.getTime() / 1000),
+            proration_behavior: 'none',
+            payment_settings: {
+              save_default_payment_method: 'on_subscription',
+            },
+            metadata: {
+              purpose: 'adoption',
+              sponsorship_id: primarySponsorshipId,
+            },
+          })
+        );
+      }
+
+      // Execute Stripe operations in parallel
+      const results = await Promise.all(stripeOperations);
+
+      // Extract results based on what operations were performed
+      let resultIndex = 0;
+      if (depositTotal > 0) {
+        const pi = results[resultIndex] as Stripe.PaymentIntent;
+        depositClientSecret = pi.client_secret ?? null;
+        paymentIntentId = pi.id;
+        resultIndex++;
+      }
+      if (subscriptionItems.length > 0) {
+        const sub = results[resultIndex] as Stripe.Subscription;
         subscriptionId = sub.id;
-        // No subscription client secret needed since we're not charging immediately
         subscriptionClientSecret = null;
       }
     } else if (mode === 'bank_transfer') {
