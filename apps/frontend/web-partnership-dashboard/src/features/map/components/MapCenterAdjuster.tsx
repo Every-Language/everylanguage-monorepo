@@ -25,42 +25,14 @@ export const MapCenterAdjuster: React.FC<MapCenterAdjusterProps> = ({
   const lastDesktopOffsetRef = React.useRef<number>(0);
 
   // Mobile map center adjustment
+  // DISABLED: This was causing invalid latitude errors and conflicts with useMapFocus
+  // which already handles mobile sheet padding adjustments properly.
+  // The issue was that adding latOffset (up to 15 degrees) to center.lat could
+  // easily exceed the valid latitude range of -90 to 90 degrees.
+  //
+  // Mobile map centering is now handled by useMapFocus hook via dynamic padding.
   React.useEffect(() => {
-    if (!mobileSheetHeight || !mobileSnapPoints) return;
-
-    const map = mapRef.current?.getMap?.();
-    if (!map) return;
-
-    const isDesktop = window.innerWidth >= 768;
-    if (isDesktop) return;
-
-    const minSnap = mobileSnapPoints[0];
-    const maxSnap = mobileSnapPoints[1];
-
-    if (mobileSheetHeight <= minSnap || mobileSheetHeight >= maxSnap) {
-      lastMobileOffsetRef.current = 0;
-      return;
-    }
-
-    const progress = (mobileSheetHeight - minSnap) / (maxSnap - minSnap);
-    const latOffset = progress * 15;
-
-    if (Math.abs(latOffset - lastMobileOffsetRef.current) < 0.5) return;
-    lastMobileOffsetRef.current = latOffset;
-
-    const center = (
-      map as unknown as { getCenter?: () => { lng: number; lat: number } }
-    ).getCenter?.();
-    if (!center) return;
-
-    (
-      map as unknown as {
-        easeTo?: (opts: { center: [number, number]; duration: number }) => void;
-      }
-    ).easeTo?.({
-      center: [center.lng, center.lat + latOffset],
-      duration: 100,
-    });
+    // Intentionally disabled - see comment above
   }, [mobileSheetHeight, mobileSnapPoints, mapRef]);
 
   // Desktop map center adjustment

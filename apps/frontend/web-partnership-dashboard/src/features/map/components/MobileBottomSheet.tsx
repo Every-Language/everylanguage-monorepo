@@ -12,6 +12,7 @@ interface MobileBottomSheetProps {
   sections: SectionType[];
   selection: MapSelection | null;
   onHeightChange?: (height: number, snapPoints: number[]) => void;
+  onDraggingChange?: (isDragging: boolean) => void;
 }
 
 type SheetState = 'collapsed' | 'half' | 'full';
@@ -40,6 +41,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   sections,
   selection,
   onHeightChange,
+  onDraggingChange,
 }) => {
   const navigate = useNavigate();
   const sheetRef = React.useRef<HTMLDivElement | null>(null);
@@ -165,9 +167,14 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       }
       document.body.style.overflow = 'hidden';
 
+      // Notify parent that dragging started
+      if (onDraggingChange) {
+        onDraggingChange(true);
+      }
+
       return true;
     },
-    [height]
+    [height, onDraggingChange]
   );
 
   const handleDragMove = React.useCallback(
@@ -201,6 +208,11 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
     }
     document.body.style.overflow = '';
 
+    // Notify parent that dragging ended
+    if (onDraggingChange) {
+      onDraggingChange(false);
+    }
+
     // Snap to nearest state
     const currentHeight = height;
     const distances = {
@@ -216,7 +228,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
     setIsTransitioning(true);
     setState(nearest);
     setTimeout(() => setIsTransitioning(false), 300);
-  }, [height, snapPoints]);
+  }, [height, snapPoints, onDraggingChange]);
 
   // Touch event handlers
   React.useEffect(() => {

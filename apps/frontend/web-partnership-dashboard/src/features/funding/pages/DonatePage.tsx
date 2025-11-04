@@ -86,7 +86,7 @@ export const DonatePage: React.FC = () => {
           </Button>
           <div className='flex-1'>
             <h1 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
-              Make a Donation
+              Support Every Language
             </h1>
           </div>
         </div>

@@ -42,8 +42,8 @@ export const DonateFAQ: React.FC<DonateFAQProps> = ({ className = '' }) => {
                   {item.question}
                 </button>
               </TooltipTrigger>
-              <TooltipContent className='max-w-xs'>
-                <p className='text-sm'>{item.answer}</p>
+              <TooltipContent className='max-w-xs p-4' sideOffset={8}>
+                <p className='text-sm leading-relaxed'>{item.answer}</p>
               </TooltipContent>
             </TooltipRoot>
             {index < faqItems.length - 1 && (
