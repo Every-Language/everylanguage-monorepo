@@ -27,16 +27,6 @@ const RegionsPage = lazy(() =>
     default: m.RegionsPage,
   }))
 );
-const SponsorshipsPage = lazy(() =>
-  import('./features/sponsorships/pages/SponsorshipsPage').then(m => ({
-    default: m.SponsorshipsPage,
-  }))
-);
-const AllocateSponsorshipsPage = lazy(() =>
-  import('./features/sponsorships/pages/AllocateSponsorshipsPage').then(m => ({
-    default: m.AllocateSponsorshipsPage,
-  }))
-);
 const DonationsPage = lazy(() =>
   import('./features/donations/pages/DonationsPage').then(m => ({
     default: m.DonationsPage,
@@ -91,11 +81,6 @@ function App() {
             <Route path='/dashboard' element={<DashboardPage />} />
             <Route path='/languages' element={<LanguagesPage />} />
             <Route path='/regions' element={<RegionsPage />} />
-            <Route path='/sponsorships' element={<SponsorshipsPage />} />
-            <Route
-              path='/sponsorships/allocate'
-              element={<AllocateSponsorshipsPage />}
-            />
             <Route path='/donations' element={<DonationsPage />} />
             <Route path='/allocations' element={<AllocationsPage />} />
           </Route>

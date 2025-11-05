@@ -1,13 +1,7 @@
 import React from 'react';
 import { DonateFlowInfo } from './DonateFlowInfo';
-import { LanguagesTable } from './LanguagesTable';
-import { StepDetails } from './StepDetails';
-import { StepPaymentMethod } from './StepPaymentMethod';
-import { PaymentSkeleton } from './PaymentSkeleton';
 import type { DonateFlowState } from '../../state/types';
 import type { useDonateFlow } from '../../hooks/useDonateFlow';
-
-const StepPayment = React.lazy(() => import('./StepPayment'));
 
 interface DonateInfoSectionProps {
   flowState: DonateFlowState;
@@ -20,70 +14,8 @@ export const DonateInfoSection: React.FC<DonateInfoSectionProps> = ({
   flow,
   className = '',
 }) => {
-  // For adopt flow, show different content on the left based on step
-  if (flowState.intent === 'adopt') {
-    if (flowState.step === 1) {
-      // Step 1: Languages table
-      return (
-        <div
-          key={`adopt-${flowState.step}`}
-          className={`${className} animate-in fade-in slide-in-from-left-4 duration-300`}
-        >
-          <LanguagesTable flow={flow} />
-        </div>
-      );
-    }
-    if (flowState.step === 2) {
-      // Step 2: Details form
-      return (
-        <div
-          key={`adopt-${flowState.step}`}
-          className={`${className} animate-in fade-in slide-in-from-left-4 duration-300`}
-        >
-          <div className='text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
-            Your details
-          </div>
-          <div className='max-w-2xl lg:max-w-none'>
-            <StepDetails flow={flow} hideButton />
-          </div>
-        </div>
-      );
-    }
-    if (flowState.step === 3) {
-      // Step 3: Payment method selection
-      return (
-        <div
-          key={`adopt-${flowState.step}`}
-          className={`${className} animate-in fade-in slide-in-from-left-4 duration-300`}
-        >
-          <div className='text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
-            Payment method
-          </div>
-          <div className='max-w-2xl lg:max-w-none'>
-            <StepPaymentMethod flow={flow} hideButton />
-          </div>
-        </div>
-      );
-    }
-    if (flowState.step === 4) {
-      // Step 4: Payment form
-      return (
-        <div
-          key={`adopt-${flowState.step}`}
-          className={`${className} animate-in fade-in slide-in-from-left-4 duration-300`}
-        >
-          <div className='text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
-            Payment details
-          </div>
-          <React.Suspense fallback={<PaymentSkeleton />}>
-            <StepPayment flow={flow} hideButton />
-          </React.Suspense>
-        </div>
-      );
-    }
-  }
-
-  // Otherwise show default info
+  // Unified flow: always show default info
+  // TODO: Add step-specific info panels if needed
   return <DonateFlowInfo className={className} />;
 };
 

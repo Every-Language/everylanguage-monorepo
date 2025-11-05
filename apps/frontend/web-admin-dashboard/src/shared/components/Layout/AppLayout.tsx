@@ -5,7 +5,6 @@ import {
   X,
   Database,
   Map,
-  DollarSign,
   LayoutDashboard,
   HandCoins,
   ArrowRightLeft,
@@ -43,20 +42,6 @@ const navigationItems: NavItem[] = [
     path: '/regions',
     section: 'Data',
     icon: <Map className='h-5 w-5' />,
-  },
-  {
-    id: 'sponsorships',
-    label: 'Sponsorships',
-    path: '/sponsorships',
-    section: 'Funding',
-    icon: <DollarSign className='h-5 w-5' />,
-  },
-  {
-    id: 'allocations',
-    label: 'Allocate Sponsorships',
-    path: '/sponsorships/allocate',
-    section: 'Funding',
-    icon: <DollarSign className='h-5 w-5' />,
   },
   {
     id: 'donations',
