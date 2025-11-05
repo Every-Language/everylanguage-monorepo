@@ -3,38 +3,17 @@
 -- Run with: supabase db reset (this will run migrations + seed)
 -- Or: psql -h localhost -p 54322 -U postgres -d postgres -f supabase/seed/dev_seed.sql
 -- ============================================================================
--- ROLES
+-- ROLES - Use existing roles from migrations
 -- ============================================================================
--- Ensure these specific test role IDs exist (insert or update)
-DO $$
-BEGIN
-  -- Team roles
-  INSERT INTO roles (id, name, role_key, resource_type)
-  VALUES 
-    ('550e8400-e29b-41d4-a716-446655440301'::uuid, 'Team Member', 'team_member', 'team'::resource_type),
-    ('550e8400-e29b-41d4-a716-446655440302'::uuid, 'Team Leader', 'team_leader', 'team'::resource_type),
-    ('550e8400-e29b-41d4-a716-446655440303'::uuid, 'Team Admin', 'team_admin', 'team'::resource_type),
-    -- Base roles
-    ('550e8400-e29b-41d4-a716-446655440401'::uuid, 'Base Member', 'base_member', 'base'::resource_type),
-    ('550e8400-e29b-41d4-a716-446655440402'::uuid, 'Base Staff', 'base_staff', 'base'::resource_type),
-    ('550e8400-e29b-41d4-a716-446655440403'::uuid, 'Base Admin', 'base_admin', 'base'::resource_type),
-    -- Partner roles
-    ('550e8400-e29b-41d4-a716-446655440501'::uuid, 'Partner Organization Member', 'partner_member', 'partner'::resource_type),
-    ('550e8400-e29b-41d4-a716-446655440502'::uuid, 'Partner Organization Leader', 'partner_leader', 'partner'::resource_type),
-    ('550e8400-e29b-41d4-a716-446655440503'::uuid, 'Partner Organization Admin', 'partner_admin', 'partner'::resource_type),
-    -- Project roles
-    ('550e8400-e29b-41d4-a716-446655440101'::uuid, 'project_viewer', 'project_viewer', 'project'::resource_type),
-    ('550e8400-e29b-41d4-a716-446655440102'::uuid, 'project_editor', 'project_editor', 'project'::resource_type),
-    ('550e8400-e29b-41d4-a716-446655440103'::uuid, 'project_admin', 'project_admin', 'project'::resource_type),
-    -- Global roles
-    ('550e8400-e29b-41d4-a716-446655440200'::uuid, 'system_admin', 'system_admin', 'global'::resource_type)
-  ON CONFLICT (id) DO UPDATE SET
-    name = EXCLUDED.name,
-    role_key = EXCLUDED.role_key,
-    resource_type = EXCLUDED.resource_type;
-END $$;
-
-
+-- Note: Roles are created by migrations. This section just documents the expected role IDs.
+-- We query the database to get the actual role IDs rather than trying to insert them.
+-- 
+-- Expected roles (created by migrations):
+-- - Team: Team Member, Team Leader, Team Admin
+-- - Base: Base Member, Base Staff, Base Admin  
+-- - Partner: Partner Member, Partner Leader, Partner Admin
+-- - Project: Project Viewer, Project Editor, Project Admin, Project Checker
+-- - Global: System Admin
 -- ============================================================================
 -- BASES
 -- ============================================================================
@@ -300,41 +279,55 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================================
 INSERT INTO
   bases_teams (team_id, base_id, role_id)
-VALUES
-  -- FF Kona April Quarter 2025 -> Kona and Pokhara bases with leader role
+SELECT
+  team_id,
+  base_id,
   (
-    '770e8400-e29b-41d4-a716-446655440001',
-    '660e8400-e29b-41d4-a716-446655440001',
-    '550e8400-e29b-41d4-a716-446655440402'
-  ),
-  (
-    '770e8400-e29b-41d4-a716-446655440001',
-    '660e8400-e29b-41d4-a716-446655440003',
-    '550e8400-e29b-41d4-a716-446655440402'
-  ),
-  -- FF Pohkara January Quarter 2025 -> Pokhara base with member role
-  (
-    '770e8400-e29b-41d4-a716-446655440002',
-    '660e8400-e29b-41d4-a716-446655440003',
-    '550e8400-e29b-41d4-a716-446655440401'
-  ),
-  -- OMT Pokhara 1 -> Port Harcourt and Pokhara with administrator role
-  (
-    '770e8400-e29b-41d4-a716-446655440003',
-    '660e8400-e29b-41d4-a716-446655440002',
-    '550e8400-e29b-41d4-a716-446655440403'
-  ),
-  (
-    '770e8400-e29b-41d4-a716-446655440003',
-    '660e8400-e29b-41d4-a716-446655440003',
-    '550e8400-e29b-41d4-a716-446655440403'
-  ),
-  -- OMT Pokhara 2 -> Pokhara only with leader role
-  (
-    '770e8400-e29b-41d4-a716-446655440004',
-    '660e8400-e29b-41d4-a716-446655440003',
-    '550e8400-e29b-41d4-a716-446655440402'
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = role_key_to_use
   )
+FROM
+  (
+    VALUES
+      -- FF Kona April Quarter 2025 -> Kona and Pokhara bases with staff role
+      (
+        '770e8400-e29b-41d4-a716-446655440001'::UUID,
+        '660e8400-e29b-41d4-a716-446655440001'::UUID,
+        'base_staff'
+      ),
+      (
+        '770e8400-e29b-41d4-a716-446655440001'::UUID,
+        '660e8400-e29b-41d4-a716-446655440003'::UUID,
+        'base_staff'
+      ),
+      -- FF Pohkara January Quarter 2025 -> Pokhara base with member role
+      (
+        '770e8400-e29b-41d4-a716-446655440002'::UUID,
+        '660e8400-e29b-41d4-a716-446655440003'::UUID,
+        'base_member'
+      ),
+      -- OMT Pokhara 1 -> Port Harcourt and Pokhara with admin role
+      (
+        '770e8400-e29b-41d4-a716-446655440003'::UUID,
+        '660e8400-e29b-41d4-a716-446655440002'::UUID,
+        'base_admin'
+      ),
+      (
+        '770e8400-e29b-41d4-a716-446655440003'::UUID,
+        '660e8400-e29b-41d4-a716-446655440003'::UUID,
+        'base_admin'
+      ),
+      -- OMT Pokhara 2 -> Pokhara only with staff role
+      (
+        '770e8400-e29b-41d4-a716-446655440004'::UUID,
+        '660e8400-e29b-41d4-a716-446655440003'::UUID,
+        'base_staff'
+      )
+  ) AS t (team_id, base_id, role_key_to_use)
 ON CONFLICT (team_id, base_id, role_id) DO NOTHING;
 
 
@@ -386,13 +379,18 @@ ON CONFLICT (id) DO NOTHING;
 -- =========================================================================
 INSERT INTO
   public.projects_teams (project_id, team_id, project_role_id, is_primary)
-VALUES
+SELECT
+  'aa0e8400-e29b-41d4-a716-446655440001'::UUID,
+  '770e8400-e29b-41d4-a716-446655440001'::UUID,
   (
-    'aa0e8400-e29b-41d4-a716-446655440001',
-    '770e8400-e29b-41d4-a716-446655440001',
-    '550e8400-e29b-41d4-a716-446655440102',
-    TRUE
-  )
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = 'project_editor'
+  ),
+  TRUE
 ON CONFLICT (project_id, team_id)
 WHERE
   (unassigned_at IS NULL) DO NOTHING;
@@ -429,51 +427,60 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================================
 INSERT INTO
   user_roles (user_id, role_id, context_type, context_id)
-VALUES
-  -- Sarah Johnson - Administrator in FF Kona April Quarter 2025
+SELECT
+  user_id,
   (
-    '880e8400-e29b-41d4-a716-446655440001',
-    '550e8400-e29b-41d4-a716-446655440303',
-    'team',
-    '770e8400-e29b-41d4-a716-446655440001'
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = role_key_to_use
   ),
-  -- Michael Chen - Leader in FF Kona April Quarter 2025  
+  'team',
+  context_id
+FROM
   (
-    '880e8400-e29b-41d4-a716-446655440002',
-    '550e8400-e29b-41d4-a716-446655440302',
-    'team',
-    '770e8400-e29b-41d4-a716-446655440001'
-  ),
-  -- Priya Sharma - Member in FF Pohkara January Quarter 2025
-  (
-    '880e8400-e29b-41d4-a716-446655440003',
-    '550e8400-e29b-41d4-a716-446655440301',
-    'team',
-    '770e8400-e29b-41d4-a716-446655440002'
-  ),
-  -- David Wilson - Leader in OMT Pokhara 1
-  (
-    '880e8400-e29b-41d4-a716-446655440004',
-    '550e8400-e29b-41d4-a716-446655440302',
-    'team',
-    '770e8400-e29b-41d4-a716-446655440003'
-  ),
-  -- Anne Okafor - Administrator in OMT Pokhara 1
-  (
-    '880e8400-e29b-41d4-a716-446655440005',
-    '550e8400-e29b-41d4-a716-446655440303',
-    'team',
-    '770e8400-e29b-41d4-a716-446655440003'
-  ),
-  -- Raj Patel - Member in OMT Pokhara 2
-  (
-    '880e8400-e29b-41d4-a716-446655440006',
-    '550e8400-e29b-41d4-a716-446655440301',
-    'team',
-    '770e8400-e29b-41d4-a716-446655440004'
-  )
-  -- Lisa Martinez - No team assignment (only base role)
-  -- John Doe - No team assignment (only base role)
+    VALUES
+      -- Sarah Johnson - Admin in FF Kona April Quarter 2025
+      (
+        '880e8400-e29b-41d4-a716-446655440001'::UUID,
+        'team_admin',
+        '770e8400-e29b-41d4-a716-446655440001'::UUID
+      ),
+      -- Michael Chen - Leader in FF Kona April Quarter 2025  
+      (
+        '880e8400-e29b-41d4-a716-446655440002'::UUID,
+        'team_leader',
+        '770e8400-e29b-41d4-a716-446655440001'::UUID
+      ),
+      -- Priya Sharma - Member in FF Pohkara January Quarter 2025
+      (
+        '880e8400-e29b-41d4-a716-446655440003'::UUID,
+        'team_member',
+        '770e8400-e29b-41d4-a716-446655440002'::UUID
+      ),
+      -- David Wilson - Leader in OMT Pokhara 1
+      (
+        '880e8400-e29b-41d4-a716-446655440004'::UUID,
+        'team_leader',
+        '770e8400-e29b-41d4-a716-446655440003'::UUID
+      ),
+      -- Anne Okafor - Admin in OMT Pokhara 1
+      (
+        '880e8400-e29b-41d4-a716-446655440005'::UUID,
+        'team_admin',
+        '770e8400-e29b-41d4-a716-446655440003'::UUID
+      ),
+      -- Raj Patel - Member in OMT Pokhara 2
+      (
+        '880e8400-e29b-41d4-a716-446655440006'::UUID,
+        'team_member',
+        '770e8400-e29b-41d4-a716-446655440004'::UUID
+      )
+      -- Lisa Martinez - No team assignment (only base role)
+      -- John Doe - No team assignment (only base role)
+  ) AS t (user_id, role_key_to_use, context_id)
 ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 
 
@@ -482,248 +489,122 @@ ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 -- ============================================================================
 INSERT INTO
   user_roles (user_id, role_id, context_type, context_id)
-VALUES
-  -- Base assignments for all users
-  -- Sarah Johnson - Administrator at Kona base
+SELECT
+  user_id,
   (
-    '880e8400-e29b-41d4-a716-446655440001',
-    '550e8400-e29b-41d4-a716-446655440403',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440001'
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = role_key_to_use
   ),
-  -- Michael Chen - Leader at Pokhara base
+  'base',
+  context_id
+FROM
   (
-    '880e8400-e29b-41d4-a716-446655440002',
-    '550e8400-e29b-41d4-a716-446655440402',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440003'
-  ),
-  -- Priya Sharma - Member at Pokhara base
-  (
-    '880e8400-e29b-41d4-a716-446655440003',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440003'
-  ),
-  -- David Wilson - Administrator at Port Harcourt base
-  (
-    '880e8400-e29b-41d4-a716-446655440004',
-    '550e8400-e29b-41d4-a716-446655440403',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440002'
-  ),
-  -- Anne Okafor - Leader at Port Harcourt base
-  (
-    '880e8400-e29b-41d4-a716-446655440005',
-    '550e8400-e29b-41d4-a716-446655440402',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440002'
-  ),
-  -- Raj Patel - Member at Pokhara base
-  (
-    '880e8400-e29b-41d4-a716-446655440006',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440003'
-  ),
-  -- Lisa Martinez - Leader at Kona base (no team)
-  (
-    '880e8400-e29b-41d4-a716-446655440007',
-    '550e8400-e29b-41d4-a716-446655440402',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440001'
-  ),
-  -- John Doe - Member at Port Harcourt base (no team)
-  (
-    '880e8400-e29b-41d4-a716-446655440008',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440002'
-  )
+    VALUES
+      -- Sarah Johnson - Admin at Kona base
+      (
+        '880e8400-e29b-41d4-a716-446655440001'::UUID,
+        'base_admin',
+        '660e8400-e29b-41d4-a716-446655440001'::UUID
+      ),
+      -- Michael Chen - Staff at Pokhara base
+      (
+        '880e8400-e29b-41d4-a716-446655440002'::UUID,
+        'base_staff',
+        '660e8400-e29b-41d4-a716-446655440003'::UUID
+      ),
+      -- Priya Sharma - Member at Pokhara base
+      (
+        '880e8400-e29b-41d4-a716-446655440003'::UUID,
+        'base_member',
+        '660e8400-e29b-41d4-a716-446655440003'::UUID
+      ),
+      -- David Wilson - Admin at Port Harcourt base
+      (
+        '880e8400-e29b-41d4-a716-446655440004'::UUID,
+        'base_admin',
+        '660e8400-e29b-41d4-a716-446655440002'::UUID
+      ),
+      -- Anne Okafor - Staff at Port Harcourt base
+      (
+        '880e8400-e29b-41d4-a716-446655440005'::UUID,
+        'base_staff',
+        '660e8400-e29b-41d4-a716-446655440002'::UUID
+      ),
+      -- Raj Patel - Member at Pokhara base
+      (
+        '880e8400-e29b-41d4-a716-446655440006'::UUID,
+        'base_member',
+        '660e8400-e29b-41d4-a716-446655440003'::UUID
+      ),
+      -- Lisa Martinez - Staff at Kona base (no team)
+      (
+        '880e8400-e29b-41d4-a716-446655440007'::UUID,
+        'base_staff',
+        '660e8400-e29b-41d4-a716-446655440001'::UUID
+      ),
+      -- John Doe - Member at Port Harcourt base (no team)
+      (
+        '880e8400-e29b-41d4-a716-446655440008'::UUID,
+        'base_member',
+        '660e8400-e29b-41d4-a716-446655440002'::UUID
+      )
+  ) AS t (user_id, role_key_to_use, context_id)
 ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 
 
 -- =========================================================================
 -- SAMPLE PERMISSIONS (for demonstration)
 -- =========================================================================
--- ROLE PERMISSIONS (new model)
-INSERT INTO
-  public.role_permissions (
-    role_id,
-    resource_type,
-    permission_key,
-    is_allowed
-  )
-VALUES
-  -- Project roles
-  (
-    '550e8400-e29b-41d4-a716-446655440101',
-    'project',
-    'project.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440102',
-    'project',
-    'project.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440102',
-    'project',
-    'project.write',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440103',
-    'project',
-    'project.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440103',
-    'project',
-    'project.write',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440103',
-    'project',
-    'project.delete',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440103',
-    'project',
-    'project.manage_roles',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440103',
-    'project',
-    'project.invite',
-    TRUE
-  ),
-  -- Team roles
-  (
-    '550e8400-e29b-41d4-a716-446655440301',
-    'team',
-    'team.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440302',
-    'team',
-    'team.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440302',
-    'team',
-    'team.write',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440303',
-    'team',
-    'team.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440303',
-    'team',
-    'team.write',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440303',
-    'team',
-    'team.delete',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440303',
-    'team',
-    'team.manage_roles',
-    TRUE
-  ),
-  -- Base roles
-  (
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    'base.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440402',
-    'base',
-    'base.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440402',
-    'base',
-    'base.write',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440403',
-    'base',
-    'base.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440403',
-    'base',
-    'base.write',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440403',
-    'base',
-    'base.delete',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440403',
-    'base',
-    'base.manage_roles',
-    TRUE
-  ),
-  -- Partner roles
-  (
-    '550e8400-e29b-41d4-a716-446655440501',
-    'partner',
-    'partner.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440502',
-    'partner',
-    'partner.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440503',
-    'partner',
-    'partner.read',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440503',
-    'partner',
-    'partner.manage_roles',
-    TRUE
-  ),
-  (
-    '550e8400-e29b-41d4-a716-446655440200',
-    'global',
-    'system.admin',
-    TRUE
-  )
-ON CONFLICT (role_id, resource_type, permission_key) DO NOTHING;
-
-
+-- ROLE PERMISSIONS - These should already exist from migrations
+-- Uncomment below if you need to add missing permissions
+-- INSERT INTO
+--   public.role_permissions (role_id, resource_type, permission_key, is_allowed)
+-- SELECT
+--   (SELECT id FROM roles WHERE role_key = role_key_to_use),
+--   resource_type,
+--   permission_key,
+--   TRUE
+-- FROM
+--   (
+--     VALUES
+--       -- Project roles
+--       ('project_viewer', 'project', 'project.read'),
+--       ('project_editor', 'project', 'project.read'),
+--       ('project_editor', 'project', 'project.write'),
+--       ('project_admin', 'project', 'project.read'),
+--       ('project_admin', 'project', 'project.write'),
+--       ('project_admin', 'project', 'project.delete'),
+--       ('project_admin', 'project', 'project.manage_roles'),
+--       ('project_admin', 'project', 'project.invite'),
+--       -- Team roles
+--       ('team_member', 'team', 'team.read'),
+--       ('team_leader', 'team', 'team.read'),
+--       ('team_leader', 'team', 'team.write'),
+--       ('team_admin', 'team', 'team.read'),
+--       ('team_admin', 'team', 'team.write'),
+--       ('team_admin', 'team', 'team.delete'),
+--       ('team_admin', 'team', 'team.manage_roles'),
+--       -- Base roles
+--       ('base_member', 'base', 'base.read'),
+--       ('base_staff', 'base', 'base.read'),
+--       ('base_staff', 'base', 'base.write'),
+--       ('base_admin', 'base', 'base.read'),
+--       ('base_admin', 'base', 'base.write'),
+--       ('base_admin', 'base', 'base.delete'),
+--       ('base_admin', 'base', 'base.manage_roles'),
+--       -- Partner roles
+--       ('partner_member', 'partner', 'partner.read'),
+--       ('partner_leader', 'partner', 'partner.read'),
+--       ('partner_admin', 'partner', 'partner.read'),
+--       ('partner_admin', 'partner', 'partner.manage_roles'),
+--       -- Global role
+--       ('system_admin', 'global', 'system.admin')
+--   ) AS t(role_key_to_use, resource_type, permission_key)
+-- ON CONFLICT (role_id, resource_type, permission_key) DO NOTHING;
 -- =========================================================================
 -- SET created_by for bases and teams (ownership for testing)
 -- =========================================================================

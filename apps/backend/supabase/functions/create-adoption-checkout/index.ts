@@ -20,8 +20,6 @@ interface RequestBody {
   orgMode?: 'individual' | 'existing' | 'new';
 }
 
-const BANK_TRANSFER_EXPIRY_DAYS = 7;
-
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return createCorsResponse();
   if (req.method !== 'POST')
@@ -168,11 +166,11 @@ Deno.serve(async (req: Request) => {
     const globalMonths = settingsResult.data?.[0]?.recurring_months ?? 12;
     const finalPartnerOrgId = partnerOrgIdResult;
 
-    // Fetch language adoptions with stripe_product_id
+    // Fetch language adoptions
     const { data: adoptions, error: aErr } = await supabase
       .from('language_adoptions')
       .select(
-        'id, language_entity_id, estimated_budget_cents, deposit_percent, recurring_months, stripe_product_id, language_entities(name)'
+        'id, language_entity_id, estimated_budget_cents, deposit_percent, language_entities(name)'
       )
       .in('id', adoptionIds);
 
@@ -183,187 +181,139 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Verify all adoptions have stripe_product_id
-    const missingProducts = (adoptions ?? []).filter(a => !a.stripe_product_id);
-    if (missingProducts.length > 0) {
-      const missingIds = missingProducts.map(a => a.id).join(', ');
-      return createErrorResponse(
-        `Some adoptions are missing Stripe products. Please contact support. IDs: ${missingIds}`,
-        500
-      );
-    }
-
-    // Calculate costs and build subscription items using pre-created products
-    let depositTotal = 0;
-    const subscriptionItems: { price_data: any; quantity: number }[] = [];
+    // Calculate deposit amounts for each adoption
     const adoptionSummaries: {
       id: string;
       name: string | null;
       depositCents: number;
-      recurringCents: number;
+      estimatedBudget: number;
     }[] = [];
+
+    let depositTotal = 0;
 
     for (const a of adoptions ?? []) {
       const depositPercent = a.deposit_percent ?? globalDeposit;
-      const months = a.recurring_months ?? globalMonths;
       const budget = Math.max(0, a.estimated_budget_cents ?? 0);
       const deposit = Math.round(budget * depositPercent);
-      const recurring = Math.max(
-        0,
-        Math.round((budget - deposit) / Math.max(1, months))
-      );
 
       depositTotal += deposit;
       adoptionSummaries.push({
         id: a.id,
         name: (a as any).language_entities?.name ?? null,
         depositCents: deposit,
-        recurringCents: recurring,
+        estimatedBudget: budget,
       });
-
-      // Build subscription items using pre-created stripe_product_id
-      if (mode === 'card' && recurring > 0) {
-        subscriptionItems.push({
-          price_data: {
-            currency: 'usd',
-            product: a.stripe_product_id, // Use pre-created product ID
-            unit_amount: recurring,
-            recurring: { interval: 'month' },
-          },
-          quantity: 1,
-        });
-      }
     }
 
-    // Create sponsorships for each adoption
-    const sponsorshipInserts = adoptionIds.map(id => ({
+    // Create language_adoption_sponsorships for each adoption
+    const sponsorshipInserts = adoptionIds.map((id, idx) => ({
       partner_org_id: finalPartnerOrgId,
       language_adoption_id: id,
-      status: mode === 'bank_transfer' ? 'pending_bank_transfer' : 'interest',
-      pledge_one_time_cents: depositTotal,
-      pledge_recurring_cents: subscriptionItems.reduce(
-        (s, i) => s + (i.price_data?.unit_amount ?? 0),
-        0
-      ),
+      deposit_amount_cents: adoptionSummaries[idx].depositCents,
       currency_code: 'USD',
-      stripe_customer_id: customer.id,
       payment_method: mode,
+      stripe_customer_id: customer.id,
       created_by: null,
     }));
 
     const { data: sponsorships, error: sErr } = await supabase
-      .from('sponsorships')
+      .from('language_adoption_sponsorships')
       .insert(sponsorshipInserts)
       .select('id');
 
     if (sErr || !sponsorships) {
-      console.error('sponsorships insert failed', sErr?.message);
+      console.error(
+        'language_adoption_sponsorships insert failed',
+        sErr?.message
+      );
       return createErrorResponse('Failed to create sponsorships', 500);
     }
 
     const sponsorshipIds = sponsorships.map(s => s.id);
     const primarySponsorshipId = sponsorshipIds[0];
 
-    let depositClientSecret: string | null = null;
-    let subscriptionClientSecret: string | null = null;
+    let clientSecret: string | null = null;
+    let setupIntentClientSecret: string | null = null;
     let paymentIntentId: string | null = null;
-    let subscriptionId: string | null = null;
+    let setupIntentId: string | null = null;
 
     if (mode === 'card') {
-      // Parallelize deposit PaymentIntent and subscription creation
-      const stripeOperations = [];
-
-      // Create deposit PaymentIntent
+      // Card payment: create PaymentIntent with setup_future_usage to save payment method
       if (depositTotal > 0) {
-        stripeOperations.push(
-          stripe.paymentIntents.create({
-            amount: depositTotal,
-            currency: 'usd',
-            customer: customer.id,
-            automatic_payment_methods: { enabled: true },
-            metadata: {
-              purpose: 'adoption',
-              type: 'deposit',
-              sponsorship_id: primarySponsorshipId,
-            },
-          })
-        );
-      }
-
-      // Create subscription for recurring (starts billing next month after deposit)
-      if (subscriptionItems.length > 0) {
-        // Calculate billing start date (first day of next month)
-        const billingStart = new Date();
-        billingStart.setMonth(billingStart.getMonth() + 1);
-        billingStart.setDate(1);
-        billingStart.setHours(0, 0, 0, 0);
-
-        stripeOperations.push(
-          stripe.subscriptions.create({
-            customer: customer.id,
-            items: subscriptionItems,
-            // Start billing next month, no immediate payment required
-            billing_cycle_anchor: Math.floor(billingStart.getTime() / 1000),
-            proration_behavior: 'none',
-            payment_settings: {
-              save_default_payment_method: 'on_subscription',
-            },
-            metadata: {
-              purpose: 'adoption',
-              sponsorship_id: primarySponsorshipId,
-            },
-          })
-        );
-      }
-
-      // Execute Stripe operations in parallel
-      const results = await Promise.all(stripeOperations);
-
-      // Extract results based on what operations were performed
-      let resultIndex = 0;
-      if (depositTotal > 0) {
-        const pi = results[resultIndex] as Stripe.PaymentIntent;
-        depositClientSecret = pi.client_secret ?? null;
+        const pi = await stripe.paymentIntents.create({
+          amount: depositTotal,
+          currency: 'usd',
+          customer: customer.id,
+          automatic_payment_methods: { enabled: true },
+          setup_future_usage: 'off_session', // Save payment method for future project top-ups
+          metadata: {
+            purpose: 'language_adoption_deposit',
+            language_adoption_sponsorship_id: primarySponsorshipId,
+          },
+        });
+        clientSecret = pi.client_secret ?? null;
         paymentIntentId = pi.id;
-        resultIndex++;
-      }
-      if (subscriptionItems.length > 0) {
-        const sub = results[resultIndex] as Stripe.Subscription;
-        subscriptionId = sub.id;
-        subscriptionClientSecret = null;
       }
     } else if (mode === 'bank_transfer') {
-      // Set adoptions to on_hold with expiry
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + BANK_TRANSFER_EXPIRY_DAYS);
+      // Bank transfer: create PaymentIntent with customer_balance
+      if (depositTotal > 0) {
+        const pi = await stripe.paymentIntents.create({
+          amount: depositTotal,
+          currency: 'usd',
+          customer: customer.id,
+          payment_method_types: ['customer_balance'],
+          payment_method_data: {
+            type: 'customer_balance',
+          },
+          payment_method_options: {
+            customer_balance: {
+              funding_type: 'bank_transfer',
+              bank_transfer: {
+                type: 'us_bank_account',
+              },
+            },
+          },
+          metadata: {
+            purpose: 'language_adoption_deposit',
+            language_adoption_sponsorship_id: primarySponsorshipId,
+            payment_method: 'bank_transfer',
+          },
+        });
+        clientSecret = pi.client_secret ?? null;
+        paymentIntentId = pi.id;
 
-      await supabase
-        .from('language_adoptions')
-        .update({
-          status: 'on_hold',
-          bank_transfer_expiry_at: expiryDate.toISOString(),
-        })
-        .in('id', adoptionIds);
+        // Also create SetupIntent to collect card for future project top-ups
+        const si = await stripe.setupIntents.create({
+          customer: customer.id,
+          payment_method_types: ['card'],
+          metadata: {
+            purpose: 'language_adoption_future_payments',
+            language_adoption_sponsorship_id: primarySponsorshipId,
+          },
+        });
+        setupIntentClientSecret = si.client_secret ?? null;
+        setupIntentId = si.id;
+      }
     }
 
     // Update sponsorships with Stripe IDs
     await supabase
-      .from('sponsorships')
+      .from('language_adoption_sponsorships')
       .update({
-        stripe_customer_id: customer.id,
         stripe_payment_intent_id: paymentIntentId,
-        stripe_subscription_id: subscriptionId,
-        status: mode === 'bank_transfer' ? 'pending_bank_transfer' : 'active',
+        stripe_setup_intent_id: setupIntentId,
       })
       .in('id', sponsorshipIds);
 
+    // Don't update language_adoptions status yet - that happens in webhook when payment succeeds
+
     return createSuccessResponse({
-      clientSecret: subscriptionClientSecret ?? depositClientSecret,
-      depositClientSecret,
-      subscriptionClientSecret,
+      clientSecret,
+      setupIntentClientSecret, // For bank transfer card collection
+      paymentIntentId,
+      setupIntentId,
       customerId: customer.id,
       sponsorshipIds,
-      subscriptionId,
       partnerOrgId: finalPartnerOrgId,
       adoptionSummaries,
     });

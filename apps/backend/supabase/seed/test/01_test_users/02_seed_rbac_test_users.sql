@@ -2,22 +2,19 @@
 -- This file contains additional test data for RBAC testing
 -- 
 -- ⚠️  PREREQUISITES:
--- This file requires roles to be created first. Either:
--- 1. Run migrations + 01_seed_test_users.sql first (recommended via `supabase db reset`)
--- 2. If running manually in SQL editor, run 01_seed_test_users.sql first
+-- This file requires roles to exist in the database (created by migrations).
+-- Run this AFTER 01_seed_test_users.sql or after migrations have been applied.
 -- 
--- The following role IDs must exist:
--- - '550e8400-e29b-41d4-a716-446655440101' (project_viewer)
--- - '550e8400-e29b-41d4-a716-446655440102' (project_editor)
--- - '550e8400-e29b-41d4-a716-446655440103' (project_admin)
--- - '550e8400-e29b-41d4-a716-446655440301' (team_member)
--- - '550e8400-e29b-41d4-a716-446655440302' (team_leader)
--- - '550e8400-e29b-41d4-a716-446655440401' (base_member)
--- - '550e8400-e29b-41d4-a716-446655440402' (base_staff)
--- - '550e8400-e29b-41d4-a716-446655440501' (partner_member)
--- - '550e8400-e29b-41d4-a716-446655440502' (partner_leader)
--- - '550e8400-e29b-41d4-a716-446655440503' (partner_admin)
--- - '550e8400-e29b-41d4-a716-446655440200' (system_admin)
+-- This file will query the database for role IDs based on role_key rather than
+-- using hardcoded UUIDs, making it compatible with any database that has the
+-- standard roles created.
+-- 
+-- Required roles (by role_key):
+-- - project_viewer, project_editor, project_admin
+-- - team_member, team_leader
+-- - base_member, base_staff  
+-- - partner_member, partner_leader, partner_admin
+-- - system_admin
 -- 
 -- ============================================================================
 -- TEST BASE
@@ -52,12 +49,16 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================================
 INSERT INTO
   bases_teams (team_id, base_id, role_id)
-VALUES
-  -- Test Team -> Test Base with staff role
+SELECT
+  '770e8400-e29b-41d4-a716-446655440005'::UUID,
+  '660e8400-e29b-41d4-a716-446655440004'::UUID,
   (
-    '770e8400-e29b-41d4-a716-446655440005',
-    '660e8400-e29b-41d4-a716-446655440004',
-    '550e8400-e29b-41d4-a716-446655440402'
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = 'base_staff'
   )
 ON CONFLICT (team_id, base_id, role_id) DO NOTHING;
 
@@ -91,13 +92,18 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================================
 INSERT INTO
   public.projects_teams (project_id, team_id, project_role_id, is_primary)
-VALUES
+SELECT
+  'aa0e8400-e29b-41d4-a716-446655440002'::UUID,
+  '770e8400-e29b-41d4-a716-446655440005'::UUID,
   (
-    'aa0e8400-e29b-41d4-a716-446655440002',
-    '770e8400-e29b-41d4-a716-446655440005',
-    '550e8400-e29b-41d4-a716-446655440102',
-    TRUE
-  )
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = 'project_editor'
+  ),
+  TRUE
 ON CONFLICT (project_id, team_id)
 WHERE
   (unassigned_at IS NULL) DO NOTHING;
@@ -371,21 +377,34 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================================
 INSERT INTO
   user_roles (user_id, role_id, context_type, context_id)
-VALUES
-  -- teamleader@everylanguage.com - Team Leader in Test Team
+SELECT
+  user_id,
   (
-    '880e8400-e29b-41d4-a716-446655440009',
-    '550e8400-e29b-41d4-a716-446655440302',
-    'team',
-    '770e8400-e29b-41d4-a716-446655440005'
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = role_key_to_use
   ),
-  -- teammember@everylanguage.com - Team Member in Test Team
+  'team',
+  context_id
+FROM
   (
-    '880e8400-e29b-41d4-a716-446655440010',
-    '550e8400-e29b-41d4-a716-446655440301',
-    'team',
-    '770e8400-e29b-41d4-a716-446655440005'
-  )
+    VALUES
+      -- teamleader@everylanguage.com - Team Leader in Test Team
+      (
+        '880e8400-e29b-41d4-a716-446655440009'::UUID,
+        'team_leader',
+        '770e8400-e29b-41d4-a716-446655440005'::UUID
+      ),
+      -- teammember@everylanguage.com - Team Member in Test Team
+      (
+        '880e8400-e29b-41d4-a716-446655440010'::UUID,
+        'team_member',
+        '770e8400-e29b-41d4-a716-446655440005'::UUID
+      )
+  ) AS t (user_id, role_key_to_use, context_id)
 ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 
 
@@ -394,62 +413,32 @@ ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 -- ============================================================================
 INSERT INTO
   user_roles (user_id, role_id, context_type, context_id)
-VALUES
-  -- All new test users get base member role at Test Base
+SELECT
+  user_id,
   (
-    '880e8400-e29b-41d4-a716-446655440009',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440004'
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = 'base_member'
   ),
+  'base',
+  '660e8400-e29b-41d4-a716-446655440004'::UUID
+FROM
   (
-    '880e8400-e29b-41d4-a716-446655440010',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440004'
-  ),
-  (
-    '880e8400-e29b-41d4-a716-446655440011',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440004'
-  ),
-  (
-    '880e8400-e29b-41d4-a716-446655440012',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440004'
-  ),
-  (
-    '880e8400-e29b-41d4-a716-446655440013',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440004'
-  ),
-  (
-    '880e8400-e29b-41d4-a716-446655440014',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440004'
-  ),
-  (
-    '880e8400-e29b-41d4-a716-446655440015',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440004'
-  ),
-  (
-    '880e8400-e29b-41d4-a716-446655440016',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440004'
-  ),
-  (
-    '880e8400-e29b-41d4-a716-446655440017',
-    '550e8400-e29b-41d4-a716-446655440401',
-    'base',
-    '660e8400-e29b-41d4-a716-446655440004'
-  )
+    VALUES
+      -- All new test users get base member role at Test Base
+      ('880e8400-e29b-41d4-a716-446655440009'::UUID),
+      ('880e8400-e29b-41d4-a716-446655440010'::UUID),
+      ('880e8400-e29b-41d4-a716-446655440011'::UUID),
+      ('880e8400-e29b-41d4-a716-446655440012'::UUID),
+      ('880e8400-e29b-41d4-a716-446655440013'::UUID),
+      ('880e8400-e29b-41d4-a716-446655440014'::UUID),
+      ('880e8400-e29b-41d4-a716-446655440015'::UUID),
+      ('880e8400-e29b-41d4-a716-446655440016'::UUID),
+      ('880e8400-e29b-41d4-a716-446655440017'::UUID)
+  ) AS t (user_id)
 ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 
 
@@ -458,28 +447,40 @@ ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 -- ============================================================================
 INSERT INTO
   user_roles (user_id, role_id, context_type, context_id)
-VALUES
-  -- partneradmin@everylanguage.com - Partner Admin in Test Partner Org
+SELECT
+  user_id,
   (
-    '880e8400-e29b-41d4-a716-446655440014',
-    '550e8400-e29b-41d4-a716-446655440503',
-    'partner',
-    'bb0e8400-e29b-41d4-a716-446655440002'
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = role_key_to_use
   ),
-  -- partnerleader@everylanguage.com - Partner Leader in Test Partner Org
+  'partner',
+  context_id
+FROM
   (
-    '880e8400-e29b-41d4-a716-446655440015',
-    '550e8400-e29b-41d4-a716-446655440502',
-    'partner',
-    'bb0e8400-e29b-41d4-a716-446655440002'
-  ),
-  -- partnermember@everylanguage.com - Partner Member in Test Partner Org
-  (
-    '880e8400-e29b-41d4-a716-446655440016',
-    '550e8400-e29b-41d4-a716-446655440501',
-    'partner',
-    'bb0e8400-e29b-41d4-a716-446655440002'
-  )
+    VALUES
+      -- partneradmin@everylanguage.com - Partner Admin in Test Partner Org
+      (
+        '880e8400-e29b-41d4-a716-446655440014'::UUID,
+        'partner_admin',
+        'bb0e8400-e29b-41d4-a716-446655440002'::UUID
+      ),
+      -- partnerleader@everylanguage.com - Partner Leader in Test Partner Org
+      (
+        '880e8400-e29b-41d4-a716-446655440015'::UUID,
+        'partner_leader',
+        'bb0e8400-e29b-41d4-a716-446655440002'::UUID
+      ),
+      -- partnermember@everylanguage.com - Partner Member in Test Partner Org
+      (
+        '880e8400-e29b-41d4-a716-446655440016'::UUID,
+        'partner_member',
+        'bb0e8400-e29b-41d4-a716-446655440002'::UUID
+      )
+  ) AS t (user_id, role_key_to_use, context_id)
 ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 
 
@@ -488,28 +489,40 @@ ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 -- ============================================================================
 INSERT INTO
   user_roles (user_id, role_id, context_type, context_id)
-VALUES
-  -- projectadmin@everylanguage.com - Project Admin in Test Project
+SELECT
+  user_id,
   (
-    '880e8400-e29b-41d4-a716-446655440011',
-    '550e8400-e29b-41d4-a716-446655440103',
-    'project',
-    'aa0e8400-e29b-41d4-a716-446655440002'
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = role_key_to_use
   ),
-  -- projectviewer@everylanguage.com - Project Viewer in Test Project
+  'project',
+  context_id
+FROM
   (
-    '880e8400-e29b-41d4-a716-446655440012',
-    '550e8400-e29b-41d4-a716-446655440101',
-    'project',
-    'aa0e8400-e29b-41d4-a716-446655440002'
-  ),
-  -- projecteditor@everylanguage.com - Project Editor in Test Project
-  (
-    '880e8400-e29b-41d4-a716-446655440013',
-    '550e8400-e29b-41d4-a716-446655440102',
-    'project',
-    'aa0e8400-e29b-41d4-a716-446655440002'
-  )
+    VALUES
+      -- projectadmin@everylanguage.com - Project Admin in Test Project
+      (
+        '880e8400-e29b-41d4-a716-446655440011'::UUID,
+        'project_admin',
+        'aa0e8400-e29b-41d4-a716-446655440002'::UUID
+      ),
+      -- projectviewer@everylanguage.com - Project Viewer in Test Project
+      (
+        '880e8400-e29b-41d4-a716-446655440012'::UUID,
+        'project_viewer',
+        'aa0e8400-e29b-41d4-a716-446655440002'::UUID
+      ),
+      -- projecteditor@everylanguage.com - Project Editor in Test Project
+      (
+        '880e8400-e29b-41d4-a716-446655440013'::UUID,
+        'project_editor',
+        'aa0e8400-e29b-41d4-a716-446655440002'::UUID
+      )
+  ) AS t (user_id, role_key_to_use, context_id)
 ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 
 
@@ -518,14 +531,18 @@ ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 -- ============================================================================
 INSERT INTO
   user_roles (user_id, role_id, context_type, context_id)
-VALUES
-  -- systemadmin@everylanguage.com - System Admin (global role)
+SELECT
+  '880e8400-e29b-41d4-a716-446655440017'::UUID,
   (
-    '880e8400-e29b-41d4-a716-446655440017',
-    '550e8400-e29b-41d4-a716-446655440200',
-    'global',
-    NULL
-  )
+    SELECT
+      id
+    FROM
+      roles
+    WHERE
+      role_key = 'system_admin'
+  ),
+  'global',
+  NULL
 ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 
 
