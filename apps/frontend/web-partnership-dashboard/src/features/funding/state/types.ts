@@ -1,4 +1,9 @@
-export type DonateIntent = 'ops' | 'adopt';
+// New donation model types
+export type DonationIntentType =
+  | 'language'
+  | 'region'
+  | 'operation'
+  | 'unrestricted';
 
 export interface DonorDetails {
   firstName: string;
@@ -7,39 +12,40 @@ export interface DonorDetails {
   phone?: string;
 }
 
-export interface AmountSelection {
-  cadence: 'once' | 'monthly';
-  amount_cents: number;
-  currency: 'USD' | 'AUD';
-  coverFees: boolean;
-}
-
-export interface AdoptSelection {
-  languageIds: string[];
-  upfront_cents: number;
-  monthly_cents: number;
-  months: number;
-}
-
-export interface OrgSelection {
-  orgMode: 'individual' | 'existing' | 'new';
-  partner_org_id?: string;
-  new_partner_org?: {
+export interface DonorType {
+  type: 'individual' | 'partner_org';
+  partnerOrgId?: string; // For existing org
+  newPartnerOrg?: {
+    // For creating new org
     name: string;
     description?: string;
-    is_public: boolean;
+    isPublic: boolean;
   };
+}
+
+export interface DonationIntent {
+  type: DonationIntentType;
+  languageEntityId?: string; // Required if type is 'language'
+  regionId?: string; // Required if type is 'region'
+  operationId?: string; // Required if type is 'operation'
+  // Display name for UI
+  displayName?: string;
+}
+
+export interface AmountSelection {
+  isRecurring: boolean; // true for monthly, false for one-time
+  amountCents: number;
 }
 
 export interface DonateFlowState {
   step: number;
-  intent: DonateIntent | null;
   donor?: DonorDetails;
-  amount?: AmountSelection;
-  adopt?: AdoptSelection;
-  orgSelection?: OrgSelection;
+  donorType?: DonorType;
+  intent?: DonationIntent;
   paymentMethod?: 'card' | 'bank_transfer';
+  amount?: AmountSelection;
+  // Results from checkout
+  donationId?: string;
   customerId?: string;
   partnerOrgId?: string;
-  transactionId?: string;
 }

@@ -77,15 +77,15 @@ export function AppLayout({ children }: LayoutProps) {
   );
 
   return (
-    <div className='flex h-full bg-neutral-50 dark:bg-neutral-950'>
+    <div className='flex flex-1 overflow-hidden bg-neutral-50 dark:bg-neutral-950'>
       {/* Sidebar */}
       <aside
         className={`${
           sidebarOpen ? 'w-64' : 'w-20'
-        } bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 transition-[width] duration-300 ease-in-out flex flex-col will-change-[width]`}
+        } h-full bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 transition-[width] duration-300 ease-in-out flex flex-col will-change-[width] overflow-hidden`}
       >
         {/* Header */}
-        <div className='h-16 flex items-center justify-between px-4 border-b border-neutral-200 dark:border-neutral-800'>
+        <div className='h-16 flex items-center justify-between px-4 border-b border-neutral-200 dark:border-neutral-800 flex-shrink-0'>
           <div
             className={`overflow-hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}
           >
@@ -110,7 +110,7 @@ export function AppLayout({ children }: LayoutProps) {
         </div>
 
         {/* Navigation */}
-        <nav className='flex-1 overflow-y-auto py-4'>
+        <nav className='flex-1 overflow-hidden py-4'>
           {Object.entries(groupedItems).map(([section, items]) => (
             <div key={section} className='mb-6'>
               {sidebarOpen && section !== 'Main' && (
@@ -158,9 +158,7 @@ export function AppLayout({ children }: LayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className='flex-1 overflow-y-auto'>
-        <div className='h-full'>{children}</div>
-      </main>
+      <main className='flex-1 overflow-y-auto'>{children}</main>
     </div>
   );
 }

@@ -75,11 +75,17 @@ export const queryKeys = {
   user: (id: string) => [...queryKeys.users(), 'user', id] as const,
 
   // Language entities
-  languageEntities: (page?: number, pageSize?: number, search?: string) =>
+  languageEntities: (
+    page?: number,
+    pageSize?: number,
+    search?: string,
+    levelFilter?: string,
+    regionFilter?: string
+  ) =>
     [
       ...queryKeys.all,
       'language-entities',
-      { page, pageSize, search },
+      { page, pageSize, search, levelFilter, regionFilter },
     ] as const,
   languageEntity: (id: string) =>
     [...queryKeys.all, 'language-entities', 'language-entity', id] as const,
@@ -87,10 +93,19 @@ export const queryKeys = {
     [...queryKeys.languageEntity(id), 'versions'] as const,
 
   // Regions
-  regions: () => [...queryKeys.all, 'regions'] as const,
-  region: (id: string) => [...queryKeys.regions(), 'region', id] as const,
-  regionVersions: (id: string) =>
-    [...queryKeys.region(id), 'versions'] as const,
+  regions: (
+    page?: number,
+    pageSize?: number,
+    search?: string,
+    levelFilter?: string,
+    languageFilter?: string
+  ) =>
+    [
+      ...queryKeys.all,
+      'regions',
+      { page, pageSize, search, levelFilter, languageFilter },
+    ] as const,
+  region: (id: string) => [...queryKeys.all, 'regions', 'region', id] as const,
 
   // Sponsorships
   sponsorships: () => [...queryKeys.all, 'sponsorships'] as const,

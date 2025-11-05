@@ -136,14 +136,25 @@ export async function searchPartnerOrgs(query: string, limit = 10) {
 
 export async function createDonationCheckout(payload: {
   donor: { firstName: string; lastName: string; email: string; phone?: string };
+  donorType: 'individual' | 'partner_org';
+  partnerOrgId?: string;
+  newPartnerOrg?: {
+    name: string;
+    description?: string;
+    isPublic: boolean;
+  };
+  intent: {
+    type: 'language' | 'region' | 'operation' | 'unrestricted';
+    languageEntityId?: string;
+    regionId?: string;
+    operationId?: string;
+  };
+  paymentMethod: 'card' | 'bank_transfer';
   amountCents: number;
-  cadence: 'once' | 'monthly';
-  mode: 'card' | 'bank_transfer';
-  currency?: string;
+  isRecurring: boolean;
 }) {
   const base = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
-  // API now uses camelCase - no transformation needed
   const res = await fetch(`${base}/create-donation-checkout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -167,10 +178,10 @@ export async function createDonationCheckout(payload: {
       : json;
   return data as {
     clientSecret: string | null;
+    paymentIntentId: string;
+    donationId: string;
     customerId: string;
-    sponsorshipId: string;
-    subscriptionId?: string | null;
-    partnerOrgId: string;
+    partnerOrgId: string | null;
   };
 }
 

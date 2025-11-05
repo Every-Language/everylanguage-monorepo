@@ -1,84 +1,19 @@
 import React from 'react';
 import { Button } from '@/shared/components/ui/Button';
-import { StepActionsContext } from './StepActionsContext';
-import { createAdoptionCheckout } from '../../api/fundingApi';
-import { useAuth } from '@/features/auth';
 
 interface StepPaymentMethodProps {
   flow: any;
-  hideButton?: boolean;
 }
 
 export const StepPaymentMethod: React.FC<StepPaymentMethodProps> = ({
   flow,
-  hideButton = false,
 }) => {
-  const { setSubmitAction, setCheckoutPromise } =
-    React.useContext(StepActionsContext);
   const [method, setMethod] = React.useState<'card' | 'bank_transfer'>('card');
-  const { user } = useAuth();
 
-  const handleContinue = React.useCallback(() => {
+  const handleContinue = () => {
     flow.setPaymentMethod(method);
-
-    // Pre-fetch checkout for adoption flow
-    if (flow.state.intent === 'adopt' && flow.state.adopt && flow.state.donor) {
-      const donor = flow.state.donor;
-      const meta = (user?.user_metadata ?? {}) as {
-        first_name?: string;
-        last_name?: string;
-      };
-      const donorFirst =
-        donor.firstName ??
-        meta.first_name ??
-        user?.email?.split('@')[0] ??
-        'Donor';
-      const donorLast = donor.lastName ?? meta.last_name ?? 'Supporter';
-      const donorEmail = donor.email ?? user?.email ?? '';
-      const donorPhone = donor.phone;
-
-      const ids = flow.state.adopt.languageIds ?? [];
-      const orgSelection = flow.state.orgSelection ?? {
-        orgMode: 'individual' as const,
-      };
-
-      if (ids.length > 0) {
-        // Start checkout creation in background
-        const checkoutPromise = createAdoptionCheckout({
-          donor: {
-            firstName: donorFirst,
-            lastName: donorLast,
-            email: donorEmail,
-            phone: donorPhone,
-          },
-          adoptionIds: ids,
-          mode: method,
-          orgMode: orgSelection.orgMode,
-          partnerOrgId: orgSelection.partner_org_id,
-          newPartnerOrg: orgSelection.new_partner_org
-            ? {
-                name: orgSelection.new_partner_org.name,
-                description: orgSelection.new_partner_org.description,
-                isPublic: orgSelection.new_partner_org.is_public,
-              }
-            : undefined,
-        });
-
-        // Store promise so StepPayment can use it
-        setCheckoutPromise(checkoutPromise);
-      }
-    }
-
     flow.next();
-  }, [flow, method, setCheckoutPromise, user]);
-
-  // Register submit action when button is hidden (adopt flow)
-  React.useEffect(() => {
-    if (hideButton) {
-      setSubmitAction(() => handleContinue);
-      return () => setSubmitAction(null);
-    }
-  }, [hideButton, handleContinue, setSubmitAction]);
+  };
 
   return (
     <div className='space-y-4'>
@@ -101,7 +36,7 @@ export const StepPaymentMethod: React.FC<StepPaymentMethodProps> = ({
               Credit or Debit Card
             </div>
             <div className='text-sm text-neutral-600 dark:text-neutral-400'>
-              Pay immediately and get instant access
+              Pay immediately and get instant confirmation
             </div>
           </div>
         </label>
@@ -120,18 +55,16 @@ export const StepPaymentMethod: React.FC<StepPaymentMethodProps> = ({
               Bank Transfer (ACH)
             </div>
             <div className='text-sm text-neutral-600 dark:text-neutral-400'>
-              Takes 1-3 business days • Your language adoption will be on hold
-              until payment is received
+              Takes 1-3 business days • Your donation will be processed when we
+              receive the transfer
             </div>
           </div>
         </label>
       </div>
 
-      {!hideButton && (
-        <div className='pt-2 flex justify-end'>
-          <Button onClick={handleContinue}>Continue</Button>
-        </div>
-      )}
+      <div className='pt-2 flex justify-end'>
+        <Button onClick={handleContinue}>Continue</Button>
+      </div>
     </div>
   );
 };

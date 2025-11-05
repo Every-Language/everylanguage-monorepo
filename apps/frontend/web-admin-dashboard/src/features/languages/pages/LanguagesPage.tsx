@@ -2,18 +2,29 @@ import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/query/query-client';
 import { languagesApi } from '../api/languagesApi';
+import { regionsApi } from '@/features/regions/api/regionsApi';
 import { LanguageEntityModal } from '../components/LanguageEntityModal';
-import type { LanguageEntityWithRegions } from '@/types';
+import { RegionModal } from '@/features/regions/components/RegionModal';
+import type { LanguageEntityWithRegions, RegionWithLanguages } from '@/types';
 import { Search, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+
+type ModalStackItem =
+  | { type: 'language'; entity: LanguageEntityWithRegions; id: string }
+  | { type: 'region'; region: RegionWithLanguages; id: string };
 
 export function LanguagesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(50);
-  const [selectedEntity, setSelectedEntity] =
-    useState<LanguageEntityWithRegions | null>(null);
-  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
+  const [levelFilter, setLevelFilter] = useState<string>('all');
+  const [regionFilters, setRegionFilters] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [regionSearchQuery, setRegionSearchQuery] = useState('');
+
+  // Modal stack for layered modals
+  const [modalStack, setModalStack] = useState<ModalStackItem[]>([]);
   const queryClient = useQueryClient();
 
   // Debounce search term
@@ -26,14 +37,38 @@ export function LanguagesPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch language entities with pagination
+  // Fetch regions for filter
+  const { data: searchedRegions } = useQuery({
+    queryKey: ['region-search-filter', regionSearchQuery],
+    queryFn: async () => {
+      if (!regionSearchQuery || regionSearchQuery.length < 2) return [];
+      const results = await regionsApi.fetchRegions({
+        searchQuery: regionSearchQuery,
+        page: 1,
+        pageSize: 20,
+      });
+      return results.data;
+    },
+    enabled: regionSearchQuery.length >= 2,
+  });
+
+  // Fetch language entities with pagination and filters
+  const regionFilterIds = regionFilters.map(r => r.id);
   const { data: response, isLoading } = useQuery({
-    queryKey: queryKeys.languageEntities(page, pageSize, debouncedSearch),
+    queryKey: queryKeys.languageEntities(
+      page,
+      pageSize,
+      debouncedSearch,
+      levelFilter,
+      regionFilterIds.join(',')
+    ),
     queryFn: () =>
       languagesApi.fetchLanguageEntities({
         page,
         pageSize,
         searchQuery: debouncedSearch,
+        levelFilter: levelFilter !== 'all' ? levelFilter : undefined,
+        regionFilters: regionFilterIds.length > 0 ? regionFilterIds : undefined,
       }),
   });
 
@@ -42,29 +77,39 @@ export function LanguagesPage() {
   const totalPages = response?.totalPages || 1;
 
   const handleEntityClick = (entity: LanguageEntityWithRegions) => {
-    setSelectedEntity(entity);
-    setSelectedEntityId(entity.id);
+    setModalStack([{ type: 'language', entity, id: entity.id }]);
   };
 
-  const handleNavigateToLanguage = (entityId: string) => {
-    // Fetch the entity to open its modal
-    languagesApi.fetchLanguageEntityById(entityId).then(entity => {
-      if (entity) {
-        setSelectedEntity(entity);
-        setSelectedEntityId(entityId);
-      }
-    });
+  const handleNavigateToLanguage = async (entityId: string) => {
+    // Fetch data first, then open modal
+    const entity = await languagesApi.fetchLanguageEntityById(entityId);
+    if (entity) {
+      setModalStack(prev => [
+        ...prev,
+        { type: 'language', entity, id: entityId },
+      ]);
+    }
   };
 
-  const handleNavigateToRegion = (regionId: string) => {
-    // For now, just log - we'll implement region modal later
-    console.log('Navigate to region:', regionId);
-    // TODO: Implement region modal
+  const handleNavigateToRegion = async (regionId: string) => {
+    // Fetch data first, then open modal
+    const region = await regionsApi.fetchRegionById(regionId);
+    if (region) {
+      setModalStack(prev => [
+        ...prev,
+        { type: 'region', region, id: regionId },
+      ]);
+    }
   };
 
   const handleCloseModal = () => {
-    setSelectedEntity(null);
-    setSelectedEntityId(null);
+    // Pop the top modal from stack
+    setModalStack(prev => prev.slice(0, -1));
+  };
+
+  const handleCloseAllModals = () => {
+    // Clear entire modal stack
+    setModalStack([]);
   };
 
   const handleEntityUpdated = () => {
@@ -83,13 +128,10 @@ export function LanguagesPage() {
         <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
           Manage language entities and their properties
         </p>
-        <p className='mt-1 text-sm text-neutral-500 dark:text-neutral-400'>
-          {totalCount.toLocaleString()} total languages
-        </p>
       </div>
 
       {/* Search */}
-      <div className='mb-6'>
+      <div className='mb-4'>
         <div className='relative'>
           <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400 dark:text-neutral-500' />
           <input
@@ -105,6 +147,112 @@ export function LanguagesPage() {
             Showing {entities.length} results for "{debouncedSearch}"
           </p>
         )}
+      </div>
+
+      {/* Filters */}
+      <div className='mb-6 grid grid-cols-1 md:grid-cols-2 gap-4'>
+        {/* Level Filter */}
+        <div>
+          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+            Filter by Level
+          </label>
+          <select
+            value={levelFilter}
+            onChange={e => {
+              setLevelFilter(e.target.value);
+              setPage(1);
+            }}
+            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
+          >
+            <option value='all'>All Levels</option>
+            <option value='family'>Family</option>
+            <option value='language'>Language</option>
+            <option value='dialect'>Dialect</option>
+            <option value='mother_tongue'>Mother Tongue</option>
+          </select>
+        </div>
+
+        {/* Region Filter */}
+        <div>
+          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+            Filter by Regions (OR)
+          </label>
+          <div className='relative'>
+            <input
+              type='text'
+              placeholder='Type to search and add regions...'
+              value={regionSearchQuery}
+              onChange={e => setRegionSearchQuery(e.target.value)}
+              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
+            />
+            {regionSearchQuery && (
+              <div className='absolute z-20 w-full mt-1 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+                <button
+                  onClick={() => {
+                    if (!regionFilters.find(r => r.id === 'none')) {
+                      setRegionFilters(prev => [
+                        ...prev,
+                        { id: 'none', name: 'No Region' },
+                      ]);
+                      setPage(1);
+                    }
+                    setRegionSearchQuery('');
+                  }}
+                  className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 italic border-b border-neutral-200 dark:border-neutral-800'
+                >
+                  No Region
+                </button>
+                {searchedRegions &&
+                  searchedRegions.map(region => (
+                    <button
+                      key={region.id}
+                      onClick={() => {
+                        if (!regionFilters.find(r => r.id === region.id)) {
+                          setRegionFilters(prev => [
+                            ...prev,
+                            { id: region.id, name: region.name },
+                          ]);
+                          setPage(1);
+                        }
+                        setRegionSearchQuery('');
+                      }}
+                      className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100'
+                    >
+                      {region.name}{' '}
+                      <span className='text-neutral-500 dark:text-neutral-400'>
+                        ({region.level})
+                      </span>
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          {/* Region filter pills */}
+          {regionFilters.length > 0 && (
+            <div className='flex flex-wrap gap-2 mt-2'>
+              {regionFilters.map(region => (
+                <span
+                  key={region.id}
+                  className='inline-flex items-center gap-1 px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 rounded-full text-sm'
+                >
+                  {region.name}
+                  <button
+                    onClick={() => {
+                      setRegionFilters(prev =>
+                        prev.filter(r => r.id !== region.id)
+                      );
+                      setPage(1);
+                    }}
+                    className='hover:text-primary-900 dark:hover:text-primary-100'
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -215,16 +363,42 @@ export function LanguagesPage() {
         )}
       </div>
 
-      {/* Modal */}
-      {selectedEntity && selectedEntityId && (
-        <LanguageEntityModal
-          entity={selectedEntity}
-          onClose={handleCloseModal}
-          onSave={handleEntityUpdated}
-          onNavigateToLanguage={handleNavigateToLanguage}
-          onNavigateToRegion={handleNavigateToRegion}
-        />
-      )}
+      {/* Modal Stack - render all modals with increasing z-index */}
+      {modalStack.map((item, index) => {
+        const zIndex = 50 + index;
+        const isTopModal = index === modalStack.length - 1;
+
+        if (item.type === 'language') {
+          return (
+            <div key={`lang-${item.id}-${index}`} style={{ zIndex }}>
+              <LanguageEntityModal
+                entity={item.entity}
+                onClose={isTopModal ? handleCloseModal : handleCloseAllModals}
+                onSave={handleEntityUpdated}
+                onNavigateToLanguage={handleNavigateToLanguage}
+                onNavigateToRegion={handleNavigateToRegion}
+              />
+            </div>
+          );
+        } else {
+          return (
+            <div key={`reg-${item.id}-${index}`} style={{ zIndex }}>
+              <RegionModal
+                region={item.region}
+                onClose={isTopModal ? handleCloseModal : handleCloseAllModals}
+                onSave={() => {
+                  queryClient.invalidateQueries({ queryKey: ['regions'] });
+                  queryClient.invalidateQueries({
+                    queryKey: ['language-entities'],
+                  });
+                }}
+                onNavigateToRegion={handleNavigateToRegion}
+                onNavigateToLanguage={handleNavigateToLanguage}
+              />
+            </div>
+          );
+        }
+      })}
     </div>
   );
 }

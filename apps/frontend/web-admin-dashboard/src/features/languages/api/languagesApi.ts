@@ -16,6 +16,8 @@ export const languagesApi = {
     page?: number;
     pageSize?: number;
     searchQuery?: string;
+    levelFilter?: string;
+    regionFilters?: string[]; // Changed to array for multi-select
   }): Promise<{
     data: LanguageEntityWithRegions[];
     count: number;
@@ -47,7 +49,7 @@ export const languagesApi = {
         }
 
         // Transform search results to match our interface
-        const results: LanguageEntityWithRegions[] = (searchResults || []).map(
+        let results: LanguageEntityWithRegions[] = (searchResults || []).map(
           (result: {
             entity_id: string;
             entity_name: string;
@@ -72,6 +74,43 @@ export const languagesApi = {
           })
         );
 
+        // Apply level filter to search results (AND logic)
+        if (params?.levelFilter) {
+          results = results.filter(
+            entity => entity.level === params.levelFilter
+          );
+        }
+
+        // Apply region filters to search results (AND logic)
+        if (params?.regionFilters && params.regionFilters.length > 0) {
+          if (params.regionFilters.includes('none')) {
+            // Filter for entities with NO regions
+            const { data: entitiesWithRegions } = await supabase
+              .from('language_entities_regions')
+              .select('language_entity_id');
+
+            const entityIdsWithRegions = new Set(
+              entitiesWithRegions?.map(e => e.language_entity_id) || []
+            );
+            results = results.filter(
+              entity => !entityIdsWithRegions.has(entity.id)
+            );
+          } else {
+            // Filter for entities in ANY selected region (OR within region filter, AND with search)
+            const { data: regionLinks } = await supabase
+              .from('language_entities_regions')
+              .select('language_entity_id, region_id')
+              .in('region_id', params.regionFilters);
+
+            const entityIdsInRegions = new Set(
+              regionLinks?.map(link => link.language_entity_id) || []
+            );
+            results = results.filter(entity =>
+              entityIdsInRegions.has(entity.id)
+            );
+          }
+        }
+
         return {
           data: results.slice(from, to + 1),
           count: results.length,
@@ -85,19 +124,97 @@ export const languagesApi = {
       }
     }
 
-    // Otherwise, fetch with pagination
-    const query = supabase
+    // Otherwise, fetch with pagination and filters
+    let query = supabase
       .from('language_entities')
       .select(
         `
         *,
-        language_entities_regions(count)
+        language_entities_regions(region_id)
       `,
         { count: 'exact' }
       )
-      .is('deleted_at', null)
-      .order('name')
-      .range(from, to);
+      .is('deleted_at', null);
+
+    // Apply level filter
+    if (params?.levelFilter) {
+      query = query.eq('level', params.levelFilter);
+    }
+
+    // Apply region filters (OR logic for multiple regions, AND with level filter)
+    if (params?.regionFilters && params.regionFilters.length > 0) {
+      if (params.regionFilters.includes('none')) {
+        // Filter for languages with NO regions - fetch and filter in JS to avoid URL length issues
+        // First, complete the query to get base results
+        query = query.order('name');
+
+        const {
+          data: allData,
+          error: allError,
+          count: totalCount,
+        } = await query;
+
+        if (allError) throw allError;
+
+        // Get all entities that have regions
+        const { data: entitiesWithRegions } = await supabase
+          .from('language_entities_regions')
+          .select('language_entity_id');
+
+        const entityIdsWithRegions = new Set(
+          entitiesWithRegions?.map(e => e.language_entity_id) || []
+        );
+
+        // Filter out entities that have regions
+        const filteredData = (allData || []).filter(
+          entity => !entityIdsWithRegions.has(entity.id)
+        );
+
+        // Apply pagination to filtered results
+        const paginatedData = filteredData.slice(from, to + 1);
+
+        const transformedData = paginatedData.map(item => ({
+          ...item,
+          region_count: 0, // By definition, these have no regions
+        }));
+
+        return {
+          data: transformedData,
+          count: filteredData.length,
+          page,
+          pageSize,
+          totalPages: Math.ceil(filteredData.length / pageSize),
+        };
+      } else {
+        // Filter for languages in ANY selected region (OR logic - union)
+        const unionIds = new Set<string>();
+
+        for (const regionId of params.regionFilters) {
+          const { data: entitiesInRegion } = await supabase
+            .from('language_entities_regions')
+            .select('language_entity_id')
+            .eq('region_id', regionId);
+
+          const entityIds =
+            entitiesInRegion?.map(r => r.language_entity_id) || [];
+          entityIds.forEach(id => unionIds.add(id));
+        }
+
+        if (unionIds.size > 0) {
+          query = query.in('id', Array.from(unionIds));
+        } else {
+          return {
+            data: [],
+            count: 0,
+            page,
+            pageSize,
+            totalPages: 0,
+          };
+        }
+      }
+    }
+
+    query = query.order('name').range(from, to);
 
     const { data, error, count } = await query;
 
@@ -105,7 +222,9 @@ export const languagesApi = {
 
     const transformedData = (data || []).map(item => ({
       ...item,
-      region_count: item.language_entities_regions?.[0]?.count || 0,
+      region_count: Array.isArray(item.language_entities_regions)
+        ? item.language_entities_regions.length
+        : 0,
     }));
 
     return {

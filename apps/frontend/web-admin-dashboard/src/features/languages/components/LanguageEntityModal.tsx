@@ -187,8 +187,9 @@ export function LanguageEntityModal({
         localProperties.filter(p => p.key && p.value)
       );
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      // Refetch and wait for fresh data
+      await queryClient.refetchQueries({
         queryKey: ['language-properties', entity.id],
       });
       setEditingProperties(false);
@@ -202,8 +203,9 @@ export function LanguageEntityModal({
         localAliases.filter(a => a.alias_name)
       );
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      // Refetch and wait for fresh data
+      await queryClient.refetchQueries({
         queryKey: ['language-aliases', entity.id],
       });
       setEditingAliases(false);
@@ -217,11 +219,12 @@ export function LanguageEntityModal({
         selectedRegionIds
       );
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      // Refetch and wait for fresh data
+      await queryClient.refetchQueries({
         queryKey: ['language-entity-full', entity.id],
       });
-      queryClient.invalidateQueries({ queryKey: ['language-entities'] });
+      await queryClient.refetchQueries({ queryKey: ['language-entities'] });
       setEditingRegions(false);
       setRegionSearchQuery('');
     },

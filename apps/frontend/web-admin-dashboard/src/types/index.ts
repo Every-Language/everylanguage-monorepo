@@ -5,6 +5,8 @@ export type LanguageEntity = Tables<'language_entities'>;
 export type LanguageProperty = Tables<'language_properties'>;
 export type LanguageAlias = Tables<'language_aliases'>;
 export type Region = Tables<'regions'>;
+export type RegionProperty = Tables<'region_properties'>;
+export type RegionAlias = Tables<'region_aliases'>;
 
 // Temporary types for sponsorships (until database types are regenerated)
 export interface Sponsorship {
@@ -47,6 +49,15 @@ export interface LanguageHierarchyNode {
 export interface RegionWithLanguages extends Region {
   language_entities?: LanguageEntity[];
   language_count?: number;
+}
+
+export interface RegionHierarchyNode {
+  hierarchy_region_id: string;
+  hierarchy_region_name: string;
+  hierarchy_region_level: string;
+  hierarchy_parent_id: string | null;
+  relationship_type: 'self' | 'ancestor' | 'descendant' | 'sibling';
+  generation_distance: number;
 }
 
 export interface SponsorshipWithDetails {
