@@ -198,7 +198,17 @@ export const MapProvider: React.FC<{
             return;
           }
           userInteractedRef.current = false;
-          const padding = opts?.padding ?? 40;
+          const padding:
+            | number
+            | { top: number; bottom: number; left: number; right: number } =
+            typeof opts?.padding === 'object'
+              ? {
+                  top: opts.padding.top ?? 40,
+                  bottom: opts.padding.bottom ?? 40,
+                  left: opts.padding.left ?? 40,
+                  right: opts.padding.right ?? 40,
+                }
+              : (opts?.padding ?? 40);
           try {
             console.info('[MapContext.fitBounds] invoking fitBounds', {
               opId,

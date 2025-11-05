@@ -5,6 +5,9 @@ interface CheckoutResponse {
   clientSecret: string | null;
   depositClientSecret?: string | null;
   subscriptionClientSecret?: string | null;
+  setupIntentClientSecret?: string | null; // For bank transfer card collection
+  paymentIntentId?: string | null;
+  setupIntentId?: string | null;
   customerId: string;
   sponsorshipId?: string;
   sponsorshipIds?: string[];

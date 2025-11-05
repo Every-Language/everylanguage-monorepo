@@ -449,12 +449,11 @@ const BankTransferInstructions: React.FC<{
               res.clientSecret
             );
 
-            if (
-              paymentIntent?.next_action?.type ===
-              'display_bank_transfer_instructions'
-            ) {
-              const instructions = paymentIntent.next_action
-                .display_bank_transfer_instructions as any;
+            // Cast to any since display_bank_transfer_instructions is not in Stripe TS types yet
+            const nextAction = paymentIntent?.next_action as any;
+            if (nextAction?.type === 'display_bank_transfer_instructions') {
+              const instructions =
+                nextAction.display_bank_transfer_instructions;
               const financialAddresses = instructions?.financial_addresses;
 
               // Find US bank account details (ABA)

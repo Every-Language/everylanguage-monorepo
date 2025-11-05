@@ -71,15 +71,21 @@ export const PartnerOrgDashboardPage: React.FC = () => {
   const totalProjects = projects?.length || 0;
   const totalPendingLanguages = pendingLanguages?.length || 0;
 
-  // Calculate aggregate funding
-  const totalBudget =
-    fundingData?.budgets.reduce((sum, b) => sum + b.total_cents, 0) || 0;
-  const totalActualCost = Array.isArray(fundingData?.financials)
-    ? fundingData.financials.reduce(
-        (sum, f) => sum + (f.total_actual_cost_cents || 0),
-        0
-      )
-    : 0;
+  // Calculate aggregate funding from balances
+  const totalContributions =
+    fundingData && 'balances' in fundingData && fundingData.balances
+      ? fundingData.balances.reduce(
+          (sum: number, b) => sum + b.total_contributions_cents,
+          0
+        )
+      : 0;
+  const totalBalance =
+    fundingData && 'balances' in fundingData && fundingData.balances
+      ? fundingData.balances.reduce(
+          (sum: number, b) => sum + b.balance_cents,
+          0
+        )
+      : 0;
 
   return (
     <div className='space-y-6'>
@@ -146,11 +152,11 @@ export const PartnerOrgDashboardPage: React.FC = () => {
       </div>
 
       {/* Funding overview */}
-      {totalBudget > 0 && (
+      {totalContributions > 0 && (
         <Card className='border border-neutral-200 dark:border-neutral-800'>
           <CardHeader>
             <CardTitle className='text-sm text-neutral-500'>
-              Total Funding
+              Project Balance Overview
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -158,18 +164,24 @@ export const PartnerOrgDashboardPage: React.FC = () => {
               <Progress
                 variant='circular'
                 size='lg'
-                value={totalActualCost}
-                max={totalBudget}
-                color='accent'
+                value={totalBalance}
+                max={totalContributions}
+                color={totalBalance > 0 ? 'accent' : 'error'}
                 showValue
               />
               <div>
                 <div className='text-3xl font-bold tracking-tight'>
-                  {formatCurrency(totalActualCost)}
+                  {formatCurrency(totalBalance)}
                 </div>
                 <div className='text-xs text-neutral-500 mt-1'>
-                  of {formatCurrency(totalBudget)} budgeted
+                  remaining from {formatCurrency(totalContributions)}{' '}
+                  contributed
                 </div>
+                {totalBalance < 0 && (
+                  <div className='text-xs text-error-600 dark:text-error-400 mt-1'>
+                    ⚠️ Projects are overspent
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

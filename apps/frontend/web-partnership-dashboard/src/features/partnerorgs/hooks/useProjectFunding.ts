@@ -1,33 +1,53 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 
-// Temporary types until database types are regenerated
-interface ProjectBudget {
-  id: string;
+// Types for new balance-based billing system
+interface ProjectBalance {
   project_id: string;
-  total_cents: number;
+  project_name: string;
+  language_entity_id: string;
+  total_contributions_cents: number;
+  total_costs_cents: number;
+  balance_cents: number;
   currency_code: string;
-  description?: string | null;
-  [key: string]: any;
+  contribution_count: number;
+  cost_count: number;
+  last_contribution_at?: string | null;
+  last_cost_at?: string | null;
 }
 
-interface ProjectFinancials {
-  project_id: string;
-  total_budget_cents: number;
-  total_actual_cost_cents: number;
+interface Contribution {
+  id: string;
+  project_id?: string | null;
+  amount_cents: number;
   currency_code: string;
-  [key: string]: any;
+  occurred_at: string;
+  kind: string;
+  stripe_payment_intent_id?: string | null;
+  stripe_invoice_id?: string | null;
+  subscription_id?: string | null;
 }
 
-interface ProjectBudgetItem {
+interface ProjectCost {
   id: string;
-  budget_id: string;
   project_id: string;
-  description: string;
-  notes?: string | null;
+  occurred_at: string;
   category: string;
   amount_cents: number;
-  [key: string]: any;
+  currency_code: string;
+  note?: string | null;
+  receipt_url?: string | null;
+}
+
+interface Subscription {
+  id: string;
+  project_id?: string | null;
+  amount_cents: number;
+  currency_code: string;
+  status: string;
+  started_at: string;
+  cancelled_at?: string | null;
+  subscription_type: string;
 }
 
 export function useProjectFunding(
@@ -39,72 +59,70 @@ export function useProjectFunding(
     queryFn: async () => {
       if (projectId === 'all') {
         // Aggregate funding across all partner org projects
-        const { data: projects } = await (supabase as any)
-          .from('vw_partner_org_projects')
+        const { data: activeProjects } = await (supabase as any)
+          .from('vw_partner_org_active_projects')
           .select('project_id')
           .eq('partner_org_id', partnerOrgId!);
 
-        const projectIds = projects?.map((p: any) => p.project_id) || [];
+        const projectIds = activeProjects?.map((p: any) => p.project_id) || [];
 
-        // Get budgets for all projects
-        const { data: budgets, error: budgetsError } = await (supabase as any)
-          .from('project_budgets')
-          .select('*')
-          .in('project_id', projectIds)
-          .is('deleted_at', null);
-
-        if (budgetsError) throw budgetsError;
-
-        // Get financials view for aggregated data
-        const { data: financials, error: financialsError } = await (
-          supabase as any
-        )
-          .from('project_financials')
+        // Get balance for all projects
+        const { data: balances, error: balancesError } = await (supabase as any)
+          .from('vw_project_balances')
           .select('*')
           .in('project_id', projectIds);
 
-        if (financialsError) throw financialsError;
+        if (balancesError) throw balancesError;
 
         return {
-          budgets: (budgets || []) as ProjectBudget[],
-          financials: (financials || []) as ProjectFinancials[],
+          balances: (balances || []) as ProjectBalance[],
         };
       } else {
-        // Single project
-        const { data: budgets, error: budgetsError } = await (supabase as any)
-          .from('project_budgets')
-          .select('*')
-          .eq('project_id', projectId)
-          .is('deleted_at', null);
-
-        if (budgetsError) throw budgetsError;
-
-        const { data: financials, error: financialsError } = await (
-          supabase as any
-        )
-          .from('project_financials')
+        // Single project - get detailed data
+        const { data: balance, error: balanceError } = await (supabase as any)
+          .from('vw_project_balances')
           .select('*')
           .eq('project_id', projectId)
           .maybeSingle();
 
-        if (financialsError) throw financialsError;
+        if (balanceError) throw balanceError;
 
-        // Get budget items for this project
-        const budgetIds = budgets?.map((b: any) => b.id) || [];
-        const { data: budgetItems, error: budgetItemsError } = await (
+        // Get contributions for this project
+        const { data: contributions, error: contributionsError } = await (
           supabase as any
         )
-          .from('project_budget_items')
+          .from('contributions')
           .select('*')
-          .in('budget_id', budgetIds)
-          .is('deleted_at', null);
+          .eq('project_id', projectId)
+          .order('occurred_at', { ascending: false });
 
-        if (budgetItemsError) throw budgetItemsError;
+        if (contributionsError) throw contributionsError;
+
+        // Get costs for this project
+        const { data: costs, error: costsError } = await (supabase as any)
+          .from('project_budget_costs')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('occurred_at', { ascending: false });
+
+        if (costsError) throw costsError;
+
+        // Get active subscriptions for this project
+        const { data: subscriptions, error: subscriptionsError } = await (
+          supabase as any
+        )
+          .from('subscriptions')
+          .select('*')
+          .eq('project_id', projectId)
+          .eq('status', 'active');
+
+        if (subscriptionsError) throw subscriptionsError;
 
         return {
-          budgets: (budgets || []) as ProjectBudget[],
-          budgetItems: (budgetItems || []) as ProjectBudgetItem[],
-          financials: financials as ProjectFinancials | null,
+          balance: balance as ProjectBalance | null,
+          contributions: (contributions || []) as Contribution[],
+          costs: (costs || []) as ProjectCost[],
+          subscriptions: (subscriptions || []) as Subscription[],
         };
       }
     },
