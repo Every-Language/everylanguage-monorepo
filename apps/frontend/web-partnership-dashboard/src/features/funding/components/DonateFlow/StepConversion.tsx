@@ -1,5 +1,9 @@
 import React from 'react';
 import { Button } from '@/shared/components/ui/Button';
+import { StepActionsContext } from './StepActionsContext';
+import { createDonationCheckout } from '../../api/fundingApi';
+import { applyFeeCover } from '../../utils/calc';
+import { useAuth } from '@/features/auth';
 
 interface StepConversionProps {
   flow: any;
@@ -15,6 +19,9 @@ export const StepConversion: React.FC<StepConversionProps> = ({
   oneTimeAmount,
   currency,
 }) => {
+  const { setCheckoutPromise } = React.useContext(StepActionsContext);
+  const { user } = useAuth();
+
   // Calculate monthly conversion amounts (rounded to nearest dollar)
   const option1Monthly =
     Math.round((oneTimeAmount * CONVERSION_OPTION_1_PERCENT) / 100) * 100;
@@ -31,6 +38,46 @@ export const StepConversion: React.FC<StepConversionProps> = ({
       });
     }
     // Otherwise keep one-time amount as is
+
+    // Pre-fetch checkout with the final amount and cadence
+    const finalCadence = monthlyAmount ? 'monthly' : 'once';
+    const finalAmountCents = monthlyAmount || oneTimeAmount;
+    const coverFees = flow.state.amount?.coverFees ?? true;
+    const totalCents = coverFees
+      ? applyFeeCover(finalAmountCents)
+      : finalAmountCents;
+
+    const donor = flow.state.donor;
+    const meta = (user?.user_metadata ?? {}) as {
+      first_name?: string;
+      last_name?: string;
+    };
+    const donorFirst =
+      donor?.firstName ??
+      meta.first_name ??
+      user?.email?.split('@')[0] ??
+      'Donor';
+    const donorLast = donor?.lastName ?? meta.last_name ?? 'Supporter';
+    const donorEmail = donor?.email ?? user?.email ?? '';
+    const donorPhone = donor?.phone;
+
+    // Start checkout creation in background
+    const checkoutPromise = createDonationCheckout({
+      donor: {
+        firstName: donorFirst,
+        lastName: donorLast,
+        email: donorEmail,
+        phone: donorPhone,
+      },
+      amountCents: totalCents,
+      cadence: finalCadence,
+      mode: 'card', // Operational costs always use card payment
+      currency: currency as 'USD' | 'AUD',
+    });
+
+    // Store promise so StepPayment can use it
+    setCheckoutPromise(checkoutPromise);
+
     flow.next();
   };
 

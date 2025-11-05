@@ -198,17 +198,7 @@ export const MapProvider: React.FC<{
             return;
           }
           userInteractedRef.current = false;
-          const rawPadding = opts?.padding ?? 40;
-          // Normalize padding to ensure all required properties are present
-          const padding =
-            typeof rawPadding === 'number'
-              ? rawPadding
-              : {
-                  top: rawPadding.top ?? 40,
-                  bottom: rawPadding.bottom ?? 40,
-                  left: rawPadding.left ?? 40,
-                  right: rawPadding.right ?? 40,
-                };
+          const padding = opts?.padding ?? 40;
           try {
             console.info('[MapContext.fitBounds] invoking fitBounds', {
               opId,

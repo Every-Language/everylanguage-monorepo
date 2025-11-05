@@ -167,6 +167,20 @@ export type Database = {
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "audio_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "audio_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_language_entities"
+            referencedColumns: ["project_id"]
+          },
         ]
       }
       bases: {
@@ -503,6 +517,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contributions_language_adoption_id_fkey"
+            columns: ["language_adoption_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_pending_languages"
+            referencedColumns: ["language_adoption_id"]
+          },
+          {
             foreignKeyName: "contributions_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -517,11 +538,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contributions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "contributions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_language_entities"
+            referencedColumns: ["project_id"]
+          },
+          {
             foreignKeyName: "contributions_sponsorship_id_fkey"
             columns: ["sponsorship_id"]
             isOneToOne: false
             referencedRelation: "sponsorships"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contributions_sponsorship_id_fkey"
+            columns: ["sponsorship_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["sponsorship_id"]
+          },
+          {
+            foreignKeyName: "contributions_sponsorship_id_fkey"
+            columns: ["sponsorship_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_pending_languages"
+            referencedColumns: ["sponsorship_id"]
           },
         ]
       }
@@ -677,6 +726,7 @@ export type Database = {
       language_adoptions: {
         Row: {
           available_since: string | null
+          bank_transfer_expiry_at: string | null
           created_at: string
           created_by: string | null
           currency_code: string
@@ -688,11 +738,13 @@ export type Database = {
           notes: string | null
           recurring_months: number | null
           status: Database["public"]["Enums"]["adoption_status"]
+          stripe_product_id: string | null
           translators_ready: boolean
           updated_at: string | null
         }
         Insert: {
           available_since?: string | null
+          bank_transfer_expiry_at?: string | null
           created_at?: string
           created_by?: string | null
           currency_code?: string
@@ -704,11 +756,13 @@ export type Database = {
           notes?: string | null
           recurring_months?: number | null
           status?: Database["public"]["Enums"]["adoption_status"]
+          stripe_product_id?: string | null
           translators_ready?: boolean
           updated_at?: string | null
         }
         Update: {
           available_since?: string | null
+          bank_transfer_expiry_at?: string | null
           created_at?: string
           created_by?: string | null
           currency_code?: string
@@ -720,6 +774,7 @@ export type Database = {
           notes?: string | null
           recurring_months?: number | null
           status?: Database["public"]["Enums"]["adoption_status"]
+          stripe_product_id?: string | null
           translators_ready?: boolean
           updated_at?: string | null
         }
@@ -1411,6 +1466,8 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          is_individual: boolean
+          is_public: boolean
           name: string
           updated_at: string | null
         }
@@ -1419,6 +1476,8 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_individual?: boolean
+          is_public?: boolean
           name: string
           updated_at?: string | null
         }
@@ -1427,6 +1486,8 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_individual?: boolean
+          is_public?: boolean
           name?: string
           updated_at?: string | null
         }
@@ -1436,52 +1497,6 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      partner_orgs_projects: {
-        Row: {
-          assigned_at: string
-          id: string
-          partner_org_id: string
-          project_id: string
-          unassigned_at: string | null
-        }
-        Insert: {
-          assigned_at?: string
-          id?: string
-          partner_org_id: string
-          project_id: string
-          unassigned_at?: string | null
-        }
-        Update: {
-          assigned_at?: string
-          id?: string
-          partner_org_id?: string
-          project_id?: string
-          unassigned_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "partner_orgs_projects_partner_org_id_fkey"
-            columns: ["partner_org_id"]
-            isOneToOne: false
-            referencedRelation: "partner_orgs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "partner_orgs_projects_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_financials"
-            referencedColumns: ["project_id"]
-          },
-          {
-            foreignKeyName: "partner_orgs_projects_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -1827,6 +1842,20 @@ export type Database = {
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "project_budget_actual_costs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_budget_actual_costs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_language_entities"
+            referencedColumns: ["project_id"]
+          },
         ]
       }
       project_budget_items: {
@@ -1931,6 +1960,158 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_budgets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_budgets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_language_entities"
+            referencedColumns: ["project_id"]
+          },
+        ]
+      }
+      project_updates: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          project_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          project_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          project_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_updates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_financials"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_language_entities"
+            referencedColumns: ["project_id"]
+          },
+        ]
+      }
+      project_updates_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          display_order: number
+          duration_seconds: number | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          media_type: Database["public"]["Enums"]["media_type"]
+          object_key: string
+          original_filename: string | null
+          project_update_id: string
+          storage_provider: string | null
+          thumbnail_object_key: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          display_order?: number
+          duration_seconds?: number | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          media_type: Database["public"]["Enums"]["media_type"]
+          object_key: string
+          original_filename?: string | null
+          project_update_id: string
+          storage_provider?: string | null
+          thumbnail_object_key?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          display_order?: number
+          duration_seconds?: number | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          media_type?: Database["public"]["Enums"]["media_type"]
+          object_key?: string
+          original_filename?: string | null
+          project_update_id?: string
+          storage_provider?: string | null
+          thumbnail_object_key?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_updates_media_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_updates_media_project_update_id_fkey"
+            columns: ["project_update_id"]
+            isOneToOne: false
+            referencedRelation: "project_updates"
             referencedColumns: ["id"]
           },
         ]
@@ -2054,6 +2235,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_teams_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "projects_teams_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_language_entities"
+            referencedColumns: ["project_id"]
           },
           {
             foreignKeyName: "projects_teams_project_role_id_fkey"
@@ -2549,6 +2744,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sequences_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "sequences_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_language_entities"
+            referencedColumns: ["project_id"]
+          },
+          {
             foreignKeyName: "sequences_start_verse_id_fkey"
             columns: ["start_verse_id"]
             isOneToOne: false
@@ -2968,11 +3177,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sponsorship_allocations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "sponsorship_allocations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_language_entities"
+            referencedColumns: ["project_id"]
+          },
+          {
             foreignKeyName: "sponsorship_allocations_sponsorship_id_fkey"
             columns: ["sponsorship_id"]
             isOneToOne: false
             referencedRelation: "sponsorships"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsorship_allocations_sponsorship_id_fkey"
+            columns: ["sponsorship_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["sponsorship_id"]
+          },
+          {
+            foreignKeyName: "sponsorship_allocations_sponsorship_id_fkey"
+            columns: ["sponsorship_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_pending_languages"
+            referencedColumns: ["sponsorship_id"]
           },
         ]
       }
@@ -2984,9 +3221,9 @@ export type Database = {
           id: string
           language_adoption_id: string | null
           partner_org_id: string
+          payment_method: string
           pledge_one_time_cents: number
           pledge_recurring_cents: number
-          project_id: string | null
           status: Database["public"]["Enums"]["sponsorship_status"]
           stripe_customer_id: string | null
           stripe_payment_intent_id: string | null
@@ -3001,9 +3238,9 @@ export type Database = {
           id?: string
           language_adoption_id?: string | null
           partner_org_id: string
+          payment_method?: string
           pledge_one_time_cents?: number
           pledge_recurring_cents?: number
-          project_id?: string | null
           status?: Database["public"]["Enums"]["sponsorship_status"]
           stripe_customer_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -3018,9 +3255,9 @@ export type Database = {
           id?: string
           language_adoption_id?: string | null
           partner_org_id?: string
+          payment_method?: string
           pledge_one_time_cents?: number
           pledge_recurring_cents?: number
-          project_id?: string | null
           status?: Database["public"]["Enums"]["sponsorship_status"]
           stripe_customer_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -3051,24 +3288,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sponsorships_language_adoption_id_fkey"
+            columns: ["language_adoption_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_pending_languages"
+            referencedColumns: ["language_adoption_id"]
+          },
+          {
             foreignKeyName: "sponsorships_partner_org_id_fkey"
             columns: ["partner_org_id"]
             isOneToOne: false
             referencedRelation: "partner_orgs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sponsorships_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_financials"
-            referencedColumns: ["project_id"]
-          },
-          {
-            foreignKeyName: "sponsorships_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -3248,6 +3478,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "text_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_active_projects"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "text_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "vw_partner_org_language_entities"
+            referencedColumns: ["project_id"]
           },
         ]
       }
@@ -4419,6 +4663,96 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_partner_org_active_projects: {
+        Row: {
+          allocation_percent: number | null
+          effective_from: string | null
+          effective_to: string | null
+          language_entity_id: string | null
+          language_name: string | null
+          partner_org_id: string | null
+          project_description: string | null
+          project_id: string | null
+          project_name: string | null
+          sponsorship_id: string | null
+          sponsorship_status:
+            | Database["public"]["Enums"]["sponsorship_status"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_target_language_entity_id_fkey"
+            columns: ["language_entity_id"]
+            isOneToOne: false
+            referencedRelation: "language_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsorships_partner_org_id_fkey"
+            columns: ["partner_org_id"]
+            isOneToOne: false
+            referencedRelation: "partner_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_partner_org_language_entities: {
+        Row: {
+          language_entity_id: string | null
+          partner_org_id: string | null
+          project_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_target_language_entity_id_fkey"
+            columns: ["language_entity_id"]
+            isOneToOne: false
+            referencedRelation: "language_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsorships_partner_org_id_fkey"
+            columns: ["partner_org_id"]
+            isOneToOne: false
+            referencedRelation: "partner_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_partner_org_pending_languages: {
+        Row: {
+          adoption_status: Database["public"]["Enums"]["adoption_status"] | null
+          currency_code: string | null
+          estimated_budget_cents: number | null
+          language_adoption_id: string | null
+          language_entity_id: string | null
+          language_name: string | null
+          partner_org_id: string | null
+          pledge_one_time_cents: number | null
+          pledge_recurring_cents: number | null
+          sponsorship_created_at: string | null
+          sponsorship_id: string | null
+          sponsorship_status:
+            | Database["public"]["Enums"]["sponsorship_status"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "language_adoptions_language_entity_id_fkey"
+            columns: ["language_entity_id"]
+            isOneToOne: false
+            referencedRelation: "language_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsorships_partner_org_id_fkey"
+            columns: ["partner_org_id"]
+            isOneToOne: false
+            referencedRelation: "partner_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _postgis_deprecate: {
@@ -4788,6 +5122,16 @@ export type Database = {
         }[]
       }
       get_region_path: { Args: { region_id: string }; Returns: string }
+      get_user_roles: {
+        Args: { target_user_id: string }
+        Returns: {
+          context_id: string
+          context_type: string
+          resource_type: string
+          role_key: string
+          role_name: string
+        }[]
+      }
       get_verse_global_order:
         | { Args: { verse_text_id: string }; Returns: number }
         | { Args: { verse_uuid: string }; Returns: number }
@@ -4933,6 +5277,15 @@ export type Database = {
           similarity_threshold_used: number
           text_version_count: number
           text_versions: Json
+        }[]
+      }
+      search_partner_orgs: {
+        Args: { max_results?: number; search_query: string }
+        Returns: {
+          description: string
+          id: string
+          name: string
+          similarity_score: number
         }[]
       }
       search_region_aliases: {
@@ -5579,7 +5932,7 @@ export type Database = {
       funding_status: "unfunded" | "partially_funded" | "fully_funded"
       language_entity_level: "family" | "language" | "dialect" | "mother_tongue"
       location_source_type: "device" | "ip" | "unknown"
-      media_type: "audio" | "video"
+      media_type: "audio" | "video" | "image"
       permission_key:
         | "system.admin"
         | "team.read"
@@ -5625,6 +5978,7 @@ export type Database = {
         | "paused"
         | "cancelled"
         | "completed"
+        | "pending_bank_transfer"
       target_type:
         | "chapter"
         | "book"
@@ -5803,7 +6157,7 @@ export const Constants = {
       funding_status: ["unfunded", "partially_funded", "fully_funded"],
       language_entity_level: ["family", "language", "dialect", "mother_tongue"],
       location_source_type: ["device", "ip", "unknown"],
-      media_type: ["audio", "video"],
+      media_type: ["audio", "video", "image"],
       permission_key: [
         "system.admin",
         "team.read",
@@ -5851,6 +6205,7 @@ export const Constants = {
         "paused",
         "cancelled",
         "completed",
+        "pending_bank_transfer",
       ],
       target_type: [
         "chapter",

@@ -18,7 +18,7 @@ export async function listAvailableLanguages(params?: {
   const limit = params?.limit ?? 100;
   const offset = params?.offset ?? 0;
 
-  const query = supabase
+  const query = (supabase as any)
     .from('language_adoptions')
     .select(
       'id, language_entity_id, estimated_budget_cents, status, language_entities(name)'
@@ -212,6 +212,9 @@ export async function createAdoptionCheckout(payload: {
     clientSecret: string | null;
     depositClientSecret: string | null;
     subscriptionClientSecret: string | null;
+    setupIntentClientSecret?: string | null; // For bank transfer card collection
+    paymentIntentId?: string | null;
+    setupIntentId?: string | null;
     customerId: string;
     sponsorshipIds: string[];
     subscriptionId?: string | null;

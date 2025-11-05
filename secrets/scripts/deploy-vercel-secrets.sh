@@ -14,8 +14,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$SCRIPT_DIR/common.sh"
 
 # Vercel configuration
-VERCEL_PROJECT_DASHBOARD="omt-project-management-website"
-VERCEL_PARTNERSHIP_DASHBOARD="everylanguage-map-portal"
+VERCEL_PROJECT_DASHBOARD="everylanguage-project-dashboard"
+VERCEL_PARTNERSHIP_DASHBOARD="everylanguage-partnership-dashboard"
 VERCEL_TEAM_ID="matts-projects-04f21572"
 
 echo -e "${BLUE}================================================${NC}"

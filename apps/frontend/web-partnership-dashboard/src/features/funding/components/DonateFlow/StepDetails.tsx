@@ -66,6 +66,10 @@ export const StepDetails: React.FC<{ flow: any; hideButton?: boolean }> = ({
       if (isAdoptionFlow) {
         flow.setOrgSelection(orgSelection);
       }
+
+      // Note: Pre-fetching for ops flow happens in StepConversion instead
+      // because the user might change from one-time to monthly there
+
       flow.next();
     } finally {
       setLoading(false);

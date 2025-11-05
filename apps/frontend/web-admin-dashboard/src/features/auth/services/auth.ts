@@ -1,5 +1,5 @@
 import { supabase } from '@/shared/services/supabase';
-import type { User, Session } from '../types';
+import type { User, Session, UserRole } from '../types';
 import { normalizePhoneNumber } from '../utils/phoneValidation';
 
 export class AuthService {
@@ -22,6 +22,34 @@ export class AuthService {
     } catch (error) {
       console.error('Unexpected error getting current user:', error);
       return null;
+    }
+  }
+
+  /**
+   * Get user roles from the database using RPC function
+   * Uses get_user_roles() function to bypass RLS recursion issues
+   */
+  async getUserRoles(userId: string): Promise<UserRole[]> {
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_user_roles', {
+        target_user_id: userId,
+      });
+
+      if (error) {
+        console.error('Error fetching user roles:', error);
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('No roles found for user:', userId);
+        return [];
+      }
+
+      // Data is already in the correct format from the function
+      return data as UserRole[];
+    } catch (error) {
+      console.error('Unexpected error fetching user roles:', error);
+      return [];
     }
   }
 

@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, userRoles } = useAuth();
   const location = useLocation();
 
   // Show loading state while auth is being determined
@@ -29,12 +29,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to='/login' state={{ from: location }} replace />;
   }
 
-  // Check if user has system.admin permission
-  if (!isSystemAdmin(user)) {
+  // Check if user has system_admin role
+  if (!isSystemAdmin(userRoles)) {
+    console.warn('Access denied: User does not have system_admin role', {
+      userId: user.id,
+      email: user.email,
+      roles: userRoles,
+    });
     // Redirect to unauthorized page
     return <Navigate to='/unauthorized' state={{ from: location }} replace />;
   }
 
-  // User is authenticated and has system.admin permission
+  // User is authenticated and has system_admin role
   return <>{children}</>;
 };

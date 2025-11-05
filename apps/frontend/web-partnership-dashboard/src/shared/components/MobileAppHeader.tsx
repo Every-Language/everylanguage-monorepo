@@ -164,7 +164,7 @@ export const MobileAppHeader: React.FC = () => {
             onClick={() => handleMenuNavigate('/map')}
             className={`block w-full text-left text-xl py-3 px-4 rounded-lg transition-colors ${
               isMapRoute
-                ? 'text-accent-600 bg-accent-50 dark:bg-accent-950 font-semibold'
+                ? 'text-accent-600 font-semibold'
                 : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
           >
@@ -175,7 +175,7 @@ export const MobileAppHeader: React.FC = () => {
             onClick={() => handleMenuNavigate('/dashboard')}
             className={`block w-full text-left text-xl py-3 px-4 rounded-lg transition-colors ${
               isDashboardRoute
-                ? 'text-accent-600 bg-accent-50 dark:bg-accent-950 font-semibold'
+                ? 'text-accent-600 font-semibold'
                 : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
           >

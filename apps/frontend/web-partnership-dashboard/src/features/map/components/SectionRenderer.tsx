@@ -71,7 +71,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
           <LinkedEntitiesSection
             type='regions'
             parentId={selection.id}
-            scrollRef={scrollRef}
+            scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
           />
         );
       }
@@ -80,7 +80,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
           <LinkedEntitiesSection
             type='languages'
             parentId={selection.id}
-            scrollRef={scrollRef}
+            scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
           />
         );
       }

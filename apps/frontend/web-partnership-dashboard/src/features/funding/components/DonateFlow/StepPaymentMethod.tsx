@@ -1,6 +1,8 @@
 import React from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { StepActionsContext } from './StepActionsContext';
+import { createAdoptionCheckout } from '../../api/fundingApi';
+import { useAuth } from '@/features/auth';
 
 interface StepPaymentMethodProps {
   flow: any;
@@ -11,13 +13,64 @@ export const StepPaymentMethod: React.FC<StepPaymentMethodProps> = ({
   flow,
   hideButton = false,
 }) => {
-  const { setSubmitAction } = React.useContext(StepActionsContext);
+  const { setSubmitAction, setCheckoutPromise } =
+    React.useContext(StepActionsContext);
   const [method, setMethod] = React.useState<'card' | 'bank_transfer'>('card');
+  const { user } = useAuth();
 
   const handleContinue = React.useCallback(() => {
     flow.setPaymentMethod(method);
+
+    // Pre-fetch checkout for adoption flow
+    if (flow.state.intent === 'adopt' && flow.state.adopt && flow.state.donor) {
+      const donor = flow.state.donor;
+      const meta = (user?.user_metadata ?? {}) as {
+        first_name?: string;
+        last_name?: string;
+      };
+      const donorFirst =
+        donor.firstName ??
+        meta.first_name ??
+        user?.email?.split('@')[0] ??
+        'Donor';
+      const donorLast = donor.lastName ?? meta.last_name ?? 'Supporter';
+      const donorEmail = donor.email ?? user?.email ?? '';
+      const donorPhone = donor.phone;
+
+      const ids = flow.state.adopt.languageIds ?? [];
+      const orgSelection = flow.state.orgSelection ?? {
+        orgMode: 'individual' as const,
+      };
+
+      if (ids.length > 0) {
+        // Start checkout creation in background
+        const checkoutPromise = createAdoptionCheckout({
+          donor: {
+            firstName: donorFirst,
+            lastName: donorLast,
+            email: donorEmail,
+            phone: donorPhone,
+          },
+          adoptionIds: ids,
+          mode: method,
+          orgMode: orgSelection.orgMode,
+          partnerOrgId: orgSelection.partner_org_id,
+          newPartnerOrg: orgSelection.new_partner_org
+            ? {
+                name: orgSelection.new_partner_org.name,
+                description: orgSelection.new_partner_org.description,
+                isPublic: orgSelection.new_partner_org.is_public,
+              }
+            : undefined,
+        });
+
+        // Store promise so StepPayment can use it
+        setCheckoutPromise(checkoutPromise);
+      }
+    }
+
     flow.next();
-  }, [flow, method]);
+  }, [flow, method, setCheckoutPromise, user]);
 
   // Register submit action when button is hidden (adopt flow)
   React.useEffect(() => {

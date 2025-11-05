@@ -4,10 +4,12 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from 'react-router-dom';
 import { ThemeProvider } from './shared/theme';
 import { ProtectedRoute, LoginPage, UnauthorizedPage } from './features/auth';
 import { AppLayout } from './shared/components/Layout';
+import { AppHeader } from './shared/components/AppHeader';
 
 // Lazy load pages
 const DashboardPage = lazy(() =>
@@ -38,83 +40,58 @@ const AllocateSponsorshipsPage = lazy(() =>
 
 function LoadingFallback() {
   return (
-    <div className='min-h-screen flex items-center justify-center bg-neutral-50'>
+    <div className='flex items-center justify-center h-full min-h-[400px]'>
       <div className='text-center'>
         <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto'></div>
-        <p className='mt-4 text-sm text-neutral-600'>Loading...</p>
+        <p className='mt-4 text-sm text-neutral-600 dark:text-neutral-400'>
+          Loading...
+        </p>
       </div>
     </div>
   );
 }
 
-// Helper component to reduce repetition
-const ProtectedLayoutRoute = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute>
-    <AppLayout>{children}</AppLayout>
-  </ProtectedRoute>
-);
+// Layout wrapper for protected routes
+function ProtectedLayout() {
+  return (
+    <ProtectedRoute>
+      <div className='flex flex-col h-screen'>
+        <AppHeader />
+        <AppLayout>
+          <Suspense fallback={<LoadingFallback />}>
+            <Outlet />
+          </Suspense>
+        </AppLayout>
+      </div>
+    </ProtectedRoute>
+  );
+}
 
 function App() {
   return (
     <ThemeProvider>
       <Router>
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            {/* Public routes */}
-            <Route path='/login' element={<LoginPage />} />
-            <Route path='/unauthorized' element={<UnauthorizedPage />} />
+        <Routes>
+          {/* Public routes */}
+          <Route path='/login' element={<LoginPage />} />
+          <Route path='/unauthorized' element={<UnauthorizedPage />} />
 
-            {/* Protected routes with layout */}
-            <Route
-              path='/dashboard'
-              element={
-                <ProtectedLayoutRoute>
-                  <DashboardPage />
-                </ProtectedLayoutRoute>
-              }
-            />
-
-            <Route
-              path='/languages'
-              element={
-                <ProtectedLayoutRoute>
-                  <LanguagesPage />
-                </ProtectedLayoutRoute>
-              }
-            />
-
-            <Route
-              path='/regions'
-              element={
-                <ProtectedLayoutRoute>
-                  <RegionsPage />
-                </ProtectedLayoutRoute>
-              }
-            />
-
-            <Route
-              path='/sponsorships'
-              element={
-                <ProtectedLayoutRoute>
-                  <SponsorshipsPage />
-                </ProtectedLayoutRoute>
-              }
-            />
-
+          {/* Protected routes with layout */}
+          <Route element={<ProtectedLayout />}>
+            <Route path='/dashboard' element={<DashboardPage />} />
+            <Route path='/languages' element={<LanguagesPage />} />
+            <Route path='/regions' element={<RegionsPage />} />
+            <Route path='/sponsorships' element={<SponsorshipsPage />} />
             <Route
               path='/sponsorships/allocate'
-              element={
-                <ProtectedLayoutRoute>
-                  <AllocateSponsorshipsPage />
-                </ProtectedLayoutRoute>
-              }
+              element={<AllocateSponsorshipsPage />}
             />
+          </Route>
 
-            {/* Default redirect */}
-            <Route path='/' element={<Navigate to='/dashboard' replace />} />
-            <Route path='*' element={<Navigate to='/dashboard' replace />} />
-          </Routes>
-        </Suspense>
+          {/* Default redirect */}
+          <Route path='/' element={<Navigate to='/dashboard' replace />} />
+          <Route path='*' element={<Navigate to='/dashboard' replace />} />
+        </Routes>
       </Router>
     </ThemeProvider>
   );

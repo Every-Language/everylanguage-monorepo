@@ -43,7 +43,8 @@ RENAME TO project_budget_costs;
 -- SECTION 3: Update Enums
 -- ============================================================================
 -- Update adoption_status enum
--- Cannot directly rename enum value, so we need to handle existing data differently
+-- Note: We're adding new values but not migrating existing data in this transaction
+-- because PostgreSQL doesn't allow using new enum values in the same transaction
 -- Add new status values
 DO $$
 BEGIN
@@ -64,14 +65,8 @@ BEGIN
 END $$;
 
 
--- Migrate existing 'on_hold' to 'deposit_paid'
-UPDATE language_adoptions
-SET
-  status = 'deposit_paid'
-WHERE
-  status = 'on_hold';
-
-
+-- Note: Existing 'on_hold' adoptions remain as 'on_hold'
+-- They will be updated to 'deposit_paid' when payments are received via webhook
 -- Remove bank_transfer_expiry_at since we're using Stripe's automatic expiry
 ALTER TABLE language_adoptions
 DROP COLUMN IF EXISTS bank_transfer_expiry_at;
@@ -391,28 +386,25 @@ CREATE OR REPLACE VIEW vw_project_balances AS
 SELECT
   p.id AS project_id,
   p.name AS project_name,
-  p.status AS project_status,
   p.target_language_entity_id AS language_entity_id,
   COALESCE(SUM(c.amount_cents), 0) AS total_contributions_cents,
   COALESCE(SUM(costs.amount_cents), 0) AS total_costs_cents,
   COALESCE(SUM(c.amount_cents), 0) - COALESCE(SUM(costs.amount_cents), 0) AS balance_cents,
-  p.currency_code,
+  'USD' AS currency_code, -- Default currency, can be overridden by actual contributions
   COUNT(DISTINCT c.id) AS contribution_count,
   COUNT(DISTINCT costs.id) AS cost_count,
   MAX(c.occurred_at) AS last_contribution_at,
-  MAX(costs.incurred_date) AS last_cost_at
+  MAX(costs.occurred_at) AS last_cost_at
 FROM
   projects p
   LEFT JOIN contributions c ON c.project_id = p.id
   LEFT JOIN project_budget_costs costs ON costs.project_id = p.id
 WHERE
-  p.status IN ('precreated', 'active', 'completed')
+  p.deleted_at IS NULL -- Only include active projects
 GROUP BY
   p.id,
   p.name,
-  p.status,
-  p.target_language_entity_id,
-  p.currency_code;
+  p.target_language_entity_id;
 
 
 comment ON view vw_project_balances IS 'Real-time project balance calculation: total contributions - total costs';
@@ -427,7 +419,6 @@ SELECT DISTINCT
   lasa.project_id,
   p.name AS project_name,
   p.description AS project_description,
-  p.status AS project_status,
   p.target_language_entity_id AS language_entity_id,
   le.name AS language_name,
   lasa.allocation_percent,

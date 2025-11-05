@@ -226,7 +226,7 @@ export function AllocateSponsorshipsPage() {
                       </div>
                       <div className='text-right'>
                         <div className='font-medium text-neutral-900'>
-                          ${sponsorship.pledge_recurring_cents / 100}/mo
+                          ${(sponsorship.pledge_recurring_cents || 0) / 100}/mo
                         </div>
                         <div className='text-xs text-neutral-500'>
                           {sponsorship.currency_code}

@@ -3,6 +3,7 @@ import { DonateFlowInfo } from './DonateFlowInfo';
 import { LanguagesTable } from './LanguagesTable';
 import { StepDetails } from './StepDetails';
 import { StepPaymentMethod } from './StepPaymentMethod';
+import { PaymentSkeleton } from './PaymentSkeleton';
 import type { DonateFlowState } from '../../state/types';
 import type { useDonateFlow } from '../../hooks/useDonateFlow';
 
@@ -74,9 +75,7 @@ export const DonateInfoSection: React.FC<DonateInfoSectionProps> = ({
           <div className='text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
             Payment details
           </div>
-          <React.Suspense
-            fallback={<div className='text-sm'>Loading payment…</div>}
-          >
+          <React.Suspense fallback={<PaymentSkeleton />}>
             <StepPayment flow={flow} hideButton />
           </React.Suspense>
         </div>

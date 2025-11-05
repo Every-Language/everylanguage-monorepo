@@ -28,17 +28,20 @@ const PartnerOrgDashboardPage = React.lazy(
 const PartnerOrgLayout = React.lazy(
   () => import('./features/partnerorgs/layout/PartnerOrgLayout')
 );
-const PartnerOrgTranslationPage = React.lazy(
-  () => import('./features/partnerorgs/pages/PartnerOrgTranslationPage')
+const PendingLanguagesPage = React.lazy(
+  () => import('./features/partnerorgs/pages/PendingLanguagesPage')
 );
-const PartnerOrgDistributionPage = React.lazy(
-  () => import('./features/partnerorgs/pages/PartnerOrgDistributionPage')
+const ProjectProgressPage = React.lazy(
+  () => import('./features/partnerorgs/pages/ProjectProgressPage')
 );
-const PartnerOrgFundingPage = React.lazy(
-  () => import('./features/partnerorgs/pages/PartnerOrgFundingPage')
+const ProjectDistributionPage = React.lazy(
+  () => import('./features/partnerorgs/pages/ProjectDistributionPage')
 );
-const PartnerOrgUpdatesPage = React.lazy(
-  () => import('./features/partnerorgs/pages/PartnerOrgUpdatesPage')
+const ProjectFundingPage = React.lazy(
+  () => import('./features/partnerorgs/pages/ProjectFundingPage')
+);
+const ProjectUpdatesPage = React.lazy(
+  () => import('./features/partnerorgs/pages/ProjectUpdatesPage')
 );
 const ProjectDashboardPage = React.lazy(
   () => import('./features/projects/pages/ProjectDashboardPage')
@@ -222,7 +225,7 @@ function AppRoutes() {
             }
           />
           <Route
-            path='/partner-org/:id'
+            path='/partner-org/:orgId'
             element={
               <ProtectedRoute>
                 <React.Suspense fallback={<div />}>
@@ -232,15 +235,7 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           >
-            <Route
-              index
-              element={
-                <React.Suspense fallback={<div />}>
-                  {' '}
-                  <PartnerOrgDashboardPage />{' '}
-                </React.Suspense>
-              }
-            />
+            <Route index element={<Navigate to='dashboard' replace />} />
             <Route
               path='dashboard'
               element={
@@ -251,38 +246,47 @@ function AppRoutes() {
               }
             />
             <Route
-              path='progress'
+              path='pending-languages'
               element={
                 <React.Suspense fallback={<div />}>
                   {' '}
-                  <PartnerOrgTranslationPage />{' '}
+                  <PendingLanguagesPage />{' '}
                 </React.Suspense>
               }
             />
             <Route
-              path='distribution'
+              path='project/:projectId/progress'
               element={
                 <React.Suspense fallback={<div />}>
                   {' '}
-                  <PartnerOrgDistributionPage />{' '}
+                  <ProjectProgressPage />{' '}
                 </React.Suspense>
               }
             />
             <Route
-              path='funding'
+              path='project/:projectId/distribution'
               element={
                 <React.Suspense fallback={<div />}>
                   {' '}
-                  <PartnerOrgFundingPage />{' '}
+                  <ProjectDistributionPage />{' '}
                 </React.Suspense>
               }
             />
             <Route
-              path='updates'
+              path='project/:projectId/funding'
               element={
                 <React.Suspense fallback={<div />}>
                   {' '}
-                  <PartnerOrgUpdatesPage />{' '}
+                  <ProjectFundingPage />{' '}
+                </React.Suspense>
+              }
+            />
+            <Route
+              path='project/:projectId/updates'
+              element={
+                <React.Suspense fallback={<div />}>
+                  {' '}
+                  <ProjectUpdatesPage />{' '}
                 </React.Suspense>
               }
             />

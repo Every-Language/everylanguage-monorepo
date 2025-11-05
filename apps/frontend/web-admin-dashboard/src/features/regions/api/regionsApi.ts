@@ -1,5 +1,5 @@
 import { supabase } from '@/shared/services/supabase';
-import type { Region, RegionWithLanguages, RegionVersion } from '@/types';
+import type { Region, RegionWithLanguages } from '@/types';
 
 export const regionsApi = {
   /**
@@ -52,33 +52,19 @@ export const regionsApi = {
     // Extract language entities from the nested structure
     const language_entities =
       data.language_entities_regions?.map(
-        (ler: { language_entities: unknown }) => ler.language_entities
+        (ler: any) => ler.language_entities
       ) || [];
 
     return {
       ...data,
       language_entities,
-    };
+    } as RegionWithLanguages;
   },
 
   /**
    * Update a region
-   * This creates a new version record for tracking
    */
-  async updateRegion(
-    id: string,
-    updates: Partial<Region>,
-    userId: string
-  ): Promise<void> {
-    // Get current data before update
-    const { data: current, error: fetchError } = await supabase
-      .from('regions')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (fetchError) throw fetchError;
-
+  async updateRegion(id: string, updates: Partial<Region>): Promise<void> {
     // Update the region
     const { error: updateError } = await supabase
       .from('regions')
@@ -89,43 +75,6 @@ export const regionsApi = {
       .eq('id', id);
 
     if (updateError) throw updateError;
-
-    // Create a version record
-    const { error: versionError } = await supabase
-      .from('region_versions')
-      .insert({
-        region_id: id,
-        name: updates.name || current.name,
-        level: updates.level || current.level,
-        parent_id:
-          updates.parent_id !== undefined
-            ? updates.parent_id
-            : current.parent_id,
-        change_type: 'update',
-        changed_by: userId,
-        changed_at: new Date().toISOString(),
-      });
-
-    if (versionError) throw versionError;
-  },
-
-  /**
-   * Fetch version history for a region
-   */
-  async fetchRegionVersions(id: string): Promise<RegionVersion[]> {
-    const { data, error } = await supabase
-      .from('region_versions')
-      .select(
-        `
-        *,
-        changed_by_user:users!changed_by(email, first_name, last_name)
-      `
-      )
-      .eq('region_id', id)
-      .order('changed_at', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
   },
 
   /**
@@ -161,7 +110,7 @@ export const regionsApi = {
   /**
    * Fetch all regions (simple list for dropdowns)
    */
-  async fetchRegionsList(): Promise<Region[]> {
+  async fetchRegionsList(): Promise<Partial<Region>[]> {
     const { data, error } = await supabase
       .from('regions')
       .select('id, name, level, parent_id')

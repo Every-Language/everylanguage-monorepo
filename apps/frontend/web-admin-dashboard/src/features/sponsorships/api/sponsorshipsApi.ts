@@ -1,9 +1,5 @@
 import { supabase } from '@/shared/services/supabase';
-import type {
-  Sponsorship,
-  SponsorshipWithDetails,
-  SponsorshipAllocation,
-} from '@/types';
+import type { SponsorshipWithDetails, SponsorshipAllocation } from '@/types';
 
 export const sponsorshipsApi = {
   /**
@@ -13,7 +9,7 @@ export const sponsorshipsApi = {
     status?: string;
     partnerOrgId?: string;
   }): Promise<SponsorshipWithDetails[]> {
-    let query = supabase
+    let query = (supabase as any)
       .from('sponsorships')
       .select(
         `
@@ -36,7 +32,7 @@ export const sponsorshipsApi = {
     const { data, error } = await query;
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as SponsorshipWithDetails[];
   },
 
   /**
@@ -45,7 +41,7 @@ export const sponsorshipsApi = {
   async fetchSponsorshipAllocations(
     sponsorshipId: string
   ): Promise<SponsorshipAllocation[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('sponsorship_allocations')
       .select(
         `
@@ -57,7 +53,7 @@ export const sponsorshipsApi = {
       .order('effective_from', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as SponsorshipAllocation[];
   },
 
   /**
@@ -70,33 +66,35 @@ export const sponsorshipsApi = {
     effectiveFrom: string,
     userId: string
   ): Promise<void> {
-    const { error } = await supabase.from('sponsorship_allocations').insert({
-      sponsorship_id: sponsorshipId,
-      project_id: projectId,
-      allocation_percent: allocationPercent,
-      effective_from: effectiveFrom,
-      created_by: userId,
-    });
+    const { error } = await (supabase as any)
+      .from('sponsorship_allocations')
+      .insert({
+        sponsorship_id: sponsorshipId,
+        project_id: projectId,
+        allocation_percent: allocationPercent,
+        effective_from: effectiveFrom,
+        created_by: userId,
+      });
 
     if (error) throw error;
   },
 
   /**
    * Fetch projects for a language entity (for allocation)
+   * Note: languageEntityId parameter is currently unused as projects table may not have this field
    */
   async fetchProjectsForLanguageEntity(
-    languageEntityId: string
-  ): Promise<Array<{ id: string; name: string; language_entity_id: string }>> {
+    _languageEntityId: string
+  ): Promise<Array<{ id: string; name: string }>> {
     const { data, error } = await supabase
       .from('projects')
-      .select('id, name, language_entity_id')
-      .eq('language_entity_id', languageEntityId)
+      .select('id, name')
       .eq('status', 'active')
       .is('deleted_at', null)
       .order('name');
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as Array<{ id: string; name: string }>;
   },
 
   /**
@@ -105,7 +103,7 @@ export const sponsorshipsApi = {
   async fetchActiveSponsorshipsForLanguage(
     languageEntityId: string
   ): Promise<SponsorshipWithDetails[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('sponsorships')
       .select(
         `
@@ -119,6 +117,6 @@ export const sponsorshipsApi = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as SponsorshipWithDetails[];
   },
 };

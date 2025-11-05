@@ -75,9 +75,14 @@ export const queryKeys = {
   user: (id: string) => [...queryKeys.users(), 'user', id] as const,
 
   // Language entities
-  languageEntities: () => [...queryKeys.all, 'language-entities'] as const,
+  languageEntities: (page?: number, pageSize?: number, search?: string) =>
+    [
+      ...queryKeys.all,
+      'language-entities',
+      { page, pageSize, search },
+    ] as const,
   languageEntity: (id: string) =>
-    [...queryKeys.languageEntities(), 'language-entity', id] as const,
+    [...queryKeys.all, 'language-entities', 'language-entity', id] as const,
   languageEntityVersions: (id: string) =>
     [...queryKeys.languageEntity(id), 'versions'] as const,
 

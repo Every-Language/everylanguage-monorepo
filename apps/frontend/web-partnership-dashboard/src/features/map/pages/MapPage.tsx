@@ -40,15 +40,15 @@ export const MapPage: React.FC = () => {
 
   // Calculate map padding for desktop inspector panels
   const mapPadding = React.useMemo(() => {
-    // Only apply padding on desktop when a selection exists
+    // Only apply padding on desktop
     if (typeof window === 'undefined') return undefined;
     const isDesktop = window.innerWidth >= 768; // md breakpoint
 
-    if (!isDesktop || !selection) {
-      return undefined; // No padding on mobile or when no selection
+    if (!isDesktop) {
+      return undefined; // No padding on mobile
     }
 
-    // Calculate panel width: 50vw with max of 600px, plus 16px spacing (left-4/right-4)
+    // Calculate panel width: 50vw with max of 480px, plus 16px spacing (left-4/right-4)
     const viewportWidth = window.innerWidth;
     const panelWidth = Math.min(viewportWidth * 0.5, 480) + 16;
 
@@ -62,7 +62,7 @@ export const MapPage: React.FC = () => {
       left: hasLeftPanel ? panelWidth : 0,
       right: hasRightPanel ? panelWidth : 0,
     };
-  }, [selection, layout.panels]);
+  }, [layout.panels]);
 
   return (
     <MobileSheetProvider

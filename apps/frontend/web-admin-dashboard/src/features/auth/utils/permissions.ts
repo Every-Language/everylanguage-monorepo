@@ -1,48 +1,43 @@
-import type { User } from '@supabase/supabase-js';
+import type { UserRole } from '../types';
 
 /**
- * Check if user has system.admin permission
- * Admin dashboard requires system.admin permission to access
+ * Check if user has system_admin role
+ * Admin dashboard requires system_admin role to access
  */
-export function isSystemAdmin(user: User | null): boolean {
-  if (!user) {
+export function isSystemAdmin(userRoles: UserRole[]): boolean {
+  if (!userRoles || userRoles.length === 0) {
     return false;
   }
 
-  // Check app_metadata for system admin role
-  if (user.app_metadata?.roles) {
-    const roles = Array.isArray(user.app_metadata.roles)
-      ? user.app_metadata.roles
-      : [user.app_metadata.roles];
-
-    // Check if user has system.admin permission
-    return roles.includes('system.admin') || roles.includes('SYSTEM_ADMIN');
-  }
-
-  // Check user_metadata as fallback
-  if (user.user_metadata?.roles) {
-    const roles = Array.isArray(user.user_metadata.roles)
-      ? user.user_metadata.roles
-      : [user.user_metadata.roles];
-
-    return roles.includes('system.admin') || roles.includes('SYSTEM_ADMIN');
-  }
-
-  return false;
+  // Check if user has system_admin role (role_key)
+  return userRoles.some(
+    role => role.role_key === 'system_admin' && role.resource_type === 'global'
+  );
 }
 
 /**
  * Check if user has any of the required roles
- * For admin dashboard, we only check for system.admin
+ * For admin dashboard, we only check for system_admin
  */
 export function hasRequiredRole(
-  user: User | null,
+  userRoles: UserRole[],
   requiredRoles: string[]
 ): boolean {
-  if (!user || requiredRoles.length === 0) {
+  if (!userRoles || userRoles.length === 0 || requiredRoles.length === 0) {
     return false;
   }
 
-  // For admin dashboard, always check if user is system admin
-  return isSystemAdmin(user);
+  // Check if user has any of the required roles
+  return userRoles.some(role => requiredRoles.includes(role.role_key));
+}
+
+/**
+ * Check if user has a specific role key
+ */
+export function hasRole(userRoles: UserRole[], roleKey: string): boolean {
+  if (!userRoles || userRoles.length === 0) {
+    return false;
+  }
+
+  return userRoles.some(role => role.role_key === roleKey);
 }

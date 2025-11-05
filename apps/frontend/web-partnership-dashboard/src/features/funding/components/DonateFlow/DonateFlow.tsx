@@ -11,6 +11,7 @@ import { StepThankYou } from './StepThankYou';
 import { LanguageCart } from './LanguageCart';
 import { LanguageSelectionContext } from './LanguageSelectionProvider';
 import { StepActionsContext } from './StepActionsContext';
+import { PaymentSkeleton } from './PaymentSkeleton';
 import { useAuth } from '@/features/auth';
 
 const StepPayment = React.lazy(() => import('./StepPayment'));
@@ -140,9 +141,7 @@ export const DonateFlow: React.FC<DonateFlowProps> = ({
             />
           )}
           {state.step === 4 && state.intent === 'ops' && (
-            <React.Suspense
-              fallback={<div className='text-sm'>Loading payment…</div>}
-            >
+            <React.Suspense fallback={<PaymentSkeleton />}>
               <StepPayment flow={flow} />
             </React.Suspense>
           )}

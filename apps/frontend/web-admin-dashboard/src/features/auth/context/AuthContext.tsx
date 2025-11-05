@@ -6,7 +6,7 @@ import React, {
   useRef,
 } from 'react';
 import { authService } from '../services/auth';
-import type { AuthContextType, AuthState } from '../types';
+import type { AuthContextType, AuthState, UserRole } from '../types';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(
@@ -18,6 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null,
     session: null,
     loading: true,
+    userRoles: [],
   });
 
   // Track pending sign in operations
@@ -33,10 +34,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         authService.getCurrentSession(),
       ]);
 
+      // Fetch user roles if user is authenticated
+      let userRoles: UserRole[] = [];
+      if (user) {
+        userRoles = await authService.getUserRoles(user.id);
+        console.log('User roles fetched:', userRoles);
+      }
+
       setState({
         user,
         session,
         loading: false,
+        userRoles,
       });
     } catch (error) {
       console.error('Error refreshing user:', error);
@@ -44,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: null,
         session: null,
         loading: false,
+        userRoles: [],
       });
     }
   }, []);
@@ -105,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: null,
         session: null,
         loading: false,
+        userRoles: [],
       });
     } catch (error) {
       console.error('Error signing out:', error);
@@ -132,7 +143,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Error initializing auth:', error);
         if (isMounted) {
-          setState({ user: null, session: null, loading: false });
+          setState({
+            user: null,
+            session: null,
+            loading: false,
+            userRoles: [],
+          });
         }
       }
     };
@@ -145,10 +161,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!isMounted) return;
 
+      // Fetch user roles if user is authenticated
+      let userRoles: UserRole[] = [];
+      if (user) {
+        userRoles = await authService.getUserRoles(user.id);
+        console.log('User roles fetched on auth change:', userRoles);
+      }
+
       setState({
         user,
         session,
         loading: false,
+        userRoles,
       });
 
       // Resolve any pending sign in operations
@@ -174,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: state.user,
     session: state.session,
     loading: state.loading,
+    userRoles: state.userRoles,
     signIn,
     signInWithPhone,
     requestPhoneOtp,

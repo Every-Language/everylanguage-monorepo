@@ -1,136 +1,269 @@
-import React from 'react'
-import { useParams } from 'react-router-dom'
-// import { useQuery } from '@tanstack/react-query'
-// import { supabase } from '@/shared/services/supabase'
-import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card'
-import { Progress } from '@/shared/components/ui/Progress'
-import { AnimatedProgress } from '../components/AnimatedProgress'
-import { CountUp } from '../components/CountUp'
-import { StageProgressBar } from '../components/StageProgress'
-import { usePartnerOrgData } from '../data/usePartnerOrgData'
+import React from 'react';
+import { useParams, Link } from 'react-router-dom';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from '@/shared/components/ui/Card';
+import { Progress } from '@/shared/components/ui/Progress';
+import { CountUp } from '../components/CountUp';
+import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
+import { usePendingLanguages } from '../hooks/usePendingLanguages';
+import { useProjectProgress } from '../hooks/useProjectProgress';
+import { useProjectDistribution } from '../hooks/useProjectDistribution';
+import { useProjectFunding } from '../hooks/useProjectFunding';
+import { useProjectUpdates } from '../hooks/useProjectUpdates';
 
-// Using centralized mock data via usePartnerOrgData
+const formatCurrency = (cents: number, currencyCode: string = 'USD') =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currencyCode,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount)
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString();
+};
 
 export const PartnerOrgDashboardPage: React.FC = () => {
-  useParams<{ id: string }>()
-  // Partner fetch kept for future real data wiring
+  const { orgId } = useParams<{ orgId: string }>();
 
-  const data = usePartnerOrgData()
-  const totalProjects = data.projects.length
-  const totalFunding = data.projects.reduce((acc, p) => acc + p.fundingTotal, 0)
-  const totalFunded = data.projects.reduce((acc, p) => acc + p.fundingFunded, 0)
+  // Fetch all data for dashboard overview
+  const { data: projects, isLoading: projectsLoading } = usePartnerOrgProjects(
+    orgId!
+  );
+  const { data: pendingLanguages, isLoading: pendingLoading } =
+    usePendingLanguages(orgId!);
+  const { isLoading: progressLoading } = useProjectProgress('all', orgId);
+  const { data: distributionData, isLoading: distributionLoading } =
+    useProjectDistribution('all', orgId);
+  const { data: fundingData, isLoading: fundingLoading } = useProjectFunding(
+    'all',
+    orgId
+  );
+  const { data: updates, isLoading: updatesLoading } = useProjectUpdates(
+    'all',
+    orgId
+  );
 
-  const updates = data.updates
+  const isLoading =
+    projectsLoading ||
+    pendingLoading ||
+    progressLoading ||
+    distributionLoading ||
+    fundingLoading ||
+    updatesLoading;
+
+  if (isLoading) {
+    return <div className='text-neutral-500'>Loading dashboard...</div>;
+  }
+
+  const totalProjects = projects?.length || 0;
+  const totalPendingLanguages = pendingLanguages?.length || 0;
+
+  // Calculate aggregate funding
+  const totalBudget =
+    fundingData?.budgets.reduce((sum, b) => sum + b.total_cents, 0) || 0;
+  const totalActualCost = Array.isArray(fundingData?.financials)
+    ? fundingData.financials.reduce(
+        (sum, f) => sum + (f.total_actual_cost_cents || 0),
+        0
+      )
+    : 0;
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <div className="mx-auto max-w-7xl p-0 sm:p-0 lg:p-0 space-y-6">
-
-        {/* Top stats row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="border border-neutral-200 dark:border-neutral-800">
-            <CardHeader>
-              <CardTitle className="text-sm text-neutral-500">Total Projects</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold tracking-tight"><CountUp value={totalProjects} /></div>
-            </CardContent>
-          </Card>
-          <Card className="border border-neutral-200 dark:border-neutral-800">
-            <CardHeader>
-              <CardTitle className="text-sm text-neutral-500">Total Funding</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <Progress variant="circular" size="lg" value={totalFunded} max={totalFunding} color="accent" showValue />
-                <div>
-                  <div className="text-3xl font-bold tracking-tight">{formatCurrency(totalFunded)}</div>
-                  <div className="text-xs text-neutral-500 mt-1">of {formatCurrency(totalFunding)} total</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Projects table */}
-        <Card className="border border-neutral-200 dark:border-neutral-800">
+    <div className='space-y-6'>
+      {/* Top stats row */}
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+        <Card className='border border-neutral-200 dark:border-neutral-800'>
           <CardHeader>
-            <CardTitle>Projects</CardTitle>
+            <CardTitle className='text-sm text-neutral-500'>
+              Active Projects
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto -mx-2 sm:mx-0">
-              <table className="min-w-full text-sm">
+            <div className='text-3xl font-bold tracking-tight'>
+              <CountUp value={totalProjects} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className='border border-neutral-200 dark:border-neutral-800'>
+          <CardHeader>
+            <CardTitle className='text-sm text-neutral-500'>
+              Pending Languages
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='flex items-center justify-between'>
+              <div className='text-3xl font-bold tracking-tight'>
+                <CountUp value={totalPendingLanguages} />
+              </div>
+              {totalPendingLanguages > 0 && (
+                <Link
+                  to={`/partner-org/${orgId}/pending-languages`}
+                  className='text-xs text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'
+                >
+                  View →
+                </Link>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className='border border-neutral-200 dark:border-neutral-800'>
+          <CardHeader>
+            <CardTitle className='text-sm text-neutral-500'>
+              App Downloads
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='text-3xl font-bold tracking-tight'>
+              <CountUp value={distributionData?.totalDownloads || 0} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className='border border-neutral-200 dark:border-neutral-800'>
+          <CardHeader>
+            <CardTitle className='text-sm text-neutral-500'>
+              Listening Hours
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='text-3xl font-bold tracking-tight'>
+              <CountUp value={distributionData?.totalListeningHours || 0} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Funding overview */}
+      {totalBudget > 0 && (
+        <Card className='border border-neutral-200 dark:border-neutral-800'>
+          <CardHeader>
+            <CardTitle className='text-sm text-neutral-500'>
+              Total Funding
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='flex items-center gap-4'>
+              <Progress
+                variant='circular'
+                size='lg'
+                value={totalActualCost}
+                max={totalBudget}
+                color='accent'
+                showValue
+              />
+              <div>
+                <div className='text-3xl font-bold tracking-tight'>
+                  {formatCurrency(totalActualCost)}
+                </div>
+                <div className='text-xs text-neutral-500 mt-1'>
+                  of {formatCurrency(totalBudget)} budgeted
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Projects table */}
+      {projects && projects.length > 0 && (
+        <Card className='border border-neutral-200 dark:border-neutral-800'>
+          <CardHeader>
+            <div className='flex items-center justify-between'>
+              <CardTitle>Active Projects</CardTitle>
+              <div className='text-xs text-neutral-500'>
+                Click a project name to view details
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className='overflow-x-auto -mx-2 sm:mx-0'>
+              <table className='min-w-full text-sm'>
                 <thead>
-                  <tr className="text-left text-neutral-500">
-                    <th className="py-2 px-3 sm:px-4">Language</th>
-                    <th className="py-2 px-3 sm:px-4">Stage</th>
-                    <th className="py-2 px-3 sm:px-4">Progress</th>
-                    <th className="py-2 px-3 sm:px-4">Funding</th>
+                  <tr className='text-left text-neutral-500'>
+                    <th className='py-2 px-3 sm:px-4'>Language / Project</th>
+                    <th className='py-2 px-3 sm:px-4'>Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                  {data.projects.map((p) => {
-                    const progressPct = Math.round((p.chaptersDone / p.chaptersTotal) * 100)
-                    const stageValues = [
-                      { stage: 'Translation', percent: progressPct, status: progressPct >= 100 ? 'completed' : progressPct > 0 ? 'in-progress' : 'not-started' } as const,
-                      { stage: 'Distribution', percent: p.stage === 'Distribution' || progressPct >= 80 ? 50 : 0, status: p.stage === 'Distribution' ? 'in-progress' : progressPct >= 100 ? 'in-progress' : 'not-started' } as const,
-                      { stage: 'Multiplication', percent: p.stage === 'Multiplication' ? 30 : 0, status: p.stage === 'Multiplication' ? 'in-progress' : 'not-started' } as const,
-                    ]
-                    return (
-                      <tr key={p.id}>
-                        <td className="py-3 px-3 sm:px-4 whitespace-nowrap">{p.language}</td>
-                        <td className="py-3 px-3 sm:px-4 min-w-[220px]">
-                          <StageProgressBar values={stageValues} />
-                        </td>
-                        <td className="py-3 px-3 sm:px-4">
-                          <div className="w-40 sm:w-56 md:w-64">
-                            <AnimatedProgress value={p.chaptersDone} max={p.chaptersTotal} color="accent" />
-                            <div className="mt-1 text-xs text-neutral-600 dark:text-neutral-400 text-center">{p.chaptersDone}/{p.chaptersTotal}</div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-3 sm:px-4">
-                          <div className="w-40 sm:w-56 md:w-64">
-                            <AnimatedProgress value={p.fundingFunded} max={p.fundingTotal} color="accent" />
-                            <div className="mt-1 text-xs text-neutral-600 dark:text-neutral-400 text-center">{formatCurrency(p.fundingFunded)} / {formatCurrency(p.fundingTotal)}</div>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                <tbody className='divide-y divide-neutral-200 dark:divide-neutral-800'>
+                  {projects.map((p: any) => (
+                    <tr key={p.project_id}>
+                      <td className='py-3 px-3 sm:px-4'>
+                        <Link
+                          to={`/partner-org/${orgId}/project/${p.project_id}/progress`}
+                          className='font-medium text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'
+                        >
+                          {p.language_name}
+                        </Link>
+                        <div className='text-xs text-neutral-500 mt-1'>
+                          {p.project_name}
+                        </div>
+                      </td>
+                      <td className='py-3 px-3 sm:px-4'>
+                        <span className='inline-flex items-center px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs capitalize'>
+                          {p.sponsorship_status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </CardContent>
         </Card>
+      )}
 
-        {/* Recent updates feed */}
-        <Card className="border border-neutral-200 dark:border-neutral-800">
+      {/* Recent updates feed */}
+      {updates && updates.length > 0 && (
+        <Card className='border border-neutral-200 dark:border-neutral-800'>
           <CardHeader>
             <CardTitle>Recent Updates</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {updates.slice(0, 6).map((u) => (
-                <div
-                  key={u.title + u.when}
-                  className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-card"
-                >
-                  <div className="text-xs text-neutral-500 mb-1">{u.when} • {u.language} • {u.project}</div>
-                  <div className="font-semibold mb-1">{u.title}</div>
-                  <div className="text-sm text-neutral-600 dark:text-neutral-400">{u.body}</div>
-                </div>
-              ))}
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+              {updates.slice(0, 6).map(update => {
+                const project = Array.isArray(update.project)
+                  ? update.project[0]
+                  : update.project;
+                const languageEntity = project?.language_entity
+                  ? Array.isArray(project.language_entity)
+                    ? project.language_entity[0]
+                    : project.language_entity
+                  : null;
+
+                return (
+                  <div
+                    key={update.id}
+                    className='rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-card'
+                  >
+                    <div className='text-xs text-neutral-500 mb-1'>
+                      {formatDate(update.created_at)}
+                      {languageEntity && <> • {languageEntity.name}</>}
+                    </div>
+                    <div className='font-semibold mb-1'>{update.title}</div>
+                    <div className='text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2'>
+                      {update.body}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default PartnerOrgDashboardPage
-
-
+export default PartnerOrgDashboardPage;
