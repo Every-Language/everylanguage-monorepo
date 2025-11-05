@@ -7,6 +7,10 @@ export type LanguageAlias = Tables<'language_aliases'>;
 export type Region = Tables<'regions'>;
 export type RegionProperty = Tables<'region_properties'>;
 export type RegionAlias = Tables<'region_aliases'>;
+export type Donation = Tables<'donations'>;
+export type DonationAllocation = Tables<'donation_allocations'>;
+export type Operation = Tables<'operations'>;
+export type Project = Tables<'projects'>;
 
 // Temporary types for sponsorships (until database types are regenerated)
 export interface Sponsorship {
@@ -82,5 +86,37 @@ export interface SponsorshipWithDetails {
   project?: {
     id: string;
     name: string;
+  } | null;
+}
+
+// Donation types
+export interface DonationWithAllocations extends Donation {
+  allocations: DonationAllocation[];
+  allocated_cents: number;
+  remaining_cents: number;
+  intent_language?: LanguageEntity | null;
+  intent_region?: Region | null;
+  intent_operation?: Operation | null;
+  partner_org?: {
+    id: string;
+    name: string;
+  } | null;
+  user?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null;
+}
+
+export interface AllocationWithDetails extends DonationAllocation {
+  donation?: Donation | null;
+  operation?: Operation | null;
+  project?: Project | null;
+  created_by_user?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
   } | null;
 }

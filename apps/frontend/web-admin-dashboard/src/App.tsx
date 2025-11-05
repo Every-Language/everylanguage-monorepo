@@ -37,6 +37,16 @@ const AllocateSponsorshipsPage = lazy(() =>
     default: m.AllocateSponsorshipsPage,
   }))
 );
+const DonationsPage = lazy(() =>
+  import('./features/donations/pages/DonationsPage').then(m => ({
+    default: m.DonationsPage,
+  }))
+);
+const AllocationsPage = lazy(() =>
+  import('./features/donations/pages/AllocationsPage').then(m => ({
+    default: m.AllocationsPage,
+  }))
+);
 
 function LoadingFallback() {
   return (
@@ -86,6 +96,8 @@ function App() {
               path='/sponsorships/allocate'
               element={<AllocateSponsorshipsPage />}
             />
+            <Route path='/donations' element={<DonationsPage />} />
+            <Route path='/allocations' element={<AllocationsPage />} />
           </Route>
 
           {/* Default redirect */}

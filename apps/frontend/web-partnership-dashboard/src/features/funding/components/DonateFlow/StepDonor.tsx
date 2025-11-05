@@ -2,8 +2,6 @@ import React from 'react';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
 import { CustomPhoneInput } from '@/features/auth/components/CustomPhoneInput';
-import { RadioGroup, RadioGroupItem } from '@/shared/components/ui/RadioGroup';
-import { Label } from '@/shared/components/ui/Label';
 import { supabase } from '@/shared/services/supabase';
 
 export const StepDonor: React.FC<{ flow: any }> = ({ flow }) => {
@@ -122,38 +120,60 @@ export const StepDonor: React.FC<{ flow: any }> = ({ flow }) => {
 
       {/* Donor Type Selection */}
       <div className='pt-2'>
-        <Label className='text-sm mb-2 block'>Donating as</Label>
-        <RadioGroup
-          value={donorMode}
-          onValueChange={(v: any) => setDonorMode(v)}
-        >
-          <div className='flex items-center space-x-2'>
-            <RadioGroupItem value='individual' id='individual' />
-            <Label htmlFor='individual' className='cursor-pointer'>
+        <label className='text-sm text-neutral-700 dark:text-neutral-300 mb-2 block font-medium'>
+          Donating as
+        </label>
+        <div className='space-y-2'>
+          <label className='flex items-center space-x-3 cursor-pointer'>
+            <input
+              type='radio'
+              name='donor-mode'
+              value='individual'
+              checked={donorMode === 'individual'}
+              onChange={() => setDonorMode('individual')}
+              className='w-4 h-4 text-primary-600 focus:ring-primary-500'
+            />
+            <span className='text-sm text-neutral-900 dark:text-neutral-100'>
               An individual
-            </Label>
-          </div>
-          <div className='flex items-center space-x-2'>
-            <RadioGroupItem value='existing' id='existing' />
-            <Label htmlFor='existing' className='cursor-pointer'>
+            </span>
+          </label>
+          <label className='flex items-center space-x-3 cursor-pointer'>
+            <input
+              type='radio'
+              name='donor-mode'
+              value='existing'
+              checked={donorMode === 'existing'}
+              onChange={() => setDonorMode('existing')}
+              className='w-4 h-4 text-primary-600 focus:ring-primary-500'
+            />
+            <span className='text-sm text-neutral-900 dark:text-neutral-100'>
               An existing organization
-            </Label>
-          </div>
-          <div className='flex items-center space-x-2'>
-            <RadioGroupItem value='new' id='new' />
-            <Label htmlFor='new' className='cursor-pointer'>
+            </span>
+          </label>
+          <label className='flex items-center space-x-3 cursor-pointer'>
+            <input
+              type='radio'
+              name='donor-mode'
+              value='new'
+              checked={donorMode === 'new'}
+              onChange={() => setDonorMode('new')}
+              className='w-4 h-4 text-primary-600 focus:ring-primary-500'
+            />
+            <span className='text-sm text-neutral-900 dark:text-neutral-100'>
               A new organization
-            </Label>
-          </div>
-        </RadioGroup>
+            </span>
+          </label>
+        </div>
       </div>
 
       {/* Existing org selector */}
       {donorMode === 'existing' && (
         <div className='space-y-2'>
-          <Label>Select organization</Label>
+          <label className='text-sm text-neutral-700 dark:text-neutral-300 block font-medium'>
+            Select organization
+          </label>
           <select
-            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800'
+            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
             value={partnerOrgId}
             onChange={e => setPartnerOrgId(e.target.value)}
           >
@@ -177,22 +197,23 @@ export const StepDonor: React.FC<{ flow: any }> = ({ flow }) => {
           />
           <textarea
             placeholder='Description (optional)'
-            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm'
+            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm'
             rows={3}
             value={newOrgDesc}
             onChange={e => setNewOrgDesc(e.target.value)}
           />
-          <div className='flex items-center space-x-2'>
+          <label className='flex items-center space-x-2 cursor-pointer'>
             <input
               type='checkbox'
               id='org-public'
               checked={newOrgPublic}
               onChange={e => setNewOrgPublic(e.target.checked)}
+              className='w-4 h-4 text-primary-600 focus:ring-primary-500 rounded'
             />
-            <Label htmlFor='org-public' className='cursor-pointer text-sm'>
+            <span className='text-sm text-neutral-700 dark:text-neutral-300'>
               Make organization publicly visible
-            </Label>
-          </div>
+            </span>
+          </label>
         </div>
       )}
 

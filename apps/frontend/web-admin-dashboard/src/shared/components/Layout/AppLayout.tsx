@@ -7,6 +7,8 @@ import {
   Map,
   DollarSign,
   LayoutDashboard,
+  HandCoins,
+  ArrowRightLeft,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -55,6 +57,20 @@ const navigationItems: NavItem[] = [
     path: '/sponsorships/allocate',
     section: 'Funding',
     icon: <DollarSign className='h-5 w-5' />,
+  },
+  {
+    id: 'donations',
+    label: 'Donations',
+    path: '/donations',
+    section: 'Funding',
+    icon: <HandCoins className='h-5 w-5' />,
+  },
+  {
+    id: 'donation-allocations',
+    label: 'Allocations',
+    path: '/allocations',
+    section: 'Funding',
+    icon: <ArrowRightLeft className='h-5 w-5' />,
   },
 ];
 

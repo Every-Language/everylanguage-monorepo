@@ -4,8 +4,10 @@ import type { DonationIntentType } from '../../state/types';
 
 export const StepIntent: React.FC<{ flow: any }> = ({ flow }) => {
   const handleSelect = (type: DonationIntentType) => {
+    // TODO: Add language/region/operation selection step for non-unrestricted intents
+    // For now, all intents are treated as unrestricted to allow testing
     // Set intent and move to next step
-    flow.setIntent({ type });
+    flow.setIntent({ type: 'unrestricted' });
     flow.next();
   };
 
