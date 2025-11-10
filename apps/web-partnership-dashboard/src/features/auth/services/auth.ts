@@ -17,7 +17,16 @@ export class AuthService {
       } = await supabase.auth.getUser();
 
       if (error) {
-        console.error('Error getting current user:', error);
+        // For public sites with optional auth, missing session is expected
+        // Only log actual errors, not expected "no session" scenarios
+        const isExpectedError =
+          error.name === 'AuthSessionMissingError' ||
+          error.message?.includes('session missing') ||
+          error.message?.includes('Auth session missing');
+
+        if (!isExpectedError) {
+          console.error('Error getting current user:', error);
+        }
         return null;
       }
 
@@ -39,7 +48,16 @@ export class AuthService {
       } = await supabase.auth.getSession();
 
       if (error) {
-        console.error('Error getting current session:', error);
+        // For public sites with optional auth, missing session is expected
+        // Only log actual errors, not expected "no session" scenarios
+        const isExpectedError =
+          error.name === 'AuthSessionMissingError' ||
+          error.message?.includes('session missing') ||
+          error.message?.includes('Auth session missing');
+
+        if (!isExpectedError) {
+          console.error('Error getting current session:', error);
+        }
         return null;
       }
 

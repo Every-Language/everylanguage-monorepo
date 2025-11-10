@@ -12,7 +12,14 @@ import { createDonationCheckout } from '../../api/fundingApi';
 import { getStripePromise } from '@/shared/services/stripe';
 import type { DonateFlow } from '../../hooks/useDonateFlow';
 
-const stripePromise = getStripePromise();
+// Lazy initialize Stripe promise - only load when component mounts
+let stripePromise: ReturnType<typeof getStripePromise> | null = null;
+const getOrInitStripePromise = () => {
+  if (!stripePromise) {
+    stripePromise = getStripePromise();
+  }
+  return stripePromise;
+};
 
 const Inner: React.FC<{ flow: DonateFlow; clientSecret: string | null }> = ({
   flow,
@@ -320,7 +327,7 @@ export const StepPayment: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
   }
 
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={getOrInitStripePromise()}>
       <Inner flow={flow} clientSecret={clientSecret} />
     </Elements>
   );

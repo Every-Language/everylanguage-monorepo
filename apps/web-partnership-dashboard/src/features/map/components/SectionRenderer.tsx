@@ -10,7 +10,28 @@ import {
   MapControlsSection,
   type LayerState,
 } from '../sections/MapControlsSection';
+import { JPGospelAccessSection } from '../sections/JPGospelAccessSection';
+import { JPPeopleGroupsSection } from '../sections/JPPeopleGroupsSection';
+import { JPCountryStatsSection } from '../sections/JPCountryStatsSection';
+import { JPLanguageStatsSection } from '../sections/JPLanguageStatsSection';
+import { JPResourcesSection } from '../sections/JPResourcesSection';
 import { useLanguageEntity } from '../hooks/useLanguageEntity';
+import { CollapsibleSection } from './shared/CollapsibleSection';
+
+// Mapping of section types to display names
+const SECTION_TITLES: Record<SectionType, string> = {
+  'hierarchy': 'Hierarchy',
+  'linked-entities': 'Related',
+  'info': 'Information',
+  'bible-progress': 'Bible Progress',
+  'bible-listening': 'Bible Listening',
+  'map-controls': 'Map Controls',
+  'jp-gospel-access': 'Gospel Access',
+  'jp-people-groups': 'People Groups',
+  'jp-country-stats': 'Country Statistics',
+  'jp-language-stats': 'Language Statistics',
+  'jp-resources': 'Resources',
+};
 
 interface SectionRendererProps {
   type: SectionType;
@@ -37,15 +58,41 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
   );
   const descendantIds = languageData.descendants.data ?? [];
 
+  // Helper function to render a section wrapped in CollapsibleSection
+  const renderSection = (content: React.ReactNode): React.ReactNode => {
+    if (!content) return null;
+    
+    // Map controls don't need collapsible wrapper when there's no selection
+    if (!selection && type === 'map-controls') {
+      return content;
+    }
+    
+    return (
+      <CollapsibleSection
+        title={SECTION_TITLES[type]}
+        sectionId={type}
+        defaultExpanded={true}
+      >
+        {content}
+      </CollapsibleSection>
+    );
+  };
+
   if (!selection) {
     // When no selection, only show map controls
     if (type === 'map-controls' && layers && onLayersChange) {
       return (
-        <MapControlsSection
-          value={layers}
-          onChange={onLayersChange}
-          embeddable
-        />
+        <CollapsibleSection
+          title={SECTION_TITLES[type]}
+          sectionId={type}
+          defaultExpanded={true}
+        >
+          <MapControlsSection
+            value={layers}
+            onChange={onLayersChange}
+            embeddable
+          />
+        </CollapsibleSection>
       );
     }
     return (
@@ -58,16 +105,16 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
   switch (type) {
     case 'hierarchy':
       if (selection.kind === 'language_entity') {
-        return <HierarchySection type='language' entityId={selection.id} />;
+        return renderSection(<HierarchySection type='language' entityId={selection.id} />);
       }
       if (selection.kind === 'region') {
-        return <HierarchySection type='region' entityId={selection.id} />;
+        return renderSection(<HierarchySection type='region' entityId={selection.id} />);
       }
       return null;
 
     case 'linked-entities':
       if (selection.kind === 'language_entity') {
-        return (
+        return renderSection(
           <LinkedEntitiesSection
             type='regions'
             parentId={selection.id}
@@ -76,7 +123,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
         );
       }
       if (selection.kind === 'region') {
-        return (
+        return renderSection(
           <LinkedEntitiesSection
             type='languages'
             parentId={selection.id}
@@ -88,16 +135,16 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
 
     case 'info':
       if (selection.kind === 'language_entity') {
-        return <InfoSection type='language' entityId={selection.id} />;
+        return renderSection(<InfoSection type='language' entityId={selection.id} />);
       }
       if (selection.kind === 'region') {
-        return <InfoSection type='region' entityId={selection.id} />;
+        return renderSection(<InfoSection type='region' entityId={selection.id} />);
       }
       return null;
 
     case 'bible-progress':
       if (selection.kind === 'language_entity') {
-        return (
+        return renderSection(
           <BibleProgressSection
             languageId={selection.id}
             descendantIds={descendantIds}
@@ -110,7 +157,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
 
     case 'bible-listening':
       if (selection.kind === 'language_entity') {
-        return (
+        return renderSection(
           <BibleListeningSection
             type='language'
             entityId={selection.id}
@@ -120,19 +167,60 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
         );
       }
       if (selection.kind === 'region') {
-        return <BibleListeningSection type='region' entityId={selection.id} />;
+        return renderSection(<BibleListeningSection type='region' entityId={selection.id} />);
       }
       return null;
 
     case 'map-controls':
       if (layers && onLayersChange) {
-        return (
+        return renderSection(
           <MapControlsSection
             value={layers}
             onChange={onLayersChange}
             embeddable
           />
         );
+      }
+      return null;
+
+    case 'jp-gospel-access':
+      if (selection.kind === 'language_entity') {
+        return renderSection(<JPGospelAccessSection type='language' entityId={selection.id} />);
+      }
+      if (selection.kind === 'region') {
+        return renderSection(<JPGospelAccessSection type='region' entityId={selection.id} />);
+      }
+      return null;
+
+    case 'jp-people-groups':
+      if (selection.kind === 'language_entity') {
+        return renderSection(<JPPeopleGroupsSection type='language' entityId={selection.id} />);
+      }
+      if (selection.kind === 'region') {
+        return renderSection(<JPPeopleGroupsSection type='region' entityId={selection.id} />);
+      }
+      return null;
+
+    case 'jp-country-stats':
+      // Only show for regions
+      if (selection.kind === 'region') {
+        return renderSection(<JPCountryStatsSection entityId={selection.id} />);
+      }
+      return null;
+
+    case 'jp-language-stats':
+      // Only show for language entities
+      if (selection.kind === 'language_entity') {
+        return renderSection(<JPLanguageStatsSection entityId={selection.id} />);
+      }
+      return null;
+
+    case 'jp-resources':
+      if (selection.kind === 'language_entity') {
+        return renderSection(<JPResourcesSection type='language' entityId={selection.id} />);
+      }
+      if (selection.kind === 'region') {
+        return renderSection(<JPResourcesSection type='region' entityId={selection.id} />);
       }
       return null;
 

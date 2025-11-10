@@ -65,40 +65,42 @@ export const MapPage: React.FC = () => {
   }, [layout.panels]);
 
   return (
-    <MobileSheetProvider
-      height={mobileSheetHeight ?? 80}
-      snapPoints={mobileSnapPoints ?? [80, 360, 744]}
-      isDragging={mobileSheetDragging}
-    >
-      <MapShell countriesEnabled={layers.countries} padding={mapPadding}>
-        <RouteSync />
-        <MapOverlayLayers countriesEnabled={layers.countries} />
-        <MapAnalyticsLayers show={layers.listening} />
+    <div className='h-full w-full'>
+      <MobileSheetProvider
+        height={mobileSheetHeight ?? 80}
+        snapPoints={mobileSnapPoints ?? [80, 360, 744]}
+        isDragging={mobileSheetDragging}
+      >
+        <MapShell countriesEnabled={layers.countries} padding={mapPadding}>
+          <RouteSync />
+          <MapOverlayLayers countriesEnabled={layers.countries} />
+          <MapAnalyticsLayers show={layers.listening} />
 
-        {/* Desktop panels */}
-        <div className='hidden md:block'>
-          {layout.panels.map(panelConfig => (
-            <InspectorPanel
-              key={panelConfig.id}
-              config={panelConfig}
+          {/* Desktop panels */}
+          <div className='hidden md:block'>
+            {layout.panels.map(panelConfig => (
+              <InspectorPanel
+                key={panelConfig.id}
+                config={panelConfig}
+                selection={selection}
+                layers={layers}
+                onLayersChange={setLayers}
+              />
+            ))}
+          </div>
+
+          {/* Mobile bottom sheet */}
+          <div className='md:hidden'>
+            <MobileBottomSheet
+              sections={layout.mobilePanel?.sections ?? []}
               selection={selection}
-              layers={layers}
-              onLayersChange={setLayers}
+              onHeightChange={handleMobileSheetHeight}
+              onDraggingChange={handleMobileSheetDragging}
             />
-          ))}
-        </div>
-
-        {/* Mobile bottom sheet */}
-        <div className='md:hidden'>
-          <MobileBottomSheet
-            sections={layout.mobilePanel?.sections ?? []}
-            selection={selection}
-            onHeightChange={handleMobileSheetHeight}
-            onDraggingChange={handleMobileSheetDragging}
-          />
-        </div>
-      </MapShell>
-    </MobileSheetProvider>
+          </div>
+        </MapShell>
+      </MobileSheetProvider>
+    </div>
   );
 };
 

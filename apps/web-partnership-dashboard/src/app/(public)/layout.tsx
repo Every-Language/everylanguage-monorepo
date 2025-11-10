@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import { usePathname } from 'next/navigation';
 import { AppHeader } from '@/shared/components/AppHeader';
 import { MobileAppHeader } from '@/shared/components/MobileAppHeader';
 
@@ -11,6 +12,9 @@ export default function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isMapRoute = pathname?.startsWith('/map') ?? false;
+
   return (
     <>
       {/* Mobile header (visible below md breakpoint) */}
@@ -27,7 +31,11 @@ export default function PublicLayout({
         </Suspense>
       </div>
 
-      <main className='relative h-[calc(100dvh-56px)] overflow-y-auto'>
+      <main
+        className={`relative h-[calc(100dvh-56px)] ${
+          isMapRoute ? 'overflow-hidden' : 'overflow-y-auto'
+        }`}
+      >
         {children}
       </main>
     </>

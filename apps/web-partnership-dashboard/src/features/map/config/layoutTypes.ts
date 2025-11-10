@@ -10,7 +10,12 @@ export type SectionType =
   | 'info'
   | 'bible-progress'
   | 'bible-listening'
-  | 'map-controls';
+  | 'map-controls'
+  | 'jp-gospel-access'
+  | 'jp-people-groups'
+  | 'jp-country-stats'
+  | 'jp-language-stats'
+  | 'jp-resources';
 
 export type PanelPosition = 'left' | 'right' | 'bottom';
 

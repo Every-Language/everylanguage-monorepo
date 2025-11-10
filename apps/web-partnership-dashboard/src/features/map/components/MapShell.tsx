@@ -210,7 +210,7 @@ export const MapShell: React.FC<MapShellProps> = ({
 
   return (
     <MapProvider mapRef={mapRef}>
-      <div className='relative h-[100dvh] w-full'>
+      <div className='relative h-full w-full'>
         {resolvedStyle && (
           <Map
             ref={mapRef}

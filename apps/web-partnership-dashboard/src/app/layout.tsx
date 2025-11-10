@@ -3,7 +3,7 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'EverlyLanguage Partnership Dashboard',
+  title: 'Every Language Partnership Dashboard',
   description:
     'Track Bible translation progress and support language projects worldwide',
 };

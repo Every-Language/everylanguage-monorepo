@@ -167,20 +167,46 @@ export async function createDonationCheckout(payload: {
     ''
   );
 
-  const res = await fetch(`${base}/create-donation-checkout`, {
+  const url = `${base}/create-donation-checkout`;
+  console.log('🔵 Creating donation checkout:', {
+    url,
+    payload: {
+      ...payload,
+      intent: payload.intent,
+    },
+  });
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+
+  console.log('🔵 Response status:', res.status, res.statusText);
+
   if (!res.ok) {
     let message = 'Failed to create donation checkout';
+    let errorDetails: any = null;
     try {
-      const j = await res.json();
+      const text = await res.text();
+      console.error('🔴 Raw error response:', text);
+      const j = JSON.parse(text);
+      errorDetails = j;
       if (j?.error) message = j.error;
-      if (j?.details) console.error('Error details:', j.details);
+      if (j?.details) {
+        console.error('🔴 Error details:', j.details);
+        message = `${message}: ${j.details}`;
+      }
     } catch (e) {
-      console.error('Failed to parse error response', e);
+      console.error('🔴 Failed to parse error response', e);
+      message = `${message} (${res.status} ${res.statusText})`;
     }
+    console.error('🔴 Full error context:', {
+      status: res.status,
+      statusText: res.statusText,
+      errorDetails,
+      url,
+    });
     throw new Error(message);
   }
   const json = await res.json();

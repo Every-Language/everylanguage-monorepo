@@ -146,17 +146,8 @@ export const HierarchySection: React.FC<HierarchySectionProps> = ({
   }
 
   return (
-    <div className='mb-2'>
-      <div className='sticky top-0 z-10 bg-white dark:bg-neutral-900 -mx-3 -mt-3 px-3 py-2 border-b border-neutral-200 dark:border-neutral-800'>
-        <div className='text-xs font-semibold tracking-wide text-neutral-500'>
-          {type === 'language'
-            ? 'Language relationships'
-            : 'Region relationships'}
-        </div>
-      </div>
-      <div className='pt-2'>
-        <Tree id={rootId} nodesById={nodesById} type={type} />
-      </div>
+    <div>
+      <Tree id={rootId} nodesById={nodesById} type={type} />
     </div>
   );
 };
