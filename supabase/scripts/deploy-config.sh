@@ -17,7 +17,7 @@ echo "📝 Deploying configuration to project: $PROJECT_REF"
 
 # Create a temporary config file with environment variables substituted
 TEMP_CONFIG=$(mktemp)
-cp supabase/config.toml "$TEMP_CONFIG"
+cp config.toml "$TEMP_CONFIG"
 
 # Substitute environment variables
 echo "🔄 Substituting environment variables..."
@@ -48,15 +48,15 @@ fi
 sed -i.bak 's|enabled = false  # Set to true in production|enabled = true|g' "$TEMP_CONFIG"
 echo "✅ Enabled SMTP for production"
 
-# Copy the processed config to the supabase directory temporarily
-cp "$TEMP_CONFIG" supabase/config.toml
+# Copy the processed config to the current directory temporarily
+cp "$TEMP_CONFIG" config.toml
 
 # Push the configuration
 echo "🚀 Pushing configuration to Supabase..."
 supabase config push --project-ref "$PROJECT_REF"
 
 # Restore the original config file
-git checkout supabase/config.toml
+git checkout config.toml
 echo "✅ Restored original config.toml"
 
 # Clean up
