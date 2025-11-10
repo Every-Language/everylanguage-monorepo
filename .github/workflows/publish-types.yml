@@ -1,0 +1,194 @@
+name: Publish Types Package
+
+on:
+  # Trigger after successful backend deploys
+  workflow_run:
+    workflows: ['Deploy Backend to Development', 'Deploy Backend to Production']
+    types:
+      - completed
+    branches: [develop, main]
+
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to publish (dev or prod)'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+jobs:
+  # Determine which environment to publish to
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.determine-env.outputs.environment }}
+      should-publish: ${{ steps.determine-env.outputs.should-publish }}
+    steps:
+      - name: Determine environment
+        id: determine-env
+        run: |
+          # For workflow_dispatch, use the input
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "should-publish=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # For workflow_run, check the source workflow and branch
+          SOURCE_WORKFLOW="${{ github.event.workflow_run.name }}"
+          SOURCE_BRANCH="${{ github.event.workflow_run.head_branch }}"
+          CONCLUSION="${{ github.event.workflow_run.conclusion }}"
+          
+          # Only publish if source workflow succeeded
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "should-publish=false" >> $GITHUB_OUTPUT
+            echo "Source workflow did not succeed, skipping publish"
+            exit 0
+          fi
+          
+          # Determine environment from branch
+          if [ "$SOURCE_BRANCH" = "main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "should-publish=true" >> $GITHUB_OUTPUT
+          elif [ "$SOURCE_BRANCH" = "develop" ]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "should-publish=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-publish=false" >> $GITHUB_OUTPUT
+            echo "Unknown branch: $SOURCE_BRANCH"
+          fi
+
+  publish:
+    needs: setup
+    if: needs.setup.outputs.should-publish == 'true'
+    runs-on: ubuntu-latest
+    # Use dynamic environment based on setup job
+    environment: ${{ needs.setup.outputs.environment == 'prod' && 'production' || 'development' }}
+
+    permissions:
+      id-token: write  # Required for OIDC trusted publishing
+      contents: read
+      packages: write
+      issues: write
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+      TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+    steps:
+      - name: Verify required secrets present
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || (echo "❌ SUPABASE_ACCESS_TOKEN is missing" && exit 1)
+          test -n "$SUPABASE_PROJECT_ID" || (echo "❌ SUPABASE_PROJECT_ID is missing" && exit 1)
+          test -n "$SUPABASE_DB_PASSWORD" || (echo "❌ SUPABASE_DB_PASSWORD is missing" && exit 1)
+          echo "✅ Required secrets present"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch || github.ref }}
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to Supabase project
+        run: cd supabase && supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Generate types
+        run: |
+          ENV_NAME="${{ needs.setup.outputs.environment }}"
+          echo "🔄 Generating types from $ENV_NAME database..."
+          cd supabase
+          supabase gen types typescript --linked > ../packages/shared-types/types/database.ts
+          echo "✅ Types generated successfully"
+
+      - name: Build package artifacts
+        run: cd supabase && npm run prepare-package:ci
+
+      # Dev: Set prerelease version
+      - name: Set prerelease dev version (no repo mutations)
+        if: needs.setup.outputs.environment == 'dev'
+        id: set_dev_version
+        run: |
+          cd packages/shared-types
+          BASE=$(node -p "require('./package.json').version.split('-')[0]")
+          TS=$(date +%Y%m%d.%H%M%S)
+          DEV_VERSION="${BASE}-dev.${TS}.${GITHUB_RUN_NUMBER}"
+          echo "Setting version to $DEV_VERSION"
+          npm version "$DEV_VERSION" --no-git-tag-version
+          echo "version=$DEV_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=dev" >> $GITHUB_OUTPUT
+
+      # Prod: Use existing version
+      - name: Get production version
+        if: needs.setup.outputs.environment == 'prod'
+        id: set_prod_version
+        run: |
+          cd packages/shared-types
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=latest" >> $GITHUB_OUTPUT
+
+      - name: Ensure npm 11.5.1+ for trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Publish to NPM with OIDC
+        run: |
+          cd packages/shared-types
+          VERSION="${{ needs.setup.outputs.environment == 'dev' && steps.set_dev_version.outputs.version || steps.set_prod_version.outputs.version }}"
+          TAG="${{ needs.setup.outputs.environment == 'dev' && 'dev' || 'latest' }}"
+          ENV_NAME="${{ needs.setup.outputs.environment }}"
+          
+          echo "🚀 Publishing @everylanguage/shared-types@$VERSION (tag: $TAG) to NPM..."
+          
+          # Skip if version already exists on NPM (in case of retries)
+          if npm view @everylanguage/shared-types@$VERSION version >/dev/null 2>&1; then
+            echo "⚠️ Version $VERSION already exists on NPM, skipping publish"
+          else
+            if [ "$TAG" = "latest" ]; then
+              npm publish --access public
+            else
+              npm publish --access public --tag $TAG
+            fi
+            echo "✅ Package published successfully as '$TAG' ($ENV_NAME)"
+          fi
+
+      - name: Summary
+        run: |
+          ENV_NAME="${{ needs.setup.outputs.environment }}"
+          TAG="${{ needs.setup.outputs.environment == 'dev' && 'dev' || 'latest' }}"
+          VERSION="${{ needs.setup.outputs.environment == 'dev' && steps.set_dev_version.outputs.version || steps.set_prod_version.outputs.version }}"
+          
+          echo "📦 Types published from $ENV_NAME environment"
+          echo "🏷️  Tag: $TAG"
+          echo "📌 Version: $VERSION"
+          echo "💡 Install with: npm i @everylanguage/shared-types@$TAG"
+
