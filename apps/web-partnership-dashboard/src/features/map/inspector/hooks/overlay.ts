@@ -14,7 +14,6 @@ export function useRegionBoundary(
     queryFn: async () => {
       if (!regionId) return null as GeoJSON.Geometry | null;
       // Prefer simplified boundary via RPC for lightweight overlay
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any).rpc(
         'get_region_boundary_simplified_by_id',
         { p_region_id: regionId, p_tolerance: null }
@@ -42,7 +41,6 @@ export function useLanguageOverlayGeometries(
     queryKey: ['overlay-language', languageEntityId ?? null],
     queryFn: async () => {
       if (!languageEntityId) return [] as GeoJSON.Geometry[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('language_entities_regions')
         .select('regions(boundary_simplified)')

@@ -10,7 +10,7 @@ export function useUserEntities(userId: string | null) {
     queryKey: ['user-roles', userId],
     staleTime: 300_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_roles')
         .select('context_type,context_id,user_id')
         .eq('user_id', userId as string);
@@ -50,12 +50,12 @@ export function useUserEntities(userId: string | null) {
     staleTime: 300_000,
     queryFn: async () => {
       const ids = Array.from(idSets.team);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('teams')
         .select('id,name')
         .in('id', ids);
       if (error) throw error;
-      return (data ?? []).map(r => ({
+      return (data ?? []).map((r: any) => ({
         id: String((r as { id?: string }).id),
         name: String((r as { name?: string | null }).name ?? ''),
       })) as SimpleEntity[];
@@ -68,12 +68,12 @@ export function useUserEntities(userId: string | null) {
     staleTime: 300_000,
     queryFn: async () => {
       const ids = Array.from(idSets.base);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bases')
         .select('id,name')
         .in('id', ids);
       if (error) throw error;
-      return (data ?? []).map(r => ({
+      return (data ?? []).map((r: any) => ({
         id: String((r as { id?: string }).id),
         name: String((r as { name?: string | null }).name ?? ''),
       })) as SimpleEntity[];
@@ -89,12 +89,12 @@ export function useUserEntities(userId: string | null) {
     staleTime: 300_000,
     queryFn: async () => {
       const ids = Array.from(idSets.project);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('projects')
         .select('id,name')
         .in('id', ids);
       if (error) throw error;
-      return (data ?? []).map(r => ({
+      return (data ?? []).map((r: any) => ({
         id: String((r as { id?: string }).id),
         name: String((r as { name?: string | null }).name ?? ''),
       })) as SimpleEntity[];
@@ -111,7 +111,6 @@ export function useUserEntities(userId: string | null) {
     queryFn: async () => {
       const ids = Array.from(idSets.partner);
       // partner_orgs might not be in generated types yet
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('partner_orgs')
         .select('id,name')

@@ -5,8 +5,7 @@ import path from 'path';
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // Load environment variables from monorepo root, then app-specific overrides
-  envDir: path.resolve(__dirname, '../..'),
+  // Load environment variables from app directory (default behavior)
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

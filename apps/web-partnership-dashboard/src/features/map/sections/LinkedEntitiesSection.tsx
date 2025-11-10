@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 import { Input } from '@/shared/components/ui/Input';
@@ -31,7 +33,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
   scrollRef,
 }) => {
   const [query, setQuery] = React.useState('');
-  const navigate = useNavigate();
+  const router = useRouter();
   const selection = useSelection();
 
   const entitiesQuery = useQuery({
@@ -44,7 +46,6 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
     queryFn: async () => {
       if (type === 'languages') {
         // Fetch languages for a region
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any).rpc(
           'list_languages_for_region',
           {
@@ -140,7 +141,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
                       selection.id === item.id
                     }
                     onClick={lid =>
-                      navigate(`/map/language/${encodeURIComponent(lid)}`)
+                      router.push(`/map/language/${encodeURIComponent(lid)}`)
                     }
                   />
                 ) : (
@@ -150,7 +151,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
                       selection?.kind === 'region' && selection.id === item.id
                     }
                     onClick={rid =>
-                      navigate(`/map/region/${encodeURIComponent(rid)}`)
+                      router.push(`/map/region/${encodeURIComponent(rid)}`)
                     }
                   />
                 )}
@@ -170,7 +171,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
                   selection.id === item.id
                 }
                 onClick={lid =>
-                  navigate(`/map/language/${encodeURIComponent(lid)}`)
+                  router.push(`/map/language/${encodeURIComponent(lid)}`)
                 }
               />
             ) : (
@@ -181,7 +182,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
                   selection?.kind === 'region' && selection.id === item.id
                 }
                 onClick={rid =>
-                  navigate(`/map/region/${encodeURIComponent(rid)}`)
+                  router.push(`/map/region/${encodeURIComponent(rid)}`)
                 }
               />
             )

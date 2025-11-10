@@ -76,7 +76,6 @@ async function fetchAudioSummariesByIds(
 > {
   if (versionIds.length === 0) return [];
   // Prefer MV, fallback to view
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mv = await (supabase as any)
     .from('mv_audio_version_progress_summary')
     .select(
@@ -90,7 +89,6 @@ async function fetchAudioSummariesByIds(
       { audio_version_id: string } & Omit<VersionCoverage, 'id' | 'name'>
     >;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const v = await (supabase as any)
     .from('audio_version_progress_summary')
     .select(
@@ -111,7 +109,6 @@ async function fetchTextSummariesByIds(
   Array<{ text_version_id: string } & Omit<VersionCoverage, 'id' | 'name'>>
 > {
   if (versionIds.length === 0) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mv = await (supabase as any)
     .from('mv_text_version_progress_summary')
     .select(
@@ -125,7 +122,6 @@ async function fetchTextSummariesByIds(
       { text_version_id: string } & Omit<VersionCoverage, 'id' | 'name'>
     >;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const v = await (supabase as any)
     .from('text_version_progress_summary')
     .select(
@@ -150,12 +146,12 @@ export async function fetchAudioVersionCoverages(
     .order('name');
   if (error) throw error;
 
-  const versionIds = (versions ?? []).map(v => v.id as string);
+  const versionIds = (versions ?? []).map((v: any) => v.id as string);
   const summaries = await fetchAudioSummariesByIds(versionIds);
   const byId = new Map<string, Omit<VersionCoverage, 'id' | 'name'>>(
     summaries.map(s => [s.audio_version_id, s])
   );
-  return (versions ?? []).map(v => {
+  return (versions ?? []).map((v: any) => {
     const s = byId.get(v.id);
     return {
       id: v.id,
@@ -180,12 +176,12 @@ export async function fetchTextVersionCoverages(
     .order('name');
   if (error) throw error;
 
-  const versionIds = (versions ?? []).map(v => v.id as string);
+  const versionIds = (versions ?? []).map((v: any) => v.id as string);
   const summaries = await fetchTextSummariesByIds(versionIds);
   const byId = new Map<string, Omit<VersionCoverage, 'id' | 'name'>>(
     summaries.map(s => [s.text_version_id, s])
   );
-  return (versions ?? []).map(v => {
+  return (versions ?? []).map((v: any) => {
     const s = byId.get(v.id);
     return {
       id: v.id,
@@ -211,12 +207,12 @@ export async function fetchAudioVersionCoveragesForLanguageIds(
     .order('name');
   if (error) throw error;
 
-  const versionIds = (versions ?? []).map(v => v.id as string);
+  const versionIds = (versions ?? []).map((v: any) => v.id as string);
   const summaries = await fetchAudioSummariesByIds(versionIds);
   const byId = new Map<string, Omit<VersionCoverage, 'id' | 'name'>>(
     summaries.map(s => [s.audio_version_id, s])
   );
-  return (versions ?? []).map(v => {
+  return (versions ?? []).map((v: any) => {
     const s = byId.get(v.id);
     return {
       id: v.id,
@@ -242,12 +238,12 @@ export async function fetchTextVersionCoveragesForLanguageIds(
     .order('name');
   if (error) throw error;
 
-  const versionIds = (versions ?? []).map(v => v.id as string);
+  const versionIds = (versions ?? []).map((v: any) => v.id as string);
   const summaries = await fetchTextSummariesByIds(versionIds);
   const byId = new Map<string, Omit<VersionCoverage, 'id' | 'name'>>(
     summaries.map(s => [s.text_version_id, s])
   );
-  return (versions ?? []).map(v => {
+  return (versions ?? []).map((v: any) => {
     const s = byId.get(v.id);
     return {
       id: v.id,

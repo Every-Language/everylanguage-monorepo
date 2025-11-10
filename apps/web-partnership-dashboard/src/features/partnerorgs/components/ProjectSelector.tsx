@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
 
 export const ProjectSelector: React.FC = () => {
@@ -7,21 +9,23 @@ export const ProjectSelector: React.FC = () => {
     orgId: string;
     projectId?: string;
   }>();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const { data: projects, isLoading } = usePartnerOrgProjects(orgId!);
 
   // Extract current tab from pathname
-  const pathSegments = location.pathname.split('/');
+  const pathSegments = pathname.split('/');
   const currentTab = pathSegments[pathSegments.length - 1] || 'progress';
 
   const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newProjectId = e.target.value;
 
     if (newProjectId === 'all') {
-      navigate(`/partner-org/${orgId}/dashboard`);
+      router.push(`/partner-org/${orgId}/dashboard`);
     } else {
-      navigate(`/partner-org/${orgId}/project/${newProjectId}/${currentTab}`);
+      router.push(
+        `/partner-org/${orgId}/project/${newProjectId}/${currentTab}`
+      );
     }
   };
 
@@ -41,7 +45,6 @@ export const ProjectSelector: React.FC = () => {
         className='block w-64 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm'
       >
         <option value='all'>All Projects</option>
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {projects?.map((p: any) => (
           <option key={p.project_id} value={p.project_id}>
             {p.language_name} • {p.project_name}

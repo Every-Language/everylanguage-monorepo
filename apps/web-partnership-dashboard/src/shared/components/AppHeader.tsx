@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Dropdown,
   DropdownContent,
@@ -70,10 +72,10 @@ const ThemeDropdown: React.FC = () => {
 
 const AuthMenu: React.FC = () => {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   if (!user) {
     return (
-      <Button variant='link' size='sm' onClick={() => navigate('/login')}>
+      <Button variant='link' size='sm' onClick={() => router.push('/login')}>
         Log in
       </Button>
     );
@@ -98,13 +100,13 @@ const AuthMenu: React.FC = () => {
         <div className='px-2 py-1.5 text-sm text-neutral-600 dark:text-neutral-300'>
           {`${first} ${last}`.trim() || user.email || 'User'}
         </div>
-        <DropdownItem onClick={() => navigate('/profile')}>
+        <DropdownItem onClick={() => router.push('/profile')}>
           Profile
         </DropdownItem>
         <DropdownItem
           onClick={() => {
             void signOut();
-            navigate('/map');
+            router.push('/map');
           }}
           variant='destructive'
         >
@@ -116,14 +118,12 @@ const AuthMenu: React.FC = () => {
 };
 
 export const AppHeader: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const searchParams = new URLSearchParams(location.search);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const intendedSection = searchParams.get('section');
   const label =
-    intendedSection === 'dashboard'
-      ? 'Dashboard'
-      : routeLabel(location.pathname);
+    intendedSection === 'dashboard' ? 'Dashboard' : routeLabel(pathname);
   const [donateOpen, setDonateOpen] = React.useState(false);
 
   return (
@@ -146,13 +146,13 @@ export const AppHeader: React.FC = () => {
           </DropdownTrigger>
           <DropdownContent className='bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-lg'>
             <DropdownItem
-              onClick={() => navigate('/map')}
+              onClick={() => router.push('/map')}
               selected={label === 'Map'}
             >
               <span>Map</span>
             </DropdownItem>
             <DropdownItem
-              onClick={() => navigate('/dashboard')}
+              onClick={() => router.push('/dashboard')}
               selected={label === 'Dashboard'}
             >
               <span>Dashboard</span>
@@ -167,8 +167,8 @@ export const AppHeader: React.FC = () => {
           embedded
           onSelect={item => {
             if (item.kind === 'language')
-              navigate(`/map/language/${encodeURIComponent(item.id)}`);
-            else navigate(`/map/region/${encodeURIComponent(item.id)}`);
+              router.push(`/map/language/${encodeURIComponent(item.id)}`);
+            else router.push(`/map/region/${encodeURIComponent(item.id)}`);
           }}
           className='w-full max-w-xl'
         />

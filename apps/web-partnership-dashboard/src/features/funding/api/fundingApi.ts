@@ -18,13 +18,11 @@ export async function listAvailableLanguages(params?: {
   const limit = params?.limit ?? 100;
   const offset = params?.offset ?? 0;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const query = (supabase as any)
     .from('language_adoptions')
     .select(
       'id, language_entity_id, estimated_budget_cents, status, language_entities(name)'
     )
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .eq('status', statusFilter as any)
     .order('estimated_budget_cents', { ascending: false })
     .range(offset, offset + limit - 1);
@@ -33,7 +31,6 @@ export async function listAvailableLanguages(params?: {
   if (error)
     throw new Error(error.message || 'Failed to list available languages');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const items: PublicAdoptionRow[] = (data ?? []).map((row: any) => ({
     id: row.id,
     language_entity_id: row.language_entity_id,
@@ -52,7 +49,10 @@ export async function createLead(payload: {
   intent: 'ops' | 'adopt';
   languageIds?: string[];
 }) {
-  const base = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+  const base = (process.env.NEXT_PUBLIC_API_BASE_URL || '/api').replace(
+    /\/$/,
+    ''
+  );
   const body = {
     firstName: payload.firstName,
     lastName: payload.lastName,
@@ -72,7 +72,10 @@ export async function createLead(payload: {
 // API methods
 
 export async function calculateAdoptionCosts(adoptionIds: string[]) {
-  const base = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+  const base = (process.env.NEXT_PUBLIC_API_BASE_URL || '/api').replace(
+    /\/$/,
+    ''
+  );
   const res = await fetch(`${base}/calculate-adoption-costs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -85,8 +88,7 @@ export async function calculateAdoptionCosts(adoptionIds: string[]) {
   const json = await res.json();
   const data =
     json && typeof json === 'object' && 'data' in json
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (json as any).data
+      ? (json as any).data
       : json;
   return data as {
     languages: Array<{
@@ -111,7 +113,10 @@ export async function calculateAdoptionCosts(adoptionIds: string[]) {
 }
 
 export async function searchPartnerOrgs(query: string, limit = 10) {
-  const base = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+  const base = (process.env.NEXT_PUBLIC_API_BASE_URL || '/api').replace(
+    /\/$/,
+    ''
+  );
   const res = await fetch(`${base}/search-partner-orgs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -126,8 +131,7 @@ export async function searchPartnerOrgs(query: string, limit = 10) {
   const json = await res.json();
   const data =
     json && typeof json === 'object' && 'data' in json
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (json as any).data
+      ? (json as any).data
       : json;
   return data as {
     results: Array<{
@@ -158,7 +162,10 @@ export async function createDonationCheckout(payload: {
   amountCents: number;
   isRecurring: boolean;
 }) {
-  const base = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+  const base = (process.env.NEXT_PUBLIC_API_BASE_URL || '/api').replace(
+    /\/$/,
+    ''
+  );
 
   const res = await fetch(`${base}/create-donation-checkout`, {
     method: 'POST',
@@ -179,8 +186,7 @@ export async function createDonationCheckout(payload: {
   const json = await res.json();
   const data =
     json && typeof json === 'object' && 'data' in json
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (json as any).data
+      ? (json as any).data
       : json;
   return data as {
     clientSecret: string | null;
@@ -203,7 +209,10 @@ export async function createAdoptionCheckout(payload: {
   };
   orgMode?: 'individual' | 'existing' | 'new';
 }) {
-  const base = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+  const base = (process.env.NEXT_PUBLIC_API_BASE_URL || '/api').replace(
+    /\/$/,
+    ''
+  );
   const res = await fetch(`${base}/create-adoption-checkout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -223,8 +232,7 @@ export async function createAdoptionCheckout(payload: {
   const json = await res.json();
   const data =
     json && typeof json === 'object' && 'data' in json
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (json as any).data
+      ? (json as any).data
       : json;
   return data as {
     clientSecret: string | null;

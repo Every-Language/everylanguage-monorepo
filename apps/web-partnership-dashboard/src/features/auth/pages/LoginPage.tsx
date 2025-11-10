@@ -1,25 +1,30 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LoginForm } from '../components/LoginForm';
 import { PhoneLoginForm } from '../components/PhoneLoginForm';
 
 export function LoginPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
 
   const handleLoginSuccess = () => {
-    const params = new URLSearchParams(location.search);
-    const next = params.get('next') || '/dashboard';
-    navigate(next);
+    const next =
+      searchParams.get('redirectTo') ||
+      searchParams.get('next') ||
+      '/dashboard';
+    router.push(next);
   };
 
   const handleForgotPassword = () => {
-    navigate('/forgot-password');
+    router.push('/forgot-password');
   };
 
   const handleSignUpRedirect = () => {
-    navigate('/register');
+    router.push('/register');
   };
 
   return (
@@ -88,7 +93,7 @@ export function LoginPage() {
             <p className='text-sm text-neutral-600 dark:text-neutral-400'>
               Don't have an account?{' '}
               <Link
-                to='/register'
+                href='/register'
                 className='font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 transition-colors'
               >
                 Sign up

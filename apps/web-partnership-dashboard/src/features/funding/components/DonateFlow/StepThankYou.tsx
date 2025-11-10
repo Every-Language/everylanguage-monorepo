@@ -1,7 +1,9 @@
+'use client';
+
 import React from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { CheckCircle2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import type { useDonateFlow } from '../../hooks/useDonateFlow';
 
 interface StepThankYouProps {
@@ -13,7 +15,7 @@ export const StepThankYou: React.FC<StepThankYouProps> = ({
   flow,
   onClose,
 }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { state } = flow;
 
   const intent = state.intent;
@@ -42,12 +44,12 @@ export const StepThankYou: React.FC<StepThankYouProps> = ({
 
   const handleViewMap = () => {
     if (onClose) onClose();
-    navigate('/map');
+    router.push('/map');
   };
 
   const handleGoToDashboard = () => {
     if (onClose) onClose();
-    navigate('/dashboard');
+    router.push('/dashboard');
   };
 
   return (

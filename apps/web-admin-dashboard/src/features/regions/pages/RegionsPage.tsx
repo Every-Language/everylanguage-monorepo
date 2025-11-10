@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/query/query-client';
 import { regionsApi } from '../api/regionsApi';
@@ -11,6 +11,90 @@ import { Search, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 type ModalStackItem =
   | { type: 'region'; region: RegionWithLanguages; id: string }
   | { type: 'language'; entity: LanguageEntityWithRegions; id: string };
+
+// Component for region row with descendant count and parent link
+function RegionRow({
+  region,
+  onRegionClick,
+  onParentClick,
+}: {
+  region: RegionWithLanguages;
+  onRegionClick: (region: RegionWithLanguages) => void;
+  onParentClick: (parentId: string) => void;
+}) {
+  // Fetch descendant count
+  const { data: descendantCount } = useQuery({
+    queryKey: ['region-descendants', region.id],
+    queryFn: () => regionsApi.countRegionDescendants(region.id),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Fetch parent region if parent_id exists
+  const { data: parentRegion } = useQuery({
+    queryKey: ['parent-region', region.parent_id],
+    queryFn: () => {
+      if (!region.parent_id) return null;
+      return regionsApi.fetchParentRegion(region.parent_id);
+    },
+    enabled: !!region.parent_id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleParentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (region.parent_id) {
+      onParentClick(region.parent_id);
+    }
+  };
+
+  return (
+    <tr
+      className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
+      onClick={() => onRegionClick(region)}
+    >
+      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+        {region.name}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        <span className='px-2 py-1 text-xs font-medium rounded-full bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-300'>
+          {region.level}
+        </span>
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        {region.language_count || 0} languages
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        {descendantCount ?? '...'}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        {parentRegion ? (
+          <button
+            onClick={handleParentClick}
+            className='text-secondary-600 dark:text-secondary-400 hover:text-secondary-900 dark:hover:text-secondary-300 hover:underline transition-colors'
+          >
+            {parentRegion.name}
+          </button>
+        ) : region.parent_id ? (
+          'Loading...'
+        ) : (
+          <span className='text-neutral-400 dark:text-neutral-600'>—</span>
+        )}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
+        <button
+          onClick={e => {
+            e.stopPropagation();
+            onRegionClick(region);
+          }}
+          className='text-secondary-600 dark:text-secondary-400 hover:text-secondary-900 dark:hover:text-secondary-300 inline-flex items-center transition-colors'
+        >
+          <Edit className='h-4 w-4 mr-1' />
+          Edit
+        </button>
+      </td>
+    </tr>
+  );
+}
 
 export function RegionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -283,6 +367,12 @@ export function RegionsPage() {
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       Languages
                     </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                      Subregions
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                      Parent Region
+                    </th>
                     <th className='px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       Actions
                     </th>
@@ -291,40 +381,17 @@ export function RegionsPage() {
                 <tbody className='bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-800'>
                   {regions && regions.length > 0 ? (
                     regions.map(region => (
-                      <tr
+                      <RegionRow
                         key={region.id}
-                        className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
-                        onClick={() => handleRegionClick(region)}
-                      >
-                        <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
-                          {region.name}
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-300'>
-                            {region.level}
-                          </span>
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-                          {region.language_count || 0} languages
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleRegionClick(region);
-                            }}
-                            className='text-secondary-600 dark:text-secondary-400 hover:text-secondary-900 dark:hover:text-secondary-300 inline-flex items-center transition-colors'
-                          >
-                            <Edit className='h-4 w-4 mr-1' />
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
+                        region={region}
+                        onRegionClick={handleRegionClick}
+                        onParentClick={handleNavigateToRegion}
+                      />
                     ))
                   ) : (
                     <tr>
                       <td
-                        colSpan={4}
+                        colSpan={6}
                         className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
                       >
                         {searchTerm

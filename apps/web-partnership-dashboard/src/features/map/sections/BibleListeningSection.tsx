@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 import { useSetSelection } from '../inspector/state/inspectorStore';
@@ -27,7 +29,7 @@ export const BibleListeningSection: React.FC<BibleListeningSectionProps> = ({
   descendantIds = [entityId],
   includeDescendants = true,
 }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const setSelection = useSetSelection();
   const [showDescendants, setShowDescendants] =
     React.useState(includeDescendants);
@@ -171,12 +173,12 @@ export const BibleListeningSection: React.FC<BibleListeningSectionProps> = ({
       const regionId = (row as { region_id: string | null }).region_id ?? null;
       if (!regionId) return;
       setSelection({ kind: 'region', id: regionId });
-      navigate(`/map/region/${encodeURIComponent(regionId)}`);
+      router.push(`/map/region/${encodeURIComponent(regionId)}`);
     } else {
       const languageId = (row as { language_entity_id: string })
         .language_entity_id;
       setSelection({ kind: 'language_entity', id: languageId });
-      navigate(`/map/language/${encodeURIComponent(languageId)}`);
+      router.push(`/map/language/${encodeURIComponent(languageId)}`);
     }
   };
 

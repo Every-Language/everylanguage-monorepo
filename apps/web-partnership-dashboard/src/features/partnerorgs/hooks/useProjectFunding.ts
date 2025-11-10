@@ -59,20 +59,14 @@ export function useProjectFunding(
     queryFn: async () => {
       if (projectId === 'all') {
         // Aggregate funding across all partner org projects
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: activeProjects } = await (supabase as any)
           .from('vw_partner_org_active_projects')
           .select('project_id')
           .eq('partner_org_id', partnerOrgId!);
 
-        const projectIds =
-          activeProjects?.map(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (p: any) => p.project_id
-          ) || [];
+        const projectIds = activeProjects?.map((p: any) => p.project_id) || [];
 
         // Get balance for all projects
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: balances, error: balancesError } = await (supabase as any)
           .from('vw_project_balances')
           .select('*')
@@ -85,7 +79,6 @@ export function useProjectFunding(
         };
       } else {
         // Single project - get detailed data
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: balance, error: balanceError } = await (supabase as any)
           .from('vw_project_balances')
           .select('*')
@@ -95,18 +88,17 @@ export function useProjectFunding(
         if (balanceError) throw balanceError;
 
         // Get contributions for this project
-        const { data: contributions, error: contributionsError } =
-          await // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
-            .from('contributions')
-            .select('*')
-            .eq('project_id', projectId)
-            .order('occurred_at', { ascending: false });
+        const { data: contributions, error: contributionsError } = (
+          supabase as any
+        )
+          .from('contributions')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('occurred_at', { ascending: false });
 
         if (contributionsError) throw contributionsError;
 
         // Get costs for this project
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: costs, error: costsError } = await (supabase as any)
           .from('project_budget_costs')
           .select('*')
@@ -116,13 +108,13 @@ export function useProjectFunding(
         if (costsError) throw costsError;
 
         // Get active subscriptions for this project
-        const { data: subscriptions, error: subscriptionsError } =
-          await // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
-            .from('subscriptions')
-            .select('*')
-            .eq('project_id', projectId)
-            .eq('status', 'active');
+        const { data: subscriptions, error: subscriptionsError } = (
+          supabase as any
+        )
+          .from('subscriptions')
+          .select('*')
+          .eq('project_id', projectId)
+          .eq('status', 'active');
 
         if (subscriptionsError) throw subscriptionsError;
 

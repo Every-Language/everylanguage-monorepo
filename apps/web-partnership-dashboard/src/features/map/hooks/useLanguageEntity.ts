@@ -39,10 +39,10 @@ export function useLanguageEntity(id: string) {
         throw new Error(`Language entity not found: ${id}`);
       }
 
-      const row = entityData[0];
+      const row = entityData[0] as any;
 
       // Fetch aliases separately
-      const { data: aliasData, error: aliasError } = await supabase
+      const { data: aliasData, error: aliasError } = await (supabase as any)
         .from('language_aliases')
         .select('alias_name')
         .eq('language_entity_id', id)
@@ -51,8 +51,8 @@ export function useLanguageEntity(id: string) {
       if (aliasError) throw aliasError;
 
       const aliases = (aliasData ?? [])
-        .map(a => a.alias_name)
-        .filter((v): v is string => !!v);
+        .map((a: any) => a.alias_name)
+        .filter((v: any): v is string => !!v);
 
       return {
         id: row.id,
@@ -69,7 +69,7 @@ export function useLanguageEntity(id: string) {
   const properties = useQuery({
     queryKey: ['language_properties', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('language_properties')
         .select('id,key,value')
         .eq('language_entity_id', id);
@@ -83,7 +83,7 @@ export function useLanguageEntity(id: string) {
   const descendants = useQuery({
     queryKey: ['language-descendants', id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc(
+      const { data, error } = await (supabase as any).rpc(
         'get_language_entity_hierarchy',
         {
           entity_id: id,
@@ -118,7 +118,7 @@ export function useLanguageEntity(id: string) {
   const primaryRegion = useQuery({
     queryKey: ['language_primary_region', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('language_entities_regions')
         .select('*,regions(id)')
         .eq('language_entity_id', id);

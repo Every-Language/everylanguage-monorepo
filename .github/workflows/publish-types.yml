@@ -74,7 +74,7 @@ jobs:
 
     permissions:
       id-token: write  # Required for OIDC trusted publishing
-      contents: read
+      contents: write  # Required to push version bumps and tags back to repo
       packages: write
       issues: write
 
@@ -147,15 +147,63 @@ jobs:
           echo "version=$DEV_VERSION" >> $GITHUB_OUTPUT
           echo "tag=dev" >> $GITHUB_OUTPUT
 
-      # Prod: Use existing version
-      - name: Get production version
+      # Prod: Auto-increment version based on conventional commits
+      - name: Determine version bump and increment
         if: needs.setup.outputs.environment == 'prod'
         id: set_prod_version
         run: |
           cd packages/shared-types
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Get the last published version tag from git
+          LAST_TAG=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "")
+          
+          # If no tag exists, this is the first release - use current version
+          if [ -z "$LAST_TAG" ]; then
+            echo "No previous tags found, using current version: $CURRENT_VERSION"
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "bump_type=none" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "Last release tag: $LAST_TAG"
+          
+          # Get commit messages since last tag
+          COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s" -- supabase/migrations supabase/functions packages/shared-types || echo "")
+          
+          echo "Analyzing commits since $LAST_TAG..."
+          echo "$COMMITS"
+          
+          # Determine bump type based on conventional commits
+          BUMP_TYPE="patch"  # Default to patch
+          
+          # Check for breaking changes (major bump)
+          if echo "$COMMITS" | grep -qiE "^[a-z]+(\(.+\))?!:|BREAKING CHANGE:"; then
+            BUMP_TYPE="major"
+            echo "🚨 Breaking changes detected → MAJOR version bump"
+          # Check for features (minor bump)
+          elif echo "$COMMITS" | grep -qiE "^feat(\(.+\))?:"; then
+            BUMP_TYPE="minor"
+            echo "✨ New features detected → MINOR version bump"
+          # Check for fixes (patch bump)
+          elif echo "$COMMITS" | grep -qiE "^fix(\(.+\))?:"; then
+            BUMP_TYPE="patch"
+            echo "🐛 Bug fixes detected → PATCH version bump"
+          else
+            BUMP_TYPE="patch"
+            echo "📦 Other changes → PATCH version bump (default)"
+          fi
+          
+          # Bump the version
+          npm version $BUMP_TYPE --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          
+          echo "Version bumped: $CURRENT_VERSION → $NEW_VERSION ($BUMP_TYPE)"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "tag=latest" >> $GITHUB_OUTPUT
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
 
       - name: Ensure npm 11.5.1+ for trusted publishing
         run: npm install -g npm@latest
@@ -181,6 +229,31 @@ jobs:
             echo "✅ Package published successfully as '$TAG' ($ENV_NAME)"
           fi
 
+      # Update package.json in repo with new version (prod only)
+      - name: Commit version bump to repository
+        if: needs.setup.outputs.environment == 'prod' && steps.set_prod_version.outputs.bump_type != 'none'
+        run: |
+          VERSION="${{ steps.set_prod_version.outputs.version }}"
+          BUMP_TYPE="${{ steps.set_prod_version.outputs.bump_type }}"
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Commit the version bump
+          git add packages/shared-types/package.json
+          git commit -m "chore(types): bump to v$VERSION [skip ci]" \
+                     -m "Auto-incremented $BUMP_TYPE version after successful production deployment"
+          
+          # Create a git tag
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          
+          # Push changes and tag back to main
+          git push origin HEAD:main
+          git push origin "v$VERSION"
+          
+          echo "✅ Version $VERSION committed and tagged"
+
       - name: Summary
         run: |
           ENV_NAME="${{ needs.setup.outputs.environment }}"
@@ -190,5 +263,11 @@ jobs:
           echo "📦 Types published from $ENV_NAME environment"
           echo "🏷️  Tag: $TAG"
           echo "📌 Version: $VERSION"
+          
+          if [ "$ENV_NAME" = "prod" ]; then
+            BUMP_TYPE="${{ steps.set_prod_version.outputs.bump_type }}"
+            echo "🔼 Bump type: $BUMP_TYPE"
+          fi
+          
           echo "💡 Install with: npm i @everylanguage/shared-types@$TAG"
 

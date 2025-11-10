@@ -12,7 +12,6 @@ export type HeatmapPoint = {
 export const fetchLanguageListensHeatmap = async (
   languageEntityId: UUID
 ): Promise<HeatmapPoint[]> => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('vw_language_listens_heatmap')
     .select('grid, event_count, last_event_at')
@@ -47,7 +46,6 @@ export const fetchCountryCodesForRegion = async (
   regionId: UUID
 ): Promise<Array<{ country_region_id: string; country_code: string }>> => {
   // Get hierarchy and pick descendant/self countries
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: hier, error: err1 } = await (supabase as any).rpc(
     'get_region_hierarchy',
     {
@@ -78,13 +76,10 @@ export const fetchCountryCodesForRegion = async (
     .in('region_id', countryIds);
   if (err2) throw err2;
   return (props ?? [])
-    .filter(
-      (p): p is { region_id: string; value: string } =>
-        !!p && typeof (p as { value?: unknown }).value === 'string'
-    )
-    .map(p => ({
-      country_region_id: (p as { region_id: string }).region_id,
-      country_code: ((p as { value: string }).value || '').toUpperCase(),
+    .filter((p: any) => !!p && typeof p?.value === 'string')
+    .map((p: any) => ({
+      country_region_id: p.region_id,
+      country_code: (p.value || '').toUpperCase(),
     }));
 };
 
@@ -101,7 +96,6 @@ export const fetchRegionLanguageListensHeatmap = async (
     last_event_at: string | null;
   }>
 > => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('vw_country_language_listens_heatmap')
     .select('language_entity_id, grid, event_count, last_event_at')
@@ -179,7 +173,6 @@ export async function fetchDownloadsByCountryForLanguages(
   rowLimit = 5000
 ): Promise<DownloadsByCountry[]> {
   if (languageEntityIds.length === 0) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('mv_language_downloads_by_country')
     .select('language_entity_id,country_code,downloads,last_download_at')
@@ -205,7 +198,6 @@ export async function fetchListeningByCountryForLanguages(
   rowLimit = 5000
 ): Promise<ListeningTimeByCountry[]> {
   if (languageEntityIds.length === 0) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('mv_language_listening_time_by_country')
     .select(
@@ -233,7 +225,6 @@ export async function fetchPopularChaptersByCountryForLanguages(
   rowLimit = 5000
 ): Promise<PopularChaptersByCountry[]> {
   if (languageEntityIds.length === 0) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('mv_language_popular_chapters_by_country')
     .select(
@@ -267,7 +258,6 @@ export async function fetchDownloadsByLanguageForCountryCodes(
   if (countryCodes.length === 0) return [];
   const codes = countryCodes.map(safeUpper2).filter((c): c is string => !!c);
   if (codes.length === 0) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('mv_language_downloads_by_country')
     .select('language_entity_id,downloads,last_download_at,country_code')
@@ -297,7 +287,6 @@ export async function fetchListeningByLanguageForCountryCodes(
   if (countryCodes.length === 0) return [];
   const codes = countryCodes.map(safeUpper2).filter((c): c is string => !!c);
   if (codes.length === 0) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('mv_language_listening_time_by_country')
     .select(
@@ -329,7 +318,6 @@ export async function fetchPopularChaptersByLanguageForCountryCodes(
   if (countryCodes.length === 0) return [];
   const codes = countryCodes.map(safeUpper2).filter((c): c is string => !!c);
   if (codes.length === 0) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('mv_language_popular_chapters_by_country')
     .select(
@@ -367,7 +355,6 @@ export async function fetchLanguageNames(
   if (error) throw error;
   const map: Record<string, string> = {};
   for (const r of data ?? []) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     map[(r as any).id as string] = (r as any).name as string;
   }
   return map;
@@ -387,7 +374,6 @@ export async function fetchLanguageUsageByCountryMV(
 ): Promise<LanguageUsageByCountry[]> {
   if (!Array.isArray(languageEntityIds) || languageEntityIds.length === 0)
     return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('mv_language_listens_stats')
     .select(
@@ -457,7 +443,6 @@ export async function fetchLanguageUsageByRegionMV(
 ): Promise<LanguageUsageByRegion[]> {
   if (!Array.isArray(languageEntityIds) || languageEntityIds.length === 0)
     return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('mv_language_listens_stats')
     .select(
@@ -522,7 +507,6 @@ export async function fetchRegionUsageByLanguageMV(
   regionId: string
 ): Promise<RegionUsageByLanguage[]> {
   // Collect descendant country region ids
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: hier, error: err1 } = await (supabase as any).rpc(
     'get_region_hierarchy',
     {
@@ -547,7 +531,6 @@ export async function fetchRegionUsageByLanguageMV(
     .map(r => r.hierarchy_region_id);
   if (regionIds.length === 0) return [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('mv_language_listens_stats')
     .select(

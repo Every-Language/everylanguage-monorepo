@@ -7,6 +7,9 @@ import type {
   LanguageHierarchyNode,
   Region,
 } from '@/types';
+import type { Database } from '@everylanguage/shared-types';
+
+type LanguageEntityLevel = Database['public']['Enums']['language_entity_level'];
 
 export const languagesApi = {
   /**
@@ -140,7 +143,7 @@ export const languagesApi = {
 
     // Apply level filter
     if (params?.levelFilter) {
-      query = query.eq('level', params.levelFilter as any);
+      query = query.eq('level', params.levelFilter as LanguageEntityLevel);
     }
 
     // Apply region filters (OR logic for multiple regions, AND with level filter)
@@ -491,5 +494,41 @@ export const languagesApi = {
 
     if (error) throw error;
     return data || [];
+  },
+
+  /**
+   * Count all descendants of a language entity (recursive, to Nth level)
+   */
+  async countLanguageDescendants(entityId: string): Promise<number> {
+    const { data, error } = await supabase.rpc(
+      'get_language_entity_hierarchy',
+      {
+        entity_id: entityId,
+        generations_up: 0,
+        generations_down: 100, // Large number to get all descendants
+      }
+    );
+
+    if (error) {
+      console.error('Error counting descendants:', error);
+      return 0;
+    }
+
+    // Count only descendants (relationship_type = 'descendant')
+    const hierarchyNodes = (data || []) as LanguageHierarchyNode[];
+    return (
+      hierarchyNodes.filter(node => node.relationship_type === 'descendant')
+        .length || 0
+    );
+  },
+
+  /**
+   * Fetch parent language entity
+   */
+  async fetchParentLanguage(
+    parentId: string
+  ): Promise<LanguageEntityWithRegions | null> {
+    if (!parentId) return null;
+    return this.fetchLanguageEntityById(parentId);
   },
 };

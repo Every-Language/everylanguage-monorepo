@@ -1,5 +1,10 @@
 import { supabase } from '@/shared/services/supabase';
 import type { DonationAllocation, DonationWithAllocations } from '@/types';
+import type { Database } from '@everylanguage/shared-types';
+
+type DonationStatus = Database['public']['Enums']['donation_status'];
+type DonationIntentType = Database['public']['Enums']['donation_intent_type'];
+type PaymentMethodType = Database['public']['Enums']['payment_method_type'];
 
 export const donationsApi = {
   /**
@@ -77,17 +82,23 @@ export const donationsApi = {
 
     // Apply status filter
     if (params?.statusFilter) {
-      query = query.eq('status', params.statusFilter as any);
+      query = query.eq('status', params.statusFilter as DonationStatus);
     }
 
     // Apply intent type filter
     if (params?.intentTypeFilter) {
-      query = query.eq('intent_type', params.intentTypeFilter as any);
+      query = query.eq(
+        'intent_type',
+        params.intentTypeFilter as DonationIntentType
+      );
     }
 
     // Apply payment method filter
     if (params?.paymentMethodFilter) {
-      query = query.eq('payment_method', params.paymentMethodFilter as any);
+      query = query.eq(
+        'payment_method',
+        params.paymentMethodFilter as PaymentMethodType
+      );
     }
 
     // Apply pagination

@@ -104,6 +104,10 @@ export default [
       ...tseslint.configs.recommended.rules,
       'no-console': 'off', // Console is ok in Edge Functions
       '@typescript-eslint/no-explicit-any': 'off', // More lenient for API responses
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-unsafe-assignment': 'off', // Disable for Deno environment
       '@typescript-eslint/no-unsafe-member-access': 'off', // Disable for Deno environment
       '@typescript-eslint/no-unsafe-call': 'off', // Disable for Deno environment

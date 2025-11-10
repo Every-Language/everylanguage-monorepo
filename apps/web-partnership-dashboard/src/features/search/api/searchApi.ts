@@ -11,12 +11,15 @@ export async function searchLanguages(
   minSim = 0.1
 ): Promise<SearchResult[]> {
   if (query.trim().length < 2) return [];
-  const { data, error } = await supabase.rpc('search_language_aliases', {
-    search_query: query,
-    max_results: max,
-    min_similarity: minSim,
-    include_regions: false,
-  });
+  const { data, error } = await (supabase as any).rpc(
+    'search_language_aliases',
+    {
+      search_query: query,
+      max_results: max,
+      min_similarity: minSim,
+      include_regions: false,
+    }
+  );
   if (error) throw error;
   const rows = (data ?? []) as LanguageSearchRow[];
   return rows.map(r => ({
@@ -35,7 +38,7 @@ export async function searchRegions(
   minSim = 0.1
 ): Promise<SearchResult[]> {
   if (query.trim().length < 2) return [];
-  const { data, error } = await supabase.rpc('search_region_aliases', {
+  const { data, error } = await (supabase as any).rpc('search_region_aliases', {
     search_query: query,
     max_results: max,
     min_similarity: minSim,

@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Card,
   CardHeader,
@@ -116,7 +119,7 @@ export const PartnerOrgDashboardPage: React.FC = () => {
               </div>
               {totalPendingLanguages > 0 && (
                 <Link
-                  to={`/partner-org/${orgId}/pending-languages`}
+                  href={`/partner-org/${orgId}/pending-languages`}
                   className='text-xs text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'
                 >
                   View →
@@ -209,12 +212,11 @@ export const PartnerOrgDashboardPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className='divide-y divide-neutral-200 dark:divide-neutral-800'>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {projects.map((p: any) => (
                     <tr key={p.project_id}>
                       <td className='py-3 px-3 sm:px-4'>
                         <Link
-                          to={`/partner-org/${orgId}/project/${p.project_id}/progress`}
+                          href={`/partner-org/${orgId}/project/${p.project_id}/progress`}
                           className='font-medium text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'
                         >
                           {p.language_name}

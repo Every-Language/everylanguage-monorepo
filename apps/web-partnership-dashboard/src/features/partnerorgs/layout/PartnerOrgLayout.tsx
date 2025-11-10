@@ -1,25 +1,27 @@
+'use client';
+
 import React from 'react';
-import {
-  Link,
-  NavLink,
-  Outlet,
-  useLocation,
-  useParams,
-} from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname, useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 import { ProjectSelector } from '../components/ProjectSelector';
 
-export const PartnerOrgLayout: React.FC = () => {
+interface PartnerOrgLayoutProps {
+  children: React.ReactNode;
+}
+
+export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
+  children,
+}) => {
   const { orgId, projectId } = useParams<{
     orgId: string;
     projectId?: string;
   }>();
-  const location = useLocation();
+  const pathname = usePathname();
   const partner = useQuery({
     queryKey: ['partner-org', orgId],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('partner_orgs')
         .select('id,name,description')
@@ -35,7 +37,7 @@ export const PartnerOrgLayout: React.FC = () => {
     enabled: !!orgId,
   });
 
-  const currentPath = location.pathname;
+  const currentPath = pathname;
   const isPendingLanguages = currentPath.includes('/pending-languages');
   const isDashboard = currentPath.includes('/dashboard');
   const isProjectView = projectId && projectId !== 'all';
@@ -84,9 +86,9 @@ export const PartnerOrgLayout: React.FC = () => {
   }, [orgId, projectId, isPendingLanguages, isDashboard]);
 
   const activeTabLabel = React.useMemo(() => {
-    const current = tabs.find(t => location.pathname.startsWith(t.to));
+    const current = tabs.find(t => pathname.startsWith(t.to));
     return current?.label;
-  }, [location.pathname, tabs]);
+  }, [pathname, tabs]);
 
   return (
     <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950'>
@@ -95,7 +97,7 @@ export const PartnerOrgLayout: React.FC = () => {
         <div className='flex items-center justify-between'>
           <div>
             <div className='text-xs text-neutral-500'>
-              <Link to='/dashboard' className='hover:underline'>
+              <Link href='/dashboard' className='hover:underline'>
                 Dashboard
               </Link>{' '}
               / {partner.data?.name ?? '—'}
@@ -119,22 +121,24 @@ export const PartnerOrgLayout: React.FC = () => {
         {/* Tabs */}
         <div className='border-b border-neutral-200 dark:border-neutral-800'>
           <nav className='-mb-px flex gap-4 overflow-x-auto'>
-            {tabs.map(t => (
-              <NavLink
-                key={t.to}
-                to={t.to}
-                className={({ isActive }) =>
-                  `whitespace-nowrap px-3 py-2 text-sm border-b-2 ${isActive ? 'border-accent-600 text-neutral-900 dark:text-neutral-100' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`
-                }
-              >
-                {t.label}
-              </NavLink>
-            ))}
+            {tabs.map(t => {
+              const isActive =
+                pathname === t.to || pathname.startsWith(t.to + '/');
+              return (
+                <Link
+                  key={t.to}
+                  href={t.to}
+                  className={`whitespace-nowrap px-3 py-2 text-sm border-b-2 ${isActive ? 'border-accent-600 text-neutral-900 dark:text-neutral-100' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}
+                >
+                  {t.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
 
         {/* Routed content */}
-        <Outlet />
+        {children}
       </div>
     </div>
   );

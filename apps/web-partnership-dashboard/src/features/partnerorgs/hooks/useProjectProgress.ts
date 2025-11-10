@@ -10,14 +10,12 @@ export function useProjectProgress(
     queryFn: async () => {
       if (projectId === 'all') {
         // Aggregate all projects for this partner org
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: langEntities } = await (supabase as any)
           .from('vw_partner_org_language_entities')
           .select('language_entity_id, project_id')
           .eq('partner_org_id', partnerOrgId!);
 
         const languageIds =
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           langEntities?.map((le: any) => le.language_entity_id) || [];
         const { data: audioVersions } = await supabase
           .from('audio_versions')

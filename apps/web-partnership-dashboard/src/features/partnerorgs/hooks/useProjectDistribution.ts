@@ -10,8 +10,7 @@ export function useProjectDistribution(
     queryFn: async () => {
       const langQuery =
         projectId === 'all'
-          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (supabase as any)
+          ? (supabase as any)
               .from('vw_partner_org_language_entities')
               .select('language_entity_id')
               .eq('partner_org_id', partnerOrgId!)
@@ -21,7 +20,6 @@ export function useProjectDistribution(
               .eq('project_id', projectId);
 
       const { data: langData } = await langQuery;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const languageIds = langData?.map((l: any) => l.language_entity_id) || [];
 
       // Get heatmap data
@@ -37,10 +35,15 @@ export function useProjectDistribution(
         .in('language_entity_id', languageIds);
 
       const totalDownloads =
-        stats?.reduce((sum, d) => sum + (d.downloads || 0), 0) || 0;
+        (stats as any)?.reduce(
+          (sum: number, d: any) => sum + (d.downloads || 0),
+          0
+        ) || 0;
       const totalListeningHours = Math.round(
-        (stats?.reduce((sum, l) => sum + (l.total_listened_seconds || 0), 0) ||
-          0) / 3600
+        ((stats as any)?.reduce(
+          (sum: number, l: any) => sum + (l.total_listened_seconds || 0),
+          0
+        ) || 0) / 3600
       );
 
       return {

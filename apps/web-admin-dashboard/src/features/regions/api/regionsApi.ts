@@ -504,4 +504,37 @@ export const regionsApi = {
     if (error) throw error;
     return data || [];
   },
+
+  /**
+   * Count all descendants of a region (recursive, to Nth level)
+   */
+  async countRegionDescendants(regionId: string): Promise<number> {
+    const { data, error } = await supabase.rpc('get_region_hierarchy', {
+      region_id: regionId,
+      generations_up: 0,
+      generations_down: 100, // Large number to get all descendants
+    });
+
+    if (error) {
+      console.error('Error counting descendants:', error);
+      return 0;
+    }
+
+    // Count only descendants (relationship_type = 'descendant')
+    const hierarchyNodes = (data || []) as RegionHierarchyNode[];
+    return (
+      hierarchyNodes.filter(node => node.relationship_type === 'descendant')
+        .length || 0
+    );
+  },
+
+  /**
+   * Fetch parent region
+   */
+  async fetchParentRegion(
+    regionId: string
+  ): Promise<RegionWithLanguages | null> {
+    if (!regionId) return null;
+    return this.fetchRegionById(regionId);
+  },
 };

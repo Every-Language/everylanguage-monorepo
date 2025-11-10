@@ -1,8 +1,8 @@
-/* eslint-disable react-refresh/only-export-components */
+'use client';
+
 import type { ReactElement } from 'react';
 import { render, type RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 
 // Mock providers for components that need context
@@ -26,9 +26,7 @@ const AllTheProviders = ({ children }: AllTheProvidersProps) => {
   });
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>{children}</BrowserRouter>
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 };
 

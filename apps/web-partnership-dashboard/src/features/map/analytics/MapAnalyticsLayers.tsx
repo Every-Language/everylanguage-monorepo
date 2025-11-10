@@ -243,7 +243,7 @@ export const MapAnalyticsLayers: React.FC<{ show: boolean }> = ({ show }) => {
       '#8da0cb',
       '#e78ac3',
     ];
-    // if (import.meta.env.DEV) console.debug('[analytics] region', regionId, 'languages', langIds.length)
+    // if (process.env.NODE_ENV === 'development') console.debug('[analytics] region', regionId, 'languages', langIds.length)
 
     return (
       <Source

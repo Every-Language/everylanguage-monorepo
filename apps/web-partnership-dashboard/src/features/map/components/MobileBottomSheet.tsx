@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 import { type SectionType } from '../config/layoutTypes';
@@ -43,7 +45,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   onHeightChange,
   onDraggingChange,
 }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const sheetRef = React.useRef<HTMLDivElement | null>(null);
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const handleRef = React.useRef<HTMLDivElement | null>(null);
@@ -404,7 +406,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           <FadeSwitch switchKey={selectionKey}>
             {isLoading ? (
               <HeaderSkeleton
-                onBack={() => navigate(-1)}
+                onBack={() => router.back()}
                 showBackButton={!!selection}
               />
             ) : selection ? (
@@ -412,7 +414,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                 <button
                   onClick={e => {
                     e.stopPropagation();
-                    navigate(-1);
+                    router.back();
                   }}
                   aria-label='Back'
                   className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800'

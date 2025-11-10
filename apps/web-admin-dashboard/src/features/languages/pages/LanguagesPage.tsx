@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/query/query-client';
 import { languagesApi } from '../api/languagesApi';
@@ -6,11 +6,83 @@ import { regionsApi } from '@/features/regions/api/regionsApi';
 import { LanguageEntityModal } from '../components/LanguageEntityModal';
 import { RegionModal } from '@/features/regions/components/RegionModal';
 import type { LanguageEntityWithRegions, RegionWithLanguages } from '@/types';
-import { Search, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 type ModalStackItem =
   | { type: 'language'; entity: LanguageEntityWithRegions; id: string }
   | { type: 'region'; region: RegionWithLanguages; id: string };
+
+// Component for language row with descendant count and parent link
+function LanguageRow({
+  entity,
+  onEntityClick,
+  onParentClick,
+}: {
+  entity: LanguageEntityWithRegions;
+  onEntityClick: (entity: LanguageEntityWithRegions) => void;
+  onParentClick: (parentId: string) => void;
+}) {
+  // Fetch descendant count
+  const { data: descendantCount } = useQuery({
+    queryKey: ['language-descendants', entity.id],
+    queryFn: () => languagesApi.countLanguageDescendants(entity.id),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Fetch parent language if parent_id exists
+  const { data: parentLanguage } = useQuery({
+    queryKey: ['parent-language', entity.parent_id],
+    queryFn: () => {
+      if (!entity.parent_id) return null;
+      return languagesApi.fetchParentLanguage(entity.parent_id);
+    },
+    enabled: !!entity.parent_id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleParentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (entity.parent_id) {
+      onParentClick(entity.parent_id);
+    }
+  };
+
+  return (
+    <tr
+      className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
+      onClick={() => onEntityClick(entity)}
+    >
+      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+        {entity.name}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        <span className='px-2 py-1 text-xs font-medium rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300'>
+          {entity.level}
+        </span>
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        {entity.region_count || 0} regions
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        {descendantCount ?? '...'}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        {parentLanguage ? (
+          <button
+            onClick={handleParentClick}
+            className='text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'
+          >
+            {parentLanguage.name}
+          </button>
+        ) : entity.parent_id ? (
+          'Loading...'
+        ) : (
+          <span className='text-neutral-400 dark:text-neutral-600'>—</span>
+        )}
+      </td>
+    </tr>
+  );
+}
 
 export function LanguagesPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -278,48 +350,28 @@ export function LanguagesPage() {
                   <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                     Regions
                   </th>
-                  <th className='px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                    Actions
+                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                    Dialects
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                    Parent Language
                   </th>
                 </tr>
               </thead>
               <tbody className='bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-800'>
                 {entities && entities.length > 0 ? (
                   entities.map(entity => (
-                    <tr
+                    <LanguageRow
                       key={entity.id}
-                      className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
-                      onClick={() => handleEntityClick(entity)}
-                    >
-                      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
-                        {entity.name}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-                        <span className='px-2 py-1 text-xs font-medium rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300'>
-                          {entity.level}
-                        </span>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-                        {entity.region_count || 0} regions
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleEntityClick(entity);
-                          }}
-                          className='text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 inline-flex items-center transition-colors'
-                        >
-                          <Edit className='h-4 w-4 mr-1' />
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
+                      entity={entity}
+                      onEntityClick={handleEntityClick}
+                      onParentClick={handleNavigateToLanguage}
+                    />
                   ))
                 ) : (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
                     >
                       {debouncedSearch

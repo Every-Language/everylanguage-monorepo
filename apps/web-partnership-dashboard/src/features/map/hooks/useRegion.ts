@@ -39,10 +39,10 @@ export function useRegion(id: string) {
         throw new Error(`Region not found: ${id}`);
       }
 
-      const row = regionData[0];
+      const row = regionData[0] as any;
 
       // Fetch aliases separately
-      const { data: aliasData, error: aliasError } = await supabase
+      const { data: aliasData, error: aliasError } = await (supabase as any)
         .from('region_aliases')
         .select('alias_name')
         .eq('region_id', id)
@@ -51,8 +51,8 @@ export function useRegion(id: string) {
       if (aliasError) throw aliasError;
 
       const aliases = (aliasData ?? [])
-        .map(a => a.alias_name)
-        .filter((v): v is string => !!v);
+        .map((a: any) => a.alias_name)
+        .filter((v: any): v is string => !!v);
 
       return {
         id: row.id,
@@ -69,7 +69,7 @@ export function useRegion(id: string) {
   const properties = useQuery({
     queryKey: ['region_properties', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('region_properties')
         .select('id,key,value')
         .eq('region_id', id);
@@ -84,7 +84,6 @@ export function useRegion(id: string) {
     queryKey: ['region_bbox', id],
     queryFn: async () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any).rpc(
           'get_region_bbox_by_id',
           {
@@ -123,7 +122,6 @@ export function useRegion(id: string) {
     queryKey: ['region_boundary_simplified', id],
     queryFn: async () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any).rpc(
           'get_region_boundary_simplified_by_id',
           {

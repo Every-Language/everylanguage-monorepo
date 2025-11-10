@@ -1,6 +1,9 @@
+'use client';
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
@@ -16,7 +19,7 @@ interface RegisterFormData {
 
 export function RegisterPage() {
   const { signUp } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -60,7 +63,7 @@ export function RegisterPage() {
 
       // Redirect to login after a delay
       setTimeout(() => {
-        navigate('/login');
+        router.push('/login');
       }, 3000);
     } catch (error: unknown) {
       console.error('Registration error:', error);
@@ -88,7 +91,7 @@ export function RegisterPage() {
   };
 
   const handlePhoneSignupSuccess = () => {
-    navigate('/dashboard');
+    router.push('/dashboard');
   };
 
   return (
@@ -380,7 +383,7 @@ export function RegisterPage() {
             <p className='text-sm text-neutral-600 dark:text-neutral-400'>
               Already have an account?{' '}
               <Link
-                to='/login'
+                href='/login'
                 className='font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 transition-colors'
               >
                 Sign in

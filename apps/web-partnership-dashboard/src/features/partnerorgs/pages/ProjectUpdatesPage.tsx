@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'next/navigation';
 import {
   Card,
   CardHeader,
@@ -98,10 +100,8 @@ export const ProjectUpdatesPage: React.FC = () => {
                   <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                     {media
                       .sort(
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (a: any, b: any) => a.display_order - b.display_order
                       )
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       .map((m: any) => (
                         <div
                           key={m.id}

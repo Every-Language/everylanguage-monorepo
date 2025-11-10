@@ -9,11 +9,11 @@ export const getStripePromise = (): Promise<Stripe | null> | null => {
     return stripePromise;
   }
 
-  const pk = (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
-    import.meta.env.VITE_STRIPE_PK) as string | undefined;
+  const pk = (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_STRIPE_PK) as string | undefined;
 
   if (!pk) {
-    console.error('Missing VITE_STRIPE_PUBLISHABLE_KEY');
+    console.error('Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY');
     return null;
   }
 

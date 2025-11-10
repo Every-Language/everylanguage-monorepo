@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'next/navigation';
 import {
   Card,
   CardHeader,
@@ -44,7 +46,6 @@ export const PendingLanguagesPage: React.FC = () => {
       </div>
 
       <div className='grid grid-cols-1 gap-4'>
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {pendingLanguages.map((lang: any) => {
           const totalListeningHours = Math.round(
             (lang.language_stats?.total_listened_seconds || 0) / 3600

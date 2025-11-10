@@ -30,7 +30,7 @@ export const MapOverlayLayers: React.FC<{ countriesEnabled?: boolean }> = ({
         .eq('id', selection.id)
         .limit(1);
       if (!data || data.length === 0) return null as string | null;
-      return (data[0]?.region_id ?? null) as string | null;
+      return ((data as any)?.[0]?.region_id ?? null) as string | null;
     },
     staleTime: 30 * 60 * 1000,
     retry: false,

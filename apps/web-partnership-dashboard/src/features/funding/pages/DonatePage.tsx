@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { useDonateFlow } from '../hooks/useDonateFlow';
@@ -10,8 +12,8 @@ import { LanguageSelectionProvider } from '../components/DonateFlow/LanguageSele
 import { StepActionsProvider } from '../components/DonateFlow/StepActionsProvider';
 
 export const DonatePage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const flow = useDonateFlow();
 
   // Handle deep linking with query params
@@ -48,7 +50,7 @@ export const DonatePage: React.FC = () => {
 
   const confirmLeave = () => {
     setShowConfirmDialog(false);
-    navigate(-1);
+    router.back();
   };
 
   // Check if we're in the adopt flow (steps 1-4 need the language selection provider)

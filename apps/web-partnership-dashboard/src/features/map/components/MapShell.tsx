@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Map, { type MapRef, NavigationControl } from 'react-map-gl/maplibre';
 import * as maplibregl from 'maplibre-gl';
@@ -6,7 +8,7 @@ import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { useTheme } from '@/shared/theme';
 import { MapProvider } from '../context/MapContext';
 import { supabase } from '@/shared/services/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/shared/theme/hooks/useToast';
 
 // MapLibre CSS should be imported by the app's CSS pipeline or here
@@ -25,7 +27,7 @@ export const MapShell: React.FC<MapShellProps> = ({
 }) => {
   const mapRef = React.useRef<MapRef | null>(null);
   const { resolvedTheme } = useTheme();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { toast } = useToast();
 
   // No interactiveLayerIds to ensure clicks fire everywhere; we'll filter features manually
@@ -89,7 +91,9 @@ export const MapShell: React.FC<MapShellProps> = ({
 
   const mapStyleUrl = React.useMemo(() => {
     // If user provided a style, respect it. Otherwise invert base map by UI theme.
-    const envStyle = import.meta.env.VITE_MAP_STYLE_URL as string | undefined;
+    const envStyle = process.env.NEXT_PUBLIC_MAP_STYLE_URL as
+      | string
+      | undefined;
     if (envStyle && envStyle.length > 0) return envStyle;
     // UI light => day (light basemap). UI dark => night (dark basemap)
     return resolvedTheme === 'light'
@@ -194,14 +198,14 @@ export const MapShell: React.FC<MapShellProps> = ({
             ? (data[0] as { id?: string | null })
             : null;
         if (row?.id) {
-          navigate(`/map/region/${encodeURIComponent(row.id)}`);
+          router.push(`/map/region/${encodeURIComponent(row.id)}`);
         }
         // If no match (e.g., ocean), do nothing
       } catch (err) {
         console.error('Map click handler failed', err);
       }
     },
-    [countriesEnabled, navigate, toast]
+    [countriesEnabled, router, toast]
   );
 
   return (

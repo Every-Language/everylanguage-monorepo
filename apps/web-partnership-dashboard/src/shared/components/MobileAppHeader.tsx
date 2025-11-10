@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { usePathname, useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { useSearch } from '@/features/search/hooks/useSearch';
 import type { SearchResult } from '@/features/search/types';
@@ -16,18 +18,18 @@ type ViewMode = 'default' | 'search' | 'menu';
 export const MobileAppHeader: React.FC = () => {
   const [mode, setMode] = React.useState<ViewMode>('default');
   const [searchQuery, setSearchQuery] = React.useState('');
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const { results, isLoading } = useSearch(searchQuery);
 
-  const isMapRoute = location.pathname.startsWith('/map');
+  const isMapRoute = pathname.startsWith('/map');
   const isDashboardRoute =
-    location.pathname.startsWith('/dashboard') ||
-    location.pathname.startsWith('/partner-org') ||
-    location.pathname.startsWith('/project') ||
-    location.pathname.startsWith('/team') ||
-    location.pathname.startsWith('/base');
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/partner-org') ||
+    pathname.startsWith('/project') ||
+    pathname.startsWith('/team') ||
+    pathname.startsWith('/base');
 
   // Auto-focus search input when entering search mode
   React.useEffect(() => {
@@ -40,20 +42,20 @@ export const MobileAppHeader: React.FC = () => {
   React.useEffect(() => {
     setMode('default');
     setSearchQuery('');
-  }, [location.pathname]);
+  }, [pathname]);
 
   const handleSearchSelect = (item: SearchResult) => {
     const path =
       item.kind === 'language'
         ? `/map/language/${encodeURIComponent(item.id)}`
         : `/map/region/${encodeURIComponent(item.id)}`;
-    navigate(path);
+    router.push(path);
     setMode('default');
     setSearchQuery('');
   };
 
   const handleMenuNavigate = (path: string) => {
-    navigate(path);
+    router.push(path);
     setMode('default');
   };
 

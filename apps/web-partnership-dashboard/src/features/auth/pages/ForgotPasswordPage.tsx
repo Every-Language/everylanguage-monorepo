@@ -1,6 +1,8 @@
+'use client';
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { authService } from '../services/auth';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
@@ -183,7 +185,7 @@ export function ForgotPasswordPage() {
             <p className='text-sm text-neutral-600'>
               Remember your password?{' '}
               <Link
-                to='/login'
+                href='/login'
                 className='font-medium text-primary-600 hover:text-primary-500 transition-colors'
               >
                 Sign in
@@ -192,7 +194,7 @@ export function ForgotPasswordPage() {
             <p className='text-sm text-neutral-600'>
               Don't have an account?{' '}
               <Link
-                to='/register'
+                href='/register'
                 className='font-medium text-primary-600 hover:text-primary-500 transition-colors'
               >
                 Sign up

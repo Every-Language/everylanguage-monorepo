@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 
@@ -8,7 +11,7 @@ export const BaseDashboardPage: React.FC = () => {
   const base = useQuery({
     queryKey: ['base', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bases')
         .select('id,name')
         .eq('id', id as string)
@@ -25,7 +28,7 @@ export const BaseDashboardPage: React.FC = () => {
         <div className='flex items-center justify-between'>
           <div>
             <div className='text-xs text-neutral-500'>
-              <Link to='/dashboard' className='hover:underline'>
+              <Link href='/dashboard' className='hover:underline'>
                 All entities
               </Link>{' '}
               / Base

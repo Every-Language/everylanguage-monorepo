@@ -344,7 +344,6 @@ export const MapProvider: React.FC<{
   return <MapContext.Provider value={value}>{children}</MapContext.Provider>;
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useMapContext = (): MapContextValue => {
   const ctx = React.useContext(MapContext);
   if (!ctx) throw new Error('useMapContext must be used within MapProvider');

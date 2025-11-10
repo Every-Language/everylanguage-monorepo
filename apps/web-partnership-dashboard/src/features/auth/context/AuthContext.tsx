@@ -1,3 +1,5 @@
+'use client';
+
 import React, {
   createContext,
   useEffect,
@@ -8,7 +10,6 @@ import React, {
 import { authService } from '../services/auth';
 import type { AuthContextType, AuthState, DbUser } from '../types';
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );

@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth, authService } from '@/features/auth';
-import { Navigate } from 'react-router-dom';
 import {
   Form,
   FormActions,
@@ -16,6 +18,7 @@ import type { DbUser } from '@/features/auth';
 
 export const MyProfilePage: React.FC = () => {
   const { user, loading, updateProfile } = useAuth();
+  const router = useRouter();
   const { toast } = useToast();
 
   const [dbUser, setDbUser] = React.useState<DbUser | null>(null);
@@ -56,13 +59,19 @@ export const MyProfilePage: React.FC = () => {
     if (user) void loadProfile();
   }, [user, loadProfile]);
 
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login?redirectTo=/profile');
+    }
+  }, [user, loading, router]);
+
   if (loading || isLoadingProfile)
     return (
       <div className='min-h-screen flex items-center justify-center'>
         Loading…
       </div>
     );
-  if (!user) return <Navigate to='/login?next=/profile' replace />;
+  if (!user) return null;
 
   const fullName =
     `${dbUser?.first_name ?? ''} ${dbUser?.last_name ?? ''}`.trim() ||

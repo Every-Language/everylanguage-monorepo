@@ -28,7 +28,6 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
   React.useEffect(() => {
     if (donorMode === 'existing') {
       supabase
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .from('partner_orgs' as any)
         .select('id, name')
         .eq('is_public', true)

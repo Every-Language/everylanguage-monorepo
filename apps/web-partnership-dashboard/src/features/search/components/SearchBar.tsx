@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { usePathname } from 'next/navigation';
 import type { SearchResult } from '../types';
 import { useSearch } from '../hooks/useSearch';
 
@@ -17,7 +19,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [query, setQuery] = React.useState('');
   const [isOpen, setIsOpen] = React.useState(false);
   const { results, isLoading } = useSearch(query);
-  const location = useLocation();
+  const pathname = usePathname();
 
   React.useEffect(() => {
     setIsOpen(query.trim().length >= 2);
@@ -27,7 +29,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   React.useEffect(() => {
     setQuery('');
     setIsOpen(false);
-  }, [location.pathname, location.search]);
+  }, [pathname]);
 
   const rootRef = React.useRef<HTMLDivElement | null>(null);
   React.useEffect(() => {

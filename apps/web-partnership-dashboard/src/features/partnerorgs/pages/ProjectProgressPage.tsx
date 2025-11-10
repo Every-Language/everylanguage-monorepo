@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'next/navigation';
 import {
   Card,
   CardHeader,
@@ -118,7 +120,6 @@ export const ProjectProgressPage: React.FC = () => {
 
   // Mock: calculate aggregate progress from first audio version
   const firstVersion = audioVersions[0];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const progressSummary = (firstVersion as any)
     .audio_version_progress_summary?.[0];
 
@@ -193,8 +194,7 @@ export const ProjectProgressPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
-            {audioVersions.map(av => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            {(audioVersions as any[]).map((av: any) => {
               const summary = (av as any).audio_version_progress_summary?.[0];
               return (
                 <div

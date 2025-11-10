@@ -14,7 +14,6 @@ const FormContext = React.createContext<FormContextValue | undefined>(
   undefined
 );
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useFormContext = () => {
   const context = React.useContext(FormContext);
   if (!context) {

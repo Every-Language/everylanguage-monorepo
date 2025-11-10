@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 import { useSelection } from '../inspector/state/inspectorStore';
@@ -31,7 +33,7 @@ export const HierarchySection: React.FC<HierarchySectionProps> = ({
     queryKey: [`${type}-hier`, entityId],
     queryFn: async () => {
       if (type === 'language') {
-        const { data, error } = await supabase.rpc(
+        const { data, error } = await (supabase as any).rpc(
           'get_language_entity_hierarchy',
           {
             entity_id: entityId,
@@ -49,11 +51,14 @@ export const HierarchySection: React.FC<HierarchySectionProps> = ({
           generation_distance: number;
         }>;
       } else {
-        const { data, error } = await supabase.rpc('get_region_hierarchy', {
-          region_id: entityId,
-          generations_up: 3,
-          generations_down: 3,
-        });
+        const { data, error } = await (supabase as any).rpc(
+          'get_region_hierarchy',
+          {
+            region_id: entityId,
+            generations_up: 3,
+            generations_down: 3,
+          }
+        );
         if (error) throw error;
         return (data ?? []) as Array<{
           hierarchy_region_id: string;
@@ -164,7 +169,7 @@ const Tree: React.FC<{
   const [open, setOpen] = React.useState<Record<string, boolean>>({
     [id]: true,
   });
-  const navigate = useNavigate();
+  const router = useRouter();
   const selection = useSelection();
 
   // Expand all nodes once when nodes change
@@ -215,7 +220,7 @@ const Tree: React.FC<{
               isSelected ? 'text-accent-600 font-semibold' : ''
             }`}
             onClick={() =>
-              navigate(
+              router.push(
                 type === 'language'
                   ? `/map/language/${encodeURIComponent(nid)}`
                   : `/map/region/${encodeURIComponent(nid)}`

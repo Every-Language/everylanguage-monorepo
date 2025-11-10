@@ -8,13 +8,9 @@ interface ProjectUpdate {
   title: string;
   body: string;
   created_at: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   project?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   media?: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   creator?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -27,19 +23,13 @@ export function useProjectUpdates(
     queryFn: async () => {
       if (projectId === 'all') {
         // Get updates for all partner org projects
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: projects } = await (supabase as any)
           .from('vw_partner_org_projects')
           .select('project_id')
           .eq('partner_org_id', partnerOrgId!);
 
-        const projectIds =
-          projects?.map(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (p: any) => p.project_id
-          ) || [];
+        const projectIds = projects?.map((p: any) => p.project_id) || [];
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: updates, error: updatesError } = await (supabase as any)
           .from('project_updates')
           .select(
@@ -82,7 +72,6 @@ export function useProjectUpdates(
         return (updates || []) as ProjectUpdate[];
       } else {
         // Single project
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: updates, error } = await (supabase as any)
           .from('project_updates')
           .select(

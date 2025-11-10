@@ -1,22 +1,20 @@
+'use client';
+
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/shared/components/ui/Button';
 import { useAuth } from '../hooks/useAuth';
 
 export const UnauthorizedPage: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
   const { user } = useAuth();
 
-  const requiredRoles =
-    (location.state as { requiredRoles?: string[] })?.requiredRoles || [];
-
   const handleGoBack = () => {
-    navigate(-1);
+    router.back();
   };
 
   const handleGoHome = () => {
-    navigate('/dashboard');
+    router.push('/dashboard');
   };
 
   return (
@@ -45,11 +43,6 @@ export const UnauthorizedPage: React.FC = () => {
 
           <p className='text-neutral-600 mb-6'>
             You don't have permission to access this page.
-            {requiredRoles.length > 0 && (
-              <span className='block mt-2 text-sm'>
-                Required roles: {requiredRoles.join(', ')}
-              </span>
-            )}
           </p>
 
           {user && (

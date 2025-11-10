@@ -4,25 +4,23 @@ This guide explains how environment variables are managed across the monorepo.
 
 ## Overview
 
-The monorepo uses a **three-tier environment variable system**:
+The monorepo uses a **two-tier environment variable system**:
 
-1. **Root-level shared variables** (`.env.local` at monorepo root) - For local development
-2. **App-specific overrides** (`.env.local` in each app) - For app-specific config
-3. **Deployment secrets** (`secrets/` directory) - For CI/CD and production
+1. **App-specific variables** (`.env.local` in each app) - For local development
+2. **Deployment secrets** (`secrets/` directory) - For CI/CD and production
 
 ## Directory Structure
 
 ```
 /monorepo-root/
-  .env.local              # ✅ Shared dev environment (all apps)
-  .env.example            # Template for local setup
-
   apps/
     web-project-dashboard/
-      .env.local          # Optional: app-specific overrides
-      env.example         # Documents app-specific vars
+      .env.local          # App-specific environment variables
+      env.example         # Template for app-specific vars
     web-partnership-dashboard/
     web-admin-dashboard/
+      .env.local          # App-specific environment variables
+      env.example         # Template for app-specific vars
 
   secrets/                # Deployment-time secrets
     .env.development      # Dev deployment (Vercel preview, GitHub Actions)
@@ -30,18 +28,19 @@ The monorepo uses a **three-tier environment variable system**:
     .env.shared           # Shared across environments
 ```
 
-## 1. Root-Level Shared Variables (Local Development)
+## 1. App-Specific Environment Variables (Local Development)
 
-**Location:** `/monorepo-root/.env.local` (gitignored)
+**Location:** `/apps/<app-name>/.env.local` (gitignored)
 
-**Purpose:** Shared environment variables for local development across all React apps.
+**Purpose:** Environment variables for local development. Each app loads its own `.env.local` file.
 
 **Contains:**
 
 - Supabase URL and keys
 - Stripe publishable keys
 - Map provider keys
-- Any shared API endpoints
+- App-specific API endpoints
+- App-specific feature flags
 
 **Example:**
 
@@ -56,47 +55,25 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 # Map providers (optional)
 VITE_MAPTILER_KEY=...
 VITE_MAP_STYLE_URL=...
+
+# App-specific feature flags
+VITE_ENABLE_BETA_FEATURE=true
 ```
 
 ### How It Works
 
-Each app's `vite.config.ts` includes:
+Each app's `vite.config.ts` uses Vite's default behavior, which loads `.env` files from the app's directory:
 
 ```typescript
 export default defineConfig({
-  // Load environment variables from monorepo root
-  envDir: path.resolve(__dirname, '../..'),
+  // No envDir specified - defaults to app directory
   // ... other config
 });
 ```
 
-This tells Vite to look for `.env` files at the monorepo root first, then check for app-specific overrides.
+This tells Vite to look for `.env` files in the app's own directory.
 
-## 2. App-Specific Overrides (Optional)
-
-**Location:** `/apps/<app-name>/.env.local` (gitignored)
-
-**Purpose:** Override root-level variables or add app-specific configuration.
-
-**When to use:**
-
-- Testing different API endpoints for one app
-- App-specific feature flags
-- App-specific third-party keys
-
-**Example use case:**
-
-```bash
-# Override Supabase URL for testing a specific app
-VITE_SUPABASE_URL=https://staging-project.supabase.co
-
-# App-specific feature flag
-VITE_ENABLE_BETA_FEATURE=true
-```
-
-**Note:** Most of the time, you won't need app-specific `.env.local` files. The root-level file is sufficient for shared backend services.
-
-## 3. Deployment Secrets
+## 2. Deployment Secrets
 
 **Location:** `/secrets/` directory
 
@@ -118,10 +95,16 @@ These are deployed to:
 
 ### For New Developers
 
-1. **Copy the root environment example:**
+1. **Copy the app's environment example:**
 
    ```bash
-   cp .env.example .env.local
+   # For admin dashboard
+   cd apps/web-admin-dashboard
+   cp env.example .env.local
+
+   # For project dashboard
+   cd apps/web-project-dashboard
+   cp env.example .env.local
    ```
 
 2. **Fill in your values:**
@@ -132,26 +115,25 @@ These are deployed to:
    ```bash
    pnpm run dev
    ```
-   All three dashboards should start and connect to Supabase.
+   All dashboards should start and connect to Supabase.
 
 ### For Existing Developers (Migration)
 
-If you already have app-specific `.env.local` files:
+If you currently have a root `.env.local` file:
 
-1. **Create root `.env.local`:**
+1. **Copy to each app directory:**
 
    ```bash
-   # Copy from any existing app (they should all be identical)
-   cp apps/web-project-dashboard/.env.local .env.local
+   # Copy root .env.local to each app
+   cp .env.local apps/web-admin-dashboard/.env.local
+   cp .env.local apps/web-project-dashboard/.env.local
    ```
 
-2. **Remove duplicate app-level `.env.local` files:**
+2. **Remove root `.env.local` (optional):**
 
    ```bash
-   # Only do this if your apps all use identical configs
-   rm apps/web-project-dashboard/.env.local
-   rm apps/web-partnership-dashboard/.env.local
-   rm apps/web-admin-dashboard/.env.local
+   # Root .env.local is no longer used by these apps
+   rm .env.local
    ```
 
 3. **Test that everything still works:**
@@ -168,10 +150,7 @@ Vite loads environment variables in this order (later sources override earlier o
 3. `.env.[mode]` - Mode-specific (e.g., `.env.production`)
 4. `.env.[mode].local` - Mode-specific local overrides
 
-With our setup using `envDir`:
-
-1. **Root** `.env.local` (shared)
-2. **App-specific** `.env.local` (overrides root)
+Each app loads these files from its own directory.
 
 ## Turbo Cache Considerations
 
@@ -196,33 +175,34 @@ These variables affect Turbo's cache invalidation. If you add new environment va
 
 ### ✅ DO:
 
-- Use root `.env.local` for shared backend services
-- Use app-specific `.env.local` only for true app-specific overrides
+- Use app-specific `.env.local` files for each app
 - Prefix all Vite env vars with `VITE_`
-- Use `.env.example` files to document required variables
+- Use `env.example` files to document required variables
 - Add new build-affecting vars to `turbo.json` `globalEnv`
+- Share common values across apps by copying (or use a script if needed)
 
 ### ❌ DON'T:
 
 - Commit `.env.local` files to git
-- Put secrets in `.env.example` files
-- Use different Supabase projects per app without good reason
-- Duplicate identical environment variables across apps
+- Put secrets in `env.example` files
+- Rely on a root `.env.local` file (apps don't read from root anymore)
 
 ## Troubleshooting
 
 ### Environment variables not loading
 
-1. **Check the `envDir` setting** in your app's `vite.config.ts`:
+1. **Check that `envDir` is not set** in your app's `vite.config.ts` (defaults to app directory):
 
    ```typescript
-   envDir: path.resolve(__dirname, '../..');
+   // Should NOT have this line:
+   // envDir: path.resolve(__dirname, '../..'),
    ```
 
 2. **Verify file location:**
 
    ```bash
-   ls -la .env.local  # Should be at monorepo root
+   ls -la apps/web-admin-dashboard/.env.local  # Should be in app directory
+   ls -la apps/web-project-dashboard/.env.local  # Should be in app directory
    ```
 
 3. **Check variable prefix:**
@@ -241,11 +221,10 @@ These variables affect Turbo's cache invalidation. If you add new environment va
 
 ### Different apps need different configs
 
-If your apps truly need different backend configurations:
+Each app now has its own `.env.local` file, so you can easily configure them differently:
 
-1. **Keep shared vars at root** (e.g., production Supabase)
-2. **Override in app-specific `.env.local`** (e.g., staging URL for one app)
-3. **Document why** in the app's `env.example`
+1. **Set different values in each app's `.env.local`**
+2. **Document differences** in the app's `env.example` if needed
 
 ### Vercel/GitHub deployments failing
 

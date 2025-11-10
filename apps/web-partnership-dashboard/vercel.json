@@ -1,13 +1,13 @@
 {
   "buildCommand": "cd ../.. && pnpm run build --filter=web-partnership-dashboard",
-  "outputDirectory": "dist",
+  "outputDirectory": ".next",
   "devCommand": "pnpm run dev",
   "installCommand": "pnpm install",
-  "framework": "vite",
+  "framework": "nextjs",
   "regions": ["iad1"],
   "headers": [
     {
-      "source": "/assets/(.*)",
+      "source": "/_next/static/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -31,12 +31,6 @@
           "value": "1; mode=block"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
     }
   ]
 }

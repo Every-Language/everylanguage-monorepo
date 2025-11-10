@@ -1,4 +1,4 @@
-? RLS for amterialized views / views
+migrate partnership-dashboard to consume from views, and write through API routes=
 
 allow community checking of verse texts too
 

@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 import { type PanelConfig } from '../config/layoutTypes';
@@ -26,7 +28,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   layers,
   onLayersChange,
 }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const selectionKey = selection ? `${selection.kind}:${selection.id}` : 'none';
 
@@ -123,13 +125,13 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         <FadeSwitch switchKey={selectionKey}>
           {isLoading ? (
             <HeaderSkeleton
-              onBack={() => navigate(-1)}
+              onBack={() => router.back()}
               showBackButton={!!selection}
             />
           ) : selection ? (
             <div className='flex items-center gap-3'>
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => router.back()}
                 aria-label='Back'
                 className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800'
               >

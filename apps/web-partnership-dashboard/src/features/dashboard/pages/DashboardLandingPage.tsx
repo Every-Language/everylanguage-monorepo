@@ -1,11 +1,13 @@
+'use client';
+
 import React from 'react';
 import { useAuth } from '@/features/auth';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { PublicLanguagesPage } from '@/features/funding/pages/PublicLanguagesPage';
 import { useUserEntities } from '@/features/dashboard/hooks/useUserEntities';
 
 const EntitySelector: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { user } = useAuth();
   const { teams, bases, projects, partners, isLoading, loading } =
     useUserEntities(user?.id ?? null);
@@ -66,20 +68,24 @@ const EntitySelector: React.FC = () => {
           title='Teams'
           items={teams}
           loading={loading?.teams}
-          onClick={id => navigate(`/team/${encodeURIComponent(id)}/dashboard`)}
+          onClick={id =>
+            router.push(`/team/${encodeURIComponent(id)}/dashboard`)
+          }
         />
         <Card
           title='Bases'
           items={bases}
           loading={loading?.bases}
-          onClick={id => navigate(`/base/${encodeURIComponent(id)}/dashboard`)}
+          onClick={id =>
+            router.push(`/base/${encodeURIComponent(id)}/dashboard`)
+          }
         />
         <Card
           title='Projects'
           items={projects}
           loading={loading?.projects}
           onClick={id =>
-            navigate(`/project/${encodeURIComponent(id)}/dashboard`)
+            router.push(`/project/${encodeURIComponent(id)}/dashboard`)
           }
         />
         <Card
@@ -87,7 +93,7 @@ const EntitySelector: React.FC = () => {
           items={partners}
           loading={loading?.partners}
           onClick={id =>
-            navigate(`/partner-org/${encodeURIComponent(id)}/dashboard`)
+            router.push(`/partner-org/${encodeURIComponent(id)}/dashboard`)
           }
         />
       </div>

@@ -1,6 +1,9 @@
-import { supabase } from '@/shared/services/supabase';
+import { createClient } from '@/lib/supabase/client';
 import type { DbUser, User, Session } from '../types';
 import { normalizePhoneNumber } from '../utils/phoneValidation';
+
+// Create a singleton Supabase client for auth operations
+const supabase = createClient();
 
 export class AuthService {
   /**
@@ -62,7 +65,7 @@ export class AuthService {
     try {
       console.log('Fetching dbUser for userId:', userId);
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('users')
         .select('*')
         .eq('id', userId)
@@ -75,7 +78,7 @@ export class AuthService {
         return null;
       }
 
-      return data;
+      return data as DbUser;
     } catch (error) {
       console.error('Unexpected error getting database user:', error);
       return null;
@@ -447,7 +450,7 @@ export class AuthService {
         dbUpdateData.phone_number = normalizePhoneNumber(profileData.phone);
       }
 
-      const { error: dbError } = await supabase
+      const { error: dbError } = await (supabase as any)
         .from('users')
         .update(dbUpdateData)
         .eq('id', user.id);
