@@ -1,20 +1,22 @@
 export default {
-  'apps/backend/**/*.{ts,js}': (filenames) => {
+  'supabase/**/*.{ts,js}': (filenames) => {
     const relativePaths = filenames
-      .map((file) => file.replace(/^apps\/backend\//, ''))
+      .map((file) => file.replace(/^supabase\//, ''))
       .map((file) => `"${file}"`)
       .join(' ');
     return [
-      `cd apps/backend && eslint --fix ${relativePaths}`,
+      `cd supabase && eslint --fix ${relativePaths}`,
       `prettier --write ${filenames.join(' ')}`,
     ];
   },
-  'apps/backend/**/*.sql': (filenames) =>
-    filenames.map(
-      (filename) =>
-        `sql-formatter --config apps/backend/.sqlformatterrc.json --fix ${filename}`
-    ),
-  'apps/frontend/**/*.{ts,tsx,js,jsx}': ['prettier --write'],
+  'supabase/**/*.sql': (filenames) =>
+    filenames
+      .filter((filename) => !filename.includes('/scripts/') && !filename.includes('/seed/'))
+      .map(
+        (filename) =>
+          `sql-formatter --config supabase/.sqlformatterrc.json --fix ${filename}`
+      ),
+  'apps/**/*.{ts,tsx,js,jsx}': ['prettier --write'],
   'packages/shared-ui/**/*.{ts,tsx}': ['prettier --write'],
   '*.{json,md,yml,yaml}': ['prettier --write'],
   'packages/shared-types/types/database.{ts,d.ts,js}': [],

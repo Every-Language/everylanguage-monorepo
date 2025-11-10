@@ -30,13 +30,13 @@ jobs:
         with:
           filters: |
             backend:
-              - 'apps/backend/**'
+              - 'supabase/**'
             shared-types:
               - 'packages/shared-types/**'
             frontend-project:
-              - 'apps/frontend/web-project-dashboard/**'
+              - 'apps/web-project-dashboard/**'
             frontend-partnership:
-              - 'apps/frontend/web-partnership-dashboard/**'
+              - 'apps/web-partnership-dashboard/**'
 
   backend:
     runs-on: ubuntu-latest
@@ -62,13 +62,13 @@ jobs:
         run: pnpm install
 
       - name: Run backend linting
-        run: pnpm --filter=backend run lint
+        run: cd supabase && pnpm run lint
 
       - name: Check backend formatting
-        run: pnpm --filter=backend run format:check
+        run: cd supabase && pnpm run format:check
 
       - name: Backend type check
-        run: pnpm --filter=backend run type-check
+        run: cd supabase && pnpm run type-check
 
       - name: Setup Deno
         uses: denoland/setup-deno@v1
@@ -76,7 +76,7 @@ jobs:
           deno-version: v2.x
 
       - name: Type check Edge Functions
-        run: pnpm --filter=backend run type-check:functions
+        run: cd supabase && pnpm run type-check:functions
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -84,7 +84,7 @@ jobs:
           version: latest
 
       - name: Start Supabase local development
-        run: cd apps/backend && supabase start
+        run: cd supabase && supabase start
 
       - name: Wait for Supabase to be ready
         run: |
@@ -101,14 +101,14 @@ jobs:
           echo "Supabase is ready!"
 
       - name: Run backend tests
-        run: pnpm --filter=backend run test
+        run: cd supabase && pnpm run test
         env:
           NODE_ENV: test
           SUPABASE_URL: http://127.0.0.1:54321
 
       - name: Stop Supabase
         if: always()
-        run: cd apps/backend && supabase stop
+        run: cd supabase && supabase stop
 
   frontend-project:
     runs-on: ubuntu-latest

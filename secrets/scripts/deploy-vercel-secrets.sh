@@ -9,9 +9,29 @@ set -e
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SECRETS_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Source common utilities
 source "$SCRIPT_DIR/common.sh"
+
+# Load VERCEL_TOKEN from .env.shared if it exists
+if [ -f "$SECRETS_DIR/.env.shared" ]; then
+    # Extract VERCEL_TOKEN from .env.shared and export it
+    # Read directly from file, skipping comments and empty lines
+    while IFS='=' read -r key value || [ -n "$key" ]; do
+        # Skip empty lines and comments
+        [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+        
+        # Remove leading/trailing whitespace and quotes
+        key=$(echo "$key" | xargs)
+        value=$(echo "$value" | xargs | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+        
+        if [ "$key" = "VERCEL_TOKEN" ] && [ -n "$value" ]; then
+            export VERCEL_TOKEN="$value"
+            break
+        fi
+    done < "$SECRETS_DIR/.env.shared"
+fi
 
 # Vercel configuration
 VERCEL_PROJECT_DASHBOARD="everylanguage-project-dashboard"
@@ -26,8 +46,15 @@ echo ""
 # Check prerequisites
 check_command "vercel" "Install with: npm install -g vercel" || exit 1
 check_command "jq" "Install with: brew install jq" || exit 1
-check_env_file "secrets/.env.development" || exit 1
-check_env_file "secrets/.env.production" || exit 1
+check_env_file "$SECRETS_DIR/.env.development" || exit 1
+check_env_file "$SECRETS_DIR/.env.production" || exit 1
+
+# Verify Vercel token is loaded
+if [ -n "$VERCEL_TOKEN" ]; then
+    echo -e "${GREEN}✓ Vercel token loaded from .env.shared${NC}"
+else
+    echo -e "${YELLOW}⚠ Vercel token not found in .env.shared, will try CLI auth${NC}"
+fi
 
 echo -e "${GREEN}✓ All prerequisite checks passed${NC}"
 echo ""
@@ -45,8 +72,10 @@ get_vercel_token() {
     if [ -f "$token_file" ]; then
         # Extract token from auth.json (handles spaces around colon)
         TOKEN=$(cat "$token_file" | grep -o '"token"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4 | head -1)
-        echo "$TOKEN"
-        return
+        if [ -n "$TOKEN" ]; then
+            echo "$TOKEN"
+            return
+        fi
     fi
     
     # Try legacy location
@@ -54,8 +83,10 @@ get_vercel_token() {
     if [ -f "$token_file" ]; then
         # Extract token from auth.json (handles spaces around colon)
         TOKEN=$(cat "$token_file" | grep -o '"token"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4 | head -1)
-        echo "$TOKEN"
-        return
+        if [ -n "$TOKEN" ]; then
+            echo "$TOKEN"
+            return
+        fi
     fi
     
     echo ""
@@ -67,28 +98,17 @@ get_vercel_project_id() {
     local team_id=$2
     local token=$3
     
-    # Debug output
-    if [ -n "$DEBUG_VERCEL" ]; then
-        echo "DEBUG: project=$project_name, team=$team_id, token_len=${#token}" >&2
+    # Build URL with optional team parameter
+    local url="https://api.vercel.com/v9/projects/$project_name"
+    if [ -n "$team_id" ]; then
+        url="$url?teamId=$team_id"
     fi
     
     # Use Vercel API to get project info
-    local response=$(curl -s -H "Authorization: Bearer $token" \
-        "https://api.vercel.com/v9/projects/$project_name?teamId=$team_id")
-    
-    # Debug output
-    if [ -n "$DEBUG_VERCEL" ]; then
-        echo "DEBUG: API response length=${#response}" >&2
-        echo "DEBUG: API response start=$(echo "$response" | head -c 100)" >&2
-    fi
+    local response=$(curl -s -H "Authorization: Bearer $token" "$url")
     
     # Extract project ID from response using jq
     local project_id=$(echo "$response" | jq -r '.id // empty')
-    
-    # Debug output
-    if [ -n "$DEBUG_VERCEL" ]; then
-        echo "DEBUG: extracted project_id=$project_id" >&2
-    fi
     
     echo "$project_id"
 }
@@ -123,15 +143,18 @@ deploy_vercel_secret() {
         return
     fi
     
-    # Map environment name for API (preview -> preview, production -> production)
-    local env_type="$environment"
+    # Build URL with optional team parameter
+    local url="https://api.vercel.com/v10/projects/$project_id/env?upsert=true"
+    if [ -n "$VERCEL_TEAM_ID" ]; then
+        url="$url&teamId=$VERCEL_TEAM_ID"
+    fi
     
     # Use Vercel API to set environment variable
     local response=$(curl -s -X POST \
         -H "Authorization: Bearer $token" \
         -H "Content-Type: application/json" \
-        -d "{\"key\":\"$secret_name\",\"value\":\"$secret_value\",\"type\":\"encrypted\",\"target\":[\"$env_type\"]}" \
-        "https://api.vercel.com/v10/projects/$project_id/env?teamId=$VERCEL_TEAM_ID&upsert=true")
+        -d "{\"key\":\"$secret_name\",\"value\":\"$secret_value\",\"type\":\"encrypted\",\"target\":[\"$environment\"]}" \
+        "$url")
     
     # Check if request was successful
     if echo "$response" | grep -q '"created"' || echo "$response" | grep -q '"updated"'; then
@@ -139,6 +162,9 @@ deploy_vercel_secret() {
         SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
     else
         echo -e "${RED}  ✗ Vercel ($project - $environment): $secret_name${NC}"
+        if [ -n "$DEBUG_VERCEL" ]; then
+            echo "    Response: $response" >&2
+        fi
         FAILURE_COUNT=$((FAILURE_COUNT + 1))
     fi
 }
@@ -149,13 +175,39 @@ deploy_vercel_secret() {
 
 echo -e "${BLUE}1. Deploying Development Secrets (Preview)${NC}"
 echo -e "${YELLOW}Vercel Preview Environment:${NC}"
+
+# Get project ID for derivations
+DEV_PROJECT_ID=$(get_env_value "SUPABASE_PROJECT_ID" "$SECRETS_DIR/.env.development")
+
+# Deploy derived VITE variables
+if [ -n "$DEV_PROJECT_ID" ]; then
+    VITE_SUPABASE_URL=$(derive_supabase_url "$DEV_PROJECT_ID")
+    deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PROJECT_DASHBOARD" "preview"
+    deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+fi
+
+# Deploy VITE_SUPABASE_PUBLISHABLE_KEY from SUPABASE_PUBLISHABLE_KEY
+VITE_SUPABASE_PUBLISHABLE_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development")
+if [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+    deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "preview"
+    deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+fi
+
+# Deploy VITE_STRIPE_PUBLISHABLE_KEY from STRIPE_PUBLISHABLE_KEY
+VITE_STRIPE_PUBLISHABLE_KEY=$(get_env_value "STRIPE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development")
+if [ -n "$VITE_STRIPE_PUBLISHABLE_KEY" ]; then
+    deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "preview"
+    deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+fi
+
+# Deploy any other VITE_* variables that might exist (for backward compatibility)
 while IFS='=' read -r key value; do
-    # Only deploy Vercel-specific secrets (VITE_*)
-    if [[ "$key" =~ ^VITE_ ]]; then
+    # Only deploy Vercel-specific secrets (VITE_*) that aren't already derived
+    if [[ "$key" =~ ^VITE_ ]] && [[ ! "$key" =~ ^(VITE_SUPABASE_URL|VITE_SUPABASE_PUBLISHABLE_KEY|VITE_STRIPE_PUBLISHABLE_KEY)$ ]]; then
         deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "preview"
         deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
     fi
-done < <(parse_env_file "secrets/.env.development")
+done < <(parse_env_file "$SECRETS_DIR/.env.development")
 echo ""
 
 # ============================================================
@@ -164,13 +216,39 @@ echo ""
 
 echo -e "${BLUE}2. Deploying Production Secrets${NC}"
 echo -e "${YELLOW}Vercel Production Environment:${NC}"
+
+# Get project ID for derivations
+PROD_PROJECT_ID=$(get_env_value "SUPABASE_PROJECT_ID" "$SECRETS_DIR/.env.production")
+
+# Deploy derived VITE variables
+if [ -n "$PROD_PROJECT_ID" ]; then
+    VITE_SUPABASE_URL=$(derive_supabase_url "$PROD_PROJECT_ID")
+    deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PROJECT_DASHBOARD" "production"
+    deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+fi
+
+# Deploy VITE_SUPABASE_PUBLISHABLE_KEY from SUPABASE_PUBLISHABLE_KEY
+VITE_SUPABASE_PUBLISHABLE_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production")
+if [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+    deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "production"
+    deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+fi
+
+# Deploy VITE_STRIPE_PUBLISHABLE_KEY from STRIPE_PUBLISHABLE_KEY
+VITE_STRIPE_PUBLISHABLE_KEY=$(get_env_value "STRIPE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production")
+if [ -n "$VITE_STRIPE_PUBLISHABLE_KEY" ]; then
+    deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "production"
+    deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+fi
+
+# Deploy any other VITE_* variables that might exist (for backward compatibility)
 while IFS='=' read -r key value; do
-    # Only deploy Vercel-specific secrets (VITE_*)
-    if [[ "$key" =~ ^VITE_ ]]; then
+    # Only deploy Vercel-specific secrets (VITE_*) that aren't already derived
+    if [[ "$key" =~ ^VITE_ ]] && [[ ! "$key" =~ ^(VITE_SUPABASE_URL|VITE_SUPABASE_PUBLISHABLE_KEY|VITE_STRIPE_PUBLISHABLE_KEY)$ ]]; then
         deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "production"
         deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
     fi
-done < <(parse_env_file "secrets/.env.production")
+done < <(parse_env_file "$SECRETS_DIR/.env.production")
 echo ""
 
 # Print summary

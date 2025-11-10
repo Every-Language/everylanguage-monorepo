@@ -9,6 +9,7 @@ set -e
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SECRETS_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Source common utilities
 source "$SCRIPT_DIR/common.sh"
@@ -23,9 +24,9 @@ echo ""
 
 # Check prerequisites
 check_command "gh" "Install with: brew install gh" || exit 1
-check_env_file "secrets/.env.shared" || exit 1
-check_env_file "secrets/.env.development" || exit 1
-check_env_file "secrets/.env.production" || exit 1
+check_env_file "$SECRETS_DIR/.env.shared" || exit 1
+check_env_file "$SECRETS_DIR/.env.development" || exit 1
+check_env_file "$SECRETS_DIR/.env.production" || exit 1
 
 echo -e "${GREEN}✓ All prerequisite checks passed${NC}"
 echo ""
@@ -44,19 +45,27 @@ deploy_github_secret() {
     TOTAL_COUNT=$((TOTAL_COUNT + 1))
     
     if [ "$target" = "repo" ]; then
-        if echo "$secret_value" | gh secret set "$secret_name" --repo "$GITHUB_REPO" 2>/dev/null; then
+        local error_output=$(echo "$secret_value" | gh secret set "$secret_name" --repo "$GITHUB_REPO" 2>&1)
+        if [ $? -eq 0 ]; then
             echo -e "${GREEN}  ✓ GitHub (repo): $secret_name${NC}"
             SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
         else
             echo -e "${RED}  ✗ GitHub (repo): $secret_name${NC}"
+            if [ -n "$error_output" ]; then
+                echo -e "${RED}    Error: $error_output${NC}"
+            fi
             FAILURE_COUNT=$((FAILURE_COUNT + 1))
         fi
     else
-        if echo "$secret_value" | gh secret set "$secret_name" --repo "$GITHUB_REPO" --env "$target" 2>/dev/null; then
+        local error_output=$(echo "$secret_value" | gh secret set "$secret_name" --repo "$GITHUB_REPO" --env "$target" 2>&1)
+        if [ $? -eq 0 ]; then
             echo -e "${GREEN}  ✓ GitHub ($target): $secret_name${NC}"
             SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
         else
             echo -e "${RED}  ✗ GitHub ($target): $secret_name${NC}"
+            if [ -n "$error_output" ]; then
+                echo -e "${RED}    Error: $error_output${NC}"
+            fi
             FAILURE_COUNT=$((FAILURE_COUNT + 1))
         fi
     fi
@@ -69,7 +78,7 @@ deploy_github_secret() {
 echo -e "${BLUE}1. Deploying Shared Secrets to GitHub Repository${NC}"
 while IFS='=' read -r key value; do
     deploy_github_secret "$key" "$value" "repo"
-done < <(parse_env_file "secrets/.env.shared")
+done < <(parse_env_file "$SECRETS_DIR/.env.shared")
 echo ""
 
 # ============================================================
@@ -83,7 +92,7 @@ while IFS='=' read -r key value; do
     if [[ ! "$key" =~ ^VITE_ ]]; then
         deploy_github_secret "$key" "$value" "development"
     fi
-done < <(parse_env_file "secrets/.env.development")
+done < <(parse_env_file "$SECRETS_DIR/.env.development")
 echo ""
 
 # ============================================================
@@ -97,7 +106,7 @@ while IFS='=' read -r key value; do
     if [[ ! "$key" =~ ^VITE_ ]]; then
         deploy_github_secret "$key" "$value" "production"
     fi
-done < <(parse_env_file "secrets/.env.production")
+done < <(parse_env_file "$SECRETS_DIR/.env.production")
 echo ""
 
 # ============================================================

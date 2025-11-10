@@ -1,0 +1,50 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/types/*": ["./types/*"],
+      "@/functions/*": ["./functions/*"]
+    },
+    "types": ["node", "jest"]
+  },
+  "include": [
+    "types/**/*",
+    "scripts/**/*",
+    "tests/**/*",
+    "src/**/*",
+    "tests/setup.ts",
+    "tests/env.setup.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".temp",
+    ".branches",
+    "functions",
+    "cloudflare-cors/**/*",
+    "tests/unit/bible-package-builder.test.ts",
+    "tests/unit/bible-package-splitter.test.ts",
+    "tests/integration/multi-package-system.test.ts",
+    "coverage"
+  ]
+}

@@ -10,8 +10,8 @@ coverage/
 .turbo/
 
 # Supabase
-apps/backend/supabase/.temp/
-apps/backend/supabase/.branches/
+supabase/.temp/
+supabase/.branches/
 
 # Generated files
 packages/shared-types/types/database.ts

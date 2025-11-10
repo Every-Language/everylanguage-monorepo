@@ -22,13 +22,14 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
 
     permissions:
+      id-token: write  # Required for OIDC trusted publishing
+      contents: read
       packages: write
-      contents: write
       issues: write
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
       TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
@@ -39,7 +40,7 @@ jobs:
       - name: Verify required secrets present
         run: |
           test -n "$SUPABASE_ACCESS_TOKEN" || (echo "❌ SUPABASE_ACCESS_TOKEN is missing" && exit 1)
-          test -n "$SUPABASE_PROJECT_REF" || (echo "❌ SUPABASE_PROJECT_REF is missing" && exit 1)
+          test -n "$SUPABASE_PROJECT_ID" || (echo "❌ SUPABASE_PROJECT_ID is missing" && exit 1)
           test -n "$SUPABASE_DB_PASSWORD" || (echo "❌ SUPABASE_DB_PASSWORD is missing" && exit 1)
           echo "✅ Required secrets present"
 
@@ -54,7 +55,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
@@ -67,17 +68,20 @@ jobs:
           version: latest
 
       - name: Link to Production project
-        run: cd apps/backend && supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+        run: cd supabase && supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
 
       - name: Generate types from Production
         run: |
           echo "🔄 Generating types from production database..."
-          cd apps/backend
-          supabase gen types typescript --linked > ../../packages/shared-types/types/database.ts
+          cd supabase
+          supabase gen types typescript --linked > ../packages/shared-types/types/database.ts
           echo "✅ Types generated successfully"
 
       - name: Build package artifacts
-        run: cd apps/backend && npm run prepare-package:ci
+        run: cd supabase && npm run prepare-package:ci
+
+      - name: Ensure npm 11.5.1+ for trusted publishing
+        run: npm install -g npm@latest
 
       - name: Publish to NPM as latest
         run: |
@@ -91,8 +95,6 @@ jobs:
             npm publish --access public
             echo "✅ Package published successfully as 'latest'"
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Summary
         run: |

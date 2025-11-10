@@ -262,6 +262,7 @@ export default {
     },
   },
   plugins: [
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('tailwindcss-animate'),
     // Plugin to add Radix UI data attribute variants
     function ({

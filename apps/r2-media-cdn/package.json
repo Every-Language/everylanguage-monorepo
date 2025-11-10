@@ -1,0 +1,22 @@
+{
+  "name": "cdn-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare CDN Worker for secure R2 media file access",
+  "main": "src/index.ts",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "cdn",
+    "r2"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20250813.0",
+    "wrangler": "^4.34.0"
+  }
+}
