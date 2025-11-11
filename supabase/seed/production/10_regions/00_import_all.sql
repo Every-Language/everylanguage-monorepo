@@ -5,6 +5,10 @@
 -- WARNING: This will DELETE all existing region data before importing!
 -- Make sure you have backups if needed.
 
+-- CRITICAL: Set client encoding to UTF-8 to prevent double-encoding issues
+-- This ensures that UTF-8 characters in the seed files are properly interpreted
+SET client_encoding = 'UTF8';
+
 -- Clear existing data (in dependency order)
 DELETE FROM region_properties WHERE region_id IN (SELECT id FROM regions);
 DELETE FROM region_aliases WHERE region_id IN (SELECT id FROM regions);

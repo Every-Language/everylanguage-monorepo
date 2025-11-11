@@ -6,6 +6,7 @@ import {
   createErrorResponse,
   createCorsResponse,
 } from '../_shared/response-utils.ts';
+import { retryWithBackoff } from '../_shared/retry-utils.ts';
 
 interface RequestBody {
   donor: {
@@ -142,60 +143,116 @@ Deno.serve(async (req: Request) => {
       apiVersion: '2023-10-16',
     });
 
-    // 1. Create or get Stripe customer
-    const customers = await stripe.customers.list({
-      email: donor.email,
-      limit: 1,
-    });
-    let customer = customers.data[0];
+    // Helper function to get or create Stripe customer with retry
+    const getOrCreateStripeCustomer = async (): Promise<Stripe.Customer> => {
+      // Try to find existing customer first
+      const customers = (await retryWithBackoff(() =>
+        stripe.customers.list({
+          email: donor.email,
+          limit: 1,
+        })
+      )) as Stripe.ApiList<Stripe.Customer>;
 
-    customer ??= await stripe.customers.create({
-      email: donor.email,
-      name: `${donor.firstName} ${donor.lastName}`.trim(),
-      phone: donor.phone,
-      metadata: {
-        source: 'everylanguage',
-        purpose: 'donation',
-      },
-    });
+      if (customers.data.length > 0) {
+        return customers.data[0];
+      }
 
-    // 2. Get or create user_id (link to public.users if authenticated, else null for now)
-    // For now, we'll assume unauthenticated donations (user_id will be null)
-    // The user can claim their donation later by creating an account
-    const userId: string | null = null;
-    // TODO: In future, check for auth.uid() from JWT to link to existing user
+      // Create new customer with retry
+      return await retryWithBackoff(() =>
+        stripe.customers.create({
+          email: donor.email,
+          name: `${donor.firstName} ${donor.lastName}`.trim(),
+          phone: donor.phone,
+          metadata: {
+            source: 'everylanguage',
+            purpose: 'donation',
+          },
+        })
+      );
+    };
 
-    // 3. Handle partner org (if donorType is 'partner_org')
-    let finalPartnerOrgId: string | null = null;
+    // Helper function to create partner org
+    const createPartnerOrg = async (): Promise<string> => {
+      let userId: string | null = null;
+      // TODO: In future, check for auth.uid() from JWT to link to existing user
 
-    if (donorType === 'partner_org') {
-      if (partnerOrgId) {
-        // Use existing partner org
-        finalPartnerOrgId = partnerOrgId;
-      } else if (newPartnerOrg) {
-        // Create new partner org
-        const { data: insOrg, error: orgErr } = await supabase
+      if (donorType === 'individual') {
+        // For individual donations, create a partner org with is_individual=true
+        const { data: individualOrg, error: orgErr } = await supabase
           .from('partner_orgs')
           .insert({
-            name: newPartnerOrg.name,
-            description: newPartnerOrg.description ?? '',
-            is_individual: false,
-            is_public: newPartnerOrg.isPublic,
+            name: `${donor.firstName} ${donor.lastName}`.trim(),
+            description: `Individual donor: ${donor.email}`,
+            is_individual: true,
+            is_public: false,
             created_by: userId,
           })
           .select('id')
           .single();
 
-        if (orgErr || !insOrg) {
-          throw new Error(`Failed to create partner org: ${orgErr?.message}`);
+        if (orgErr || !individualOrg) {
+          console.error('Failed to create individual partner org', {
+            error: orgErr,
+            errorMessage: orgErr?.message,
+            errorCode: orgErr?.code,
+            errorDetails: orgErr?.details,
+          });
+          throw new Error(
+            `Failed to create donor record: ${orgErr?.message || 'Unknown error'}`
+          );
         }
-        finalPartnerOrgId = insOrg.id;
+        return individualOrg.id;
       } else {
-        return createErrorResponse(
-          'partnerOrgId or newPartnerOrg required when donorType is partner_org',
-          400
-        );
+        // Handle partner org
+        if (partnerOrgId) {
+          return partnerOrgId;
+        } else if (newPartnerOrg) {
+          const { data: insOrg, error: orgErr } = await supabase
+            .from('partner_orgs')
+            .insert({
+              name: newPartnerOrg.name,
+              description: newPartnerOrg.description ?? '',
+              is_individual: false,
+              is_public: newPartnerOrg.isPublic,
+              created_by: userId,
+            })
+            .select('id')
+            .single();
+
+          if (orgErr || !insOrg) {
+            throw new Error(`Failed to create partner org: ${orgErr?.message}`);
+          }
+          return insOrg.id;
+        } else {
+          throw new Error(
+            'partnerOrgId or newPartnerOrg required when donorType is partner_org'
+          );
+        }
       }
+    };
+
+    // OPTIMIZATION: Parallelize Stripe customer lookup and partner org creation
+    // These operations are independent and can run concurrently
+    let userId: string | null = null;
+    let finalPartnerOrgId: string | null = null;
+    let customer: Stripe.Customer;
+
+    try {
+      const [customerResult, partnerOrgResult] = await Promise.all([
+        getOrCreateStripeCustomer(),
+        createPartnerOrg(),
+      ]);
+
+      customer = customerResult;
+      finalPartnerOrgId = partnerOrgResult;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to create customer or partner org:', errorMessage);
+      return createErrorResponse(
+        `Failed to set up donation: ${errorMessage}`,
+        500
+      );
     }
 
     // 4. Create donation record (business logic layer)
@@ -222,54 +279,79 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (donationErr || !donation) {
-      console.error('Failed to create donation', donationErr?.message);
-      return createErrorResponse('Failed to create donation', 500);
+      console.error('Failed to create donation', {
+        error: donationErr,
+        errorMessage: donationErr?.message,
+        errorCode: donationErr?.code,
+        errorDetails: donationErr?.details,
+        errorHint: donationErr?.hint,
+        donationInsert,
+      });
+      return createErrorResponse(
+        `Failed to create donation: ${donationErr?.message || 'Unknown error'}`,
+        500,
+        donationErr?.details || donationErr?.hint
+      );
     }
 
     const donationId = donation.id;
 
-    // 5. Create Stripe PaymentIntent (payment provider layer)
+    // 5. Create Stripe PaymentIntent (payment provider layer) with retry
     let paymentIntent: Stripe.PaymentIntent;
 
-    if (paymentMethod === 'card') {
-      // Card payment: create PaymentIntent with automatic_payment_methods
-      paymentIntent = await stripe.paymentIntents.create({
-        amount: amountCents,
-        currency: 'usd',
-        customer: customer.id,
-        automatic_payment_methods: { enabled: true },
-        setup_future_usage: isRecurring ? 'off_session' : undefined, // Save card for recurring
-        metadata: {
-          purpose: 'donation',
-          donation_id: donationId,
-          intent_type: intent.type,
-        },
-      });
-    } else {
-      // Bank transfer: create PaymentIntent with customer_balance
-      paymentIntent = await stripe.paymentIntents.create({
-        amount: amountCents,
-        currency: 'usd',
-        customer: customer.id,
-        payment_method_types: ['customer_balance'],
-        payment_method_data: {
-          type: 'customer_balance',
-        },
-        payment_method_options: {
-          customer_balance: {
-            funding_type: 'bank_transfer',
-            bank_transfer: {
-              type: 'us_bank_account',
+    const createPaymentIntent = async (): Promise<Stripe.PaymentIntent> => {
+      if (paymentMethod === 'card') {
+        // Card payment: create PaymentIntent with automatic_payment_methods
+        return await stripe.paymentIntents.create({
+          amount: amountCents,
+          currency: 'usd',
+          customer: customer.id,
+          automatic_payment_methods: { enabled: true },
+          setup_future_usage: isRecurring ? 'off_session' : undefined,
+          metadata: {
+            purpose: 'donation',
+            donation_id: donationId,
+            intent_type: intent.type,
+          },
+        });
+      } else {
+        // Bank transfer: create PaymentIntent with customer_balance
+        return await stripe.paymentIntents.create({
+          amount: amountCents,
+          currency: 'usd',
+          customer: customer.id,
+          payment_method_types: ['customer_balance'],
+          payment_method_data: {
+            type: 'customer_balance',
+          },
+          payment_method_options: {
+            customer_balance: {
+              funding_type: 'bank_transfer',
+              bank_transfer: {
+                type: 'us_bank_account',
+              },
             },
           },
-        },
-        metadata: {
-          purpose: 'donation',
-          donation_id: donationId,
-          intent_type: intent.type,
-          payment_method: 'bank_transfer',
-        },
-      });
+          metadata: {
+            purpose: 'donation',
+            donation_id: donationId,
+            intent_type: intent.type,
+            payment_method: 'bank_transfer',
+          },
+        });
+      }
+    };
+
+    try {
+      paymentIntent = await retryWithBackoff(createPaymentIntent);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to create PaymentIntent:', errorMessage);
+      return createErrorResponse(
+        `Failed to create payment: ${errorMessage}`,
+        500
+      );
     }
 
     // 6. Create payment_attempt record (payment provider layer)

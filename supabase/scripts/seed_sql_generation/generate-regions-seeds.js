@@ -496,7 +496,8 @@ async function main() {
     const { sql: hierarchySQL, parentMap } = generateHierarchySQL();
     fs.writeFileSync(
       path.join(outputDir, '01_regions_hierarchy.sql'),
-      hierarchySQL
+      hierarchySQL,
+      'utf8'
     );
 
     // Generate countries SQL
@@ -505,13 +506,23 @@ async function main() {
 
     fs.writeFileSync(
       path.join(outputDir, '02_regions_countries.sql'),
-      countriesSQL
+      countriesSQL,
+      'utf8'
     );
-    fs.writeFileSync(path.join(outputDir, '03_region_sources.sql'), sourcesSQL);
-    fs.writeFileSync(path.join(outputDir, '04_region_aliases.sql'), aliasesSQL);
+    fs.writeFileSync(
+      path.join(outputDir, '03_region_sources.sql'),
+      sourcesSQL,
+      'utf8'
+    );
+    fs.writeFileSync(
+      path.join(outputDir, '04_region_aliases.sql'),
+      aliasesSQL,
+      'utf8'
+    );
     fs.writeFileSync(
       path.join(outputDir, '05_region_properties.sql'),
-      propertiesSQL
+      propertiesSQL,
+      'utf8'
     );
 
     // Create a master import file
@@ -521,6 +532,10 @@ async function main() {
 
 -- WARNING: This will DELETE all existing region data before importing!
 -- Make sure you have backups if needed.
+
+-- CRITICAL: Set client encoding to UTF-8 to prevent double-encoding issues
+-- This ensures that UTF-8 characters in the seed files are properly interpreted
+SET client_encoding = 'UTF8';
 
 -- Clear existing data (in dependency order)
 DELETE FROM region_properties WHERE region_id IN (SELECT id FROM regions);
@@ -595,7 +610,11 @@ FROM regions
 WHERE level = 'country' AND parent_id IS NULL;
 `;
 
-    fs.writeFileSync(path.join(outputDir, '00_import_all.sql'), masterSQL);
+    fs.writeFileSync(
+      path.join(outputDir, '00_import_all.sql'),
+      masterSQL,
+      'utf8'
+    );
 
     console.log('✅ SQL generation completed successfully!');
     console.log(`📁 Generated production seed files in: ${outputDir}/`);

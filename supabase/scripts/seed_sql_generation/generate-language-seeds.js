@@ -445,7 +445,7 @@ function generateChunkedSQL(tableName, data, columns) {
       sql += '\nON CONFLICT (id) DO NOTHING;\n';
     }
 
-    fs.writeFileSync(filepath, sql);
+    fs.writeFileSync(filepath, sql, 'utf8');
     console.log(`  ✓ Generated ${filename} (${chunk.length} records)`);
   });
 }
@@ -513,7 +513,7 @@ function generateLanguageRegionsSQL() {
     });
   }
 
-  fs.writeFileSync(filepath, sql);
+  fs.writeFileSync(filepath, sql, 'utf8');
   console.log(
     `  ✓ Generated ${filename} (${languageEntitiesRegions.length} region linkages)`
   );
@@ -528,6 +528,10 @@ function generateMasterImportSQL() {
   let sql = `-- Master Language Import Script\n`;
   sql += `-- Generated from ISO 639-3 and ROLV data\n`;
   sql += `-- Run this file to import all language data in the correct order\n\n`;
+
+  sql += `-- CRITICAL: Set client encoding to UTF-8 to prevent double-encoding issues\n`;
+  sql += `-- This ensures that UTF-8 characters in the seed files are properly interpreted\n`;
+  sql += `SET client_encoding = 'UTF8';\n\n`;
 
   sql += `-- Begin transaction for atomic import\n`;
   sql += `BEGIN;\n\n`;
@@ -618,7 +622,7 @@ function generateMasterImportSQL() {
   sql += `WHERE le.level = 'dialect'\n`;
   sql += `LIMIT 10;\n`;
 
-  fs.writeFileSync(filepath, sql);
+  fs.writeFileSync(filepath, sql, 'utf8');
   console.log(`  ✓ Generated ${filename} (master import script)`);
 }
 

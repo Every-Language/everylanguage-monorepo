@@ -2,6 +2,10 @@
 -- Generated from ISO 639-3 and ROLV data
 -- Run this file to import all language data in the correct order
 
+-- CRITICAL: Set client encoding to UTF-8 to prevent double-encoding issues
+-- This ensures that UTF-8 characters in the seed files are properly interpreted
+SET client_encoding = 'UTF8';
+
 -- Begin transaction for atomic import
 BEGIN;
 

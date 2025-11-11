@@ -586,6 +586,10 @@ function generateMasterImport(verseChunks) {
   sql += '-- Complete Protestant Bible with all verses\n';
   sql += `-- Generated for ${EXPECTED_TOTALS.books} books, ${EXPECTED_TOTALS.chapters} chapters, ${EXPECTED_TOTALS.verses.toLocaleString()} verses\n\n`;
 
+  sql +=
+    '-- CRITICAL: Set client encoding to UTF-8 to prevent encoding issues\n';
+  sql += "SET client_encoding = 'UTF8';\n\n";
+
   sql += '-- Begin transaction for atomic import\n';
   sql += 'BEGIN;\n\n';
 
@@ -669,14 +673,16 @@ function generateSeedFiles() {
   const booksSQL = generateBibleVersionAndBooks();
   fs.writeFileSync(
     path.join(CONFIG.outputDir, '01_bible_version_books.sql'),
-    booksSQL
+    booksSQL,
+    'utf8'
   );
 
   // Generate chapters
   const chaptersSQL = generateChapters();
   fs.writeFileSync(
     path.join(CONFIG.outputDir, '02_all_chapters.sql'),
-    chaptersSQL
+    chaptersSQL,
+    'utf8'
   );
 
   // Generate verses in chunks
@@ -684,13 +690,18 @@ function generateSeedFiles() {
   verseChunks.forEach(chunk => {
     fs.writeFileSync(
       path.join(CONFIG.outputDir, chunk.filename),
-      chunk.content
+      chunk.content,
+      'utf8'
     );
   });
 
   // Generate master import script
   const masterSQL = generateMasterImport(verseChunks);
-  fs.writeFileSync(path.join(CONFIG.outputDir, '00_import_all.sql'), masterSQL);
+  fs.writeFileSync(
+    path.join(CONFIG.outputDir, '00_import_all.sql'),
+    masterSQL,
+    'utf8'
+  );
 
   console.log('✅ Bible seed generation completed successfully!');
   console.log(`\n📁 Generated files in: ${CONFIG.outputDir}/`);

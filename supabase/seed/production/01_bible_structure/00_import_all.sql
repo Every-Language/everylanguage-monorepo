@@ -2,6 +2,9 @@
 -- Complete Protestant Bible with all verses
 -- Generated for 66 books, 1189 chapters, 31,102 verses
 
+-- CRITICAL: Set client encoding to UTF-8 to prevent encoding issues
+SET client_encoding = 'UTF8';
+
 -- Begin transaction for atomic import
 BEGIN;
 
