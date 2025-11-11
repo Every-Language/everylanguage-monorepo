@@ -256,6 +256,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // 4. Create donation record (business logic layer)
+    // Map frontend payment method to database enum value
+    // Frontend uses 'bank_transfer' but database enum uses 'us_bank_account'
+    const dbPaymentMethod =
+      paymentMethod === 'bank_transfer' ? 'us_bank_account' : paymentMethod;
+
     const donationInsert = {
       user_id: userId,
       partner_org_id: finalPartnerOrgId,
@@ -266,7 +271,7 @@ Deno.serve(async (req: Request) => {
       amount_cents: amountCents,
       currency_code: 'USD',
       status: 'draft', // Will move to pending when payment is initiated
-      payment_method: paymentMethod,
+      payment_method: dbPaymentMethod,
       is_recurring: isRecurring,
       stripe_customer_id: customer.id,
       created_by: userId,
