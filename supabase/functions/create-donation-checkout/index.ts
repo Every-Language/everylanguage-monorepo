@@ -320,23 +320,15 @@ Deno.serve(async (req: Request) => {
           },
         });
       } else {
-        // Bank transfer: create PaymentIntent with customer_balance
+        // Bank transfer (ACH): create PaymentIntent with us_bank_account
+        // Note: This requires collecting bank account details via Stripe Elements
+        // The payment will be in 'processing' status until the ACH transfer clears (1-3 business days)
         return await stripe.paymentIntents.create({
           amount: amountCents,
           currency: 'usd',
           customer: customer.id,
-          payment_method_types: ['customer_balance'],
-          payment_method_data: {
-            type: 'customer_balance',
-          },
-          payment_method_options: {
-            customer_balance: {
-              funding_type: 'bank_transfer',
-              bank_transfer: {
-                type: 'us_bank_transfer', // Stripe requires us_bank_transfer, not us_bank_account
-              },
-            },
-          },
+          payment_method_types: ['us_bank_account'],
+          setup_future_usage: isRecurring ? 'off_session' : undefined,
           metadata: {
             purpose: 'donation',
             donation_id: donationId,
