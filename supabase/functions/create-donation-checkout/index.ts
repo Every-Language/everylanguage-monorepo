@@ -333,7 +333,7 @@ Deno.serve(async (req: Request) => {
             customer_balance: {
               funding_type: 'bank_transfer',
               bank_transfer: {
-                type: 'us_bank_account',
+                type: 'us_bank_transfer', // Stripe requires us_bank_transfer, not us_bank_account
               },
             },
           },
