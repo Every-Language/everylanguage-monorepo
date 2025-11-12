@@ -1,7 +1,11 @@
 -- Add donation_mode enum and column to donations table
 -- This tracks whether a donation is an adoption (full funding) or contribution (partial funding)
--- Create enum type
-CREATE TYPE if NOT EXISTS donation_mode AS ENUM('adoption', 'contribution');
+-- Create enum type (PostgreSQL doesn't support IF NOT EXISTS for CREATE TYPE, so use DO block)
+DO $$ BEGIN
+  CREATE TYPE donation_mode AS ENUM('adoption', 'contribution');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 
 comment ON type donation_mode IS 'Donation mode: adoption (full funding of entity) or contribution (partial funding)';
@@ -26,6 +30,10 @@ comment ON COLUMN donations.donation_mode IS 'Whether this donation is a full ad
 -- Add public read policies for donation flow
 -- ============================================================================
 -- Allow anonymous/public users to read languages with available/in_progress status
+-- Drop policy if it exists to avoid conflicts
+DROP POLICY if EXISTS language_funding_read_public ON language_funding;
+
+
 CREATE POLICY language_funding_read_public ON language_funding FOR
 SELECT
   TO anon,
@@ -36,6 +44,10 @@ SELECT
 
 
 -- Allow anonymous/public users to read public operations
+-- Drop policy if it exists to avoid conflicts
+DROP POLICY if EXISTS operations_read_public ON operations;
+
+
 CREATE POLICY operations_read_public ON operations FOR
 SELECT
   TO anon,
@@ -48,6 +60,10 @@ SELECT
 
 -- Allow anonymous/public users to read region_funding view
 -- Views can have RLS policies without explicitly enabling RLS
+-- Drop policy if it exists to avoid conflicts
+DROP POLICY if EXISTS region_funding_read_public ON region_funding;
+
+
 CREATE POLICY region_funding_read_public ON region_funding FOR
 SELECT
   TO anon,
