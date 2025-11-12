@@ -379,6 +379,8 @@ comment ON view region_funding IS 'Computed view showing funding status and budg
 -- 6. MIGRATE EXISTING DATA (if any)
 -- ============================================================================
 -- Migrate existing funding_status from language_entities to language_funding
+-- Only migrate non-draft statuses (available, in_progress, funded, archived)
+-- Draft languages should be added manually through the UI
 INSERT INTO
   language_funding (
     language_entity_id,
@@ -397,6 +399,7 @@ FROM
   language_entities
 WHERE
   funding_status IS NOT NULL
+  AND funding_status != 'draft' -- Exclude draft status
   AND deleted_at IS NULL
   AND id NOT IN (
     SELECT
