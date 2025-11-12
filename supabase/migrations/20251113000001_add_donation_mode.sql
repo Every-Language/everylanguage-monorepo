@@ -59,12 +59,9 @@ SELECT
 
 
 -- Allow anonymous/public users to read region_funding view
--- Views can have RLS policies without explicitly enabling RLS
--- Drop policy if it exists to avoid conflicts
-DROP POLICY if EXISTS region_funding_read_public ON region_funding;
-
-
-CREATE POLICY region_funding_read_public ON region_funding FOR
+-- Views don't support RLS policies directly, so we grant SELECT permission
+-- The view will filter based on the USING clause in the query
+GRANT
 SELECT
-  TO anon,
-  authenticated USING (funding_status IN ('available', 'in_progress'));
+  ON region_funding TO anon,
+  authenticated;
