@@ -20,3 +20,35 @@ WHERE
 
 -- Add comment
 comment ON COLUMN donations.donation_mode IS 'Whether this donation is a full adoption or partial contribution';
+
+
+-- ============================================================================
+-- Add public read policies for donation flow
+-- ============================================================================
+-- Allow anonymous/public users to read languages with available/in_progress status
+CREATE POLICY language_funding_read_public ON language_funding FOR
+SELECT
+  TO anon,
+  authenticated USING (
+    funding_status IN ('available', 'in_progress')
+    AND deleted_at IS NULL
+  );
+
+
+-- Allow anonymous/public users to read public operations
+CREATE POLICY operations_read_public ON operations FOR
+SELECT
+  TO anon,
+  authenticated USING (
+    status = 'available'
+    AND is_public = TRUE
+    AND deleted_at IS NULL
+  );
+
+
+-- Allow anonymous/public users to read region_funding view
+-- Views can have RLS policies without explicitly enabling RLS
+CREATE POLICY region_funding_read_public ON region_funding FOR
+SELECT
+  TO anon,
+  authenticated USING (funding_status IN ('available', 'in_progress'));
