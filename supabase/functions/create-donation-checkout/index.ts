@@ -142,27 +142,17 @@ Deno.serve(async (req: Request) => {
     }
 
     // Validate environment variables
-    // Note: Supabase automatically provides SUPABASE_URL to Edge Functions
-    // For admin operations (bypassing RLS), we need a service role key or secret key
-    // Supabase may provide this as SUPABASE_SERVICE_ROLE_KEY or we may need to set it manually
+    // Note: Supabase automatically provides SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to Edge Functions
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    // Try multiple possible names for the service role/secret key
-    const supabaseSecretKey =
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ||
-      Deno.env.get('SUPABASE_SECRET_KEY') ||
-      Deno.env.get('SUPABASE_SERVICE_KEY') ||
-      '';
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
 
     console.log('Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,
       supabaseUrl: supabaseUrl?.substring(0, 30) + '...', // Log partial URL for debugging
-      hasSupabaseServiceRoleKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
-      hasSupabaseSecretKey: !!Deno.env.get('SUPABASE_SECRET_KEY'),
-      hasSupabaseServiceKey: !!Deno.env.get('SUPABASE_SERVICE_KEY'),
-      hasSupabaseSecretKeyFinal: !!supabaseSecretKey,
+      hasSupabaseServiceRoleKey: !!supabaseServiceRoleKey,
       hasStripeKey: !!stripeKey,
-      supabaseKeyLength: supabaseSecretKey?.length ?? 0,
+      supabaseKeyLength: supabaseServiceRoleKey?.length ?? 0,
       stripeKeyLength: stripeKey?.length ?? 0,
     });
 
@@ -174,12 +164,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    if (!supabaseSecretKey) {
-      console.error(
-        'Missing service role key. Checked: SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SECRET_KEY, SUPABASE_SERVICE_KEY'
-      );
+    if (!supabaseServiceRoleKey) {
+      console.error('Missing SUPABASE_SERVICE_ROLE_KEY');
       return createErrorResponse(
-        'Server configuration error: Supabase service role key is missing. For admin operations, you need to set SUPABASE_SERVICE_ROLE_KEY in your Edge Function secrets. This is different from publishable keys - it bypasses RLS for server-side operations.',
+        'Server configuration error: Supabase service role key is missing.',
         500
       );
     }
@@ -192,7 +180,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseSecretKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
     const stripe = new Stripe(stripeKey, {
       httpClient: Stripe.createFetchHttpClient(),
       apiVersion: '2023-10-16',

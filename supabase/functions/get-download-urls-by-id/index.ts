@@ -46,7 +46,7 @@ Deno.serve(async (req: Request) => {
     // R2-only storage provider
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SECRET_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const expiresInSeconds = Math.min(Math.max(1, expirationHours), 24) * 3600;
