@@ -324,11 +324,6 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # These functions are publicly accessible and use service role key internally
 # -----------------------------------------------------------------------------
 
-[functions.create-adoption-checkout]
-enabled = true
-verify_jwt = false
-entrypoint = "./functions/create-adoption-checkout/index.ts"
-
 [functions.create-donation-checkout]
 enabled = true
 verify_jwt = false
