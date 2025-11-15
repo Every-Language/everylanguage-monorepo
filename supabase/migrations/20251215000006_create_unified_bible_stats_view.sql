@@ -214,7 +214,8 @@ WHERE
 
 CREATE OR REPLACE FUNCTION refresh_unified_bible_stats () returns void AS $$
 BEGIN
-  REFRESH MATERIALIZED VIEW CONCURRENTLY unified_bible_translation_stats;
+  PERFORM set_config('statement_timeout', '120000', TRUE);
+  REFRESH MATERIALIZED VIEW unified_bible_translation_stats;
 END;
 $$ language plpgsql;
 

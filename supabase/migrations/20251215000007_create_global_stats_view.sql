@@ -51,10 +51,7 @@ WITH
   ),
   internal_project_counts AS (
     SELECT
-      COUNT(*) FILTER (
-        WHERE
-          project_status = 'active'
-      )::BIGINT AS active_projects,
+      COUNT(*)::BIGINT AS active_projects,
       COUNT(*) FILTER (
         WHERE
           project_status = 'completed'

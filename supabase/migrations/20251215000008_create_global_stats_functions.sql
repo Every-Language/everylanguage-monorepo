@@ -63,7 +63,6 @@ FROM projects p
 LEFT JOIN audio_progress a ON a.project_id = p.id
 LEFT JOIN text_progress t ON t.project_id = p.id
 WHERE p.deleted_at IS NULL
-  AND p.project_status = 'active'
   AND (a.project_id IS NOT NULL OR t.project_id IS NOT NULL)
 ORDER BY progress_percentage DESC NULLS LAST, p.created_at DESC;
 $$ language sql stable;
