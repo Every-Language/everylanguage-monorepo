@@ -334,6 +334,16 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/stripe-webhook/index.ts"
 
+[functions.sync-jp-languages]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/sync-jp-languages/index.ts"
+
+[functions.sync-grn-languages]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/sync-grn-languages/index.ts"
+
 # -----------------------------------------------------------------------------
 # AUTHENTICATED ENDPOINTS - JWT verification required
 # These functions require user authentication and use auth middleware
