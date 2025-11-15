@@ -36,6 +36,7 @@ export const useInspectorStore = create<InspectorState & InspectorInternal>()(
 
 export const useSelection = () => useInspectorStore(s => s.selection);
 export const useSetSelection = () => useInspectorStore(s => s.setSelection);
+export const useClearSelection = () => useInspectorStore(s => s.clear);
 export const useLastUpdateFromRoute = () =>
   useInspectorStore(s => s.lastUpdateFromRoute);
 export const useSetLastUpdateFromRoute = () =>

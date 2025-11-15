@@ -184,9 +184,8 @@ export const BibleListeningSection: React.FC<BibleListeningSectionProps> = ({
 
   return (
     <div className='space-y-4'>
-      <div className='flex items-center justify-between'>
-        <div className='font-semibold'>Bible listening data</div>
-        {type === 'language' && descendantIds.length > 1 && (
+      {type === 'language' && descendantIds.length > 1 && (
+        <div className='flex items-center justify-end'>
           <label className='text-xs flex items-center gap-2'>
             <input
               type='checkbox'
@@ -195,8 +194,8 @@ export const BibleListeningSection: React.FC<BibleListeningSectionProps> = ({
             />
             Include descendant languages
           </label>
-        )}
-      </div>
+        </div>
+      )}
 
       <div>
         <DataTable

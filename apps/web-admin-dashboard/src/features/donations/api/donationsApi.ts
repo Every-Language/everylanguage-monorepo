@@ -298,13 +298,27 @@ export const donationsApi = {
       throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase
+    const { data: insertedData, error: insertError } = await supabase
       .from('donation_allocations')
       .insert({
         ...allocation,
         created_by: userData.user.id,
       })
-      .select()
+      .select('id')
+      .single();
+
+    if (insertError) throw insertError;
+    if (!insertedData?.id) {
+      throw new Error('Failed to create allocation');
+    }
+
+    // Fetch the full allocation record
+    const { data, error } = await supabase
+      .from('donation_allocations')
+      .select(
+        'id, donation_id, operation_id, project_id, amount_cents, currency_code, effective_from, effective_to, created_by, created_at, notes'
+      )
+      .eq('id', insertedData.id)
       .single();
 
     if (error) throw error;

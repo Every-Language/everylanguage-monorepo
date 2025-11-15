@@ -14,25 +14,30 @@ export default function PublicLayout({
 }) {
   const pathname = usePathname();
   const isMapRoute = pathname?.startsWith('/map') ?? false;
+  const isDonateRoute = pathname?.startsWith('/donate') ?? false;
 
   return (
     <>
-      {/* Mobile header (visible below md breakpoint) */}
-      <div className='md:hidden'>
-        <Suspense fallback={<div className='h-14' />}>
-          <MobileAppHeader />
-        </Suspense>
-      </div>
+      {/* Mobile header (visible below md breakpoint, hidden on donate route) */}
+      {!isDonateRoute && (
+        <div className='md:hidden'>
+          <Suspense fallback={<div className='h-14' />}>
+            <MobileAppHeader />
+          </Suspense>
+        </div>
+      )}
 
-      {/* Desktop header (visible at md breakpoint and above) */}
-      <div className='hidden md:block'>
-        <Suspense fallback={<div className='h-14' />}>
-          <AppHeader />
-        </Suspense>
-      </div>
+      {/* Desktop header (visible at md breakpoint and above, hidden on donate route) */}
+      {!isDonateRoute && (
+        <div className='hidden md:block'>
+          <Suspense fallback={<div className='h-14' />}>
+            <AppHeader />
+          </Suspense>
+        </div>
+      )}
 
       <main
-        className={`relative h-[calc(100dvh-56px)] ${
+        className={`relative ${isDonateRoute ? 'min-h-screen' : 'h-[calc(100dvh-56px)]'} ${
           isMapRoute ? 'overflow-hidden' : 'overflow-y-auto'
         }`}
       >

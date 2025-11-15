@@ -23,9 +23,6 @@ export function useMapFocus(
     // Skip map updates while the mobile sheet is being dragged
     // This prevents the map from panning/zooming during sheet drag gestures
     if (mobileSheet.isDragging) {
-      console.info('[useMapFocus] skipping update during sheet drag', {
-        entityId,
-      });
       return;
     }
 
@@ -41,11 +38,6 @@ export function useMapFocus(
       : 60; // Desktop uses uniform padding
 
     if (bbox) {
-      console.info('[useMapFocus] focusing using bbox', {
-        entityId,
-        bbox,
-        padding,
-      });
       fitBounds(bbox, { padding, maxZoom: 7 });
       return;
     }
@@ -58,16 +50,10 @@ export function useMapFocus(
           | GeoJSON.Geometry
       );
       if (calculatedBbox) {
-        console.info(
-          '[useMapFocus] focusing using calculated bbox from boundary',
-          { entityId, bbox: calculatedBbox, padding }
-        );
         fitBounds(calculatedBbox, { padding, maxZoom: 7 });
         return;
       }
     }
-
-    console.info('[useMapFocus] no geometry available for focus', { entityId });
   }, [
     bbox,
     boundary,

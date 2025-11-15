@@ -15,7 +15,9 @@ export type SectionType =
   | 'jp-people-groups'
   | 'jp-country-stats'
   | 'jp-language-stats'
-  | 'jp-resources';
+  | 'jp-resources'
+  | 'grn-language-sample'
+  | 'grn-gospel-resources';
 
 export type PanelPosition = 'left' | 'right' | 'bottom';
 

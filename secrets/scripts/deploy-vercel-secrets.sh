@@ -170,6 +170,42 @@ deploy_vercel_secret() {
 }
 
 # ============================================================
+# Deploy Shared Secrets (Both Preview and Production)
+# ============================================================
+
+echo -e "${BLUE}0. Deploying Shared Secrets (Preview + Production)${NC}"
+echo -e "${YELLOW}Vercel Shared Environment Variables:${NC}"
+
+# Deploy VITE_* and Next.js variables from .env.shared to both environments
+if [ -f "$SECRETS_DIR/.env.shared" ]; then
+    while IFS='=' read -r key value; do
+        # Deploy VITE_* variables to both projects
+        if [[ "$key" =~ ^VITE_ ]]; then
+            # Deploy to preview environment
+            deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "preview"
+            deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+            # Deploy to production environment
+            deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "production"
+            deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+        fi
+        # Deploy NEXT_PUBLIC_* variables for Next.js apps (partnership dashboard)
+        if [[ "$key" =~ ^NEXT_PUBLIC_ ]]; then
+            deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+            deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+        fi
+        # Deploy server-side env vars for Next.js apps (partnership dashboard)
+        # Only deploy known server-side vars to avoid deploying everything
+        if [[ "$key" == "JOSHUA_PROJECT_API_KEY" ]]; then
+            deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+            deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+        fi
+    done < <(parse_env_file "$SECRETS_DIR/.env.shared")
+else
+    echo -e "${YELLOW}  ⊘ .env.shared not found, skipping shared secrets${NC}"
+fi
+echo ""
+
+# ============================================================
 # Deploy Development Secrets (Preview Environment)
 # ============================================================
 
@@ -205,6 +241,15 @@ while IFS='=' read -r key value; do
     # Only deploy Vercel-specific secrets (VITE_*) that aren't already derived
     if [[ "$key" =~ ^VITE_ ]] && [[ ! "$key" =~ ^(VITE_SUPABASE_URL|VITE_SUPABASE_PUBLISHABLE_KEY|VITE_STRIPE_PUBLISHABLE_KEY)$ ]]; then
         deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "preview"
+        deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    fi
+    # Deploy NEXT_PUBLIC_* variables for Next.js apps (partnership dashboard)
+    if [[ "$key" =~ ^NEXT_PUBLIC_ ]]; then
+        deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    fi
+    # Deploy server-side env vars for Next.js apps (partnership dashboard)
+    # Only deploy known server-side vars to avoid deploying everything
+    if [[ "$key" == "JOSHUA_PROJECT_API_KEY" ]]; then
         deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
     fi
 done < <(parse_env_file "$SECRETS_DIR/.env.development")
@@ -246,6 +291,15 @@ while IFS='=' read -r key value; do
     # Only deploy Vercel-specific secrets (VITE_*) that aren't already derived
     if [[ "$key" =~ ^VITE_ ]] && [[ ! "$key" =~ ^(VITE_SUPABASE_URL|VITE_SUPABASE_PUBLISHABLE_KEY|VITE_STRIPE_PUBLISHABLE_KEY)$ ]]; then
         deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "production"
+        deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    fi
+    # Deploy NEXT_PUBLIC_* variables for Next.js apps (partnership dashboard)
+    if [[ "$key" =~ ^NEXT_PUBLIC_ ]]; then
+        deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    fi
+    # Deploy server-side env vars for Next.js apps (partnership dashboard)
+    # Only deploy known server-side vars to avoid deploying everything
+    if [[ "$key" == "JOSHUA_PROJECT_API_KEY" ]]; then
         deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
     fi
 done < <(parse_env_file "$SECRETS_DIR/.env.production")

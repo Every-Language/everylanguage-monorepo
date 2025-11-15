@@ -2,7 +2,7 @@
 
 🎯 **Shared TypeScript types**
 
-This package contains automatically generated TypeScript types from our Supabase database schema, ensuring type safety across all applications in the EverlyLanguage ecosystem.
+This package contains automatically generated TypeScript types from our Supabase database schema, ensuring type safety across all applications in the Every Language ecosystem.
 
 ## 📦 Installation
 

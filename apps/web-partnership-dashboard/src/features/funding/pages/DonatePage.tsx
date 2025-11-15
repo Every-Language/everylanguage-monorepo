@@ -8,8 +8,7 @@ import { useDonateFlow } from '../hooks/useDonateFlow';
 import { DonateFlow } from '../components/DonateFlow/DonateFlow';
 import { DonateInfoSection } from '../components/DonateFlow/DonateInfoSection';
 import { DonateFAQ } from '../components/DonateFlow/DonateFAQ';
-import { LanguageSelectionProvider } from '../components/DonateFlow/LanguageSelectionProvider';
-import { StepActionsProvider } from '../components/DonateFlow/StepActionsProvider';
+import { CartSidebar } from '../components/DonateFlow/CartSidebar';
 
 export const DonatePage: React.FC = () => {
   const searchParams = useSearchParams();
@@ -52,12 +51,6 @@ export const DonatePage: React.FC = () => {
     setShowConfirmDialog(false);
     router.back();
   };
-
-  // Check if we're in the adopt flow (steps 1-4 need the language selection provider)
-  const isAdoptFlow =
-    flow.state.intent?.type === 'language' &&
-    flow.state.step >= 1 &&
-    flow.state.step <= 4;
 
   const pageContent = (
     <>
@@ -103,17 +96,123 @@ export const DonatePage: React.FC = () => {
 
       {/* Main Content */}
       <div className='flex-1 max-w-7xl w-full mx-auto px-4 py-8'>
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12'>
-          {/* Left: Info Panel - dynamic based on step */}
-          <div className='lg:pr-8'>
-            <DonateInfoSection flowState={flow.state} flow={flow} />
-          </div>
+        {(() => {
+          // Check if we should show cart sidebar (entity selection or steps with cart)
+          const hasCart =
+            (flow.state.step === 1 &&
+              flow.state.intent?.type !== 'unrestricted') ||
+            (flow.state.step >= 2 &&
+              flow.state.step <= 4 &&
+              flow.state.selectedEntities &&
+              flow.state.selectedEntities.length > 0);
 
-          {/* Right: Flow Steps - max-width when stacked */}
-          <div className='lg:pl-8 max-w-2xl lg:max-w-none mx-auto w-full'>
-            <DonateFlow flow={flow} showBackButton={false} />
-          </div>
-        </div>
+          const entityTypeLabel =
+            flow.state.intent?.type === 'language'
+              ? 'language'
+              : flow.state.intent?.type === 'region'
+                ? 'region'
+                : flow.state.intent?.type === 'operation'
+                  ? 'operation'
+                  : 'item';
+
+          if (hasCart) {
+            return (
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12'>
+                {/* Left: Info Panel + Step Content */}
+                <div className='space-y-8'>
+                  <DonateInfoSection flowState={flow.state} flow={flow} />
+                  <DonateFlow flow={flow} showBackButton={false} />
+                </div>
+
+                {/* Right: Cart Sidebar */}
+                <div>
+                  <div className='sticky top-4 space-y-4'>
+                    <CartSidebar
+                      selectedEntities={flow.state.selectedEntities || []}
+                      cartTotalCents={flow.state.cartTotalCents || 0}
+                      isEditable={
+                        flow.state.step === 1 &&
+                        (flow.state.selectedEntities?.length || 0) === 1
+                      }
+                      onTotalChange={newTotal => {
+                        if ((flow.state.selectedEntities?.length || 0) === 1) {
+                          flow.setCartTotalCents(newTotal);
+                          flow.setCartEdited(true);
+                        }
+                      }}
+                      onRemove={(entityId, entityType) => {
+                        flow.removeEntityFromCart(entityId, entityType);
+                      }}
+                      entityTypeLabel={entityTypeLabel}
+                    />
+                    {/* Continue button for entity selection step */}
+                    {flow.state.step === 1 && (
+                      <Button
+                        onClick={() => {
+                          const selectedEntities =
+                            flow.state.selectedEntities || [];
+                          if (selectedEntities.length === 0) return;
+
+                          const intent = flow.state.intent;
+                          if (!intent) return;
+
+                          const entityType =
+                            intent.type === 'language'
+                              ? 'language'
+                              : intent.type === 'region'
+                                ? 'region'
+                                : 'operation';
+
+                          const languageIds =
+                            entityType === 'language'
+                              ? selectedEntities.map(e => e.id)
+                              : undefined;
+                          const regionIds =
+                            entityType === 'region'
+                              ? selectedEntities.map(e => e.id)
+                              : undefined;
+                          const operationIds =
+                            entityType === 'operation'
+                              ? selectedEntities.map(e => e.id)
+                              : undefined;
+
+                          flow.setIntent({
+                            ...intent,
+                            languageEntityIds: languageIds,
+                            regionIds: regionIds,
+                            operationIds: operationIds,
+                          });
+
+                          flow.next();
+                        }}
+                        className='w-full'
+                        disabled={
+                          (flow.state.selectedEntities?.length || 0) === 0
+                        }
+                      >
+                        Continue to details
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12'>
+              {/* Left: Info Panel */}
+              <div className='lg:pr-8'>
+                <DonateInfoSection flowState={flow.state} flow={flow} />
+              </div>
+
+              {/* Right: Flow Steps */}
+              <div className='lg:pl-8 max-w-2xl lg:max-w-none mx-auto w-full'>
+                <DonateFlow flow={flow} showBackButton={false} />
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* FAQ at bottom */}
@@ -127,13 +226,7 @@ export const DonatePage: React.FC = () => {
 
   return (
     <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col'>
-      {isAdoptFlow ? (
-        <StepActionsProvider>
-          <LanguageSelectionProvider>{pageContent}</LanguageSelectionProvider>
-        </StepActionsProvider>
-      ) : (
-        pageContent
-      )}
+      {pageContent}
     </div>
   );
 };

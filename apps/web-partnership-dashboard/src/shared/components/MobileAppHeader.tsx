@@ -44,6 +44,14 @@ export const MobileAppHeader: React.FC = () => {
     setSearchQuery('');
   }, [pathname]);
 
+  // Reset to default if search mode is active on dashboard route
+  React.useEffect(() => {
+    if (mode === 'search' && isDashboardRoute) {
+      setMode('default');
+      setSearchQuery('');
+    }
+  }, [mode, isDashboardRoute]);
+
   const handleSearchSelect = (item: SearchResult) => {
     const path =
       item.kind === 'language'
@@ -65,21 +73,23 @@ export const MobileAppHeader: React.FC = () => {
       <header className='sticky top-0 z-30 h-14 px-4 bg-white/70 dark:bg-neutral-900/70 backdrop-blur border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between'>
         <div className='font-semibold text-base'>Every Language</div>
         <div className='flex items-center gap-3'>
-          <button
-            onClick={() => setMode('search')}
-            aria-label='Search'
-            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800'
-          >
-            <Search className='h-5 w-5' />
-          </button>
+          {!isDashboardRoute && (
+            <button
+              onClick={() => setMode('search')}
+              aria-label='Search'
+              className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800'
+            >
+              <Search className='h-5 w-5' />
+            </button>
+          )}
           <MenuButton isOpen={false} onClick={() => setMode('menu')} />
         </div>
       </header>
     );
   }
 
-  // Search mode
-  if (mode === 'search') {
+  // Search mode (only accessible on non-dashboard routes)
+  if (mode === 'search' && !isDashboardRoute) {
     const showResults = searchQuery.trim().length >= 2;
 
     return (

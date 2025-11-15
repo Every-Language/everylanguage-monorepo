@@ -5,6 +5,7 @@ import { regionsApi } from '../api/regionsApi';
 import { languagesApi } from '@/features/languages/api/languagesApi';
 import { RegionModal } from '../components/RegionModal';
 import { LanguageEntityModal } from '@/features/languages/components/LanguageEntityModal';
+import { FundingStatusBadge } from '@/shared/components/FundingStatusBadge';
 import type { RegionWithLanguages, LanguageEntityWithRegions } from '@/types';
 import { Search, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -79,6 +80,9 @@ function RegionRow({
         ) : (
           <span className='text-neutral-400 dark:text-neutral-600'>—</span>
         )}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        <FundingStatusBadge status={region.region_funding?.funding_status} />
       </td>
       <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
         <button
@@ -373,6 +377,9 @@ export function RegionsPage() {
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       Parent Region
                     </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                      Funding Status
+                    </th>
                     <th className='px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       Actions
                     </th>
@@ -391,7 +398,7 @@ export function RegionsPage() {
                   ) : (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
                       >
                         {searchTerm

@@ -6,6 +6,7 @@ import type {
   RegionProperty,
   RegionAlias,
   LanguageEntity,
+  RegionFundingStatus,
 } from '@/types';
 
 interface FetchRegionsParams {
@@ -46,8 +47,7 @@ export const regionsApi = {
           throw searchError;
         }
 
-        // Transform search results to match our interface
-        let results: RegionWithLanguages[] = (searchResults || []).map(
+        let results = (searchResults || []).map(
           (result: {
             region_id: string;
             region_name: string;
@@ -74,15 +74,13 @@ export const regionsApi = {
               created_at: '',
               updated_at: '',
               deleted_at: null,
-              bbox_max_lat: null,
-              bbox_max_lon: null,
               bbox_min_lat: null,
               bbox_min_lon: null,
               boundary: null,
               boundary_simplified: null,
               center_lat: null,
               center_lon: null,
-              funding_status: null,
+              region_funding: null,
             }) as RegionWithLanguages
         );
 
@@ -136,9 +134,16 @@ export const regionsApi = {
     // Normal pagination query with filters
     let query = supabase
       .from('regions')
-      .select('*, language_entities_regions(language_entity_id)', {
-        count: 'exact',
-      })
+      .select(
+        `
+        *,
+        language_entities_regions(language_entity_id),
+        region_funding!left(*)
+      `,
+        {
+          count: 'exact',
+        }
+      )
       .is('deleted_at', null);
 
     // Apply level filter
@@ -177,7 +182,8 @@ export const regionsApi = {
         const results = paginatedData.map(item => ({
           ...item,
           language_count: 0, // By definition, these have no languages
-        }));
+          region_funding: null,
+        })) as RegionWithLanguages[];
 
         return {
           data: results,
@@ -219,7 +225,20 @@ export const regionsApi = {
       language_count: Array.isArray(item.language_entities_regions)
         ? item.language_entities_regions.length
         : 0,
-    }));
+      region_funding:
+        Array.isArray(item.region_funding) &&
+        item.region_funding.length > 0 &&
+        item.region_funding[0].region_id
+          ? {
+              region_id: item.region_funding[0].region_id!,
+              region_name: item.region_funding[0].region_name || '',
+              region_level: item.region_funding[0].region_level || '',
+              budget_cents: item.region_funding[0].budget_cents || 0,
+              funding_status: (item.region_funding[0].funding_status ||
+                'not_started') as RegionFundingStatus,
+            }
+          : null,
+    })) as RegionWithLanguages[];
 
     return {
       data: results,
@@ -234,7 +253,12 @@ export const regionsApi = {
     // Fetch region first
     const { data: regionData, error: regionError } = await supabase
       .from('regions')
-      .select('*')
+      .select(
+        `
+        *,
+        region_funding!left(*)
+      `
+      )
       .eq('id', id)
       .is('deleted_at', null)
       .single();
@@ -256,6 +280,19 @@ export const regionsApi = {
       return {
         ...regionData,
         language_entities: [],
+        region_funding:
+          Array.isArray(regionData.region_funding) &&
+          regionData.region_funding.length > 0 &&
+          regionData.region_funding[0].region_id
+            ? {
+                region_id: regionData.region_funding[0].region_id!,
+                region_name: regionData.region_funding[0].region_name || '',
+                region_level: regionData.region_funding[0].region_level || '',
+                budget_cents: regionData.region_funding[0].budget_cents || 0,
+                funding_status: (regionData.region_funding[0].funding_status ||
+                  'not_started') as RegionFundingStatus,
+              }
+            : null,
       };
     }
 
@@ -266,6 +303,19 @@ export const regionsApi = {
     return {
       ...regionData,
       language_entities,
+      region_funding:
+        Array.isArray(regionData.region_funding) &&
+        regionData.region_funding.length > 0 &&
+        regionData.region_funding[0].region_id
+          ? {
+              region_id: regionData.region_funding[0].region_id!,
+              region_name: regionData.region_funding[0].region_name || '',
+              region_level: regionData.region_funding[0].region_level || '',
+              budget_cents: regionData.region_funding[0].budget_cents || 0,
+              funding_status: (regionData.region_funding[0].funding_status ||
+                'not_started') as RegionFundingStatus,
+            }
+          : null,
     };
   },
 
@@ -486,7 +536,6 @@ export const regionsApi = {
         created_at: '',
         updated_at: '',
         deleted_at: null,
-        funding_status: null,
       })
     ) as LanguageEntity[];
   },

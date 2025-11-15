@@ -8,6 +8,9 @@ import {
   LayoutDashboard,
   HandCoins,
   ArrowRightLeft,
+  Globe,
+  FolderKanban,
+  Settings,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -42,6 +45,27 @@ const navigationItems: NavItem[] = [
     path: '/regions',
     section: 'Data',
     icon: <Map className='h-5 w-5' />,
+  },
+  {
+    id: 'language-availability',
+    label: 'Language Availability',
+    path: '/budgets/languages',
+    section: 'Budgets',
+    icon: <Globe className='h-5 w-5' />,
+  },
+  {
+    id: 'operations',
+    label: 'Operations',
+    path: '/budgets/operations',
+    section: 'Budgets',
+    icon: <Settings className='h-5 w-5' />,
+  },
+  {
+    id: 'projects',
+    label: 'Projects',
+    path: '/budgets/projects',
+    section: 'Budgets',
+    icon: <FolderKanban className='h-5 w-5' />,
   },
   {
     id: 'donations',

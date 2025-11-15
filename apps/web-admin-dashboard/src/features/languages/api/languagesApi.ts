@@ -135,7 +135,8 @@ export const languagesApi = {
       .select(
         `
         *,
-        language_entities_regions(region_id)
+        language_entities_regions(region_id),
+        language_funding(*)
       `,
         { count: 'exact' }
       )
@@ -177,6 +178,11 @@ export const languagesApi = {
         const transformedData = paginatedData.map(item => ({
           ...item,
           region_count: 0, // By definition, these have no regions
+          language_funding:
+            Array.isArray(item.language_funding) &&
+            item.language_funding.length > 0
+              ? item.language_funding[0]
+              : null,
         })) as LanguageEntityWithRegions[];
 
         return {
@@ -226,6 +232,10 @@ export const languagesApi = {
       region_count: Array.isArray(item.language_entities_regions)
         ? item.language_entities_regions.length
         : 0,
+      language_funding:
+        Array.isArray(item.language_funding) && item.language_funding.length > 0
+          ? item.language_funding[0]
+          : null,
     })) as LanguageEntityWithRegions[];
 
     return {
@@ -246,7 +256,12 @@ export const languagesApi = {
     // Fetch entity first
     const { data: entityData, error: entityError } = await supabase
       .from('language_entities')
-      .select('*')
+      .select(
+        `
+        *,
+        language_funding(*)
+      `
+      )
       .eq('id', id)
       .is('deleted_at', null)
       .single();
@@ -268,6 +283,11 @@ export const languagesApi = {
       return {
         ...entityData,
         regions: [],
+        language_funding:
+          Array.isArray(entityData.language_funding) &&
+          entityData.language_funding.length > 0
+            ? entityData.language_funding[0]
+            : null,
       };
     }
 
@@ -276,6 +296,11 @@ export const languagesApi = {
     return {
       ...entityData,
       regions,
+      language_funding:
+        Array.isArray(entityData.language_funding) &&
+        entityData.language_funding.length > 0
+          ? entityData.language_funding[0]
+          : null,
     };
   },
 

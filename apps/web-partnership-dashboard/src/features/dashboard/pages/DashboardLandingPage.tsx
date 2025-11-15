@@ -3,7 +3,6 @@
 import React from 'react';
 import { useAuth } from '@/features/auth';
 import { useRouter } from 'next/navigation';
-import { PublicLanguagesPage } from '@/features/funding/pages/PublicLanguagesPage';
 import { useUserEntities } from '@/features/dashboard/hooks/useUserEntities';
 
 const EntitySelector: React.FC = () => {
@@ -103,13 +102,21 @@ const EntitySelector: React.FC = () => {
 
 export const DashboardLandingPage: React.FC = () => {
   const { user, loading } = useAuth();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [loading, user, router]);
+
   if (loading)
     return (
       <div className='min-h-screen flex items-center justify-center'>
         Loading…
       </div>
     );
-  if (!user) return <PublicLanguagesPage />;
+  if (!user) return null;
   return <EntitySelector />;
 };
 

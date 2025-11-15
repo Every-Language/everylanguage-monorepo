@@ -1,1 +1,11 @@
+# Check if lockfile is in sync with package.json files
+if git diff --cached --name-only | grep -qE '(package\.json|pnpm-lock\.yaml)'; then
+  echo "Checking lockfile sync..."
+  pnpm install --frozen-lockfile --dry-run || {
+    echo "❌ Lockfile is out of sync with package.json files"
+    echo "Run 'pnpm install' to update the lockfile"
+    exit 1
+  }
+fi
+
 npx lint-staged

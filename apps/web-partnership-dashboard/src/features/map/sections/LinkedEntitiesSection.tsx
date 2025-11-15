@@ -96,23 +96,23 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
   // Measure the offset from scroll container to virtualized list
   React.useEffect(() => {
     if (!scrollRef?.current || !virtualContainerRef.current) return;
-    
+
     const updateScrollMargin = (): void => {
       const scrollElement = scrollRef.current;
       const containerElement = virtualContainerRef.current;
       if (!scrollElement || !containerElement) return;
-      
+
       // Get bounding rects relative to viewport
       const scrollRect = scrollElement.getBoundingClientRect();
       const containerRect = containerElement.getBoundingClientRect();
-      
+
       // Calculate offset from scroll container's content top to virtual container top
       // When scrollTop = 0, containerRect.top - scrollRect.top is the offset
       // When scrolled, we need to add scrollTop to get the offset in scroll coordinates
       const viewportOffset = containerRect.top - scrollRect.top;
       const scrollOffset = scrollElement.scrollTop;
       const totalOffset = viewportOffset + scrollOffset;
-      
+
       setScrollMargin(Math.max(0, totalOffset));
     };
 
@@ -120,16 +120,18 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
     const rafId = requestAnimationFrame(() => {
       updateScrollMargin();
     });
-    
+
     // Re-measure when content changes or scrolls
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(updateScrollMargin);
     });
-    
+
     if (scrollRef.current) {
       resizeObserver.observe(scrollRef.current);
       // Also listen to scroll events to remeasure
-      scrollRef.current.addEventListener('scroll', updateScrollMargin, { passive: true });
+      scrollRef.current.addEventListener('scroll', updateScrollMargin, {
+        passive: true,
+      });
     }
     if (virtualContainerRef.current) {
       resizeObserver.observe(virtualContainerRef.current);
@@ -159,7 +161,6 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
 
   return (
     <div className='space-y-2'>
-      <div className='font-semibold'>{sectionTitle}</div>
       <Input
         value={query}
         onChange={e => setQuery(e.target.value)}
@@ -182,7 +183,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
               <div
                 key={item.id}
                 className='absolute top-0 left-0 w-full p-0.5'
-                style={{ 
+                style={{
                   transform: `translateY(${v.start - scrollMargin}px)`,
                 }}
               >

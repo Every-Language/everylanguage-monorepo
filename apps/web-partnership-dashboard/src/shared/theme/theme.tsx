@@ -15,9 +15,48 @@ interface ThemeProviderProps {
   children: ReactNode;
 }
 
+// Initialize theme synchronously to prevent flash
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') {
+    return 'system';
+  }
+
+  try {
+    const savedTheme = localStorage.getItem('omt-theme') as Theme;
+    if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
+      return savedTheme;
+    }
+  } catch (e) {
+    // localStorage might not be available
+  }
+
+  return 'system';
+}
+
+function getInitialResolvedTheme(): 'light' | 'dark' {
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+
+  const theme = getInitialTheme();
+
+  if (theme === 'system') {
+    if (window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+    }
+    return 'light';
+  }
+
+  return theme;
+}
+
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>('system');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(
+    getInitialResolvedTheme
+  );
 
   // Check system preference
   const getSystemTheme = (): 'light' | 'dark' => {
@@ -37,14 +76,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setResolvedTheme(newTheme);
   };
 
-  // Initialize theme from localStorage or system
+  // Sync with the theme that was applied by the blocking script
+  // This ensures React state matches what's already on the DOM
   useEffect(() => {
-    const savedTheme = localStorage.getItem('omt-theme') as Theme;
-    if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
-      setTheme(savedTheme);
-    } else {
-      setTheme('system');
+    const currentClass = document.documentElement.classList.contains('dark')
+      ? 'dark'
+      : 'light';
+    if (currentClass !== resolvedTheme) {
+      setResolvedTheme(currentClass);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update resolved theme when theme changes

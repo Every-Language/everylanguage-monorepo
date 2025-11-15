@@ -5,6 +5,7 @@ import { languagesApi } from '../api/languagesApi';
 import { regionsApi } from '@/features/regions/api/regionsApi';
 import { LanguageEntityModal } from '../components/LanguageEntityModal';
 import { RegionModal } from '@/features/regions/components/RegionModal';
+import { FundingStatusBadge } from '@/shared/components/FundingStatusBadge';
 import type { LanguageEntityWithRegions, RegionWithLanguages } from '@/types';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -79,6 +80,9 @@ function LanguageRow({
         ) : (
           <span className='text-neutral-400 dark:text-neutral-600'>—</span>
         )}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        <FundingStatusBadge status={entity.language_funding?.funding_status} />
       </td>
     </tr>
   );
@@ -356,6 +360,9 @@ export function LanguagesPage() {
                   <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                     Parent Language
                   </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                    Funding Status
+                  </th>
                 </tr>
               </thead>
               <tbody className='bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-800'>
@@ -371,7 +378,7 @@ export function LanguagesPage() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
                     >
                       {debouncedSearch

@@ -1,6 +1,6 @@
 /**
  * Joshua Project API Client
- * 
+ *
  * Provides typed functions to interact with the Joshua Project API
  * through our Next.js API proxy.
  */
@@ -13,7 +13,7 @@
  * Country statistics from Joshua Project
  */
 export interface JPCountry {
-  ROG3: string; // ISO 3166-1 alpha-3 country code
+  ROG3: string; // FIPS 10-4 country code (2-letter)
   Ctry: string; // Country name
   RegionCode: string; // Region code
   RegionName: string; // Region name
@@ -25,7 +25,8 @@ export interface JPCountry {
   ROG2: string; // 2-letter country code
   WBGeo: string; // World Bank geographic region
   WBIncome: string; // World Bank income classification
-  WBPopulation: number; // Population estimate
+  WBPopulation: number | null; // Population estimate (may be null, use Population instead)
+  Population: number | null; // Population estimate (primary field)
   RLR3: string; // Primary language code (ISO 639-3)
   PrimaryLanguageName: string; // Name of primary language
   PrimaryReligion: string; // Primary religion
@@ -82,8 +83,14 @@ export interface JPCountry {
   MediumTypeGospelPresentation: string | null; // Medium type for gospel presentation
   Unengaged: string | null; // Unengaged status
   RaceCode: string | null; // Race code
-  PeopleGroups: number; // Number of people groups
+  PeopleGroups: number | null; // Number of people groups (deprecated, use CntPeoples)
+  CntPeoples: number | null; // Number of people groups (primary field)
+  CntPeoplesLR: number | null; // Number of least reached people groups
+  CntPrimaryLanguages: number | null; // Number of primary languages
   PercentPeopleGroups: number; // Percent of people groups
+  PoplPeoplesLR: number | null; // Population of least reached peoples
+  PoplPeoplesFPG: number | null; // Population of frontier people groups
+  ROL3OfficialLanguage: string | null; // Official language ISO 639-3 code
 }
 
 /**
@@ -126,7 +133,8 @@ export interface JPLanguage {
 export interface JPPeopleGroup {
   PeopleID3: string; // People group ID
   PeopNameInCountry: string; // People name in country
-  ROG3: string; // Country code (ISO 3166-1 alpha-3)
+  ROG3: string; // Joshua Project's internal country code
+  ISO3: string; // ISO 3166-1 alpha-3 country code
   Ctry: string; // Country name
   PrimaryLanguageName: string; // Primary language name
   PrimaryLanguageDialect: string | null; // Primary language dialect
@@ -208,39 +216,49 @@ export interface JPApiResponse<T> {
 /**
  * Builds the URL for our Next.js API proxy
  */
-function buildProxyUrl(endpoint: string, params?: Record<string, string | number>): string {
+function buildProxyUrl(
+  endpoint: string,
+  params?: Record<string, string | number>
+): string {
   const url = new URL('/api/joshua-project', window.location.origin);
   url.searchParams.set('endpoint', endpoint);
-  
+
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.set(key, String(value));
     });
   }
-  
+
   return url.toString();
 }
 
 /**
  * Fetches data from our Joshua Project API proxy
  */
-async function fetchFromProxy<T>(endpoint: string, params?: Record<string, string | number>): Promise<T[]> {
+export async function fetchFromProxy<T>(
+  endpoint: string,
+  params?: Record<string, string | number>
+): Promise<T[]> {
   const url = buildProxyUrl(endpoint, params);
-  
+
   const response = await fetch(url, {
     method: 'GET',
     headers: {
-      'Accept': 'application/json',
+      Accept: 'application/json',
     },
   });
-  
+
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(errorData.error || `API request failed with status ${response.status}`);
+    const errorData = await response
+      .json()
+      .catch(() => ({ error: 'Unknown error' }));
+    throw new Error(
+      errorData.error || `API request failed with status ${response.status}`
+    );
   }
-  
+
   const data = await response.json();
-  
+
   // Joshua Project API returns an array directly
   return Array.isArray(data) ? data : [];
 }
@@ -250,16 +268,127 @@ async function fetchFromProxy<T>(endpoint: string, params?: Record<string, strin
 // ============================================================================
 
 /**
- * Fetch country statistics by ISO3 code
- * Note: We use the list endpoint with ISO3 filter because the single country
- * endpoint expects ROG3 (Joshua Project's code), not ISO3
+ * Fetches a single country by FIPS code (ROG3) using the single country endpoint
  */
-export async function fetchCountryStats(iso3: string): Promise<JPCountry | null> {
+async function fetchCountryByFIPS(rog3: string): Promise<JPCountry | null> {
   try {
-    const data = await fetchFromProxy<JPCountry>('countries', {
-      ISO3: iso3,
+    // Use the single country endpoint: /countries/{id}.json where id is FIPS code
+    const url = buildProxyUrl(`countries/${rog3}`);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[JP Debug] Fetching country by FIPS code: ${rog3}, URL: ${url}`
+      );
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+      cache: 'no-store', // Disable caching to ensure fresh data
     });
-    return data[0] || null;
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Single endpoint returns an array with one item
+    const result = Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+    if (process.env.NODE_ENV === 'development' && result) {
+      console.log(`[JP Debug] Country fetched by FIPS ${rog3}:`, {
+        Ctry: result.Ctry,
+        ISO3: result.ISO3,
+        ROG3: result.ROG3,
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch country by FIPS ${rog3}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch country statistics by FIPS code (ROG3)
+ *
+ * Uses the single country endpoint format: /v1/countries/{id}.json
+ * where id is the 2-letter FIPS 10-4 code (ROG3).
+ *
+ * This function expects the FIPS code to be provided directly (typically from database).
+ */
+export async function fetchCountryStatsByFIPS(
+  rog3: string
+): Promise<JPCountry | null> {
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[JP Debug] Fetching country stats by FIPS code: ${rog3}`);
+    }
+
+    // Use the single country endpoint directly: /countries/{FIPS}.json
+    const countryData = await fetchCountryByFIPS(rog3);
+
+    if (process.env.NODE_ENV === 'development' && countryData) {
+      console.log(`[JP Debug] Country stats result:`, {
+        Ctry: countryData.Ctry,
+        ISO3: countryData.ISO3,
+        ROG3: countryData.ROG3,
+      });
+    }
+
+    return countryData;
+  } catch (error) {
+    console.error(`Failed to fetch country stats for FIPS ${rog3}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch country statistics by ISO3 code
+ *
+ * DEPRECATED: This function is kept for backward compatibility but should not be used.
+ * Use fetchCountryStatsByFIPS instead, with FIPS code from database.
+ *
+ * This fallback builds a cache by fetching all countries if FIPS code is not available.
+ */
+export async function fetchCountryStats(
+  iso3: string
+): Promise<JPCountry | null> {
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        `[JP Debug] fetchCountryStats called with ISO3: ${iso3}. Consider using fetchCountryStatsByFIPS with FIPS code from database.`
+      );
+    }
+
+    // Fallback: fetch all countries and find the matching one
+    const countries = await fetchFromProxy<JPCountry>('countries', {
+      limit: 300,
+    });
+
+    const matchingCountry = countries.find(c => c.ISO3 === iso3);
+
+    if (!matchingCountry || !matchingCountry.ROG3) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[JP Debug] No country found for ISO3: ${iso3}`);
+      }
+      return null;
+    }
+
+    const rog3 = matchingCountry.ROG3;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[JP Debug] Found FIPS code ${rog3} for ISO3 ${iso3}, fetching single country endpoint`
+      );
+    }
+
+    // Use the single country endpoint directly: /countries/{FIPS}.json
+    return await fetchCountryStatsByFIPS(rog3);
   } catch (error) {
     console.error(`Failed to fetch country stats for ${iso3}:`, error);
     throw error;
@@ -271,7 +400,9 @@ export async function fetchCountryStats(iso3: string): Promise<JPCountry | null>
  * Note: We use the list endpoint with ROL3 filter because the single language
  * endpoint expects Joshua Project's language code
  */
-export async function fetchLanguageStats(iso6393: string): Promise<JPLanguage | null> {
+export async function fetchLanguageStats(
+  iso6393: string
+): Promise<JPLanguage | null> {
   try {
     const data = await fetchFromProxy<JPLanguage>('languages', {
       ROL3: iso6393,
@@ -285,16 +416,53 @@ export async function fetchLanguageStats(iso6393: string): Promise<JPLanguage | 
 
 /**
  * Fetch people groups by country (ISO3 code)
+ *
+ * Uses the `countries` parameter with FIPS 10-4 code (ROG3) to filter people groups.
+ * The API documentation specifies using 2-letter FIPS codes via the `countries` parameter.
  */
 export async function fetchPeopleGroupsByCountry(
   iso3: string,
   limit: number = 100
 ): Promise<JPPeopleGroup[]> {
   try {
-    return await fetchFromProxy<JPPeopleGroup>('people_groups', {
-      ROG3: iso3,
+    // First, get the country stats to obtain ROG3 code (FIPS 10-4)
+    const countryStats = await fetchCountryStats(iso3);
+
+    if (!countryStats || !countryStats.ROG3) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(
+          `[JP Debug] No ROG3 found for ISO3 ${iso3}, cannot fetch people groups`
+        );
+      }
+      return [];
+    }
+
+    const rog3 = countryStats.ROG3; // This is the FIPS 10-4 code (2-letter)
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[JP Debug] Fetching people groups for ISO3: ${iso3} using FIPS code (ROG3): ${rog3}`
+      );
+    }
+
+    // Use the `countries` parameter with FIPS code (ROG3) - this works correctly!
+    const data = await fetchFromProxy<JPPeopleGroup>('people_groups', {
+      countries: rog3, // FIPS 10-4 code (2-letter)
       limit,
     });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[JP Debug] Fetched ${data.length} people groups for FIPS code: ${rog3} (ISO3: ${iso3})`
+      );
+      if (data.length > 0) {
+        console.log(
+          `[JP Debug] First people group: ${data[0].PeopNameInCountry} - Country: ${data[0].Ctry}, ISO3: ${data[0].ISO3}, ROG3: ${data[0].ROG3}`
+        );
+      }
+    }
+
+    return data;
   } catch (error) {
     console.error(`Failed to fetch people groups for country ${iso3}:`, error);
     throw error;
@@ -314,7 +482,10 @@ export async function fetchPeopleGroupsByLanguage(
       limit,
     });
   } catch (error) {
-    console.error(`Failed to fetch people groups for language ${iso6393}:`, error);
+    console.error(
+      `Failed to fetch people groups for language ${iso6393}:`,
+      error
+    );
     throw error;
   }
 }
@@ -334,20 +505,35 @@ export interface ExternalIdSource {
 /**
  * Extracts ISO3 code from region sources
  */
-export function extractISO3FromRegionSources(sources: ExternalIdSource[]): string | null {
+export function extractISO3FromRegionSources(
+  sources: ExternalIdSource[]
+): string | null {
   const iso3Source = sources.find(
-    (s) => s.external_id_type === 'iso3166-1-alpha3' || s.external_id_type === 'iso3166-1-alpha-3'
+    s =>
+      s.external_id_type === 'iso3166-1-alpha3' ||
+      s.external_id_type === 'iso3166-1-alpha-3'
   );
   return iso3Source?.external_id || null;
 }
 
 /**
+ * Extracts FIPS 10-4 code from region sources
+ */
+export function extractFIPSFromRegionSources(
+  sources: ExternalIdSource[]
+): string | null {
+  const fipsSource = sources.find(s => s.external_id_type === 'fips-10-4');
+  return fipsSource?.external_id || null;
+}
+
+/**
  * Extracts ISO 639-3 code from language entity sources
  */
-export function extractISO6393FromLanguageSources(sources: ExternalIdSource[]): string | null {
+export function extractISO6393FromLanguageSources(
+  sources: ExternalIdSource[]
+): string | null {
   const iso6393Source = sources.find(
-    (s) => s.external_id_type === 'iso-639-3' || s.external_id_type === 'iso639-3'
+    s => s.external_id_type === 'iso-639-3' || s.external_id_type === 'iso639-3'
   );
   return iso6393Source?.external_id || null;
 }
-

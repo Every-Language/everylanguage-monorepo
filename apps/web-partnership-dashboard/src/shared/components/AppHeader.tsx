@@ -126,6 +126,14 @@ export const AppHeader: React.FC = () => {
     intendedSection === 'dashboard' ? 'Dashboard' : routeLabel(pathname);
   const [donateOpen, setDonateOpen] = React.useState(false);
 
+  // Hide search bar on dashboard routes
+  const isDashboardRoute =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/partner-org') ||
+    pathname.startsWith('/project') ||
+    pathname.startsWith('/team') ||
+    pathname.startsWith('/base');
+
   return (
     <header className='sticky top-0 z-30 h-14 px-3 sm:px-4 lg:px-6 bg-white/70 dark:bg-neutral-900/70 backdrop-blur border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-3'>
       {/* Left: Brand + route switcher */}
@@ -161,21 +169,25 @@ export const AppHeader: React.FC = () => {
         </Dropdown>
       </div>
 
-      {/* Middle: Search */}
-      <div className='flex-1 flex justify-center'>
-        <SearchBar
-          embedded
-          onSelect={item => {
-            if (item.kind === 'language')
-              router.push(`/map/language/${encodeURIComponent(item.id)}`);
-            else router.push(`/map/region/${encodeURIComponent(item.id)}`);
-          }}
-          className='w-full max-w-xl'
-        />
-      </div>
+      {/* Middle: Search (hidden on dashboard routes) */}
+      {!isDashboardRoute && (
+        <div className='flex-1 flex justify-center'>
+          <SearchBar
+            embedded
+            onSelect={item => {
+              if (item.kind === 'language')
+                router.push(`/map/language/${encodeURIComponent(item.id)}`);
+              else router.push(`/map/region/${encodeURIComponent(item.id)}`);
+            }}
+            className='w-full max-w-xl'
+          />
+        </div>
+      )}
 
       {/* Right: Theme + Auth */}
-      <div className='ml-auto flex items-center gap-2'>
+      <div
+        className={`flex items-center gap-2 ${isDashboardRoute ? 'ml-auto' : ''}`}
+      >
         <ThemeDropdown />
         <AuthMenu />
         {/* Donate button to the right of the login/auth */}

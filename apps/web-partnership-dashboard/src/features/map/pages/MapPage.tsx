@@ -8,6 +8,7 @@ import { InspectorPanel } from '../components/InspectorPanel';
 import { MobileBottomSheet } from '../components/MobileBottomSheet';
 import { MobileSheetProvider } from '../context/MobileSheetProvider';
 import { DEFAULT_LAYOUT } from '../config/layouts';
+import { MapFocusHandler } from '../components/MapFocusHandler';
 
 /**
  * MapPage - Main map view with configurable inspector panels
@@ -73,6 +74,7 @@ export const MapPage: React.FC = () => {
       >
         <MapShell countriesEnabled={layers.countries} padding={mapPadding}>
           <RouteSync />
+          <MapFocusHandler />
           <MapOverlayLayers countriesEnabled={layers.countries} />
           <MapAnalyticsLayers show={layers.listening} />
 

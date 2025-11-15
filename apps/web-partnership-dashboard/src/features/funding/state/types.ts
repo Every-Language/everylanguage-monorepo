@@ -23,11 +23,23 @@ export interface DonorType {
   };
 }
 
+export interface SelectedEntity {
+  id: string;
+  type: 'language' | 'region' | 'operation';
+  name: string;
+  budgetCents: number;
+}
+
 export interface DonationIntent {
   type: DonationIntentType;
-  languageEntityId?: string; // Required if type is 'language'
-  regionId?: string; // Required if type is 'region'
-  operationId?: string; // Required if type is 'operation'
+  // Support multiple entities for adoption mode
+  languageEntityIds?: string[]; // For 'language' type
+  regionIds?: string[]; // For 'region' type
+  operationIds?: string[]; // For 'operation' type
+  // Legacy single entity support (for backward compatibility)
+  languageEntityId?: string;
+  regionId?: string;
+  operationId?: string;
   // Display name for UI
   displayName?: string;
 }
@@ -44,8 +56,14 @@ export interface DonateFlowState {
   intent?: DonationIntent;
   paymentMethod?: 'card' | 'bank_transfer';
   amount?: AmountSelection;
+  // Cart state for entity selection
+  selectedEntities?: SelectedEntity[];
+  cartTotalCents?: number; // Editable total
+  cartEdited?: boolean; // Tracks if user edited cart
   // Results from checkout
+  clientSecret?: string | null;
   donationId?: string;
   customerId?: string;
   partnerOrgId?: string;
+  paymentIntentId?: string;
 }

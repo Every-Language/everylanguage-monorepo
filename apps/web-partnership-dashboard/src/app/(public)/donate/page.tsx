@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { DonateClientPage } from './client';
 
 export const metadata: Metadata = {
-  title: 'Support Bible Translation | EverlyLanguage',
+  title: 'Support Bible Translation | Every Language',
   description:
     'Make a lasting impact by supporting Bible translation projects worldwide. Help bring Scripture to languages that need it most.',
   openGraph: {

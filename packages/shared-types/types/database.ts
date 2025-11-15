@@ -641,6 +641,13 @@ export type Database = {
             foreignKeyName: "donations_intent_region_id_fkey"
             columns: ["intent_region_id"]
             isOneToOne: false
+            referencedRelation: "region_funding"
+            referencedColumns: ["region_id"]
+          },
+          {
+            foreignKeyName: "donations_intent_region_id_fkey"
+            columns: ["intent_region_id"]
+            isOneToOne: false
             referencedRelation: "regions"
             referencedColumns: ["id"]
           },
@@ -845,7 +852,6 @@ export type Database = {
         Row: {
           created_at: string | null
           deleted_at: string | null
-          funding_status: Database["public"]["Enums"]["entity_status"] | null
           id: string
           level: Database["public"]["Enums"]["language_entity_level"]
           name: string
@@ -855,7 +861,6 @@ export type Database = {
         Insert: {
           created_at?: string | null
           deleted_at?: string | null
-          funding_status?: Database["public"]["Enums"]["entity_status"] | null
           id?: string
           level: Database["public"]["Enums"]["language_entity_level"]
           name: string
@@ -865,7 +870,6 @@ export type Database = {
         Update: {
           created_at?: string | null
           deleted_at?: string | null
-          funding_status?: Database["public"]["Enums"]["entity_status"] | null
           id?: string
           level?: Database["public"]["Enums"]["language_entity_level"]
           name?: string
@@ -917,6 +921,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "language_entities"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "language_entities_regions_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "region_funding"
+            referencedColumns: ["region_id"]
           },
           {
             foreignKeyName: "language_entities_regions_region_id_fkey"
@@ -976,6 +987,54 @@ export type Database = {
             foreignKeyName: "language_entity_sources_language_entity_id_fkey"
             columns: ["language_entity_id"]
             isOneToOne: false
+            referencedRelation: "language_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      language_funding: {
+        Row: {
+          budget_cents: number | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          funding_status: string
+          id: string
+          language_entity_id: string
+          updated_at: string
+        }
+        Insert: {
+          budget_cents?: number | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          funding_status?: string
+          id?: string
+          language_entity_id: string
+          updated_at?: string
+        }
+        Update: {
+          budget_cents?: number | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          funding_status?: string
+          id?: string
+          language_entity_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "language_funding_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "language_funding_language_entity_id_fkey"
+            columns: ["language_entity_id"]
+            isOneToOne: true
             referencedRelation: "language_entities"
             referencedColumns: ["id"]
           },
@@ -2258,6 +2317,13 @@ export type Database = {
             foreignKeyName: "projects_region_id_fkey"
             columns: ["region_id"]
             isOneToOne: false
+            referencedRelation: "region_funding"
+            referencedColumns: ["region_id"]
+          },
+          {
+            foreignKeyName: "projects_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
             referencedRelation: "regions"
             referencedColumns: ["id"]
           },
@@ -2370,6 +2436,59 @@ export type Database = {
             foreignKeyName: "region_aliases_region_id_fkey"
             columns: ["region_id"]
             isOneToOne: false
+            referencedRelation: "region_funding"
+            referencedColumns: ["region_id"]
+          },
+          {
+            foreignKeyName: "region_aliases_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      region_funding_overrides: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          funding_status: string
+          region_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          funding_status?: string
+          region_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          funding_status?: string
+          region_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "region_funding_overrides_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "region_funding_overrides_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: true
+            referencedRelation: "region_funding"
+            referencedColumns: ["region_id"]
+          },
+          {
+            foreignKeyName: "region_funding_overrides_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: true
             referencedRelation: "regions"
             referencedColumns: ["id"]
           },
@@ -2401,6 +2520,13 @@ export type Database = {
           value?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "region_properties_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "region_funding"
+            referencedColumns: ["region_id"]
+          },
           {
             foreignKeyName: "region_properties_region_id_fkey"
             columns: ["region_id"]
@@ -2459,6 +2585,13 @@ export type Database = {
             foreignKeyName: "region_sources_region_id_fkey"
             columns: ["region_id"]
             isOneToOne: false
+            referencedRelation: "region_funding"
+            referencedColumns: ["region_id"]
+          },
+          {
+            foreignKeyName: "region_sources_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
             referencedRelation: "regions"
             referencedColumns: ["id"]
           },
@@ -2476,7 +2609,6 @@ export type Database = {
           center_lon: number | null
           created_at: string | null
           deleted_at: string | null
-          funding_status: Database["public"]["Enums"]["entity_status"] | null
           id: string
           level: Database["public"]["Enums"]["region_level"]
           name: string
@@ -2494,7 +2626,6 @@ export type Database = {
           center_lon?: number | null
           created_at?: string | null
           deleted_at?: string | null
-          funding_status?: Database["public"]["Enums"]["entity_status"] | null
           id?: string
           level: Database["public"]["Enums"]["region_level"]
           name: string
@@ -2512,7 +2643,6 @@ export type Database = {
           center_lon?: number | null
           created_at?: string | null
           deleted_at?: string | null
-          funding_status?: Database["public"]["Enums"]["entity_status"] | null
           id?: string
           level?: Database["public"]["Enums"]["region_level"]
           name?: string
@@ -2520,6 +2650,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "regions_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "region_funding"
+            referencedColumns: ["region_id"]
+          },
           {
             foreignKeyName: "regions_parent_id_fkey"
             columns: ["parent_id"]
@@ -4513,6 +4650,16 @@ export type Database = {
         }
         Relationships: []
       }
+      region_funding: {
+        Row: {
+          budget_cents: number | null
+          funding_status: string | null
+          region_id: string | null
+          region_level: Database["public"]["Enums"]["region_level"] | null
+          region_name: string | null
+        }
+        Relationships: []
+      }
       text_version_progress_summary: {
         Row: {
           book_fraction: number | null
@@ -4580,6 +4727,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_operation_balances"
             referencedColumns: ["operation_id"]
+          },
+          {
+            foreignKeyName: "donations_intent_region_id_fkey"
+            columns: ["intent_region_id"]
+            isOneToOne: false
+            referencedRelation: "region_funding"
+            referencedColumns: ["region_id"]
           },
           {
             foreignKeyName: "donations_intent_region_id_fkey"
@@ -4751,6 +4905,13 @@ export type Database = {
             foreignKeyName: "donations_intent_region_id_fkey"
             columns: ["intent_region_id"]
             isOneToOne: false
+            referencedRelation: "region_funding"
+            referencedColumns: ["region_id"]
+          },
+          {
+            foreignKeyName: "donations_intent_region_id_fkey"
+            columns: ["intent_region_id"]
+            isOneToOne: false
             referencedRelation: "regions"
             referencedColumns: ["id"]
           },
@@ -4899,6 +5060,14 @@ export type Database = {
             }
             Returns: string
           }
+      calculate_language_funding_status: {
+        Args: { language_id: string }
+        Returns: string
+      }
+      check_language_project_allocations: {
+        Args: { language_id: string }
+        Returns: boolean
+      }
       convert_to_usd: {
         Args: {
           p_amount_cents: number
@@ -5919,6 +6088,10 @@ export type Database = {
       try_fix_mojibake: { Args: { value: string }; Returns: string }
       try_fix_mojibake_v2: { Args: { value: string }; Returns: string }
       unlockrows: { Args: { "": string }; Returns: number }
+      update_region_funding_status: {
+        Args: { region_id: string }
+        Returns: undefined
+      }
       updategeometrysrid: {
         Args: {
           catalogn_name: string
@@ -5955,7 +6128,12 @@ export type Database = {
         | "failed"
         | "refunded"
         | "cancelled"
-      entity_status: "draft" | "available" | "funded" | "archived"
+      entity_status:
+        | "draft"
+        | "available"
+        | "funded"
+        | "archived"
+        | "in_progress"
       feedback_actioned: "pending" | "actioned" | "rejected"
       feedback_type: "approved" | "change_required"
       funding_status: "unfunded" | "partially_funded" | "fully_funded"
@@ -6193,7 +6371,13 @@ export const Constants = {
         "refunded",
         "cancelled",
       ],
-      entity_status: ["draft", "available", "funded", "archived"],
+      entity_status: [
+        "draft",
+        "available",
+        "funded",
+        "archived",
+        "in_progress",
+      ],
       feedback_actioned: ["pending", "actioned", "rejected"],
       feedback_type: ["approved", "change_required"],
       funding_status: ["unfunded", "partially_funded", "fully_funded"],

@@ -37,6 +37,21 @@ const AllocationsPage = lazy(() =>
     default: m.AllocationsPage,
   }))
 );
+const LanguageAvailabilityPage = lazy(() =>
+  import('./features/availability/pages/LanguageAvailabilityPage').then(m => ({
+    default: m.LanguageAvailabilityPage,
+  }))
+);
+const ProjectsPage = lazy(() =>
+  import('./features/availability/pages/ProjectsPage').then(m => ({
+    default: m.ProjectsPage,
+  }))
+);
+const OperationsPage = lazy(() =>
+  import('./features/operations/pages/OperationsPage').then(m => ({
+    default: m.OperationsPage,
+  }))
+);
 
 function LoadingFallback() {
   return (
@@ -83,6 +98,12 @@ function App() {
             <Route path='/regions' element={<RegionsPage />} />
             <Route path='/donations' element={<DonationsPage />} />
             <Route path='/allocations' element={<AllocationsPage />} />
+            <Route
+              path='/budgets/languages'
+              element={<LanguageAvailabilityPage />}
+            />
+            <Route path='/budgets/projects' element={<ProjectsPage />} />
+            <Route path='/budgets/operations' element={<OperationsPage />} />
           </Route>
 
           {/* Default redirect */}
