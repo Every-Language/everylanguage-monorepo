@@ -30,6 +30,7 @@ const UPSERT_BATCH_SIZE = 300;
 const FETCH_BATCH_SIZE = 5;
 const STALE_AFTER_DAYS = 7;
 const SOURCE_PAGE_SIZE = 1000;
+const MAX_CODES_PER_RUN = 250;
 
 function chunkArray<T>(items: T[], size: number): T[][] {
   const result: T[][] = [];
@@ -302,21 +303,31 @@ Deno.serve(async req => {
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const [isoCodes, cacheRows] = await Promise.all([
+    const [isoCodes, cacheQuery] = await Promise.all([
       fetchIsoCodes(supabase),
-      supabase.from('jp_language_cache').select('iso639_3, updated_at'),
+      supabase
+        .from('jp_language_cache')
+        .select('iso639_3, updated_at')
+        .returns<CachedLanguageRow[]>(),
     ]);
 
+    if (cacheQuery.error) {
+      throw new Error(
+        `Failed to load JP cache metadata: ${cacheQuery.error.message}`
+      );
+    }
+
     const uniqueCodes = isoCodes;
-    const staleCodes = filterStaleCodes(
-      uniqueCodes,
-      (cacheRows ?? []) as CachedLanguageRow[]
-    );
+    const staleCodes = filterStaleCodes(uniqueCodes, cacheQuery.data ?? []);
+    const codesToProcess =
+      staleCodes.length > MAX_CODES_PER_RUN
+        ? staleCodes.slice(0, MAX_CODES_PER_RUN)
+        : staleCodes;
 
     const upserts: JpCacheRow[] = [];
     let processed = 0;
 
-    for (const batch of chunkArray(staleCodes, FETCH_BATCH_SIZE)) {
+    for (const batch of chunkArray(codesToProcess, FETCH_BATCH_SIZE)) {
       const results = await Promise.all(
         batch.map(code => fetchLanguageFromApi(code, jpApiKey))
       );
@@ -356,6 +367,7 @@ Deno.serve(async req => {
         processed,
         upserted: upserts.length,
         skipped: uniqueCodes.length - staleCodes.length,
+        remaining: Math.max(staleCodes.length - codesToProcess.length, 0),
       }),
       { status: 200, headers: { 'content-type': 'application/json' } }
     );
