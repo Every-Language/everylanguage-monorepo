@@ -29,6 +29,7 @@ const JP_BASE_URL = 'https://api.joshuaproject.net/v1/languages.json';
 const UPSERT_BATCH_SIZE = 300;
 const FETCH_BATCH_SIZE = 5;
 const STALE_AFTER_DAYS = 7;
+const SOURCE_PAGE_SIZE = 1000;
 
 function chunkArray<T>(items: T[], size: number): T[][] {
   const result: T[][] = [];
@@ -68,6 +69,19 @@ function coerceBoolean(value: unknown): boolean {
   return false;
 }
 
+function toCleanString(value: unknown): string | null {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  return null;
+}
+
 function getField(payload: JpLanguagePayload, candidates: string[]): unknown {
   for (const key of candidates) {
     if (key in payload) {
@@ -81,6 +95,57 @@ function getField(payload: JpLanguagePayload, candidates: string[]): unknown {
     }
   }
   return undefined;
+}
+
+function extractIsoCode(payload: JpLanguagePayload): string | null {
+  const candidate = getField(payload, [
+    'ROL3',
+    'rol3',
+    'ROL_3',
+    'ROD_Code',
+    'rod_code',
+    'ROD',
+    'rod',
+    'LanguageCode',
+    'language_code',
+    'ISO',
+    'iso',
+    'ISO6393',
+    'iso639_3',
+  ]);
+
+  return toCleanString(candidate);
+}
+
+function resolvePayloadList(data: unknown): JpLanguagePayload[] | null {
+  if (Array.isArray(data)) {
+    return data as JpLanguagePayload[];
+  }
+
+  if (
+    data &&
+    typeof data === 'object' &&
+    'api' in data &&
+    data.api &&
+    typeof data.api === 'object' &&
+    'data' in data.api
+  ) {
+    const apiData = (data.api as { data?: unknown }).data;
+    if (Array.isArray(apiData)) {
+      return apiData as JpLanguagePayload[];
+    }
+  }
+
+  if (
+    data &&
+    typeof data === 'object' &&
+    'data' in data &&
+    Array.isArray((data as { data?: unknown }).data)
+  ) {
+    return (data as { data?: unknown }).data as JpLanguagePayload[];
+  }
+
+  return null;
 }
 
 function normalizeLanguage(
@@ -125,7 +190,8 @@ async function fetchLanguageFromApi(
   apiKey: string
 ): Promise<JpCacheRow | null> {
   const url = new URL(JP_BASE_URL);
-  url.searchParams.set('ROL3', iso);
+  const normalizedIso = iso.trim();
+  url.searchParams.set('ROL3', normalizedIso.toUpperCase());
   url.searchParams.set('api_key', apiKey);
 
   const response = await fetch(url.toString(), {
@@ -137,14 +203,20 @@ async function fetchLanguageFromApi(
     return null;
   }
 
-  const payload = (await response.json()) as JpLanguagePayload[] | undefined;
-  if (!payload || payload.length === 0) {
+  const payloadList = resolvePayloadList(await response.json());
+  if (!payloadList || payloadList.length === 0) {
     return null;
   }
 
-  const first = payload[0];
+  const targetIso = normalizedIso.toLowerCase();
+  const matched =
+    payloadList.find(item => {
+      const code = extractIsoCode(item);
+      return code?.toLowerCase() === targetIso;
+    }) ?? payloadList[0];
+
   const now = new Date().toISOString();
-  return normalizeLanguage(iso, first, now);
+  return normalizeLanguage(normalizedIso, matched, now);
 }
 
 function filterStaleCodes(
@@ -169,6 +241,45 @@ function filterStaleCodes(
   });
 }
 
+async function fetchIsoCodes(
+  supabase: ReturnType<typeof createClient>
+): Promise<string[]> {
+  const codes: string[] = [];
+  let page = 0;
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const from = page * SOURCE_PAGE_SIZE;
+    const to = from + SOURCE_PAGE_SIZE - 1;
+    const { data, error } = await supabase
+      .from('language_entity_sources')
+      .select('external_id')
+      .eq('external_id_type', 'iso-639-3')
+      .eq('is_external', true)
+      .is('deleted_at', null)
+      .range(from, to)
+      .returns<LanguageSourceRow[]>();
+
+    if (error) {
+      throw new Error(`Failed to load ISO codes: ${error.message}`);
+    }
+
+    const chunk = ((data ?? []) as LanguageSourceRow[])
+      .map((row: LanguageSourceRow) => row.external_id?.trim() ?? null)
+      .filter((val: string | null): val is string => Boolean(val));
+
+    codes.push(...chunk);
+
+    if (!data || data.length < SOURCE_PAGE_SIZE) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return Array.from(new Set(codes));
+}
+
 Deno.serve(async req => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -191,26 +302,12 @@ Deno.serve(async req => {
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const [{ data: isoRows, error: isoError }, { data: cacheRows }] =
-      await Promise.all([
-        supabase
-          .from('language_entity_sources')
-          .select('external_id')
-          .eq('external_id_type', 'iso-639-3')
-          .eq('is_external', true)
-          .is('deleted_at', null),
-        supabase.from('jp_language_cache').select('iso639_3, updated_at'),
-      ]);
+    const [isoCodes, cacheRows] = await Promise.all([
+      fetchIsoCodes(supabase),
+      supabase.from('jp_language_cache').select('iso639_3, updated_at'),
+    ]);
 
-    if (isoError) {
-      throw new Error(`Failed to load ISO codes: ${isoError.message}`);
-    }
-
-    const isoCodes = (isoRows ?? [])
-      .map(row => row.external_id?.trim())
-      .filter((val): val is string => Boolean(val));
-
-    const uniqueCodes = Array.from(new Set(isoCodes));
+    const uniqueCodes = isoCodes;
     const staleCodes = filterStaleCodes(
       uniqueCodes,
       (cacheRows ?? []) as CachedLanguageRow[]
