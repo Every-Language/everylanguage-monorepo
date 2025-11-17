@@ -161,28 +161,38 @@ Deno.serve(async req => {
       }
     }
 
-    const { error: refreshError } = await supabase.rpc(
-      'refresh_unified_bible_stats'
-    );
-
-    if (refreshError) {
-      console.error('Failed to refresh unified bible stats', refreshError);
-      return new Response(
-        JSON.stringify({
-          error: 'GRN sync completed but refresh failed',
-          details: refreshError.message,
-        }),
-        { status: 500, headers: { 'content-type': 'application/json' } }
+    // Refresh the unified stats materialized view
+    // Handle errors gracefully - don't fail the entire sync if refresh times out
+    let refreshErrorMessage: string | null = null;
+    try {
+      const { error: refreshError } = await supabase.rpc(
+        'refresh_unified_bible_stats'
       );
+
+      if (refreshError) {
+        console.error('Unified stats refresh failed', refreshError);
+        refreshErrorMessage =
+          refreshError.message ?? 'Unknown refresh error occurred';
+      }
+    } catch (err) {
+      console.error('Exception refreshing unified stats:', err);
+      refreshErrorMessage =
+        err instanceof Error ? err.message : 'Unknown refresh error occurred';
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        upserted: upserts.length,
-      }),
-      { status: 200, headers: { 'content-type': 'application/json' } }
-    );
+    const response = {
+      success: true,
+      upserted: upserts.length,
+      refresh_status: refreshErrorMessage ? 'failed' : 'succeeded',
+      refresh_error: refreshErrorMessage,
+    };
+
+    console.log('GRN sync summary:', JSON.stringify(response));
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
   } catch (error) {
     console.error('Unhandled GRN sync error', error);
     return new Response(
