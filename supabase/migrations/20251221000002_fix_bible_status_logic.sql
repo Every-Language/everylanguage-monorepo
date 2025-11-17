@@ -1,8 +1,9 @@
--- 20250115000006_create_unified_bible_stats_view.sql
--- Materialized view that unifies internal progress, overrides, and cache data
+-- 20251221000002_fix_bible_status_logic.sql
+-- Fix Bible status logic: bible_status = 5 means Complete Bible (not 6)
 BEGIN;
 
 
+-- Drop and recreate the materialized view with corrected logic
 DROP MATERIALIZED VIEW IF EXISTS unified_bible_translation_stats cascade;
 
 
@@ -58,7 +59,7 @@ WITH
       jp.has_audio_recordings AS jp_has_audio
     FROM
       language_base lb
-      LEFT JOIN jp_language_cache jp ON jp.iso639_3 = lb.iso639_3
+      LEFT JOIN jp_language_cache jp ON LOWER(jp.iso639_3) = LOWER(lb.iso639_3)
   ),
   grn_data AS (
     SELECT
@@ -69,7 +70,7 @@ WITH
       LEFT JOIN grn_language_cache grn ON (
         (
           lb.iso639_3 IS NOT NULL
-          AND grn.iso639_3 = lb.iso639_3
+          AND LOWER(grn.iso639_3) = LOWER(lb.iso639_3)
         )
         OR (
           lb.rolv_code IS NOT NULL
@@ -210,14 +211,6 @@ WHERE
 CREATE INDEX idx_unified_stats_audio_portions ON unified_bible_translation_stats (has_audio_portions)
 WHERE
   has_audio_portions = TRUE;
-
-
-CREATE OR REPLACE FUNCTION refresh_unified_bible_stats () returns void AS $$
-BEGIN
-  PERFORM set_config('statement_timeout', '120000', TRUE);
-  REFRESH MATERIALIZED VIEW unified_bible_translation_stats;
-END;
-$$ language plpgsql;
 
 
 COMMIT;

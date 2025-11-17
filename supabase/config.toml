@@ -329,11 +329,6 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/create-donation-checkout/index.ts"
 
-[functions.stripe-webhook]
-enabled = true
-verify_jwt = false
-entrypoint = "./functions/stripe-webhook/index.ts"
-
 [functions.sync-jp-languages]
 enabled = true
 verify_jwt = false

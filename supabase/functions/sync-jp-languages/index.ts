@@ -1,16 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-type LanguageSourceRow = {
-  external_id: string | null;
-};
-
-type CachedLanguageRow = {
-  iso639_3: string;
-  language_name: string | null;
-  updated_at: string | null;
-};
-
 type JpLanguagePayload = Record<string, unknown>;
 
 type JpCacheRow = {
@@ -27,11 +17,9 @@ type JpCacheRow = {
 };
 
 const JP_BASE_URL = 'https://api.joshuaproject.net/v1/languages.json';
-const UPSERT_BATCH_SIZE = 300;
-const FETCH_BATCH_SIZE = 5;
+const UPSERT_BATCH_SIZE = 500;
+const FETCH_PAGE_SIZE = 250; // Use smaller page size for API calls
 const STALE_AFTER_DAYS = 7;
-const SOURCE_PAGE_SIZE = 1000;
-const MAX_CODES_PER_RUN = 250;
 
 function chunkArray<T>(items: T[], size: number): T[][] {
   const result: T[][] = [];
@@ -119,50 +107,30 @@ function extractIsoCode(payload: JpLanguagePayload): string | null {
   return toCleanString(candidate);
 }
 
-function resolvePayloadList(data: unknown): JpLanguagePayload[] | null {
-  if (Array.isArray(data)) {
-    return data as JpLanguagePayload[];
-  }
-
-  if (
-    data &&
-    typeof data === 'object' &&
-    'api' in data &&
-    data.api &&
-    typeof data.api === 'object' &&
-    'data' in data.api
-  ) {
-    const apiData = (data.api as { data?: unknown }).data;
-    if (Array.isArray(apiData)) {
-      return apiData as JpLanguagePayload[];
-    }
-  }
-
-  if (
-    data &&
-    typeof data === 'object' &&
-    'data' in data &&
-    Array.isArray((data as { data?: unknown }).data)
-  ) {
-    return (data as { data?: unknown }).data as JpLanguagePayload[];
-  }
-
-  return null;
-}
-
 function normalizeLanguage(
-  iso: string,
   payload: JpLanguagePayload,
   timestamp: string
-): JpCacheRow {
+): JpCacheRow | null {
+  const isoCode = extractIsoCode(payload);
+  if (!isoCode) {
+    return null; // Skip entries without ISO code
+  }
+
+  const normalizedIso = isoCode.toLowerCase().trim();
   const languageName =
-    (getField(payload, ['Language', 'LanguageName', 'Name']) as string) ?? iso;
+    (getField(payload, ['Language', 'LanguageName', 'Name', 'WebLangText']) as
+      | string
+      | undefined) ?? normalizedIso;
   const bibleStatus = coerceNumber(getField(payload, ['BibleStatus']));
   const bibleYear =
-    (getField(payload, ['BibleYear', 'Bible_Year']) as string) ?? null;
-  const ntYear = (getField(payload, ['NTYear', 'NT_Year']) as string) ?? null;
+    (getField(payload, ['BibleYear', 'Bible_Year']) as string | undefined) ??
+    null;
+  const ntYear =
+    (getField(payload, ['NTYear', 'NT_Year']) as string | undefined) ?? null;
   const portionsYear =
-    (getField(payload, ['PortionsYear', 'Portions_Year']) as string) ?? null;
+    (getField(payload, ['PortionsYear', 'Portions_Year']) as
+      | string
+      | undefined) ?? null;
   const hasAudio = coerceBoolean(
     getField(payload, [
       'HasAudioRecordings',
@@ -171,10 +139,11 @@ function normalizeLanguage(
     ])
   );
   const grnUrl =
-    (getField(payload, ['GRN', 'GRNLink', 'GRN_URL']) as string) ?? null;
+    (getField(payload, ['GRN', 'GRNLink', 'GRN_URL']) as string | undefined) ??
+    null;
 
   return {
-    iso639_3: iso,
+    iso639_3: normalizedIso,
     language_name: languageName,
     bible_status: bibleStatus,
     bible_year: bibleYear,
@@ -187,14 +156,14 @@ function normalizeLanguage(
   };
 }
 
-async function fetchLanguageFromApi(
-  iso: string,
-  apiKey: string
-): Promise<JpCacheRow | null> {
+async function fetchLanguagesPage(
+  apiKey: string,
+  page: number
+): Promise<{ languages: JpLanguagePayload[]; hasMore: boolean }> {
   const url = new URL(JP_BASE_URL);
-  const normalizedIso = iso.trim();
-  url.searchParams.set('ROL3', normalizedIso.toUpperCase());
   url.searchParams.set('api_key', apiKey);
+  url.searchParams.set('limit', String(FETCH_PAGE_SIZE));
+  url.searchParams.set('page', String(page));
 
   try {
     const response = await fetch(url.toString(), {
@@ -202,10 +171,9 @@ async function fetchLanguageFromApi(
     });
 
     if (!response.ok) {
-      console.error(
-        `JP language request failed for ${iso}: ${response.status}`
+      throw new Error(
+        `JP API request failed: ${response.status} ${response.statusText}`
       );
-      return null;
     }
 
     const jsonData = await response.json();
@@ -220,134 +188,64 @@ async function fetchLanguageFromApi(
       'status' in jsonData.api &&
       jsonData.api.status === 'error'
     ) {
-      console.log(
-        `JP API returned error for ${iso}: ${JSON.stringify(jsonData.api.error || 'Unknown error')}`
+      throw new Error(
+        `JP API returned error: ${JSON.stringify(
+          jsonData.api.error || 'Unknown error'
+        )}`
       );
-      return null;
     }
 
-    const payloadList = resolvePayloadList(jsonData);
-    if (!payloadList || payloadList.length === 0) {
-      return null;
+    // The API returns an array of language objects
+    if (!Array.isArray(jsonData)) {
+      throw new Error('JP API did not return an array of languages');
     }
 
-    const targetIso = normalizedIso.toLowerCase();
-    const matched = payloadList.find(item => {
-      const code = extractIsoCode(item);
-      return code?.toLowerCase() === targetIso;
-    });
-
-    // Only cache if we found an exact match - don't fallback to first item
-    if (!matched) {
-      console.log(`No exact match found for ISO ${iso} in JP API response`);
-      return null;
-    }
-
-    const now = new Date().toISOString();
-    const normalized = normalizeLanguage(normalizedIso, matched, now);
-
-    // Validate that we got meaningful data - don't cache if all fields are null/zero
-    // and the language name is suspicious (matches ISO code or known default)
-    if (
-      normalized.bible_status === null &&
-      normalized.bible_year === null &&
-      normalized.nt_year === null &&
-      normalized.portions_year === null &&
-      !normalized.has_audio_recordings &&
-      normalized.grn_url === null &&
-      (normalized.language_name === normalized.iso639_3 ||
-        normalized.language_name === "A'ou")
-    ) {
-      console.log(
-        `Skipping cache for ${iso} - appears to be default/empty response`
-      );
-      return null;
-    }
-
-    return normalized;
+    return {
+      languages: jsonData as JpLanguagePayload[],
+      hasMore: jsonData.length === FETCH_PAGE_SIZE,
+    };
   } catch (error) {
-    console.error(`Exception fetching JP language ${iso}:`, error);
-    return null;
+    console.error(`Exception fetching page ${page} from JP API:`, error);
+    throw error;
   }
 }
 
-function filterStaleCodes(
-  codes: string[],
-  cache: CachedLanguageRow[]
-): string[] {
-  if (cache.length === 0) {
-    return codes;
-  }
-
-  const threshold = Date.now() - STALE_AFTER_DAYS * 24 * 60 * 60 * 1000;
-  // Use a longer TTL (90 days) for "not found" entries to avoid repeatedly querying
-  const notFoundThreshold = Date.now() - 90 * 24 * 60 * 60 * 1000;
-
-  const cacheMap = new Map(
-    cache.map(row => [
-      row.iso639_3,
-      { updatedAt: row.updated_at, languageName: row.language_name },
-    ])
-  );
-
-  return codes.filter(code => {
-    const cached = cacheMap.get(code);
-    if (!cached || !cached.updatedAt) {
-      return true; // Not in cache, should be processed
-    }
-    const updatedTime = Date.parse(cached.updatedAt);
-    if (!Number.isFinite(updatedTime)) {
-      return true; // Invalid timestamp, reprocess
-    }
-
-    // Check if this is a "not found" entry (language_name === iso639_3 indicates not found)
-    // Use case-insensitive comparison for ISO codes
-    const isNotFound =
-      cached.languageName?.toLowerCase() === code.toLowerCase() ||
-      cached.languageName === null;
-    const relevantThreshold = isNotFound ? notFoundThreshold : threshold;
-
-    return updatedTime < relevantThreshold;
-  });
-}
-
-async function fetchIsoCodes(
-  supabase: ReturnType<typeof createClient>
-): Promise<string[]> {
-  const codes: string[] = [];
-  let page = 0;
+async function fetchAllLanguagesFromApi(apiKey: string): Promise<JpCacheRow[]> {
+  console.log('Fetching all languages from Joshua Project API (paginated)...');
+  const normalized: JpCacheRow[] = [];
+  const now = new Date().toISOString();
+  let page = 1;
+  let totalFetched = 0;
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const from = page * SOURCE_PAGE_SIZE;
-    const to = from + SOURCE_PAGE_SIZE - 1;
-    const { data, error } = await supabase
-      .from('language_entity_sources')
-      .select('external_id')
-      .eq('external_id_type', 'iso-639-3')
-      .eq('is_external', true)
-      .is('deleted_at', null)
-      .range(from, to)
-      .returns<LanguageSourceRow[]>();
+    console.log(`Fetching page ${page}...`);
+    const { languages, hasMore } = await fetchLanguagesPage(apiKey, page);
 
-    if (error) {
-      throw new Error(`Failed to load ISO codes: ${error.message}`);
+    for (const language of languages) {
+      const normalizedLang = normalizeLanguage(language, now);
+      if (normalizedLang) {
+        normalized.push(normalizedLang);
+      }
     }
 
-    const chunk = ((data ?? []) as LanguageSourceRow[])
-      .map((row: LanguageSourceRow) => row.external_id?.trim() ?? null)
-      .filter((val: string | null): val is string => Boolean(val));
+    totalFetched += languages.length;
+    console.log(
+      `Page ${page}: fetched ${languages.length} languages (total: ${totalFetched}, normalized: ${normalized.length})`
+    );
 
-    codes.push(...chunk);
-
-    if (!data || data.length < SOURCE_PAGE_SIZE) {
+    if (!hasMore || languages.length === 0) {
       break;
     }
 
     page += 1;
   }
 
-  return Array.from(new Set(codes));
+  console.log(
+    `Completed: fetched ${totalFetched} languages, normalized ${normalized.length} entries`
+  );
+
+  return normalized;
 }
 
 Deno.serve(async req => {
@@ -372,103 +270,14 @@ Deno.serve(async req => {
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const [isoCodes, cacheQuery] = await Promise.all([
-      fetchIsoCodes(supabase),
-      supabase
-        .from('jp_language_cache')
-        .select('iso639_3, language_name, updated_at')
-        .returns<CachedLanguageRow[]>(),
-    ]);
+    // Fetch all languages from JP API in one call
+    const allLanguages = await fetchAllLanguagesFromApi(jpApiKey);
 
-    if (cacheQuery.error) {
-      throw new Error(
-        `Failed to load JP cache metadata: ${cacheQuery.error.message}`
-      );
-    }
+    console.log(`Upserting ${allLanguages.length} languages into cache...`);
 
-    const uniqueCodes = isoCodes;
-    const staleCodes = filterStaleCodes(uniqueCodes, cacheQuery.data ?? []);
-    const codesToProcess =
-      staleCodes.length > MAX_CODES_PER_RUN
-        ? staleCodes.slice(0, MAX_CODES_PER_RUN)
-        : staleCodes;
-
-    const upserts: JpCacheRow[] = [];
-    const notFoundCodes: string[] = [];
-    let processed = 0;
-    let found = 0;
-    let notFound = 0;
-    let rejected = 0;
-
-    for (const batch of chunkArray(codesToProcess, FETCH_BATCH_SIZE)) {
-      const results = await Promise.allSettled(
-        batch.map(code => fetchLanguageFromApi(code, jpApiKey))
-      );
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          if (result.value) {
-            upserts.push(result.value);
-            found++;
-          } else {
-            notFoundCodes.push(batch[index]);
-            notFound++;
-          }
-        } else if (result.status === 'rejected') {
-          console.error(
-            `Failed to fetch language ${batch[index]}:`,
-            result.reason
-          );
-          rejected++;
-        }
-      });
-      processed += batch.length;
-    }
-
-    console.log(
-      `Processed ${processed} codes: ${found} found, ${notFound} not found, ${rejected} errors`
-    );
-
-    // Cache "not found" results to avoid repeatedly querying codes that don't exist in JP
-    // Use a long TTL (90 days) for not-found entries
-    if (notFoundCodes.length > 0) {
-      const now = new Date().toISOString();
-      const notFoundCacheEntries: JpCacheRow[] = notFoundCodes.map(iso => ({
-        iso639_3: iso.toLowerCase().trim(), // Normalize ISO code
-        language_name: iso.toLowerCase().trim(), // Use normalized ISO as placeholder
-        bible_status: null,
-        bible_year: null,
-        nt_year: null,
-        portions_year: null,
-        has_audio_recordings: false,
-        grn_url: null,
-        last_synced_at: now,
-        updated_at: now,
-      }));
-
-      // Only cache not-found entries if they're not already in cache
-      // We'll use a special marker: if language_name === iso639_3 and all fields are null/zero,
-      // it's a "not found" entry
-      try {
-        const { error: notFoundError } = await supabase
-          .from('jp_language_cache')
-          .upsert(notFoundCacheEntries, { onConflict: 'iso639_3' });
-
-        if (notFoundError) {
-          console.error(
-            `Failed to cache not-found entries: ${notFoundError.message}`
-          );
-        } else {
-          console.log(
-            `Cached ${notFoundCacheEntries.length} not-found entries`
-          );
-        }
-      } catch (err) {
-        console.error('Exception caching not-found entries:', err);
-        // Don't throw - continue processing even if not-found caching fails
-      }
-    }
-
-    for (const batch of chunkArray(upserts, UPSERT_BATCH_SIZE)) {
+    // Upsert all languages in batches
+    let upserted = 0;
+    for (const batch of chunkArray(allLanguages, UPSERT_BATCH_SIZE)) {
       const { error } = await supabase
         .from('jp_language_cache')
         .upsert(batch, { onConflict: 'iso639_3' });
@@ -476,38 +285,36 @@ Deno.serve(async req => {
       if (error) {
         throw new Error(`JP cache upsert failed: ${error.message}`);
       }
+      upserted += batch.length;
+      console.log(`Upserted batch: ${upserted}/${allLanguages.length}`);
     }
 
+    // Refresh the unified stats materialized view
     let refreshErrorMessage: string | null = null;
-
-    if (upserts.length > 0) {
-      const { error: refreshError } = await supabase
-        .rpc('refresh_unified_bible_stats')
-        .catch((err: unknown) => ({
-          error: err as { message?: string },
-        }));
+    try {
+      const { error: refreshError } = await supabase.rpc(
+        'refresh_unified_bible_stats'
+      );
 
       if (refreshError) {
         console.error('Unified stats refresh failed', refreshError);
         refreshErrorMessage =
           refreshError.message ?? 'Unknown refresh error occurred';
       }
+    } catch (err) {
+      console.error('Exception refreshing unified stats:', err);
+      refreshErrorMessage =
+        err instanceof Error ? err.message : 'Unknown refresh error occurred';
     }
 
     const response = {
       success: true,
-      processed,
-      found,
-      notFound,
-      rejected,
-      upserted: upserts.length,
-      skipped: uniqueCodes.length - staleCodes.length,
-      remaining: Math.max(staleCodes.length - codesToProcess.length, 0),
+      total_languages: allLanguages.length,
+      upserted,
       refresh_status: refreshErrorMessage ? 'failed' : 'succeeded',
       refresh_error: refreshErrorMessage,
     };
 
-    // Log summary for debugging
     console.log('JP sync summary:', JSON.stringify(response));
 
     return new Response(JSON.stringify(response), {
