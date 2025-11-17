@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { donationsApi } from '../api/donationsApi';
 import type { DonationWithAllocations } from '@/types';
@@ -23,6 +23,9 @@ export function ViewDonationModal({
 
   // State for add allocation form
   const [showAddAllocation, setShowAddAllocation] = useState(false);
+  const [allocationType, setAllocationType] = useState<'operation' | 'project'>(
+    'operation'
+  );
   const [allocationOperationId, setAllocationOperationId] =
     useState<string>('');
   const [allocationProjectId, setAllocationProjectId] = useState<string>('');
@@ -32,6 +35,33 @@ export function ViewDonationModal({
   const [allocationEffectiveFrom, setAllocationEffectiveFrom] =
     useState<string>(new Date().toISOString().split('T')[0]);
 
+  // Search states
+  const [operationSearchQuery, setOperationSearchQuery] = useState('');
+  const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [debouncedOperationSearch, setDebouncedOperationSearch] = useState('');
+  const [debouncedProjectSearch, setDebouncedProjectSearch] = useState('');
+  const [showOperationDropdown, setShowOperationDropdown] = useState(false);
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+
+  // Pagination states for operations/projects lists
+  const [operationPage, setOperationPage] = useState(1);
+  const [projectPage, setProjectPage] = useState(1);
+  const [accumulatedOperations, setAccumulatedOperations] = useState<
+    Array<{ id: string; name: string; category: string }>
+  >([]);
+  const [accumulatedProjects, setAccumulatedProjects] = useState<
+    Array<{
+      id: string;
+      name: string;
+      target_language_entity_id: string | null;
+      target_language_name: string | null;
+    }>
+  >([]);
+
+  // Refs for click-outside detection
+  const operationDropdownRef = useRef<HTMLDivElement>(null);
+  const projectDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     // Small delay to allow initial render, then trigger animation
     const timer = setTimeout(() => {
@@ -40,22 +70,152 @@ export function ViewDonationModal({
     return () => clearTimeout(timer);
   }, []);
 
+  // Debounce search queries
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedOperationSearch(operationSearchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [operationSearchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedProjectSearch(projectSearchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [projectSearchQuery]);
+
   const handleClose = () => {
     setIsExiting(true);
     setTimeout(onClose, 300); // Match animation duration
   };
 
-  // Fetch operations for allocation dropdown
-  const { data: operations } = useQuery({
-    queryKey: ['operations-list'],
-    queryFn: () => donationsApi.fetchOperations(),
+  // Search operations (when search query >= 2 chars)
+  const { data: searchedOperations = [] } = useQuery({
+    queryKey: ['search-operations', debouncedOperationSearch],
+    queryFn: () => donationsApi.searchOperations(debouncedOperationSearch, 50),
+    enabled: debouncedOperationSearch.length >= 2,
   });
 
-  // Fetch projects for allocation dropdown
-  const { data: projects } = useQuery({
-    queryKey: ['projects-list'],
-    queryFn: () => donationsApi.fetchProjects(),
+  // Fetch paginated operations (when no search query)
+  const { data: paginatedOperationsData } = useQuery({
+    queryKey: ['paginated-operations', operationPage],
+    queryFn: () =>
+      donationsApi.fetchOperationsPaginated({
+        page: operationPage,
+        pageSize: 20,
+      }),
+    enabled: debouncedOperationSearch.length < 2 && showOperationDropdown,
   });
+
+  // Accumulate operations pages
+  useEffect(() => {
+    if (paginatedOperationsData?.data) {
+      if (operationPage === 1) {
+        setAccumulatedOperations(paginatedOperationsData.data);
+      } else {
+        setAccumulatedOperations(prev => {
+          const existingIds = new Set(prev.map(op => op.id));
+          const newOps = paginatedOperationsData.data.filter(
+            op => !existingIds.has(op.id)
+          );
+          return [...prev, ...newOps];
+        });
+      }
+    }
+  }, [paginatedOperationsData, operationPage]);
+
+  // Reset accumulated operations when search changes
+  useEffect(() => {
+    if (debouncedOperationSearch.length >= 2) {
+      setAccumulatedOperations([]);
+      setOperationPage(1);
+    }
+  }, [debouncedOperationSearch]);
+
+  // Search projects (when search query >= 2 chars)
+  const { data: searchedProjects = [] } = useQuery({
+    queryKey: ['search-projects', debouncedProjectSearch],
+    queryFn: () => donationsApi.searchProjects(debouncedProjectSearch, 50),
+    enabled: debouncedProjectSearch.length >= 2,
+  });
+
+  // Fetch paginated projects (when no search query)
+  const { data: paginatedProjectsData } = useQuery({
+    queryKey: ['paginated-projects', projectPage],
+    queryFn: () =>
+      donationsApi.fetchProjectsPaginated({ page: projectPage, pageSize: 20 }),
+    enabled: debouncedProjectSearch.length < 2 && showProjectDropdown,
+  });
+
+  // Accumulate projects pages
+  useEffect(() => {
+    if (paginatedProjectsData?.data) {
+      if (projectPage === 1) {
+        setAccumulatedProjects(paginatedProjectsData.data);
+      } else {
+        setAccumulatedProjects(prev => {
+          const existingIds = new Set(prev.map(proj => proj.id));
+          const newProjs = paginatedProjectsData.data.filter(
+            proj => !existingIds.has(proj.id)
+          );
+          return [...prev, ...newProjs];
+        });
+      }
+    }
+  }, [paginatedProjectsData, projectPage]);
+
+  // Reset accumulated projects when search changes
+  useEffect(() => {
+    if (debouncedProjectSearch.length >= 2) {
+      setAccumulatedProjects([]);
+      setProjectPage(1);
+    }
+  }, [debouncedProjectSearch]);
+
+  // Click outside handler for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        operationDropdownRef.current &&
+        !operationDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowOperationDropdown(false);
+      }
+      if (
+        projectDropdownRef.current &&
+        !projectDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowProjectDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Combine operations: search results or accumulated paginated list
+  const displayOperations =
+    debouncedOperationSearch.length >= 2
+      ? searchedOperations
+      : accumulatedOperations;
+
+  // Combine projects: search results or accumulated paginated list
+  const displayProjects =
+    debouncedProjectSearch.length >= 2 ? searchedProjects : accumulatedProjects;
+
+  // Fetch donation by ID to get latest data including allocations
+  const { data: currentDonation } = useQuery({
+    queryKey: ['donation', donation.id],
+    queryFn: () => donationsApi.fetchDonationById(donation.id),
+    enabled: !!donation.id,
+    initialData: donation,
+  });
+
+  // Use currentDonation if available, otherwise fall back to donation prop
+  const displayDonation = currentDonation || donation;
 
   // Create allocation mutation
   const createAllocationMutation = useMutation({
@@ -69,14 +229,25 @@ export function ViewDonationModal({
     }) => donationsApi.createAllocation(allocationData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['donations'] });
+      queryClient.invalidateQueries({ queryKey: ['allocations'] });
+      queryClient.invalidateQueries({ queryKey: ['donation', donation.id] });
       onUpdate();
       setShowAddAllocation(false);
       // Reset form
+      setAllocationType('operation');
       setAllocationOperationId('');
       setAllocationProjectId('');
       setAllocationAmountCents('');
       setAllocationNotes('');
       setAllocationEffectiveFrom(new Date().toISOString().split('T')[0]);
+      setOperationSearchQuery('');
+      setProjectSearchQuery('');
+      setShowOperationDropdown(false);
+      setShowProjectDropdown(false);
+      setOperationPage(1);
+      setProjectPage(1);
+      setAccumulatedOperations([]);
+      setAccumulatedProjects([]);
     },
   });
 
@@ -88,20 +259,25 @@ export function ViewDonationModal({
       return;
     }
 
-    if (amountCents > donation.remaining_cents) {
+    if (amountCents > displayDonation.remaining_cents) {
       alert(
-        `Amount exceeds remaining donation balance (${formatCurrency(donation.remaining_cents, donation.currency_code)})`
+        `Amount exceeds remaining donation balance (${formatCurrency(displayDonation.remaining_cents, displayDonation.currency_code)})`
       );
       return;
     }
 
-    if (!allocationOperationId && !allocationProjectId) {
-      alert('Please select either an operation or a project');
+    if (allocationType === 'operation' && !allocationOperationId) {
+      alert('Please select an operation');
+      return;
+    }
+
+    if (allocationType === 'project' && !allocationProjectId) {
+      alert('Please select a project');
       return;
     }
 
     createAllocationMutation.mutate({
-      donation_id: donation.id,
+      donation_id: displayDonation.id,
       operation_id: allocationOperationId || undefined,
       project_id: allocationProjectId || undefined,
       amount_cents: amountCents,
@@ -172,21 +348,21 @@ export function ViewDonationModal({
   };
 
   const getIntentDisplay = () => {
-    switch (donation.intent_type) {
+    switch (displayDonation.intent_type) {
       case 'language':
         return {
           type: 'Language',
-          name: donation.intent_language?.name || 'Unknown',
+          name: displayDonation.intent_language?.name || 'Unknown',
         };
       case 'region':
         return {
           type: 'Region',
-          name: donation.intent_region?.name || 'Unknown',
+          name: displayDonation.intent_region?.name || 'Unknown',
         };
       case 'operation':
         return {
           type: 'Operation',
-          name: donation.intent_operation?.name || 'Unknown',
+          name: displayDonation.intent_operation?.name || 'Unknown',
         };
       case 'unrestricted':
         return { type: 'Unrestricted', name: 'No specific intent' };
@@ -228,9 +404,6 @@ export function ViewDonationModal({
                 <h2 className='text-2xl font-bold text-neutral-900 dark:text-neutral-100'>
                   Donation Details
                 </h2>
-                <p className='mt-1 text-sm text-neutral-500 dark:text-neutral-400'>
-                  ID: {donation.id}
-                </p>
               </div>
               <button
                 onClick={handleClose}
@@ -252,19 +425,20 @@ export function ViewDonationModal({
                       Donor
                     </label>
                     <div className='text-sm text-neutral-900 dark:text-neutral-100'>
-                      {donation.user ? (
+                      {displayDonation.user ? (
                         <>
                           <div className='font-medium'>
-                            {donation.user.first_name} {donation.user.last_name}
+                            {displayDonation.user.first_name}{' '}
+                            {displayDonation.user.last_name}
                           </div>
                           <div className='text-neutral-500 dark:text-neutral-400'>
-                            {donation.user.email}
+                            {displayDonation.user.email}
                           </div>
                         </>
-                      ) : donation.partner_org ? (
+                      ) : displayDonation.partner_org ? (
                         <>
                           <div className='font-medium'>
-                            {donation.partner_org.name}
+                            {displayDonation.partner_org.name}
                           </div>
                           <div className='text-neutral-500 dark:text-neutral-400'>
                             Partner Organization
@@ -285,10 +459,10 @@ export function ViewDonationModal({
                     </label>
                     <div className='text-2xl font-bold text-neutral-900 dark:text-neutral-100'>
                       {formatCurrency(
-                        donation.amount_cents,
-                        donation.currency_code
+                        displayDonation.amount_cents,
+                        displayDonation.currency_code
                       )}
-                      {donation.is_recurring && (
+                      {displayDonation.is_recurring && (
                         <span className='ml-2 text-sm font-normal text-primary-600 dark:text-primary-400'>
                           / month
                         </span>
@@ -300,7 +474,7 @@ export function ViewDonationModal({
                     <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
                       Status
                     </label>
-                    <div>{getStatusBadge(donation.status)}</div>
+                    <div>{getStatusBadge(displayDonation.status)}</div>
                   </div>
                 </div>
 
@@ -324,9 +498,9 @@ export function ViewDonationModal({
                       Payment Method
                     </label>
                     <div className='text-sm text-neutral-900 dark:text-neutral-100'>
-                      {donation.payment_method === 'card'
+                      {displayDonation.payment_method === 'card'
                         ? 'Credit Card'
-                        : donation.payment_method === 'us_bank_account'
+                        : displayDonation.payment_method === 'us_bank_account'
                           ? 'US Bank Account'
                           : 'SEPA Debit'}
                     </div>
@@ -338,7 +512,7 @@ export function ViewDonationModal({
                       Date
                     </label>
                     <div className='text-sm text-neutral-900 dark:text-neutral-100'>
-                      {formatDate(donation.created_at)}
+                      {formatDate(displayDonation.created_at)}
                     </div>
                   </div>
                 </div>
@@ -356,8 +530,8 @@ export function ViewDonationModal({
                     </div>
                     <div className='text-xl font-bold text-neutral-900 dark:text-neutral-100'>
                       {formatCurrency(
-                        donation.amount_cents,
-                        donation.currency_code
+                        displayDonation.amount_cents,
+                        displayDonation.currency_code
                       )}
                     </div>
                   </div>
@@ -367,8 +541,8 @@ export function ViewDonationModal({
                     </div>
                     <div className='text-xl font-bold text-blue-600 dark:text-blue-400'>
                       {formatCurrency(
-                        donation.allocated_cents,
-                        donation.currency_code
+                        displayDonation.allocated_cents,
+                        displayDonation.currency_code
                       )}
                     </div>
                   </div>
@@ -378,8 +552,8 @@ export function ViewDonationModal({
                     </div>
                     <div className='text-xl font-bold text-green-600 dark:text-green-400'>
                       {formatCurrency(
-                        donation.remaining_cents,
-                        donation.currency_code
+                        displayDonation.remaining_cents,
+                        displayDonation.currency_code
                       )}
                     </div>
                   </div>
@@ -390,9 +564,9 @@ export function ViewDonationModal({
               <div>
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
-                    Allocations ({donation.allocations.length})
+                    Allocations ({displayDonation.allocations.length})
                   </h3>
-                  {donation.remaining_cents > 0 && (
+                  {displayDonation.remaining_cents > 0 && (
                     <button
                       onClick={() => setShowAddAllocation(!showAddAllocation)}
                       className='inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors'
@@ -410,50 +584,219 @@ export function ViewDonationModal({
                       New Allocation
                     </h4>
                     <div className='space-y-3'>
-                      <div className='grid grid-cols-2 gap-3'>
-                        <div>
-                          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                            Operation (optional)
-                          </label>
-                          <select
-                            value={allocationOperationId}
-                            onChange={e =>
-                              setAllocationOperationId(e.target.value)
-                            }
-                            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
-                          >
-                            <option value=''>Select operation</option>
-                            {operations?.map(op => (
-                              <option key={op.id} value={op.id}>
-                                {op.name} ({op.category})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                            Project (optional)
-                          </label>
-                          <select
-                            value={allocationProjectId}
-                            onChange={e =>
-                              setAllocationProjectId(e.target.value)
-                            }
-                            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
-                          >
-                            <option value=''>Select project</option>
-                            {projects?.map(proj => (
-                              <option key={proj.id} value={proj.id}>
-                                {proj.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                      {/* Tab Selector */}
+                      <div className='flex gap-2 border-b border-neutral-200 dark:border-neutral-700'>
+                        <button
+                          type='button'
+                          onClick={() => {
+                            setAllocationType('operation');
+                            setAllocationProjectId('');
+                            setProjectSearchQuery('');
+                            setShowProjectDropdown(false);
+                            setProjectPage(1);
+                            setAccumulatedProjects([]);
+                          }}
+                          className={`px-4 py-2 text-sm font-medium transition-colors ${
+                            allocationType === 'operation'
+                              ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
+                              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                          }`}
+                        >
+                          Operation
+                        </button>
+                        <button
+                          type='button'
+                          onClick={() => {
+                            setAllocationType('project');
+                            setAllocationOperationId('');
+                            setOperationSearchQuery('');
+                            setShowOperationDropdown(false);
+                            setOperationPage(1);
+                            setAccumulatedOperations([]);
+                          }}
+                          className={`px-4 py-2 text-sm font-medium transition-colors ${
+                            allocationType === 'project'
+                              ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
+                              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                          }`}
+                        >
+                          Project
+                        </button>
+                      </div>
+
+                      {/* Operation or Project Selector */}
+                      <div>
+                        {allocationType === 'operation' ? (
+                          <div className='space-y-2'>
+                            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
+                              Operation{' '}
+                              <span className='text-error-500'>*</span>
+                            </label>
+                            <div
+                              className='relative'
+                              ref={operationDropdownRef}
+                            >
+                              <input
+                                type='text'
+                                value={operationSearchQuery}
+                                onChange={e => {
+                                  setOperationSearchQuery(e.target.value);
+                                  setShowOperationDropdown(true);
+                                }}
+                                onFocus={() => setShowOperationDropdown(true)}
+                                placeholder='Type to search operations...'
+                                className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+                              />
+                              {showOperationDropdown && (
+                                <div className='absolute z-50 w-full mt-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+                                  {displayOperations.length > 0 ? (
+                                    <>
+                                      {displayOperations.map(op => (
+                                        <button
+                                          key={op.id}
+                                          type='button'
+                                          onClick={() => {
+                                            setAllocationOperationId(op.id);
+                                            setOperationSearchQuery(
+                                              `${op.name} (${op.category})`
+                                            );
+                                            setShowOperationDropdown(false);
+                                          }}
+                                          className={`w-full px-3 py-2 text-left text-sm hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors ${
+                                            allocationOperationId === op.id
+                                              ? 'bg-primary-100 dark:bg-primary-900/30'
+                                              : ''
+                                          }`}
+                                        >
+                                          {op.name} ({op.category})
+                                        </button>
+                                      ))}
+                                      {debouncedOperationSearch.length < 2 &&
+                                        paginatedOperationsData &&
+                                        operationPage <
+                                          paginatedOperationsData.totalPages && (
+                                          <button
+                                            type='button'
+                                            onClick={() => {
+                                              setOperationPage(p => p + 1);
+                                            }}
+                                            className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'
+                                          >
+                                            Load more...
+                                          </button>
+                                        )}
+                                    </>
+                                  ) : (
+                                    <div className='px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                                      {debouncedOperationSearch.length >= 2
+                                        ? 'No operations found'
+                                        : 'Loading...'}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {allocationOperationId && (
+                              <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+                                Selected:{' '}
+                                {displayOperations.find(
+                                  op => op.id === allocationOperationId
+                                )?.name || 'Operation'}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className='space-y-2'>
+                            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
+                              Project <span className='text-error-500'>*</span>
+                            </label>
+                            <div className='relative' ref={projectDropdownRef}>
+                              <input
+                                type='text'
+                                value={projectSearchQuery}
+                                onChange={e => {
+                                  setProjectSearchQuery(e.target.value);
+                                  setShowProjectDropdown(true);
+                                }}
+                                onFocus={() => setShowProjectDropdown(true)}
+                                placeholder='Type to search projects...'
+                                className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+                              />
+                              {showProjectDropdown && (
+                                <div className='absolute z-50 w-full mt-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+                                  {displayProjects.length > 0 ? (
+                                    <>
+                                      {displayProjects.map(proj => (
+                                        <button
+                                          key={proj.id}
+                                          type='button'
+                                          onClick={() => {
+                                            setAllocationProjectId(proj.id);
+                                            setProjectSearchQuery(
+                                              proj.target_language_name
+                                                ? `${proj.name} (${proj.target_language_name})`
+                                                : proj.name
+                                            );
+                                            setShowProjectDropdown(false);
+                                          }}
+                                          className={`w-full px-3 py-2 text-left text-sm hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors ${
+                                            allocationProjectId === proj.id
+                                              ? 'bg-primary-100 dark:bg-primary-900/30'
+                                              : ''
+                                          }`}
+                                        >
+                                          {proj.name}
+                                          {proj.target_language_name &&
+                                            ` (${proj.target_language_name})`}
+                                        </button>
+                                      ))}
+                                      {debouncedProjectSearch.length < 2 &&
+                                        paginatedProjectsData &&
+                                        projectPage <
+                                          paginatedProjectsData.totalPages && (
+                                          <button
+                                            type='button'
+                                            onClick={() => {
+                                              setProjectPage(p => p + 1);
+                                            }}
+                                            className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'
+                                          >
+                                            Load more...
+                                          </button>
+                                        )}
+                                    </>
+                                  ) : (
+                                    <div className='px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                                      {debouncedProjectSearch.length >= 2
+                                        ? 'No projects found'
+                                        : 'Loading...'}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {allocationProjectId && (
+                              <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+                                Selected:{' '}
+                                {(() => {
+                                  const selected = displayProjects.find(
+                                    proj => proj.id === allocationProjectId
+                                  );
+                                  return selected
+                                    ? selected.target_language_name
+                                      ? `${selected.name} (${selected.target_language_name})`
+                                      : selected.name
+                                    : 'Project';
+                                })()}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className='grid grid-cols-2 gap-3'>
                         <div>
                           <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                            Amount ({donation.currency_code})
+                            Amount ({displayDonation.currency_code})
                           </label>
                           <input
                             type='number'
@@ -468,8 +811,8 @@ export function ViewDonationModal({
                           <p className='mt-1 text-xs text-neutral-500 dark:text-neutral-400'>
                             Max:{' '}
                             {formatCurrency(
-                              donation.remaining_cents,
-                              donation.currency_code
+                              displayDonation.remaining_cents,
+                              displayDonation.currency_code
                             )}
                           </p>
                         </div>
@@ -521,7 +864,7 @@ export function ViewDonationModal({
                 )}
 
                 {/* Allocations Table */}
-                {donation.allocations.length > 0 ? (
+                {displayDonation.allocations.length > 0 ? (
                   <div className='border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden'>
                     <table className='min-w-full divide-y divide-neutral-200 dark:divide-neutral-800'>
                       <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
@@ -541,7 +884,7 @@ export function ViewDonationModal({
                         </tr>
                       </thead>
                       <tbody className='bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-800'>
-                        {donation.allocations.map(allocation => (
+                        {displayDonation.allocations.map(allocation => (
                           <tr key={allocation.id}>
                             <td className='px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100'>
                               {allocation.operation_id ? (

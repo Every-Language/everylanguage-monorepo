@@ -541,6 +541,26 @@ export const regionsApi = {
   },
 
   /**
+   * Search for regions
+   */
+  async searchRegions(searchQuery: string): Promise<Region[]> {
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('regions')
+      .select('*')
+      .ilike('name', `%${searchQuery}%`)
+      .is('deleted_at', null)
+      .order('name')
+      .limit(20);
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
    * Fetch all regions (simple list for dropdowns)
    */
   async fetchRegionsList(): Promise<Partial<Region>[]> {

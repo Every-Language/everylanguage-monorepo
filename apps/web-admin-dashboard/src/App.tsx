@@ -32,11 +32,6 @@ const DonationsPage = lazy(() =>
     default: m.DonationsPage,
   }))
 );
-const AllocationsPage = lazy(() =>
-  import('./features/donations/pages/AllocationsPage').then(m => ({
-    default: m.AllocationsPage,
-  }))
-);
 const LanguageAvailabilityPage = lazy(() =>
   import('./features/availability/pages/LanguageAvailabilityPage').then(m => ({
     default: m.LanguageAvailabilityPage,
@@ -51,6 +46,20 @@ const OperationsPage = lazy(() =>
   import('./features/operations/pages/OperationsPage').then(m => ({
     default: m.OperationsPage,
   }))
+);
+const BibleTranslationOverridesPage = lazy(() =>
+  import('./features/statistics/pages/BibleTranslationOverridesPage').then(
+    m => ({
+      default: m.BibleTranslationOverridesPage,
+    })
+  )
+);
+const ExternalProjectsOverridesPage = lazy(() =>
+  import('./features/statistics/pages/ExternalProjectsOverridesPage').then(
+    m => ({
+      default: m.ExternalProjectsOverridesPage,
+    })
+  )
 );
 
 function LoadingFallback() {
@@ -97,13 +106,20 @@ function App() {
             <Route path='/languages' element={<LanguagesPage />} />
             <Route path='/regions' element={<RegionsPage />} />
             <Route path='/donations' element={<DonationsPage />} />
-            <Route path='/allocations' element={<AllocationsPage />} />
             <Route
               path='/budgets/languages'
               element={<LanguageAvailabilityPage />}
             />
             <Route path='/budgets/projects' element={<ProjectsPage />} />
             <Route path='/budgets/operations' element={<OperationsPage />} />
+            <Route
+              path='/statistics/bible-translations'
+              element={<BibleTranslationOverridesPage />}
+            />
+            <Route
+              path='/statistics/external-projects'
+              element={<ExternalProjectsOverridesPage />}
+            />
           </Route>
 
           {/* Default redirect */}

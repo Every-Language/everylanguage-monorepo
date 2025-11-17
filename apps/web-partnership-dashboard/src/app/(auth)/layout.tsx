@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import { usePathname } from 'next/navigation';
 import { ProtectedRoute } from '@/features/auth';
 import { AppHeader } from '@/shared/components/AppHeader';
 import { MobileAppHeader } from '@/shared/components/MobileAppHeader';
@@ -10,8 +11,11 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const requiresAuth = pathname !== '/dashboard';
+
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requireAuth={requiresAuth}>
       {/* Mobile header (visible below md breakpoint) */}
       <div className='md:hidden'>
         <Suspense fallback={<div className='h-14' />}>

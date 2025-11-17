@@ -7,9 +7,8 @@ export type OperationCost = Tables<'operation_costs'>;
 export type OperationCategory = Enums<'operation_category'>;
 export type EntityStatus = Enums<'entity_status'>;
 
-export interface OperationWithBalance extends OperationBalance {
-  // Additional fields if needed
-}
+// OperationWithBalance is just an alias for OperationBalance
+export type OperationWithBalance = OperationBalance;
 
 export interface CreateOperationData {
   name: string;
@@ -55,6 +54,10 @@ export const operationsApi = {
     searchQuery?: string;
     page?: number;
     pageSize?: number;
+    categoryFilter?: OperationCategory;
+    statusFilter?: EntityStatus;
+    sortField?: 'name' | 'allocations' | 'costs' | 'balance';
+    sortDirection?: 'asc' | 'desc';
   }): Promise<{
     data: OperationBalance[];
     count: number;
@@ -66,15 +69,50 @@ export const operationsApi = {
     const pageSize = params?.pageSize || 50;
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
+    const sortField = params?.sortField ?? 'name';
+    const sortDirection = params?.sortDirection ?? 'asc';
+    const sortAscending = sortDirection === 'asc';
 
     let query = supabase
       .from('vw_operation_balances')
-      .select('*', { count: 'exact' })
-      .order('operation_name');
+      .select('*', { count: 'exact' });
 
     // Apply search if provided
     if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
       query = query.ilike('operation_name', `%${params.searchQuery.trim()}%`);
+    }
+
+    if (params?.categoryFilter) {
+      query = query.eq('category', params.categoryFilter);
+    }
+
+    if (params?.statusFilter) {
+      query = query.eq('status', params.statusFilter);
+    }
+
+    switch (sortField) {
+      case 'allocations':
+        query = query.order('total_allocated_cents', {
+          ascending: sortAscending,
+        });
+        break;
+      case 'costs':
+        query = query.order('total_costs_cents', { ascending: sortAscending });
+        break;
+      case 'balance':
+        query = query.order('balance_cents', {
+          ascending: sortAscending,
+          nullsFirst: sortAscending,
+        });
+        break;
+      case 'name':
+      default:
+        query = query.order('operation_name', { ascending: sortAscending });
+        break;
+    }
+
+    if (sortField !== 'name') {
+      query = query.order('operation_name', { ascending: true });
     }
 
     const { data, error, count: totalCount } = await query.range(from, to);

@@ -8,7 +8,6 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 import { Button } from '@/shared/components/ui/Button';
-import { createDonationCheckout } from '../../api/fundingApi';
 import { getStripePromise } from '@/shared/services/stripe';
 import type { DonateFlow } from '../../hooks/useDonateFlow';
 

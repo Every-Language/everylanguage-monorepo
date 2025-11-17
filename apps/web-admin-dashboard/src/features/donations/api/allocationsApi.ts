@@ -71,6 +71,15 @@ export const allocationsApi = {
       query = query.eq('project_id', params.projectFilter);
     }
 
+    // Apply search filter in SQL before pagination
+    if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
+      const searchTerm = params.searchQuery.trim();
+      // Search across multiple fields using OR
+      query = query.or(
+        `operation.name.ilike.%${searchTerm}%,project.name.ilike.%${searchTerm}%,created_by_user.first_name.ilike.%${searchTerm}%,created_by_user.last_name.ilike.%${searchTerm}%,notes.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%,donation_id.ilike.%${searchTerm}%`
+      );
+    }
+
     // Apply pagination
     query = query.range(from, to);
 
@@ -79,7 +88,7 @@ export const allocationsApi = {
     if (error) throw error;
 
     // Transform data
-    let transformedData: AllocationWithDetails[] = (data || []).map(
+    const transformedData: AllocationWithDetails[] = (data || []).map(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (allocation: any) =>
         ({
@@ -98,40 +107,12 @@ export const allocationsApi = {
         }) as AllocationWithDetails
     );
 
-    // Apply search filter in-memory
-    if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
-      const searchLower = params.searchQuery.toLowerCase();
-      transformedData = transformedData.filter(allocation => {
-        const operationName = allocation.operation?.name?.toLowerCase() || '';
-        const projectName = allocation.project?.name?.toLowerCase() || '';
-        const userName = allocation.created_by_user
-          ? `${allocation.created_by_user.first_name} ${allocation.created_by_user.last_name}`.toLowerCase()
-          : '';
-        const notes = allocation.notes?.toLowerCase() || '';
-
-        return (
-          operationName.includes(searchLower) ||
-          projectName.includes(searchLower) ||
-          userName.includes(searchLower) ||
-          notes.includes(searchLower) ||
-          allocation.id.toLowerCase().includes(searchLower) ||
-          allocation.donation_id.toLowerCase().includes(searchLower)
-        );
-      });
-    }
-
-    // Recalculate pagination after filters
-    const filteredCount = transformedData.length;
-    const paginatedData = transformedData.slice(0, pageSize);
-
     return {
-      data: paginatedData,
-      count: params?.searchQuery ? filteredCount : count || 0,
+      data: transformedData,
+      count: count || 0,
       page,
       pageSize,
-      totalPages: Math.ceil(
-        (params?.searchQuery ? filteredCount : count || 0) / pageSize
-      ),
+      totalPages: Math.ceil((count || 0) / pageSize),
     };
   },
 

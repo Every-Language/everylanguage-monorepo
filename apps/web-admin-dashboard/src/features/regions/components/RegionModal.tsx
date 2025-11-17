@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { regionsApi } from '../api/regionsApi';
 import type { RegionWithLanguages } from '@/types';
 import { X, Edit, Save, Plus, Trash2, Search } from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 interface RegionModalProps {
   region: RegionWithLanguages;
@@ -391,15 +392,13 @@ export function RegionModal({
                   </div>
 
                   <div>
-                    <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                      Level
-                    </label>
                     {editingInfo ? (
-                      <select
+                      <Select
+                        label='Level'
                         value={level}
-                        onChange={e =>
+                        onValueChange={value =>
                           setLevel(
-                            e.target.value as
+                            value as
                               | 'continent'
                               | 'world_region'
                               | 'country'
@@ -410,50 +409,59 @@ export function RegionModal({
                               | 'village'
                           )
                         }
-                        className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500 dark:focus:ring-secondary-600'
                       >
-                        <option value='continent'>Continent</option>
-                        <option value='world_region'>World Region</option>
-                        <option value='country'>Country</option>
-                        <option value='state'>State</option>
-                        <option value='province'>Province</option>
-                        <option value='district'>District</option>
-                        <option value='town'>Town</option>
-                        <option value='village'>Village</option>
-                      </select>
+                        <SelectItem value='continent'>Continent</SelectItem>
+                        <SelectItem value='world_region'>
+                          World Region
+                        </SelectItem>
+                        <SelectItem value='country'>Country</SelectItem>
+                        <SelectItem value='state'>State</SelectItem>
+                        <SelectItem value='province'>Province</SelectItem>
+                        <SelectItem value='district'>District</SelectItem>
+                        <SelectItem value='town'>Town</SelectItem>
+                        <SelectItem value='village'>Village</SelectItem>
+                      </Select>
                     ) : (
-                      <p className='text-neutral-900 dark:text-neutral-100'>
-                        {fullRegion?.level}
-                      </p>
+                      <>
+                        <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                          Level
+                        </label>
+                        <p className='text-neutral-900 dark:text-neutral-100'>
+                          {fullRegion?.level}
+                        </p>
+                      </>
                     )}
                   </div>
 
                   <div>
-                    <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                      Parent Region
-                    </label>
                     {editingInfo ? (
-                      <select
+                      <Select
+                        label='Parent Region'
                         value={parentId || ''}
-                        onChange={e => setParentId(e.target.value || null)}
-                        className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500 dark:focus:ring-secondary-600'
+                        onValueChange={value => setParentId(value || null)}
+                        placeholder='None'
                       >
-                        <option value=''>None</option>
+                        <SelectItem value=''>None</SelectItem>
                         {allRegions
-                          ?.filter(r => r.id !== region.id)
+                          ?.filter(r => r.id && r.id !== region.id)
                           .map(r => (
-                            <option key={r.id} value={r.id}>
+                            <SelectItem key={r.id} value={r.id!}>
                               {r.name} ({r.level})
-                            </option>
+                            </SelectItem>
                           ))}
-                      </select>
+                      </Select>
                     ) : (
-                      <p className='text-neutral-900 dark:text-neutral-100'>
-                        {parentId
-                          ? allRegions?.find(r => r.id === parentId)?.name ||
-                            parentId
-                          : 'None'}
-                      </p>
+                      <>
+                        <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                          Parent Region
+                        </label>
+                        <p className='text-neutral-900 dark:text-neutral-100'>
+                          {parentId
+                            ? allRegions?.find(r => r.id === parentId)?.name ||
+                              parentId
+                            : 'None'}
+                        </p>
+                      </>
                     )}
                   </div>
                 </div>

@@ -12,10 +12,7 @@ export function LoginPage() {
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
 
   const handleLoginSuccess = () => {
-    const next =
-      searchParams.get('redirectTo') ||
-      searchParams.get('next') ||
-      '/dashboard';
+    const next = searchParams.get('next') || '/dashboard';
     router.push(next);
   };
 

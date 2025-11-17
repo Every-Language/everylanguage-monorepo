@@ -19,7 +19,6 @@ import {
   extractISO3FromRegionSources,
   extractFIPSFromRegionSources,
   extractISO6393FromLanguageSources,
-  fetchFromProxy,
 } from '../services/joshuaProjectApi';
 
 // ============================================================================

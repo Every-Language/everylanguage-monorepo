@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 import { hasRequiredRole } from '../utils/permissions';
 
@@ -20,14 +20,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     // Check if authentication is required and user is not authenticated
     if (!loading && requireAuth && !user) {
       // Redirect to login with the current location for return after login
-      const redirectUrl = `${fallbackPath}?redirectTo=${encodeURIComponent(pathname)}`;
-      router.push(redirectUrl);
+      router.push(fallbackPath);
     }
 
     // Check role-based access if roles are specified
@@ -39,15 +37,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         router.push('/unauthorized');
       }
     }
-  }, [
-    user,
-    loading,
-    requireAuth,
-    requiredRoles,
-    router,
-    pathname,
-    fallbackPath,
-  ]);
+  }, [user, loading, requireAuth, requiredRoles, router, fallbackPath]);
 
   // Show loading state while auth is being determined
   if (loading) {

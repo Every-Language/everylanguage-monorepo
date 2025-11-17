@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { operationsApi } from '../api/operationsApi';
 import type { EntityStatus, OperationCategory } from '../api/operationsApi';
 import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AddOperationModal } from '../components/AddOperationModal';
 import { ViewOperationModal } from '../components/ViewOperationModal';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 const OPERATION_CATEGORIES: OperationCategory[] = [
   'travel',
@@ -31,6 +32,12 @@ export function OperationsPage() {
   const [selectedOperationId, setSelectedOperationId] = useState<string | null>(
     null
   );
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilterValue, setStatusFilterValue] = useState<string>('all');
+  const [sortField, setSortField] = useState<
+    'name' | 'allocations' | 'costs' | 'balance'
+  >('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const queryClient = useQueryClient();
 
   // Debounce search term
@@ -44,12 +51,31 @@ export function OperationsPage() {
 
   // Fetch operations
   const { data: response, isLoading } = useQuery({
-    queryKey: ['operations', page, pageSize, debouncedSearch],
+    queryKey: [
+      'operations',
+      page,
+      pageSize,
+      debouncedSearch,
+      categoryFilter,
+      statusFilterValue,
+      sortField,
+      sortDirection,
+    ],
     queryFn: () =>
       operationsApi.fetchOperations({
         page,
         pageSize,
         searchQuery: debouncedSearch,
+        categoryFilter:
+          categoryFilter !== 'all'
+            ? (categoryFilter as OperationCategory)
+            : undefined,
+        statusFilter:
+          statusFilterValue !== 'all'
+            ? (statusFilterValue as EntityStatus)
+            : undefined,
+        sortField,
+        sortDirection,
       }),
   });
 
@@ -110,6 +136,23 @@ export function OperationsPage() {
     queryClient.invalidateQueries({ queryKey: ['operations'] });
   };
 
+  const handleSort = (field: 'name' | 'allocations' | 'costs' | 'balance') => {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection(field === 'name' ? 'asc' : 'desc');
+    }
+    setPage(1);
+  };
+
+  const getSortIndicator = (
+    field: 'name' | 'allocations' | 'costs' | 'balance'
+  ) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? '↑' : '↓';
+  };
+
   return (
     <div className='p-8'>
       <div className='mb-8 flex items-center justify-between'>
@@ -144,6 +187,40 @@ export function OperationsPage() {
         </div>
       </div>
 
+      <div className='mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4'>
+        <Select
+          label='Category'
+          value={categoryFilter}
+          onValueChange={value => {
+            setCategoryFilter(value);
+            setPage(1);
+          }}
+        >
+          <SelectItem value='all'>All categories</SelectItem>
+          {OPERATION_CATEGORIES.map(category => (
+            <SelectItem key={category} value={category}>
+              {formatCategory(category)}
+            </SelectItem>
+          ))}
+        </Select>
+
+        <Select
+          label='Status'
+          value={statusFilterValue}
+          onValueChange={value => {
+            setStatusFilterValue(value);
+            setPage(1);
+          }}
+        >
+          <SelectItem value='all'>All statuses</SelectItem>
+          {STATUS_OPTIONS.map(status => (
+            <SelectItem key={status} value={status}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </SelectItem>
+          ))}
+        </Select>
+      </div>
+
       {/* Table */}
       <div className='bg-white dark:bg-neutral-900 rounded-lg shadow dark:shadow-dark-card border border-neutral-200 dark:border-neutral-800 overflow-hidden'>
         {isLoading ? (
@@ -160,19 +237,47 @@ export function OperationsPage() {
                 <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
                   <tr>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                      Name
+                      <button
+                        type='button'
+                        onClick={() => handleSort('name')}
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                      >
+                        Name
+                        <span>{getSortIndicator('name')}</span>
+                      </button>
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       Category
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                      Allocations
+                      <button
+                        type='button'
+                        onClick={() => handleSort('allocations')}
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                      >
+                        Allocations
+                        <span>{getSortIndicator('allocations')}</span>
+                      </button>
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                      Costs
+                      <button
+                        type='button'
+                        onClick={() => handleSort('costs')}
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                      >
+                        Costs
+                        <span>{getSortIndicator('costs')}</span>
+                      </button>
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                      Balance
+                      <button
+                        type='button'
+                        onClick={() => handleSort('balance')}
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                      >
+                        Balance
+                        <span>{getSortIndicator('balance')}</span>
+                      </button>
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       Status
@@ -216,26 +321,29 @@ export function OperationsPage() {
                           {formatCurrency(operation.balance_cents)}
                         </td>
                         <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-                          <select
-                            value={operation.status || 'draft'}
-                            onChange={e =>
-                              operation.operation_id &&
-                              handleStatusChange(
-                                operation.operation_id,
-                                e.target.value as EntityStatus
-                              )
-                            }
-                            disabled={updateStatusMutation.isPending}
+                          <div
                             onClick={e => e.stopPropagation()}
-                            className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 disabled:opacity-50 disabled:cursor-not-allowed'
+                            className='w-full'
                           >
-                            {STATUS_OPTIONS.map(status => (
-                              <option key={status} value={status}>
-                                {status.charAt(0).toUpperCase() +
-                                  status.slice(1)}
-                              </option>
-                            ))}
-                          </select>
+                            <Select
+                              value={operation.status || 'draft'}
+                              onValueChange={value =>
+                                operation.operation_id &&
+                                handleStatusChange(
+                                  operation.operation_id,
+                                  value as EntityStatus
+                                )
+                              }
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              {STATUS_OPTIONS.map(status => (
+                                <SelectItem key={status} value={status}>
+                                  {status.charAt(0).toUpperCase() +
+                                    status.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </Select>
+                          </div>
                         </td>
                       </tr>
                     ))

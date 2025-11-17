@@ -1,33 +1,159 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { donationsApi } from '../api/donationsApi';
+import { allocationsApi } from '../api/allocationsApi';
 import { ViewDonationModal } from '../components/ViewDonationModal';
-import type { DonationWithAllocations } from '@/types';
-import { Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ViewAllocationModal } from '../components/ViewAllocationModal';
+import type { DonationWithAllocations, AllocationWithDetails } from '@/types';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
+import { languagesApi } from '../../languages/api/languagesApi';
+
+type DonationSortField = 'date' | 'amount' | 'remaining' | 'donor';
+type SortDirection = 'asc' | 'desc';
+
+// Type for allocation with nested operation and project from Supabase query
+type AllocationWithNested = {
+  id: string;
+  amount_cents: number;
+  donation_id: string;
+  operation_id: string | null;
+  project_id: string | null;
+  notes: string | null;
+  created_at: string;
+  created_by: string;
+  effective_from: string;
+  effective_to: string | null;
+  currency_code: string;
+  operation?: { id: string; name: string; category: string } | null;
+  project?: {
+    id: string;
+    name: string;
+    target_language_entity_id: string | null;
+    target_language?: { id: string; name: string; level: string } | null;
+  } | null;
+};
 
 export function DonationsPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(50);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [intentTypeFilter, setIntentTypeFilter] = useState<string>('all');
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all');
   const [onlyUnallocated, setOnlyUnallocated] = useState(false);
+  const [languageFilter, setLanguageFilter] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [operationFilter, setOperationFilter] = useState<{
+    id: string;
+    name: string;
+    category?: string | null;
+  } | null>(null);
+  const [languageSearchTerm, setLanguageSearchTerm] = useState('');
+  const [operationSearchTerm, setOperationSearchTerm] = useState('');
+  const [debouncedLanguageSearch, setDebouncedLanguageSearch] = useState('');
+  const [debouncedOperationSearch, setDebouncedOperationSearch] = useState('');
+  const [showOperationDropdown, setShowOperationDropdown] = useState(false);
+  const [operationPage, setOperationPage] = useState(1);
+  const [accumulatedOperations, setAccumulatedOperations] = useState<
+    Array<{ id: string; name: string; category: string }>
+  >([]);
+  const operationDropdownRef = useRef<HTMLDivElement>(null);
+  const [sortField, setSortField] = useState<DonationSortField>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedDonation, setSelectedDonation] =
     useState<DonationWithAllocations | null>(null);
+  const [selectedAllocation, setSelectedAllocation] =
+    useState<AllocationWithDetails | null>(null);
 
   const queryClient = useQueryClient();
 
-  // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-      setPage(1); // Reset to page 1 on search
-    }, 300);
+      setDebouncedLanguageSearch(languageSearchTerm);
+    }, 250);
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [languageSearchTerm]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedOperationSearch(operationSearchTerm);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [operationSearchTerm]);
+
+  const { data: languageSearchResults = [] } = useQuery({
+    queryKey: ['donation-language-filter', debouncedLanguageSearch],
+    queryFn: () => languagesApi.searchLanguageEntities(debouncedLanguageSearch),
+    enabled: debouncedLanguageSearch.length >= 2,
+  });
+
+  const { data: operationSearchResults = [] } = useQuery({
+    queryKey: ['donation-operation-filter', debouncedOperationSearch],
+    queryFn: () => donationsApi.searchOperations(debouncedOperationSearch, 20),
+    enabled: debouncedOperationSearch.length >= 2,
+  });
+
+  // Fetch paginated operations (when no search query)
+  const { data: paginatedOperationsData } = useQuery({
+    queryKey: ['donation-paginated-operations', operationPage],
+    queryFn: () =>
+      donationsApi.fetchOperationsPaginated({
+        page: operationPage,
+        pageSize: 20,
+      }),
+    enabled: debouncedOperationSearch.length < 2 && showOperationDropdown,
+  });
+
+  // Accumulate operations pages
+  useEffect(() => {
+    if (paginatedOperationsData?.data) {
+      if (operationPage === 1) {
+        setAccumulatedOperations(paginatedOperationsData.data);
+      } else {
+        setAccumulatedOperations(prev => {
+          const existingIds = new Set(prev.map(op => op.id));
+          const newOps = paginatedOperationsData.data.filter(
+            op => !existingIds.has(op.id)
+          );
+          return [...prev, ...newOps];
+        });
+      }
+    }
+  }, [paginatedOperationsData, operationPage]);
+
+  // Reset accumulated operations when search changes
+  useEffect(() => {
+    if (debouncedOperationSearch.length >= 2) {
+      setAccumulatedOperations([]);
+      setOperationPage(1);
+    }
+  }, [debouncedOperationSearch]);
+
+  // Combine operations: search results or accumulated paginated list
+  const displayOperations =
+    debouncedOperationSearch.length >= 2
+      ? operationSearchResults
+      : accumulatedOperations;
+
+  // Click outside handler for operation dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        operationDropdownRef.current &&
+        !operationDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowOperationDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch donations with pagination and filters
   const { data: response, isLoading } = useQuery({
@@ -35,22 +161,25 @@ export function DonationsPage() {
       'donations',
       page,
       pageSize,
-      debouncedSearch,
       statusFilter,
       intentTypeFilter,
-      paymentMethodFilter,
       onlyUnallocated,
+      languageFilter?.id ?? null,
+      operationFilter?.id ?? null,
+      sortField,
+      sortDirection,
     ],
     queryFn: () =>
       donationsApi.fetchDonations({
         page,
         pageSize,
-        searchQuery: debouncedSearch,
         statusFilter: statusFilter !== 'all' ? statusFilter : undefined,
         intentTypeFilter:
           intentTypeFilter !== 'all' ? intentTypeFilter : undefined,
-        paymentMethodFilter:
-          paymentMethodFilter !== 'all' ? paymentMethodFilter : undefined,
+        intentLanguageId: languageFilter?.id,
+        intentOperationId: operationFilter?.id,
+        sortField,
+        sortDirection,
         onlyUnallocated,
       }),
   });
@@ -58,6 +187,33 @@ export function DonationsPage() {
   const donations = response?.data || [];
   const totalCount = response?.count || 0;
   const totalPages = response?.totalPages || 1;
+  const hasActiveFilters =
+    statusFilter !== 'all' ||
+    intentTypeFilter !== 'all' ||
+    onlyUnallocated ||
+    !!languageFilter ||
+    !!operationFilter;
+  const emptyMessage = onlyUnallocated
+    ? 'No unallocated donations found'
+    : hasActiveFilters
+      ? 'No donations found matching your filters'
+      : 'No donations found';
+
+  const toggledDirection = (field: DonationSortField): SortDirection => {
+    if (sortField !== field) return 'desc';
+    return sortDirection === 'asc' ? 'desc' : 'asc';
+  };
+
+  const handleSort = (field: DonationSortField) => {
+    setSortDirection(toggledDirection(field));
+    setSortField(field);
+    setPage(1);
+  };
+
+  const getSortIndicator = (field: DonationSortField) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? '↑' : '↓';
+  };
 
   const handleDonationClick = (donation: DonationWithAllocations) => {
     setSelectedDonation(donation);
@@ -68,6 +224,34 @@ export function DonationsPage() {
   };
 
   const handleDonationUpdated = () => {
+    queryClient.invalidateQueries({
+      queryKey: ['donations'],
+    });
+  };
+
+  const handleAllocationClick = async (
+    e: React.MouseEvent,
+    allocationId: string
+  ) => {
+    e.stopPropagation(); // Prevent row click
+    try {
+      const allocation = await allocationsApi.fetchAllocationById(allocationId);
+      if (allocation) {
+        setSelectedAllocation(allocation);
+      }
+    } catch (error) {
+      console.error('Failed to fetch allocation:', error);
+    }
+  };
+
+  const handleCloseAllocationModal = () => {
+    setSelectedAllocation(null);
+  };
+
+  const handleAllocationUpdated = () => {
+    queryClient.invalidateQueries({
+      queryKey: ['allocations'],
+    });
     queryClient.invalidateQueries({
       queryKey: ['donations'],
     });
@@ -158,92 +342,210 @@ export function DonationsPage() {
         </p>
       </div>
 
-      {/* Search */}
-      <div className='mb-4'>
-        <div className='relative'>
-          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400 dark:text-neutral-500' />
-          <input
-            type='text'
-            placeholder='Search donations by donor name, email, or intent...'
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className='w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 focus:border-primary-500 dark:focus:border-primary-600'
-          />
-        </div>
-        {debouncedSearch && (
-          <p className='mt-2 text-sm text-neutral-500 dark:text-neutral-400'>
-            Showing {donations.length} results for "{debouncedSearch}"
-          </p>
-        )}
-      </div>
-
       {/* Filters */}
-      <div className='mb-6 grid grid-cols-1 md:grid-cols-4 gap-4'>
-        {/* Status Filter */}
-        <div>
-          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-            Status
-          </label>
-          <select
+      <div className='mb-6 space-y-4'>
+        <div className='grid grid-cols-1 lg:grid-cols-4 gap-4'>
+          {/* Status Filter */}
+          <Select
+            label='Status'
             value={statusFilter}
-            onChange={e => {
-              setStatusFilter(e.target.value);
+            onValueChange={value => {
+              setStatusFilter(value);
               setPage(1);
             }}
-            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
           >
-            <option value='all'>All Statuses</option>
-            <option value='pending'>Pending</option>
-            <option value='processing'>Processing</option>
-            <option value='completed'>Completed</option>
-            <option value='failed'>Failed</option>
-            <option value='cancelled'>Cancelled</option>
-          </select>
-        </div>
+            <SelectItem value='all'>All Statuses</SelectItem>
+            <SelectItem value='pending'>Pending</SelectItem>
+            <SelectItem value='processing'>Processing</SelectItem>
+            <SelectItem value='completed'>Completed</SelectItem>
+            <SelectItem value='failed'>Failed</SelectItem>
+            <SelectItem value='cancelled'>Cancelled</SelectItem>
+          </Select>
 
-        {/* Intent Type Filter */}
-        <div>
-          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-            Intent Type
-          </label>
-          <select
+          {/* Intent Type Filter */}
+          <Select
+            label='Intent Type'
             value={intentTypeFilter}
-            onChange={e => {
-              setIntentTypeFilter(e.target.value);
+            onValueChange={value => {
+              setIntentTypeFilter(value);
               setPage(1);
             }}
-            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
           >
-            <option value='all'>All Intent Types</option>
-            <option value='language'>Language</option>
-            <option value='region'>Region</option>
-            <option value='operation'>Operation</option>
-            <option value='unrestricted'>Unrestricted</option>
-          </select>
+            <SelectItem value='all'>All Intent Types</SelectItem>
+            <SelectItem value='language'>Language</SelectItem>
+            <SelectItem value='region'>Region</SelectItem>
+            <SelectItem value='operation'>Operation</SelectItem>
+            <SelectItem value='unrestricted'>Unrestricted</SelectItem>
+          </Select>
+
+          {/* Language filter */}
+          <div>
+            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+              Language Intent
+            </label>
+            {languageFilter ? (
+              <div className='flex items-center justify-between px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900'>
+                <div>
+                  <p className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                    {languageFilter.name}
+                  </p>
+                  <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+                    Language
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  onClick={() => {
+                    setLanguageFilter(null);
+                    setPage(1);
+                  }}
+                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'
+                >
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <div className='relative'>
+                <input
+                  type='text'
+                  value={languageSearchTerm}
+                  onChange={e => setLanguageSearchTerm(e.target.value)}
+                  placeholder='Search languages...'
+                  className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
+                />
+                {debouncedLanguageSearch.length >= 2 && (
+                  <div className='absolute z-20 w-full mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+                    {languageSearchResults.length === 0 ? (
+                      <div className='px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                        No matches
+                      </div>
+                    ) : (
+                      languageSearchResults.map(language => (
+                        <button
+                          key={language.id}
+                          type='button'
+                          onClick={() => {
+                            setLanguageFilter({
+                              id: language.id,
+                              name: language.name,
+                            });
+                            setLanguageSearchTerm('');
+                            setDebouncedLanguageSearch('');
+                            setIntentTypeFilter('language');
+                            setPage(1);
+                          }}
+                          className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+                        >
+                          {language.name}{' '}
+                          <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                            ({language.level})
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Operation filter */}
+          <div>
+            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+              Operation Intent
+            </label>
+            {operationFilter ? (
+              <div className='flex items-center justify-between px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900'>
+                <div>
+                  <p className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                    {operationFilter.name}
+                  </p>
+                  <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+                    {operationFilter.category || 'Operation'}
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  onClick={() => {
+                    setOperationFilter(null);
+                    setPage(1);
+                  }}
+                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'
+                >
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <div className='relative' ref={operationDropdownRef}>
+                <input
+                  type='text'
+                  value={operationSearchTerm}
+                  onChange={e => {
+                    setOperationSearchTerm(e.target.value);
+                    setShowOperationDropdown(true);
+                  }}
+                  onFocus={() => setShowOperationDropdown(true)}
+                  placeholder='Search operations...'
+                  className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
+                />
+                {showOperationDropdown && (
+                  <div className='absolute z-20 w-full mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+                    {displayOperations.length > 0 ? (
+                      <>
+                        {displayOperations.map(operation => (
+                          <button
+                            key={operation.id}
+                            type='button'
+                            onClick={() => {
+                              setOperationFilter({
+                                id: operation.id,
+                                name: operation.name,
+                                category: operation.category,
+                              });
+                              setOperationSearchTerm('');
+                              setDebouncedOperationSearch('');
+                              setShowOperationDropdown(false);
+                              setIntentTypeFilter('operation');
+                              setPage(1);
+                            }}
+                            className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+                          >
+                            {operation.name}{' '}
+                            <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                              ({operation.category || 'operation'})
+                            </span>
+                          </button>
+                        ))}
+                        {debouncedOperationSearch.length < 2 &&
+                          paginatedOperationsData &&
+                          operationPage <
+                            paginatedOperationsData.totalPages && (
+                            <button
+                              type='button'
+                              onClick={() => {
+                                setOperationPage(p => p + 1);
+                              }}
+                              className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'
+                            >
+                              Load more...
+                            </button>
+                          )}
+                      </>
+                    ) : (
+                      <div className='px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                        {debouncedOperationSearch.length >= 2
+                          ? 'No matches'
+                          : 'Loading...'}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Payment Method Filter */}
         <div>
-          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-            Payment Method
-          </label>
-          <select
-            value={paymentMethodFilter}
-            onChange={e => {
-              setPaymentMethodFilter(e.target.value);
-              setPage(1);
-            }}
-            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
-          >
-            <option value='all'>All Payment Methods</option>
-            <option value='card'>Card</option>
-            <option value='us_bank_account'>US Bank Account</option>
-            <option value='sepa_debit'>SEPA Debit</option>
-          </select>
-        </div>
-
-        {/* Unallocated Filter */}
-        <div className='flex items-end'>
           <label className='flex items-center cursor-pointer'>
             <input
               type='checkbox'
@@ -275,29 +577,54 @@ export function DonationsPage() {
             <table className='min-w-full divide-y divide-neutral-200 dark:divide-neutral-800'>
               <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
                 <tr>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                    Donor
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    <button
+                      type='button'
+                      onClick={() => handleSort('date')}
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                    >
+                      Date
+                      <span>{getSortIndicator('date')}</span>
+                    </button>
                   </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                    Amount
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                    Intent
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                    Allocated
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                    Remaining
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
                     Status
                   </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                    Date
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    <button
+                      type='button'
+                      onClick={() => handleSort('donor')}
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                    >
+                      Donor
+                      <span>{getSortIndicator('donor')}</span>
+                    </button>
                   </th>
-                  <th className='px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                    Actions
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    <button
+                      type='button'
+                      onClick={() => handleSort('amount')}
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                    >
+                      Amount
+                      <span>{getSortIndicator('amount')}</span>
+                    </button>
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    Intent
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    Allocations
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    <button
+                      type='button'
+                      onClick={() => handleSort('remaining')}
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                    >
+                      Remaining
+                      <span>{getSortIndicator('remaining')}</span>
+                    </button>
                   </th>
                 </tr>
               </thead>
@@ -309,6 +636,12 @@ export function DonationsPage() {
                       className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
                       onClick={() => handleDonationClick(donation)}
                     >
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+                        {formatDate(donation.created_at)}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm'>
+                        {getStatusBadge(donation.status)}
+                      </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
                         {donation.user ? (
                           <div>
@@ -356,10 +689,44 @@ export function DonationsPage() {
                           {getIntentDisplay(donation)}
                         </div>
                       </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-                        {formatCurrency(
-                          donation.allocated_cents,
-                          donation.currency_code
+                      <td className='px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100'>
+                        {donation.allocations &&
+                        donation.allocations.length > 0 ? (
+                          <div className='space-y-1'>
+                            {donation.allocations.map(allocation => (
+                              <button
+                                key={allocation.id}
+                                onClick={e =>
+                                  handleAllocationClick(e, allocation.id)
+                                }
+                                className='block text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'
+                              >
+                                {formatCurrency(
+                                  allocation.amount_cents,
+                                  allocation.currency_code ||
+                                    donation.currency_code
+                                )}
+                                {(allocation as AllocationWithNested).operation
+                                  ? ` → ${(allocation as AllocationWithNested).operation!.name}`
+                                  : (allocation as AllocationWithNested).project
+                                    ? ` → ${(allocation as AllocationWithNested).project!.name}`
+                                    : ''}
+                              </button>
+                            ))}
+                            <div className='pt-1 mt-1 border-t border-neutral-200 dark:border-neutral-700'>
+                              <div className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                                Total:{' '}
+                                {formatCurrency(
+                                  donation.allocated_cents,
+                                  donation.currency_code
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className='text-neutral-500 dark:text-neutral-400 italic'>
+                            No allocations
+                          </span>
                         )}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
@@ -376,37 +743,15 @@ export function DonationsPage() {
                           )}
                         </span>
                       </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                        {getStatusBadge(donation.status)}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-                        {formatDate(donation.created_at)}
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleDonationClick(donation);
-                          }}
-                          className='text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 inline-flex items-center transition-colors'
-                        >
-                          <Eye className='h-4 w-4 mr-1' />
-                          View
-                        </button>
-                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={7}
                       className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
                     >
-                      {debouncedSearch
-                        ? 'No donations found matching your search'
-                        : onlyUnallocated
-                          ? 'No unallocated donations found'
-                          : 'No donations found'}
+                      {emptyMessage}
                     </td>
                   </tr>
                 )}
@@ -451,6 +796,15 @@ export function DonationsPage() {
           donation={selectedDonation}
           onClose={handleCloseModal}
           onUpdate={handleDonationUpdated}
+        />
+      )}
+
+      {/* View Allocation Modal */}
+      {selectedAllocation && (
+        <ViewAllocationModal
+          allocation={selectedAllocation}
+          onClose={handleCloseAllocationModal}
+          onUpdate={handleAllocationUpdated}
         />
       )}
     </div>

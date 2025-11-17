@@ -94,6 +94,8 @@ export default [
         globalThis: 'readonly',
         TextEncoder: 'readonly',
         TextDecoder: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
       },
     },
     plugins: {

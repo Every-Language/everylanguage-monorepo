@@ -4,6 +4,7 @@ import React from 'react';
 import { useAuth } from '@/features/auth';
 import { useRouter } from 'next/navigation';
 import { useUserEntities } from '@/features/dashboard/hooks/useUserEntities';
+import { GlobalStatsWidget } from '@/features/global-stats/components/GlobalStatsWidget';
 
 const EntitySelector: React.FC = () => {
   const router = useRouter();
@@ -102,13 +103,6 @@ const EntitySelector: React.FC = () => {
 
 export const DashboardLandingPage: React.FC = () => {
   const { user, loading } = useAuth();
-  const router = useRouter();
-
-  React.useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [loading, user, router]);
 
   if (loading)
     return (
@@ -116,7 +110,17 @@ export const DashboardLandingPage: React.FC = () => {
         Loading…
       </div>
     );
-  if (!user) return null;
+
+  if (!user) {
+    return (
+      <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950 p-4 sm:p-6 lg:p-8'>
+        <div className='mx-auto max-w-6xl'>
+          <GlobalStatsWidget />
+        </div>
+      </div>
+    );
+  }
+
   return <EntitySelector />;
 };
 

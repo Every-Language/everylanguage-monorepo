@@ -19,7 +19,6 @@ type JpCacheRow = {
 const JP_BASE_URL = 'https://api.joshuaproject.net/v1/languages.json';
 const UPSERT_BATCH_SIZE = 500;
 const FETCH_PAGE_SIZE = 250; // Use smaller page size for API calls
-const STALE_AFTER_DAYS = 7;
 
 function chunkArray<T>(items: T[], size: number): T[][] {
   const result: T[][] = [];
@@ -217,7 +216,6 @@ async function fetchAllLanguagesFromApi(apiKey: string): Promise<JpCacheRow[]> {
   let page = 1;
   let totalFetched = 0;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     console.log(`Fetching page ${page}...`);
     const { languages, hasMore } = await fetchLanguagesPage(apiKey, page);

@@ -11,7 +11,6 @@ import { supabase } from '@/shared/services/supabase';
 import {
   type GRNLanguageFeed,
   type GRNSetFeed,
-  type GRNISOFeed,
   type ExternalIdSource,
   fetchLanguageFeed,
   fetchSetFeed,

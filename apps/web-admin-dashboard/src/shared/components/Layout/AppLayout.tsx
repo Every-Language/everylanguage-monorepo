@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Menu,
@@ -7,10 +7,14 @@ import {
   Map,
   LayoutDashboard,
   HandCoins,
-  ArrowRightLeft,
   Globe,
   FolderKanban,
   Settings,
+  BarChart3,
+  BookOpen,
+  FolderOpen,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -23,6 +27,8 @@ interface NavItem {
   path: string;
   icon: React.ReactNode;
   section?: string;
+  children?: NavItem[];
+  parentId?: string;
 }
 
 const navigationItems: NavItem[] = [
@@ -45,6 +51,29 @@ const navigationItems: NavItem[] = [
     path: '/regions',
     section: 'Data',
     icon: <Map className='h-5 w-5' />,
+  },
+  {
+    id: 'statistics',
+    label: 'Statistics',
+    path: '/statistics',
+    section: 'Data',
+    icon: <BarChart3 className='h-5 w-5' />,
+    children: [
+      {
+        id: 'bible-translation-overrides',
+        label: 'Bible Translation Overrides',
+        path: '/statistics/bible-translations',
+        icon: <BookOpen className='h-4 w-4' />,
+        parentId: 'statistics',
+      },
+      {
+        id: 'external-projects-overrides',
+        label: 'External Projects Overrides',
+        path: '/statistics/external-projects',
+        icon: <FolderOpen className='h-4 w-4' />,
+        parentId: 'statistics',
+      },
+    ],
   },
   {
     id: 'language-availability',
@@ -74,19 +103,31 @@ const navigationItems: NavItem[] = [
     section: 'Funding',
     icon: <HandCoins className='h-5 w-5' />,
   },
-  {
-    id: 'donation-allocations',
-    label: 'Allocations',
-    path: '/allocations',
-    section: 'Funding',
-    icon: <ArrowRightLeft className='h-5 w-5' />,
-  },
 ];
 
 export function AppLayout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  // Auto-expand parent items when child route is active
+  useEffect(() => {
+    const newExpanded = new Set<string>();
+    navigationItems.forEach(item => {
+      if (item.children) {
+        const hasActiveChild = item.children.some(
+          child => location.pathname === child.path
+        );
+        if (hasActiveChild) {
+          newExpanded.add(item.id);
+        }
+      }
+    });
+    if (newExpanded.size > 0) {
+      setExpandedItems(newExpanded);
+    }
+  }, [location.pathname]);
 
   // Group navigation items by section
   const groupedItems = navigationItems.reduce(
@@ -100,6 +141,18 @@ export function AppLayout({ children }: LayoutProps) {
     },
     {} as Record<string, NavItem[]>
   );
+
+  const toggleExpand = (itemId: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className='flex flex-1 overflow-hidden bg-neutral-50 dark:bg-neutral-950'>
@@ -147,34 +200,91 @@ export function AppLayout({ children }: LayoutProps) {
               )}
               {items.map(item => {
                 const isActive = location.pathname === item.path;
+                const hasChildren = item.children && item.children.length > 0;
+                const isExpanded = expandedItems.has(item.id);
+                const hasActiveChild =
+                  hasChildren &&
+                  item.children?.some(
+                    child => location.pathname === child.path
+                  );
+
                 return (
-                  <button
-                    key={item.id}
-                    onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center ${
-                      sidebarOpen ? 'px-4' : 'px-6'
-                    } py-3 text-left transition-colors ${
-                      isActive
-                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border-r-2 border-primary-700 dark:border-primary-500'
-                        : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                    }`}
-                    title={!sidebarOpen ? item.label : undefined}
-                  >
-                    <span
-                      className={
-                        isActive
-                          ? 'text-primary-700 dark:text-primary-400'
-                          : 'text-neutral-500 dark:text-neutral-400'
-                      }
+                  <div key={item.id}>
+                    <button
+                      onClick={() => {
+                        if (hasChildren) {
+                          toggleExpand(item.id);
+                        } else {
+                          navigate(item.path);
+                        }
+                      }}
+                      className={`w-full flex items-center ${
+                        sidebarOpen ? 'px-4' : 'px-6'
+                      } py-3 text-left transition-colors ${
+                        isActive || hasActiveChild
+                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border-r-2 border-primary-700 dark:border-primary-500'
+                          : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                      }`}
+                      title={!sidebarOpen ? item.label : undefined}
                     >
-                      {item.icon}
-                    </span>
-                    <span
-                      className={`ml-3 text-sm font-medium whitespace-nowrap overflow-hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}
-                    >
-                      {item.label}
-                    </span>
-                  </button>
+                      {hasChildren && sidebarOpen && (
+                        <span className='mr-1'>
+                          {isExpanded ? (
+                            <ChevronDown className='h-4 w-4' />
+                          ) : (
+                            <ChevronRight className='h-4 w-4' />
+                          )}
+                        </span>
+                      )}
+                      <span
+                        className={
+                          isActive || hasActiveChild
+                            ? 'text-primary-700 dark:text-primary-400'
+                            : 'text-neutral-500 dark:text-neutral-400'
+                        }
+                      >
+                        {item.icon}
+                      </span>
+                      <span
+                        className={`ml-3 text-sm font-medium whitespace-nowrap overflow-hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}
+                      >
+                        {item.label}
+                      </span>
+                    </button>
+                    {/* Render children if expanded */}
+                    {hasChildren && isExpanded && sidebarOpen && (
+                      <div className='ml-4 border-l border-neutral-200 dark:border-neutral-800 pl-2'>
+                        {item.children?.map(child => {
+                          const isChildActive =
+                            location.pathname === child.path;
+                          return (
+                            <button
+                              key={child.id}
+                              onClick={() => navigate(child.path)}
+                              className={`w-full flex items-center px-4 py-2 text-left transition-colors ${
+                                isChildActive
+                                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
+                                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                              }`}
+                            >
+                              <span
+                                className={
+                                  isChildActive
+                                    ? 'text-primary-700 dark:text-primary-400'
+                                    : 'text-neutral-500 dark:text-neutral-400'
+                                }
+                              >
+                                {child.icon}
+                              </span>
+                              <span className='ml-3 text-sm font-medium whitespace-nowrap'>
+                                {child.label}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>

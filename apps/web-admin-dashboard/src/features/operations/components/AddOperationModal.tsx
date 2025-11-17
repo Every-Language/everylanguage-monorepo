@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { operationsApi } from '../api/operationsApi';
 import type { OperationCategory, EntityStatus } from '../api/operationsApi';
 import { X } from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 const OPERATION_CATEGORIES: OperationCategory[] = [
   'travel',
@@ -128,50 +129,32 @@ export function AddOperationModal({
             </div>
 
             {/* Category */}
-            <div>
-              <label
-                htmlFor='category'
-                className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'
-              >
-                Category <span className='text-red-500'>*</span>
-              </label>
-              <select
-                id='category'
-                value={category}
-                onChange={e => setCategory(e.target.value as OperationCategory)}
-                required
-                className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
-              >
-                {OPERATION_CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>
-                    {formatCategory(cat)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label='Category'
+              value={category}
+              onValueChange={value => setCategory(value as OperationCategory)}
+              required
+            >
+              {OPERATION_CATEGORIES.map(cat => (
+                <SelectItem key={cat} value={cat}>
+                  {formatCategory(cat)}
+                </SelectItem>
+              ))}
+            </Select>
 
             {/* Status */}
-            <div>
-              <label
-                htmlFor='status'
-                className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'
-              >
-                Status <span className='text-red-500'>*</span>
-              </label>
-              <select
-                id='status'
-                value={status}
-                onChange={e => setStatus(e.target.value as EntityStatus)}
-                required
-                className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
-              >
-                {STATUS_OPTIONS.map(stat => (
-                  <option key={stat} value={stat}>
-                    {stat.charAt(0).toUpperCase() + stat.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label='Status'
+              value={status}
+              onValueChange={value => setStatus(value as EntityStatus)}
+              required
+            >
+              {STATUS_OPTIONS.map(stat => (
+                <SelectItem key={stat} value={stat}>
+                  {stat.charAt(0).toUpperCase() + stat.slice(1)}
+                </SelectItem>
+              ))}
+            </Select>
 
             {/* Is Public */}
             <div className='flex items-center'>

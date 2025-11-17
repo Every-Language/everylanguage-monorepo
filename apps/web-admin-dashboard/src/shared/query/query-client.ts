@@ -65,6 +65,18 @@ queryClient.setQueryDefaults(['sponsorships'], {
   gcTime: 15 * 60 * 1000, // 15 minutes
 });
 
+// Set query defaults for bible translation overrides
+queryClient.setQueryDefaults(['bible-translation-overrides'], {
+  staleTime: 30 * 60 * 1000, // 30 minutes - admin data
+  gcTime: 60 * 60 * 1000, // 1 hour
+});
+
+// Set query defaults for external projects overrides
+queryClient.setQueryDefaults(['external-projects-overrides'], {
+  staleTime: 30 * 60 * 1000, // 30 minutes - admin data
+  gcTime: 60 * 60 * 1000, // 1 hour
+});
+
 // Query keys factory for consistent key generation
 export const queryKeys = {
   // Base keys
@@ -113,4 +125,44 @@ export const queryKeys = {
     [...queryKeys.sponsorships(), 'sponsorship', id] as const,
   sponsorshipAllocations: (id: string) =>
     [...queryKeys.sponsorship(id), 'allocations'] as const,
+
+  // Bible Translation Overrides
+  bibleTranslationOverrides: (
+    page?: number,
+    pageSize?: number,
+    search?: string,
+    languageFilter?: string
+  ) =>
+    [
+      ...queryKeys.all,
+      'bible-translation-overrides',
+      { page, pageSize, search, languageFilter },
+    ] as const,
+  bibleTranslationOverride: (id: string) =>
+    [
+      ...queryKeys.all,
+      'bible-translation-overrides',
+      'bible-translation-override',
+      id,
+    ] as const,
+
+  // External Projects Overrides
+  externalProjectsOverrides: (
+    page?: number,
+    pageSize?: number,
+    search?: string,
+    languageFilter?: string
+  ) =>
+    [
+      ...queryKeys.all,
+      'external-projects-overrides',
+      { page, pageSize, search, languageFilter },
+    ] as const,
+  externalProjectOverride: (id: string) =>
+    [
+      ...queryKeys.all,
+      'external-projects-overrides',
+      'external-project-override',
+      id,
+    ] as const,
 };

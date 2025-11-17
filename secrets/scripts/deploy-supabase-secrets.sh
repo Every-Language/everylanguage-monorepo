@@ -89,7 +89,7 @@ else
     # Deploy shared secrets needed by edge functions and auth services
     while IFS='=' read -r key value; do
         # Deploy secrets used by edge functions and Supabase Auth
-        if [[ "$key" =~ ^(R2_ACCOUNT_ID|R2_ACCESS_KEY_ID|R2_SECRET_ACCESS_KEY|CDN_SIGNING_SECRET|CDN_BASE_URL|IP_GEO_PROVIDER|IP_GEO_API_KEY|TWILIO_ACCOUNT_SID|TWILIO_AUTH_TOKEN|TWILIO_VERIFY_SERVICE_SID|RESEND_API_KEY)$ ]]; then
+        if [[ "$key" =~ ^(R2_ACCOUNT_ID|R2_ACCESS_KEY_ID|R2_SECRET_ACCESS_KEY|CDN_SIGNING_SECRET|CDN_BASE_URL|IP_GEO_PROVIDER|IP_GEO_API_KEY|TWILIO_ACCOUNT_SID|TWILIO_AUTH_TOKEN|TWILIO_VERIFY_SERVICE_SID|RESEND_API_KEY|JOSHUA_PROJECT_API_KEY)$ ]]; then
             deploy_supabase_secret "$key" "$value" "$DEV_PROJECT_ID" "development"
         fi
     done < <(parse_env_file "$SECRETS_DIR/.env.shared")
@@ -125,7 +125,7 @@ else
     # Deploy shared secrets needed by edge functions and auth services
     while IFS='=' read -r key value; do
         # Deploy secrets used by edge functions and Supabase Auth
-        if [[ "$key" =~ ^(R2_ACCOUNT_ID|R2_ACCESS_KEY_ID|R2_SECRET_ACCESS_KEY|CDN_SIGNING_SECRET|CDN_BASE_URL|IP_GEO_PROVIDER|IP_GEO_API_KEY|TWILIO_ACCOUNT_SID|TWILIO_AUTH_TOKEN|TWILIO_VERIFY_SERVICE_SID|RESEND_API_KEY)$ ]]; then
+        if [[ "$key" =~ ^(R2_ACCOUNT_ID|R2_ACCESS_KEY_ID|R2_SECRET_ACCESS_KEY|CDN_SIGNING_SECRET|CDN_BASE_URL|IP_GEO_PROVIDER|IP_GEO_API_KEY|TWILIO_ACCOUNT_SID|TWILIO_AUTH_TOKEN|TWILIO_VERIFY_SERVICE_SID|RESEND_API_KEY|JOSHUA_PROJECT_API_KEY)$ ]]; then
             deploy_supabase_secret "$key" "$value" "$PROD_PROJECT_ID" "production"
         fi
     done < <(parse_env_file "$SECRETS_DIR/.env.shared")

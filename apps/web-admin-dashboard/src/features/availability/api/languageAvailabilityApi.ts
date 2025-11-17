@@ -9,6 +9,9 @@ export const languageAvailabilityApi = {
     searchQuery?: string;
     page?: number;
     pageSize?: number;
+    statusFilter?: LanguageFundingStatus;
+    sortField?: 'name' | 'budget';
+    sortDirection?: 'asc' | 'desc';
   }): Promise<{
     data: LanguageEntityWithRegions[];
     count: number;
@@ -20,6 +23,9 @@ export const languageAvailabilityApi = {
     const pageSize = params?.pageSize || 50;
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
+    const sortField = params?.sortField ?? 'name';
+    const sortDirection = params?.sortDirection ?? 'asc';
+    const sortAscending = sortDirection === 'asc';
 
     // Fetch all language_funding records (no status filter)
     let query = supabase
@@ -42,28 +48,48 @@ export const languageAvailabilityApi = {
       );
     }
 
-    const { data, error, count: totalCount } = await query;
+    if (params?.statusFilter) {
+      query = query.eq('funding_status', params.statusFilter);
+    }
+
+    switch (sortField) {
+      case 'budget':
+        query = query.order('budget_cents', {
+          ascending: sortAscending,
+          nullsFirst: sortAscending,
+        });
+        break;
+      case 'name':
+      default:
+        query = query.order('name', {
+          ascending: sortAscending,
+          referencedTable: 'language_entities',
+        });
+        break;
+    }
+
+    const { data, error, count: totalCount } = await query.range(from, to);
 
     if (error) throw error;
 
-    // Sort by language name in JavaScript
-    const sortedData = (data || []).sort((a: any, b: any) => {
-      const nameA = a.language_entities?.name || '';
-      const nameB = b.language_entities?.name || '';
-      return nameA.localeCompare(nameB);
-    });
-
-    const totalPages = Math.ceil((totalCount || sortedData.length) / pageSize);
-    const paginatedData = sortedData.slice(from, to + 1);
-
     // Transform data to match LanguageEntityWithRegions
-    const transformedData: LanguageEntityWithRegions[] = paginatedData.map(
-      (item: any) => ({
+    const transformedData: LanguageEntityWithRegions[] = (data || []).map(
+      (item: {
+        id: string;
+        language_entity_id: string;
+        funding_status: string;
+        budget_cents: number | null;
+        created_at: string;
+        updated_at: string;
+        created_by: string | null;
+        deleted_at: string | null;
+        language_entities: LanguageEntityWithRegions;
+      }) => ({
         ...item.language_entities,
         language_funding: {
           id: item.id,
           language_entity_id: item.language_entity_id,
-          funding_status: item.funding_status,
+          funding_status: item.funding_status as LanguageFundingStatus,
           budget_cents: item.budget_cents,
           created_at: item.created_at,
           updated_at: item.updated_at,
@@ -73,9 +99,11 @@ export const languageAvailabilityApi = {
       })
     );
 
+    const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
+
     return {
       data: transformedData,
-      count: totalCount || sortedData.length,
+      count: totalCount || 0,
       page,
       pageSize,
       totalPages,
@@ -102,13 +130,14 @@ export const languageAvailabilityApi = {
     const to = from + pageSize - 1;
 
     // Get languages that either have no funding record or have draft status
-    // We'll filter in JavaScript after fetching
+    // PostgREST doesn't support OR filters on LEFT JOINed tables easily,
+    // so we'll fetch languages and filter in JavaScript, but apply pagination correctly
     let query = supabase
       .from('language_entities')
       .select(
         `
         *,
-        language_funding(*)
+        language_funding!left(*)
       `,
         { count: 'exact' }
       )
@@ -154,37 +183,73 @@ export const languageAvailabilityApi = {
             };
           }
         }
-      } catch (err) {
+      } catch {
         // Fallback to simple ilike search
         query = query.ilike('name', `%${params.searchQuery.trim()}%`);
       }
     }
 
-    const { data, error } = await query.range(from, to);
+    // Fetch all matching languages (we need to filter for draft/no funding after fetching)
+    // Fetch a larger set to account for filtering
+    const fetchLimit = 1000; // Reasonable limit to prevent excessive data transfer
+    const { data, error } = await query.range(0, fetchLimit - 1);
 
     if (error) throw error;
 
     // Filter for languages with no funding record OR draft status
-    const filteredData = (data || []).filter((item: any) => {
-      const funding =
-        item.language_funding && item.language_funding.length > 0
-          ? item.language_funding[0]
-          : null;
-      return !funding || funding.funding_status === 'draft';
-    });
+    const filteredData = (data || []).filter(
+      (item: { language_funding?: { funding_status: string } | null }) => {
+        const funding = item.language_funding;
+        return !funding || funding.funding_status === 'draft';
+      }
+    );
 
+    // Apply pagination after filtering
     const totalCount = filteredData.length;
     const totalPages = Math.ceil(totalCount / pageSize);
     const paginatedData = filteredData.slice(from, to + 1);
 
-    // Transform data
+    // Transform data - properly type the raw Supabase response
     const transformedData: LanguageEntityWithRegions[] = paginatedData.map(
-      (item: any) => ({
-        ...item,
-        language_funding:
-          item.language_funding && item.language_funding.length > 0
-            ? item.language_funding[0]
-            : null,
+      (item: {
+        id: string;
+        name: string;
+        level: string;
+        parent_id: string | null;
+        created_at: string | null;
+        updated_at: string | null;
+        deleted_at: string | null;
+        language_funding?: {
+          id: string;
+          language_entity_id: string;
+          funding_status: string;
+          budget_cents: number | null;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+          deleted_at: string | null;
+        } | null;
+      }) => ({
+        id: item.id,
+        name: item.name,
+        level: item.level as LanguageEntityWithRegions['level'],
+        parent_id: item.parent_id,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        deleted_at: item.deleted_at,
+        language_funding: item.language_funding
+          ? {
+              id: item.language_funding.id,
+              language_entity_id: item.language_funding.language_entity_id,
+              funding_status: item.language_funding
+                .funding_status as LanguageFundingStatus,
+              budget_cents: item.language_funding.budget_cents,
+              created_at: item.language_funding.created_at,
+              updated_at: item.language_funding.updated_at,
+              created_by: item.language_funding.created_by,
+              deleted_at: item.language_funding.deleted_at,
+            }
+          : null,
       })
     );
 

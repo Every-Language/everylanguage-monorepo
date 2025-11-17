@@ -12,6 +12,7 @@ import {
   Check,
   X as XIcon,
 } from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 export function LanguageAvailabilityPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +25,9 @@ export function LanguageAvailabilityPage() {
   const [addModalPage, setAddModalPage] = useState(1);
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
   const [budgetValue, setBudgetValue] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortField, setSortField] = useState<'name' | 'budget'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const queryClient = useQueryClient();
 
   // Debounce search term
@@ -46,12 +50,26 @@ export function LanguageAvailabilityPage() {
 
   // Fetch available languages
   const { data: response, isLoading } = useQuery({
-    queryKey: ['available-languages', page, pageSize, debouncedSearch],
+    queryKey: [
+      'available-languages',
+      page,
+      pageSize,
+      debouncedSearch,
+      statusFilter,
+      sortField,
+      sortDirection,
+    ],
     queryFn: () =>
       languageAvailabilityApi.fetchAvailableLanguages({
         page,
         pageSize,
         searchQuery: debouncedSearch,
+        statusFilter:
+          statusFilter !== 'all'
+            ? (statusFilter as LanguageFundingStatus)
+            : undefined,
+        sortField,
+        sortDirection,
       }),
   });
 
@@ -79,6 +97,21 @@ export function LanguageAvailabilityPage() {
   const draftLanguages = draftResponse?.data || [];
   const draftTotalCount = draftResponse?.count || 0;
   const draftTotalPages = draftResponse?.totalPages || 1;
+
+  const handleSort = (field: 'name' | 'budget') => {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection(field === 'name' ? 'asc' : 'desc');
+    }
+    setPage(1);
+  };
+
+  const getSortIndicator = (field: 'name' | 'budget') => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? '↑' : '↓';
+  };
 
   // Update status mutation
   const updateStatusMutation = useMutation({
@@ -189,6 +222,24 @@ export function LanguageAvailabilityPage() {
         </div>
       </div>
 
+      <div className='mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4'>
+        <Select
+          label='Funding Status'
+          value={statusFilter}
+          onValueChange={value => {
+            setStatusFilter(value);
+            setPage(1);
+          }}
+        >
+          <SelectItem value='all'>All statuses</SelectItem>
+          <SelectItem value='draft'>Draft</SelectItem>
+          <SelectItem value='available'>Available</SelectItem>
+          <SelectItem value='in_progress'>In Progress</SelectItem>
+          <SelectItem value='funded'>Funded</SelectItem>
+          <SelectItem value='archived'>Archived</SelectItem>
+        </Select>
+      </div>
+
       {/* Table */}
       <div className='bg-white dark:bg-neutral-900 rounded-lg shadow dark:shadow-dark-card border border-neutral-200 dark:border-neutral-800 overflow-hidden'>
         {isLoading ? (
@@ -205,10 +256,24 @@ export function LanguageAvailabilityPage() {
                 <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
                   <tr>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                      Name
+                      <button
+                        type='button'
+                        onClick={() => handleSort('name')}
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                      >
+                        Name
+                        <span>{getSortIndicator('name')}</span>
+                      </button>
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                      Budget
+                      <button
+                        type='button'
+                        onClick={() => handleSort('budget')}
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                      >
+                        Budget
+                        <span>{getSortIndicator('budget')}</span>
+                      </button>
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       Status
@@ -285,26 +350,34 @@ export function LanguageAvailabilityPage() {
                           )}
                         </td>
                         <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-                          <select
-                            value={
-                              language.language_funding?.funding_status ||
-                              'draft'
-                            }
-                            onChange={e =>
-                              handleStatusChange(
-                                language.id,
-                                e.target.value as LanguageFundingStatus
-                              )
-                            }
-                            disabled={updateStatusMutation.isPending}
-                            className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 disabled:opacity-50 disabled:cursor-not-allowed'
+                          <div
+                            onClick={e => e.stopPropagation()}
+                            className='w-full'
                           >
-                            <option value='draft'>Draft</option>
-                            <option value='available'>Available</option>
-                            <option value='in_progress'>In Progress</option>
-                            <option value='funded'>Funded</option>
-                            <option value='archived'>Archived</option>
-                          </select>
+                            <Select
+                              value={
+                                language.language_funding?.funding_status ||
+                                'draft'
+                              }
+                              onValueChange={value =>
+                                handleStatusChange(
+                                  language.id,
+                                  value as LanguageFundingStatus
+                                )
+                              }
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              <SelectItem value='draft'>Draft</SelectItem>
+                              <SelectItem value='available'>
+                                Available
+                              </SelectItem>
+                              <SelectItem value='in_progress'>
+                                In Progress
+                              </SelectItem>
+                              <SelectItem value='funded'>Funded</SelectItem>
+                              <SelectItem value='archived'>Archived</SelectItem>
+                            </Select>
+                          </div>
                         </td>
                       </tr>
                     ))

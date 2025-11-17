@@ -12,7 +12,6 @@ export async function middleware(request: NextRequest) {
 
   // Protected routes that require authentication
   const protectedRoutes = [
-    '/dashboard',
     '/partner-org',
     '/profile',
     '/project',
@@ -24,9 +23,7 @@ export async function middleware(request: NextRequest) {
 
   // Redirect to login if accessing protected route without authentication
   if (isProtected && !user) {
-    const redirectUrl = new URL('/login', request.url);
-    redirectUrl.searchParams.set('redirectTo', pathname);
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return response;

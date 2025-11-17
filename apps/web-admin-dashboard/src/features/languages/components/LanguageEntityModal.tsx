@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { languagesApi } from '../api/languagesApi';
 import type { LanguageEntityWithRegions } from '@/types';
 import { X, Edit, Save, Plus, Trash2, Search } from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 interface LanguageEntityModalProps {
   entity: LanguageEntityWithRegions;
@@ -393,24 +394,26 @@ export function LanguageEntityModal({
                 )}
               </div>
               <div>
-                <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                  Level
-                </label>
                 {editingInfo ? (
-                  <select
+                  <Select
+                    label='Level'
                     value={level}
-                    onChange={e => setLevel(e.target.value as typeof level)}
-                    className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                    onValueChange={value => setLevel(value as typeof level)}
                   >
-                    <option value='family'>Family</option>
-                    <option value='language'>Language</option>
-                    <option value='dialect'>Dialect</option>
-                    <option value='mother_tongue'>Mother Tongue</option>
-                  </select>
+                    <SelectItem value='family'>Family</SelectItem>
+                    <SelectItem value='language'>Language</SelectItem>
+                    <SelectItem value='dialect'>Dialect</SelectItem>
+                    <SelectItem value='mother_tongue'>Mother Tongue</SelectItem>
+                  </Select>
                 ) : (
-                  <p className='text-neutral-900 dark:text-neutral-100'>
-                    {entity.level}
-                  </p>
+                  <>
+                    <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                      Level
+                    </label>
+                    <p className='text-neutral-900 dark:text-neutral-100'>
+                      {entity.level}
+                    </p>
+                  </>
                 )}
               </div>
               {editingInfo && (

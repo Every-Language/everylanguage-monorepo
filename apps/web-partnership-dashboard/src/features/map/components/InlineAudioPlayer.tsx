@@ -34,7 +34,6 @@ export const InlineAudioPlayer: React.FC<InlineAudioPlayerProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSeeking, setIsSeeking] = useState(false);
   const seekTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSeekingRef = useRef(false);
 
@@ -91,7 +90,6 @@ export const InlineAudioPlayer: React.FC<InlineAudioPlayerProps> = ({
     if (audioRef.current && isSeekingRef.current) {
       const actualTime = audioRef.current.currentTime;
       setCurrentTime(actualTime);
-      setIsSeeking(false);
       isSeekingRef.current = false;
       // Clear timeout since seeked fired
       if (seekTimeoutRef.current) {
@@ -148,7 +146,6 @@ export const InlineAudioPlayer: React.FC<InlineAudioPlayerProps> = ({
   };
 
   const handleSeekStart = () => {
-    setIsSeeking(true);
     isSeekingRef.current = true;
   };
 
@@ -156,7 +153,6 @@ export const InlineAudioPlayer: React.FC<InlineAudioPlayerProps> = ({
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Set seeking flag when user starts interacting (if not already set)
     if (!isSeekingRef.current) {
-      setIsSeeking(true);
       isSeekingRef.current = true;
     }
 
@@ -190,7 +186,6 @@ export const InlineAudioPlayer: React.FC<InlineAudioPlayerProps> = ({
     // But add a fallback timeout in case seeked doesn't fire
     seekTimeoutRef.current = setTimeout(() => {
       if (isSeekingRef.current) {
-        setIsSeeking(false);
         isSeekingRef.current = false;
         // Sync with audio element one more time after seeking ends
         if (audioRef.current) {

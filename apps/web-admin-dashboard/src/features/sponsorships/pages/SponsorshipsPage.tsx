@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/query/query-client';
 import { sponsorshipsApi } from '../api/sponsorshipsApi';
 import { Search } from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 export function SponsorshipsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,19 +56,19 @@ export function SponsorshipsPage() {
             className='w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 focus:border-primary-500 dark:focus:border-primary-600'
           />
         </div>
-        <select
+        <Select
           value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 focus:border-primary-500 dark:focus:border-primary-600'
+          onValueChange={value => setStatusFilter(value)}
+          placeholder='All Status'
         >
-          <option value=''>All Status</option>
-          <option value='interest'>Interest</option>
-          <option value='pledged'>Pledged</option>
-          <option value='active'>Active</option>
-          <option value='paused'>Paused</option>
-          <option value='cancelled'>Cancelled</option>
-          <option value='completed'>Completed</option>
-        </select>
+          <SelectItem value=''>All Status</SelectItem>
+          <SelectItem value='interest'>Interest</SelectItem>
+          <SelectItem value='pledged'>Pledged</SelectItem>
+          <SelectItem value='active'>Active</SelectItem>
+          <SelectItem value='paused'>Paused</SelectItem>
+          <SelectItem value='cancelled'>Cancelled</SelectItem>
+          <SelectItem value='completed'>Completed</SelectItem>
+        </Select>
       </div>
 
       {/* Table */}

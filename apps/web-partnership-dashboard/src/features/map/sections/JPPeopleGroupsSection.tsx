@@ -5,7 +5,6 @@ import {
   useHasJPCountryData,
   useHasJPLanguageData,
 } from '../hooks/useJoshuaProject';
-import type { JPPeopleGroup } from '../services/joshuaProjectApi';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
 
 // Helper function to safely convert to number

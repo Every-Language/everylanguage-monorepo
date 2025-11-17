@@ -502,6 +502,47 @@ export const languagesApi = {
   },
 
   /**
+   * Search for language entities
+   */
+  async searchLanguageEntities(query: string): Promise<LanguageEntity[]> {
+    if (!query || query.trim().length < 2) return [];
+
+    const { data, error } = await supabase.rpc('search_language_aliases', {
+      search_query: query,
+      max_results: 20,
+      min_similarity: 0.1,
+      include_regions: false,
+    });
+
+    if (error) {
+      console.error('Language search error:', error);
+      throw error;
+    }
+
+    // Transform search results
+    return (data || []).map(
+      (result: {
+        entity_id: string;
+        entity_name: string;
+        entity_level: string;
+        entity_parent_id: string | null;
+      }) => ({
+        id: result.entity_id,
+        name: result.entity_name,
+        level: result.entity_level as
+          | 'family'
+          | 'language'
+          | 'dialect'
+          | 'mother_tongue',
+        parent_id: result.entity_parent_id,
+        created_at: '',
+        updated_at: '',
+        deleted_at: null,
+      })
+    ) as LanguageEntity[];
+  },
+
+  /**
    * Fetch regions with search
    */
   async searchRegions(searchQuery: string): Promise<Region[]> {

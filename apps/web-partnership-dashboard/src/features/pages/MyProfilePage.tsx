@@ -61,7 +61,7 @@ export const MyProfilePage: React.FC = () => {
 
   React.useEffect(() => {
     if (!loading && !user) {
-      router.push('/login?redirectTo=/profile');
+      router.push('/login');
     }
   }, [user, loading, router]);
 

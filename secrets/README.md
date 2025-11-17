@@ -113,6 +113,7 @@ The following secrets are deployed to Supabase Edge Functions:
 - IP_GEO_PROVIDER, IP_GEO_API_KEY (for analytics geolocation)
 - TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID (for SMS auth)
 - RESEND_API_KEY (for email auth via SMTP)
+- JOSHUA_PROJECT_API_KEY (for Joshua Project API integration)
 - HUBSPOT_PRIVATE_APP_TOKEN (optional, for CRM integration)
 
 **From `.env.development` / `.env.production`:**

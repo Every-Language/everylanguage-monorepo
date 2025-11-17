@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { operationsApi } from '../api/operationsApi';
 import type {
-  Operation,
   OperationCost,
   OperationCategory,
   EntityStatus,
 } from '../api/operationsApi';
 import { X, Edit, Save, Plus, Trash2 } from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 const OPERATION_CATEGORIES: OperationCategory[] = [
   'travel',
@@ -343,49 +343,53 @@ export function ViewOperationModal({
                 )}
               </div>
               <div>
-                <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                  Category
-                </label>
                 {editingInfo ? (
-                  <select
+                  <Select
+                    label='Category'
                     value={category}
-                    onChange={e =>
-                      setCategory(e.target.value as OperationCategory)
+                    onValueChange={value =>
+                      setCategory(value as OperationCategory)
                     }
-                    className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
                   >
                     {OPERATION_CATEGORIES.map(cat => (
-                      <option key={cat} value={cat}>
+                      <SelectItem key={cat} value={cat}>
                         {formatCategory(cat)}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
+                  </Select>
                 ) : (
-                  <p className='text-neutral-900 dark:text-neutral-100'>
-                    {formatCategory(operation.category)}
-                  </p>
+                  <>
+                    <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                      Category
+                    </label>
+                    <p className='text-neutral-900 dark:text-neutral-100'>
+                      {formatCategory(operation.category)}
+                    </p>
+                  </>
                 )}
               </div>
               <div>
-                <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                  Status
-                </label>
                 {editingInfo ? (
-                  <select
+                  <Select
+                    label='Status'
                     value={status}
-                    onChange={e => setStatus(e.target.value as EntityStatus)}
-                    className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                    onValueChange={value => setStatus(value as EntityStatus)}
                   >
                     {STATUS_OPTIONS.map(stat => (
-                      <option key={stat} value={stat}>
+                      <SelectItem key={stat} value={stat}>
                         {stat.charAt(0).toUpperCase() + stat.slice(1)}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
+                  </Select>
                 ) : (
-                  <p className='text-neutral-900 dark:text-neutral-100'>
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </p>
+                  <>
+                    <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                      Status
+                    </label>
+                    <p className='text-neutral-900 dark:text-neutral-100'>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </p>
+                  </>
                 )}
               </div>
               <div>
@@ -474,22 +478,20 @@ export function ViewOperationModal({
                     />
                   </div>
                   <div>
-                    <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                      Category <span className='text-red-500'>*</span>
-                    </label>
-                    <select
+                    <Select
+                      label='Category'
                       value={costCategory}
-                      onChange={e =>
-                        setCostCategory(e.target.value as OperationCategory)
+                      onValueChange={value =>
+                        setCostCategory(value as OperationCategory)
                       }
-                      className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                      required
                     >
                       {OPERATION_CATEGORIES.map(cat => (
-                        <option key={cat} value={cat}>
+                        <SelectItem key={cat} value={cat}>
                           {formatCategory(cat)}
-                        </option>
+                        </SelectItem>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
                 <div>

@@ -5,9 +5,9 @@ import { languagesApi } from '../api/languagesApi';
 import { regionsApi } from '@/features/regions/api/regionsApi';
 import { LanguageEntityModal } from '../components/LanguageEntityModal';
 import { RegionModal } from '@/features/regions/components/RegionModal';
-import { FundingStatusBadge } from '@/shared/components/FundingStatusBadge';
 import type { LanguageEntityWithRegions, RegionWithLanguages } from '@/types';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 type ModalStackItem =
   | { type: 'language'; entity: LanguageEntityWithRegions; id: string }
@@ -80,9 +80,6 @@ function LanguageRow({
         ) : (
           <span className='text-neutral-400 dark:text-neutral-600'>—</span>
         )}
-      </td>
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-        <FundingStatusBadge status={entity.language_funding?.funding_status} />
       </td>
     </tr>
   );
@@ -228,25 +225,20 @@ export function LanguagesPage() {
       {/* Filters */}
       <div className='mb-6 grid grid-cols-1 md:grid-cols-2 gap-4'>
         {/* Level Filter */}
-        <div>
-          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-            Filter by Level
-          </label>
-          <select
-            value={levelFilter}
-            onChange={e => {
-              setLevelFilter(e.target.value);
-              setPage(1);
-            }}
-            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
-          >
-            <option value='all'>All Levels</option>
-            <option value='family'>Family</option>
-            <option value='language'>Language</option>
-            <option value='dialect'>Dialect</option>
-            <option value='mother_tongue'>Mother Tongue</option>
-          </select>
-        </div>
+        <Select
+          label='Filter by Level'
+          value={levelFilter}
+          onValueChange={value => {
+            setLevelFilter(value);
+            setPage(1);
+          }}
+        >
+          <SelectItem value='all'>All Levels</SelectItem>
+          <SelectItem value='family'>Family</SelectItem>
+          <SelectItem value='language'>Language</SelectItem>
+          <SelectItem value='dialect'>Dialect</SelectItem>
+          <SelectItem value='mother_tongue'>Mother Tongue</SelectItem>
+        </Select>
 
         {/* Region Filter */}
         <div>
@@ -360,9 +352,6 @@ export function LanguagesPage() {
                   <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                     Parent Language
                   </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                    Funding Status
-                  </th>
                 </tr>
               </thead>
               <tbody className='bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-800'>
@@ -378,7 +367,7 @@ export function LanguagesPage() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={5}
                       className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
                     >
                       {debouncedSearch

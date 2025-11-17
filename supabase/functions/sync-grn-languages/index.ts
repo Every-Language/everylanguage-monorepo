@@ -180,16 +180,16 @@ Deno.serve(async req => {
         err instanceof Error ? err.message : 'Unknown refresh error occurred';
     }
 
-    const response = {
+    const summary = {
       success: true,
       upserted: upserts.length,
       refresh_status: refreshErrorMessage ? 'failed' : 'succeeded',
       refresh_error: refreshErrorMessage,
     };
 
-    console.log('GRN sync summary:', JSON.stringify(response));
+    console.log('GRN sync summary:', JSON.stringify(summary));
 
-    return new Response(JSON.stringify(response), {
+    return new Response(JSON.stringify(summary), {
       status: 200,
       headers: { 'content-type': 'application/json' },
     });

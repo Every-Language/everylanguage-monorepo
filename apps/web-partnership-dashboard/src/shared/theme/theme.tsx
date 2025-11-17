@@ -26,7 +26,7 @@ function getInitialTheme(): Theme {
     if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
       return savedTheme;
     }
-  } catch (e) {
+  } catch {
     // localStorage might not be available
   }
 

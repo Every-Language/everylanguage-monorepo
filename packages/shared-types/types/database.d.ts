@@ -149,6 +149,13 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "audio_versions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "audio_versions_project_id_fkey";
                         columns: ["project_id"];
                         isOneToOne: false;
@@ -255,6 +262,85 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "teams";
                         referencedColumns: ["id"];
+                    }
+                ];
+            };
+            bible_translation_overrides: {
+                Row: {
+                    coverage: Database["public"]["Enums"]["scripture_coverage"];
+                    created_at: string;
+                    created_by: string | null;
+                    deleted_at: string | null;
+                    external_url: string | null;
+                    id: string;
+                    is_audio: boolean;
+                    is_text: boolean;
+                    language_entity_id: string;
+                    notes: string | null;
+                    nt_books_completed: number | null;
+                    ot_books_completed: number | null;
+                    source: string | null;
+                    updated_at: string;
+                    version_name: string;
+                    year_completed: string | null;
+                };
+                Insert: {
+                    coverage?: Database["public"]["Enums"]["scripture_coverage"];
+                    created_at?: string;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    external_url?: string | null;
+                    id?: string;
+                    is_audio?: boolean;
+                    is_text?: boolean;
+                    language_entity_id: string;
+                    notes?: string | null;
+                    nt_books_completed?: number | null;
+                    ot_books_completed?: number | null;
+                    source?: string | null;
+                    updated_at?: string;
+                    version_name: string;
+                    year_completed?: string | null;
+                };
+                Update: {
+                    coverage?: Database["public"]["Enums"]["scripture_coverage"];
+                    created_at?: string;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    external_url?: string | null;
+                    id?: string;
+                    is_audio?: boolean;
+                    is_text?: boolean;
+                    language_entity_id?: string;
+                    notes?: string | null;
+                    nt_books_completed?: number | null;
+                    ot_books_completed?: number | null;
+                    source?: string | null;
+                    updated_at?: string;
+                    version_name?: string;
+                    year_completed?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "bible_translation_overrides_created_by_fkey";
+                        columns: ["created_by"];
+                        isOneToOne: false;
+                        referencedRelation: "users";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "bible_translation_overrides_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "bible_translation_overrides_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -365,6 +451,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "chapter_listens_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "chapter_listens_origin_share_id_fkey";
@@ -542,6 +635,7 @@ export type Database = {
                     created_by: string | null;
                     currency_code: string;
                     deleted_at: string | null;
+                    donation_mode: Database["public"]["Enums"]["donation_mode"];
                     id: string;
                     intent_language_entity_id: string | null;
                     intent_operation_id: string | null;
@@ -565,6 +659,7 @@ export type Database = {
                     created_by?: string | null;
                     currency_code?: string;
                     deleted_at?: string | null;
+                    donation_mode?: Database["public"]["Enums"]["donation_mode"];
                     id?: string;
                     intent_language_entity_id?: string | null;
                     intent_operation_id?: string | null;
@@ -588,6 +683,7 @@ export type Database = {
                     created_by?: string | null;
                     currency_code?: string;
                     deleted_at?: string | null;
+                    donation_mode?: Database["public"]["Enums"]["donation_mode"];
                     id?: string;
                     intent_language_entity_id?: string | null;
                     intent_operation_id?: string | null;
@@ -617,6 +713,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_language_entity_id_fkey";
+                        columns: ["intent_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "donations_intent_operation_id_fkey";
@@ -689,6 +792,85 @@ export type Database = {
                 };
                 Relationships: [];
             };
+            external_projects_overrides: {
+                Row: {
+                    completed_chapters: number;
+                    completion_date: string | null;
+                    created_at: string;
+                    created_by: string | null;
+                    deleted_at: string | null;
+                    id: string;
+                    is_active: boolean;
+                    is_audio: boolean;
+                    is_text: boolean;
+                    language_entity_id: string;
+                    notes: string | null;
+                    partner_organization: string | null;
+                    project_name: string;
+                    start_date: string | null;
+                    total_chapters: number;
+                    updated_at: string;
+                };
+                Insert: {
+                    completed_chapters?: number;
+                    completion_date?: string | null;
+                    created_at?: string;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    is_active?: boolean;
+                    is_audio?: boolean;
+                    is_text?: boolean;
+                    language_entity_id: string;
+                    notes?: string | null;
+                    partner_organization?: string | null;
+                    project_name: string;
+                    start_date?: string | null;
+                    total_chapters: number;
+                    updated_at?: string;
+                };
+                Update: {
+                    completed_chapters?: number;
+                    completion_date?: string | null;
+                    created_at?: string;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    is_active?: boolean;
+                    is_audio?: boolean;
+                    is_text?: boolean;
+                    language_entity_id?: string;
+                    notes?: string | null;
+                    partner_organization?: string | null;
+                    project_name?: string;
+                    start_date?: string | null;
+                    total_chapters?: number;
+                    updated_at?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "external_projects_overrides_created_by_fkey";
+                        columns: ["created_by"];
+                        isOneToOne: false;
+                        referencedRelation: "users";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "external_projects_overrides_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "external_projects_overrides_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
+                    }
+                ];
+            };
             funding_settings: {
                 Row: {
                     created_at: string;
@@ -710,6 +892,45 @@ export type Database = {
                     id?: string;
                     recurring_months?: number;
                     updated_at?: string | null;
+                };
+                Relationships: [];
+            };
+            grn_language_cache: {
+                Row: {
+                    created_at: string;
+                    grn_language_id: number;
+                    has_recordings: boolean;
+                    id: string;
+                    iso639_3: string | null;
+                    language_name: string;
+                    last_synced_at: string;
+                    parent_id: number | null;
+                    program_count: number | null;
+                    updated_at: string;
+                };
+                Insert: {
+                    created_at?: string;
+                    grn_language_id: number;
+                    has_recordings?: boolean;
+                    id?: string;
+                    iso639_3?: string | null;
+                    language_name: string;
+                    last_synced_at?: string;
+                    parent_id?: number | null;
+                    program_count?: number | null;
+                    updated_at?: string;
+                };
+                Update: {
+                    created_at?: string;
+                    grn_language_id?: number;
+                    has_recordings?: boolean;
+                    id?: string;
+                    iso639_3?: string | null;
+                    language_name?: string;
+                    last_synced_at?: string;
+                    parent_id?: number | null;
+                    program_count?: number | null;
+                    updated_at?: string;
                 };
                 Relationships: [];
             };
@@ -811,6 +1032,51 @@ export type Database = {
                     }
                 ];
             };
+            jp_language_cache: {
+                Row: {
+                    bible_status: number | null;
+                    bible_year: string | null;
+                    created_at: string;
+                    grn_url: string | null;
+                    has_audio_recordings: boolean;
+                    id: string;
+                    iso639_3: string;
+                    language_name: string;
+                    last_synced_at: string;
+                    nt_year: string | null;
+                    portions_year: string | null;
+                    updated_at: string;
+                };
+                Insert: {
+                    bible_status?: number | null;
+                    bible_year?: string | null;
+                    created_at?: string;
+                    grn_url?: string | null;
+                    has_audio_recordings?: boolean;
+                    id?: string;
+                    iso639_3: string;
+                    language_name: string;
+                    last_synced_at?: string;
+                    nt_year?: string | null;
+                    portions_year?: string | null;
+                    updated_at?: string;
+                };
+                Update: {
+                    bible_status?: number | null;
+                    bible_year?: string | null;
+                    created_at?: string;
+                    grn_url?: string | null;
+                    has_audio_recordings?: boolean;
+                    id?: string;
+                    iso639_3?: string;
+                    language_name?: string;
+                    last_synced_at?: string;
+                    nt_year?: string | null;
+                    portions_year?: string | null;
+                    updated_at?: string;
+                };
+                Relationships: [];
+            };
             language_aliases: {
                 Row: {
                     alias_name: string;
@@ -840,6 +1106,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_aliases_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -878,6 +1151,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_parent_id_fkey";
+                        columns: ["parent_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -916,6 +1196,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "language_entities_regions_region_id_fkey";
@@ -984,6 +1271,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entity_sources_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -1032,6 +1326,13 @@ export type Database = {
                         isOneToOne: true;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_funding_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: true;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -1067,6 +1368,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_properties_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -1111,6 +1419,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "media_file_listens_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "media_file_listens_media_file_id_fkey";
@@ -1271,6 +1586,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "media_files_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "media_files_start_verse_id_fkey";
@@ -1533,6 +1855,7 @@ export type Database = {
             };
             operations: {
                 Row: {
+                    budget_cents: number | null;
                     category: Database["public"]["Enums"]["operation_category"];
                     created_at: string;
                     created_by: string | null;
@@ -1546,6 +1869,7 @@ export type Database = {
                     updated_at: string | null;
                 };
                 Insert: {
+                    budget_cents?: number | null;
                     category: Database["public"]["Enums"]["operation_category"];
                     created_at?: string;
                     created_by?: string | null;
@@ -1559,6 +1883,7 @@ export type Database = {
                     updated_at?: string | null;
                 };
                 Update: {
+                    budget_cents?: number | null;
                     category?: Database["public"]["Enums"]["operation_category"];
                     created_at?: string;
                     created_by?: string | null;
@@ -2127,6 +2452,7 @@ export type Database = {
                     project_id: string;
                     title: string;
                     updated_at: string | null;
+                    visibility: Database["public"]["Enums"]["update_visibility"];
                 };
                 Insert: {
                     body: string;
@@ -2137,6 +2463,7 @@ export type Database = {
                     project_id: string;
                     title: string;
                     updated_at?: string | null;
+                    visibility?: Database["public"]["Enums"]["update_visibility"];
                 };
                 Update: {
                     body?: string;
@@ -2147,6 +2474,7 @@ export type Database = {
                     project_id?: string;
                     title?: string;
                     updated_at?: string | null;
+                    visibility?: Database["public"]["Enums"]["update_visibility"];
                 };
                 Relationships: [
                     {
@@ -2324,11 +2652,25 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "projects_source_language_entity_id_fkey";
+                        columns: ["source_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "projects_target_language_entity_id_fkey";
                         columns: ["target_language_entity_id"];
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "projects_target_language_entity_id_fkey";
+                        columns: ["target_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -3213,6 +3555,13 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "shares_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "shares_session_id_fkey";
                         columns: ["session_id"];
                         isOneToOne: false;
@@ -3409,6 +3758,13 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "text_versions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "text_versions_project_id_fkey";
                         columns: ["project_id"];
                         isOneToOne: false;
@@ -3446,7 +3802,7 @@ export type Database = {
                     occurred_at: string;
                     payment_attempt_id: string | null;
                     project_id: string | null;
-                    sponsorship_id: string;
+                    sponsorship_id: string | null;
                     stripe_charge_id: string | null;
                     stripe_event_id: string | null;
                     stripe_invoice_id: string | null;
@@ -3468,7 +3824,7 @@ export type Database = {
                     occurred_at?: string;
                     payment_attempt_id?: string | null;
                     project_id?: string | null;
-                    sponsorship_id: string;
+                    sponsorship_id?: string | null;
                     stripe_charge_id?: string | null;
                     stripe_event_id?: string | null;
                     stripe_invoice_id?: string | null;
@@ -3490,7 +3846,7 @@ export type Database = {
                     occurred_at?: string;
                     payment_attempt_id?: string | null;
                     project_id?: string | null;
-                    sponsorship_id?: string;
+                    sponsorship_id?: string | null;
                     stripe_charge_id?: string | null;
                     stripe_event_id?: string | null;
                     stripe_invoice_id?: string | null;
@@ -4349,6 +4705,13 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "verse_listens_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "verse_listens_origin_share_id_fkey";
                         columns: ["origin_share_id"];
                         isOneToOne: false;
@@ -4554,6 +4917,22 @@ export type Database = {
                 };
                 Relationships: [];
             };
+            global_translation_statistics: {
+                Row: {
+                    active_projects_total: number | null;
+                    audio_portions_count: number | null;
+                    audio_portions_percentage: number | null;
+                    completed_projects_total: number | null;
+                    full_audio_bible_count: number | null;
+                    full_audio_bible_percentage: number | null;
+                    generated_at: string | null;
+                    text_portions_count: number | null;
+                    text_portions_percentage: number | null;
+                    total_chapters_completed: number | null;
+                    total_languages: number | null;
+                };
+                Relationships: [];
+            };
             language_entity_best_audio_version: {
                 Row: {
                     audio_version_id: string | null;
@@ -4566,6 +4945,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "audio_versions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -4581,6 +4967,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "text_versions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -4652,6 +5045,19 @@ export type Database = {
                 };
                 Relationships: [];
             };
+            unified_bible_translation_stats: {
+                Row: {
+                    computed_at: string | null;
+                    has_audio_portions: boolean | null;
+                    has_full_audio_bible: boolean | null;
+                    has_text_portions: boolean | null;
+                    iso639_3: string | null;
+                    language_entity_id: string | null;
+                    language_name: string | null;
+                    rolv_code: string | null;
+                };
+                Relationships: [];
+            };
             vw_country_language_listens_heatmap: {
                 Row: {
                     country_code: string | null;
@@ -4688,6 +5094,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_language_entity_id_fkey";
+                        columns: ["intent_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "donations_intent_operation_id_fkey";
@@ -4803,6 +5216,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "projects_target_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -4831,6 +5251,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "projects_target_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -4859,6 +5286,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_language_entity_id_fkey";
+                        columns: ["intent_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "unified_bible_translation_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "donations_intent_operation_id_fkey";
@@ -5403,6 +5837,20 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            get_active_projects_with_progress: {
+                Args: never;
+                Returns: {
+                    completed_chapters: number;
+                    has_audio: boolean;
+                    has_text: boolean;
+                    language_name: string;
+                    last_activity_at: string;
+                    progress_percentage: number;
+                    project_id: string;
+                    project_name: string;
+                    total_chapters: number;
+                }[];
+            };
             get_chapter_global_order: {
                 Args: {
                     chapter_text_id: string;
@@ -5453,6 +5901,35 @@ export type Database = {
                     project_uuid: string;
                 };
                 Returns: number;
+            };
+            get_recent_bible_audio_uploads: {
+                Args: {
+                    limit_count?: number;
+                };
+                Returns: {
+                    audio_version_id: string;
+                    book_name: string;
+                    chapter_number: number;
+                    language_name: string;
+                    media_file_id: string;
+                    object_key: string;
+                    uploaded_at: string;
+                }[];
+            };
+            get_recent_public_updates: {
+                Args: {
+                    limit_count?: number;
+                };
+                Returns: {
+                    body: string;
+                    created_at: string;
+                    language_name: string;
+                    media_keys: string[];
+                    project_id: string;
+                    project_name: string;
+                    title: string;
+                    update_id: string;
+                }[];
             };
             get_region_bbox_by_id: {
                 Args: {
@@ -5756,6 +6233,10 @@ export type Database = {
                 Args: {
                     p_region_id: string;
                 };
+                Returns: undefined;
+            };
+            refresh_unified_bible_stats: {
+                Args: never;
                 Returns: undefined;
             };
             search_language_aliases: {
@@ -7094,6 +7575,7 @@ export type Database = {
             connectivity_type: "wifi" | "cellular" | "offline" | "unknown";
             contribution_status: "approved" | "not_approved";
             donation_intent_type: "language" | "region" | "operation" | "unrestricted";
+            donation_mode: "adoption" | "contribution";
             donation_status: "draft" | "pending" | "processing" | "completed" | "failed" | "refunded" | "cancelled";
             entity_status: "draft" | "available" | "funded" | "archived" | "in_progress";
             feedback_actioned: "pending" | "actioned" | "rejected";
@@ -7112,12 +7594,14 @@ export type Database = {
             publish_status: "pending" | "published" | "archived";
             region_level: "continent" | "world_region" | "country" | "state" | "province" | "district" | "town" | "village";
             resource_type: "global" | "team" | "project" | "base" | "partner";
+            scripture_coverage: "none" | "portions" | "ot" | "nt" | "full_bible";
             segment_type: "source" | "target";
             share_entity_type: "app" | "chapter" | "playlist" | "verse" | "passage";
             target_type: "chapter" | "book" | "sermon" | "passage" | "verse" | "podcast" | "film_segment" | "audio_segment";
             testament: "old" | "new";
             text_version_source: "official_translation" | "ai_transcription" | "user_submitted";
             transaction_kind: "payment" | "refund" | "adjustment" | "transfer";
+            update_visibility: "private" | "project" | "public";
             upload_status: "pending" | "uploading" | "completed" | "failed";
             version_filter_type: "audio_only" | "text_only" | "both_required" | "either";
             wallet_tx_type: "deposit" | "withdrawal" | "adjustment";
@@ -7197,6 +7681,7 @@ export declare const Constants: {
             readonly connectivity_type: readonly ["wifi", "cellular", "offline", "unknown"];
             readonly contribution_status: readonly ["approved", "not_approved"];
             readonly donation_intent_type: readonly ["language", "region", "operation", "unrestricted"];
+            readonly donation_mode: readonly ["adoption", "contribution"];
             readonly donation_status: readonly ["draft", "pending", "processing", "completed", "failed", "refunded", "cancelled"];
             readonly entity_status: readonly ["draft", "available", "funded", "archived", "in_progress"];
             readonly feedback_actioned: readonly ["pending", "actioned", "rejected"];
@@ -7215,12 +7700,14 @@ export declare const Constants: {
             readonly publish_status: readonly ["pending", "published", "archived"];
             readonly region_level: readonly ["continent", "world_region", "country", "state", "province", "district", "town", "village"];
             readonly resource_type: readonly ["global", "team", "project", "base", "partner"];
+            readonly scripture_coverage: readonly ["none", "portions", "ot", "nt", "full_bible"];
             readonly segment_type: readonly ["source", "target"];
             readonly share_entity_type: readonly ["app", "chapter", "playlist", "verse", "passage"];
             readonly target_type: readonly ["chapter", "book", "sermon", "passage", "verse", "podcast", "film_segment", "audio_segment"];
             readonly testament: readonly ["old", "new"];
             readonly text_version_source: readonly ["official_translation", "ai_transcription", "user_submitted"];
             readonly transaction_kind: readonly ["payment", "refund", "adjustment", "transfer"];
+            readonly update_visibility: readonly ["private", "project", "public"];
             readonly upload_status: readonly ["pending", "uploading", "completed", "failed"];
             readonly version_filter_type: readonly ["audio_only", "text_only", "both_required", "either"];
             readonly wallet_tx_type: readonly ["deposit", "withdrawal", "adjustment"];

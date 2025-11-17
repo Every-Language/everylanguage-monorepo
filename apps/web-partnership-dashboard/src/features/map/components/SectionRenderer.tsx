@@ -19,6 +19,7 @@ import { GRNLanguageSampleSection } from '../sections/GRNLanguageSampleSection';
 import { GRNGospelResourcesSection } from '../sections/GRNGospelResourcesSection';
 import { useLanguageEntity } from '../hooks/useLanguageEntity';
 import { CollapsibleSection } from './shared/CollapsibleSection';
+import { GlobalStatsWidget } from '@/features/global-stats/components/GlobalStatsWidget';
 
 // Mapping of section types to display names
 const SECTION_TITLES: Record<SectionType, string> = {
@@ -107,11 +108,18 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
         </CollapsibleSection>
       );
     }
-    return (
-      <div className='text-sm text-neutral-500'>
-        Select a country, language, or project to view details.
-      </div>
-    );
+    if (type === 'info') {
+      return (
+        <CollapsibleSection
+          title='Global translation snapshot'
+          sectionId='global-stats'
+          defaultExpanded={true}
+        >
+          <GlobalStatsWidget />
+        </CollapsibleSection>
+      );
+    }
+    return null;
   }
 
   switch (type) {
