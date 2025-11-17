@@ -7,6 +7,7 @@ type LanguageSourceRow = {
 
 type CachedLanguageRow = {
   iso639_3: string;
+  language_name: string | null;
   updated_at: string | null;
 };
 
@@ -279,16 +280,32 @@ function filterStaleCodes(
   }
 
   const threshold = Date.now() - STALE_AFTER_DAYS * 24 * 60 * 60 * 1000;
+  // Use a longer TTL (90 days) for "not found" entries to avoid repeatedly querying
+  const notFoundThreshold = Date.now() - 90 * 24 * 60 * 60 * 1000;
 
-  const cacheMap = new Map(cache.map(row => [row.iso639_3, row.updated_at]));
+  const cacheMap = new Map(
+    cache.map(row => [
+      row.iso639_3,
+      { updatedAt: row.updated_at, languageName: row.language_name },
+    ])
+  );
 
   return codes.filter(code => {
-    const updatedAt = cacheMap.get(code);
-    if (!updatedAt) {
-      return true;
+    const cached = cacheMap.get(code);
+    if (!cached || !cached.updatedAt) {
+      return true; // Not in cache, should be processed
     }
-    const updatedTime = Date.parse(updatedAt);
-    return Number.isFinite(updatedTime) && updatedTime < threshold;
+    const updatedTime = Date.parse(cached.updatedAt);
+    if (!Number.isFinite(updatedTime)) {
+      return true; // Invalid timestamp, reprocess
+    }
+
+    // Check if this is a "not found" entry (language_name === iso639_3 indicates not found)
+    const isNotFound =
+      cached.languageName === code || cached.languageName === null;
+    const relevantThreshold = isNotFound ? notFoundThreshold : threshold;
+
+    return updatedTime < relevantThreshold;
   });
 }
 
@@ -357,7 +374,7 @@ Deno.serve(async req => {
       fetchIsoCodes(supabase),
       supabase
         .from('jp_language_cache')
-        .select('iso639_3, updated_at')
+        .select('iso639_3, language_name, updated_at')
         .returns<CachedLanguageRow[]>(),
     ]);
 
@@ -375,23 +392,69 @@ Deno.serve(async req => {
         : staleCodes;
 
     const upserts: JpCacheRow[] = [];
+    const notFoundCodes: string[] = [];
     let processed = 0;
+    let found = 0;
+    let notFound = 0;
+    let rejected = 0;
 
     for (const batch of chunkArray(codesToProcess, FETCH_BATCH_SIZE)) {
       const results = await Promise.allSettled(
         batch.map(code => fetchLanguageFromApi(code, jpApiKey))
       );
       results.forEach((result, index) => {
-        if (result.status === 'fulfilled' && result.value) {
-          upserts.push(result.value);
+        if (result.status === 'fulfilled') {
+          if (result.value) {
+            upserts.push(result.value);
+            found++;
+          } else {
+            notFoundCodes.push(batch[index]);
+            notFound++;
+          }
         } else if (result.status === 'rejected') {
           console.error(
             `Failed to fetch language ${batch[index]}:`,
             result.reason
           );
+          rejected++;
         }
       });
       processed += batch.length;
+    }
+
+    console.log(
+      `Processed ${processed} codes: ${found} found, ${notFound} not found, ${rejected} errors`
+    );
+
+    // Cache "not found" results to avoid repeatedly querying codes that don't exist in JP
+    // Use a long TTL (90 days) for not-found entries
+    if (notFoundCodes.length > 0) {
+      const now = new Date().toISOString();
+      const notFoundCacheEntries: JpCacheRow[] = notFoundCodes.map(iso => ({
+        iso639_3: iso,
+        language_name: iso, // Use ISO as placeholder
+        bible_status: null,
+        bible_year: null,
+        nt_year: null,
+        portions_year: null,
+        has_audio_recordings: false,
+        grn_url: null,
+        last_synced_at: now,
+        updated_at: now,
+      }));
+
+      // Only cache not-found entries if they're not already in cache
+      // We'll use a special marker: if language_name === iso639_3 and all fields are null/zero,
+      // it's a "not found" entry
+      const { error: notFoundError } = await supabase
+        .from('jp_language_cache')
+        .upsert(notFoundCacheEntries, { onConflict: 'iso639_3' });
+
+      if (notFoundError) {
+        console.error(
+          `Failed to cache not-found entries: ${notFoundError.message}`
+        );
+      }
     }
 
     for (const batch of chunkArray(upserts, UPSERT_BATCH_SIZE)) {
@@ -423,6 +486,9 @@ Deno.serve(async req => {
     const response = {
       success: true,
       processed,
+      found,
+      notFound,
+      rejected,
       upserted: upserts.length,
       skipped: uniqueCodes.length - staleCodes.length,
       remaining: Math.max(staleCodes.length - codesToProcess.length, 0),
