@@ -301,8 +301,10 @@ function filterStaleCodes(
     }
 
     // Check if this is a "not found" entry (language_name === iso639_3 indicates not found)
+    // Use case-insensitive comparison for ISO codes
     const isNotFound =
-      cached.languageName === code || cached.languageName === null;
+      cached.languageName?.toLowerCase() === code.toLowerCase() ||
+      cached.languageName === null;
     const relevantThreshold = isNotFound ? notFoundThreshold : threshold;
 
     return updatedTime < relevantThreshold;
@@ -431,8 +433,8 @@ Deno.serve(async req => {
     if (notFoundCodes.length > 0) {
       const now = new Date().toISOString();
       const notFoundCacheEntries: JpCacheRow[] = notFoundCodes.map(iso => ({
-        iso639_3: iso,
-        language_name: iso, // Use ISO as placeholder
+        iso639_3: iso.toLowerCase().trim(), // Normalize ISO code
+        language_name: iso.toLowerCase().trim(), // Use normalized ISO as placeholder
         bible_status: null,
         bible_year: null,
         nt_year: null,
@@ -446,14 +448,23 @@ Deno.serve(async req => {
       // Only cache not-found entries if they're not already in cache
       // We'll use a special marker: if language_name === iso639_3 and all fields are null/zero,
       // it's a "not found" entry
-      const { error: notFoundError } = await supabase
-        .from('jp_language_cache')
-        .upsert(notFoundCacheEntries, { onConflict: 'iso639_3' });
+      try {
+        const { error: notFoundError } = await supabase
+          .from('jp_language_cache')
+          .upsert(notFoundCacheEntries, { onConflict: 'iso639_3' });
 
-      if (notFoundError) {
-        console.error(
-          `Failed to cache not-found entries: ${notFoundError.message}`
-        );
+        if (notFoundError) {
+          console.error(
+            `Failed to cache not-found entries: ${notFoundError.message}`
+          );
+        } else {
+          console.log(
+            `Cached ${notFoundCacheEntries.length} not-found entries`
+          );
+        }
+      } catch (err) {
+        console.error('Exception caching not-found entries:', err);
+        // Don't throw - continue processing even if not-found caching fails
       }
     }
 
