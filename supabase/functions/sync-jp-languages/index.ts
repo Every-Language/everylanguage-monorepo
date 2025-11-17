@@ -195,29 +195,79 @@ async function fetchLanguageFromApi(
   url.searchParams.set('ROL3', normalizedIso.toUpperCase());
   url.searchParams.set('api_key', apiKey);
 
-  const response = await fetch(url.toString(), {
-    headers: { Accept: 'application/json' },
-  });
+  try {
+    const response = await fetch(url.toString(), {
+      headers: { Accept: 'application/json' },
+    });
 
-  if (!response.ok) {
-    console.error(`JP language request failed for ${iso}: ${response.status}`);
-    return null;
-  }
+    if (!response.ok) {
+      console.error(
+        `JP language request failed for ${iso}: ${response.status}`
+      );
+      return null;
+    }
 
-  const payloadList = resolvePayloadList(await response.json());
-  if (!payloadList || payloadList.length === 0) {
-    return null;
-  }
+    const jsonData = await response.json();
 
-  const targetIso = normalizedIso.toLowerCase();
-  const matched =
-    payloadList.find(item => {
+    // Check for API error responses
+    if (
+      jsonData &&
+      typeof jsonData === 'object' &&
+      'api' in jsonData &&
+      jsonData.api &&
+      typeof jsonData.api === 'object' &&
+      'status' in jsonData.api &&
+      jsonData.api.status === 'error'
+    ) {
+      console.log(
+        `JP API returned error for ${iso}: ${JSON.stringify(jsonData.api.error || 'Unknown error')}`
+      );
+      return null;
+    }
+
+    const payloadList = resolvePayloadList(jsonData);
+    if (!payloadList || payloadList.length === 0) {
+      return null;
+    }
+
+    const targetIso = normalizedIso.toLowerCase();
+    const matched = payloadList.find(item => {
       const code = extractIsoCode(item);
       return code?.toLowerCase() === targetIso;
-    }) ?? payloadList[0];
+    });
 
-  const now = new Date().toISOString();
-  return normalizeLanguage(normalizedIso, matched, now);
+    // Only cache if we found an exact match - don't fallback to first item
+    if (!matched) {
+      console.log(`No exact match found for ISO ${iso} in JP API response`);
+      return null;
+    }
+
+    const now = new Date().toISOString();
+    const normalized = normalizeLanguage(normalizedIso, matched, now);
+
+    // Validate that we got meaningful data - don't cache if all fields are null/zero
+    // and the language name is suspicious (matches ISO code or known default)
+    if (
+      normalized.bible_status === null &&
+      normalized.bible_year === null &&
+      normalized.nt_year === null &&
+      normalized.portions_year === null &&
+      !normalized.has_audio_recordings &&
+      normalized.grn_url === null &&
+      (normalized.language_name === normalized.iso639_3 ||
+        normalized.language_name === "A'ou")
+    ) {
+      console.log(
+        `Skipping cache for ${iso} - appears to be default/empty response`
+      );
+      return null;
+    }
+
+    return normalized;
+  } catch (error) {
+    console.error(`Exception fetching JP language ${iso}:`, error);
+    return null;
+  }
 }
 
 function filterStaleCodes(
@@ -328,12 +378,17 @@ Deno.serve(async req => {
     let processed = 0;
 
     for (const batch of chunkArray(codesToProcess, FETCH_BATCH_SIZE)) {
-      const results = await Promise.all(
+      const results = await Promise.allSettled(
         batch.map(code => fetchLanguageFromApi(code, jpApiKey))
       );
-      results.forEach(record => {
-        if (record) {
-          upserts.push(record);
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+          upserts.push(result.value);
+        } else if (result.status === 'rejected') {
+          console.error(
+            `Failed to fetch language ${batch[index]}:`,
+            result.reason
+          );
         }
       });
       processed += batch.length;
@@ -349,28 +404,39 @@ Deno.serve(async req => {
       }
     }
 
+    let refreshErrorMessage: string | null = null;
+
     if (upserts.length > 0) {
-      const { error: refreshError } = await supabase.rpc(
-        'refresh_unified_bible_stats'
-      );
+      const { error: refreshError } = await supabase
+        .rpc('refresh_unified_bible_stats')
+        .catch((err: unknown) => ({
+          error: err as { message?: string },
+        }));
 
       if (refreshError) {
-        throw new Error(
-          `Unified stats refresh failed: ${refreshError.message}`
-        );
+        console.error('Unified stats refresh failed', refreshError);
+        refreshErrorMessage =
+          refreshError.message ?? 'Unknown refresh error occurred';
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        processed,
-        upserted: upserts.length,
-        skipped: uniqueCodes.length - staleCodes.length,
-        remaining: Math.max(staleCodes.length - codesToProcess.length, 0),
-      }),
-      { status: 200, headers: { 'content-type': 'application/json' } }
-    );
+    const response = {
+      success: true,
+      processed,
+      upserted: upserts.length,
+      skipped: uniqueCodes.length - staleCodes.length,
+      remaining: Math.max(staleCodes.length - codesToProcess.length, 0),
+      refresh_status: refreshErrorMessage ? 'failed' : 'succeeded',
+      refresh_error: refreshErrorMessage,
+    };
+
+    // Log summary for debugging
+    console.log('JP sync summary:', JSON.stringify(response));
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
   } catch (error) {
     console.error('JP sync error', error);
     return new Response(
