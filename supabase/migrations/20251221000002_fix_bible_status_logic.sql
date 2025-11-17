@@ -3,6 +3,11 @@
 BEGIN;
 
 
+-- Increase statement timeout for materialized view creation (5 minutes)
+SET
+  local statement_timeout = '300s';
+
+
 -- Drop and recreate the materialized view with corrected logic
 DROP MATERIALIZED VIEW IF EXISTS unified_bible_translation_stats cascade;
 
