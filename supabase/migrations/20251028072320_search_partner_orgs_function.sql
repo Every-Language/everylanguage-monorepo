@@ -38,7 +38,6 @@ BEGIN
   FROM partner_orgs po
   WHERE 
     po.is_public = true
-    AND po.deleted_at IS NULL
     AND similarity(po.name, search_query) >= similarity_threshold
   ORDER BY 
     similarity(po.name, search_query) DESC,
