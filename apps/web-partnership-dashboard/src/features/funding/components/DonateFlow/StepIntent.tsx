@@ -8,15 +8,15 @@ export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
     // Set intent
     flow.setIntent({ type: intentType });
 
-    // For unrestricted, skip entity selection and go directly to donor step (step 2)
-    // For language/region/operation, go to entity selection step (step 1)
+    // Navigate to next step
+    // For unrestricted: skip Step 1 (entity selection) and go to Step 2 (amount entry)
+    // For language/region/operation: go to Step 1 (entity selection)
     if (intentType === 'unrestricted') {
-      // Skip entity selection - go directly to donor step
-      // DonateFlow will handle skipping step 1 for unrestricted
-      flow.next(); // Go to step 1
-      flow.next(); // Then go to step 2 (donor)
+      // Skip Step 1, go directly to Step 2
+      flow.next(); // Step 0 -> Step 1
+      flow.next(); // Step 1 -> Step 2
     } else {
-      // Go to entity selection step
+      // Go to Step 1 (entity selection)
       flow.next();
     }
   };

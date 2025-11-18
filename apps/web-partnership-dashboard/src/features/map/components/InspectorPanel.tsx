@@ -4,12 +4,19 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
+import { Dialog } from '@/shared/components/ui/Dialog';
 import { type PanelConfig } from '../config/layoutTypes';
 import { type MapSelection } from '../inspector/state/inspectorStore';
 import { type LayerState } from '../sections/MapControlsSection';
 import { SectionRenderer } from './SectionRenderer';
 import { FadeSwitch } from './shared/FadeTransition';
 import { HeaderSkeleton, BodySkeleton } from './shared/Skeletons';
+import { DonateButton } from './DonateButton';
+import { DonateModal } from '@/features/funding/components/DonateFlow/DonateModal';
+import type {
+  DonationIntent,
+  SelectedEntity,
+} from '@/features/funding/state/types';
 
 interface InspectorPanelProps {
   config: PanelConfig;
@@ -31,6 +38,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   const router = useRouter();
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const selectionKey = selection ? `${selection.kind}:${selection.id}` : 'none';
+  const [donateOpen, setDonateOpen] = React.useState(false);
+  const [initialDonateState, setInitialDonateState] = React.useState<{
+    intent: DonationIntent;
+    selectedEntity: SelectedEntity;
+    step: number;
+  } | null>(null);
 
   // Fetch header data
   const regionHeader = useQuery({
@@ -177,10 +190,42 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   />
                 </div>
               ))}
+              {/* Donate button at bottom */}
+              <DonateButton
+                selection={selection}
+                onClick={({ intent, selectedEntity }) => {
+                  setInitialDonateState({
+                    intent,
+                    selectedEntity,
+                    step: 2, // Skip to amount entry step
+                  });
+                  setDonateOpen(true);
+                }}
+              />
             </div>
           </FadeSwitch>
         )}
       </div>
+
+      {/* Donate Modal */}
+      <Dialog
+        open={donateOpen}
+        onOpenChange={open => {
+          setDonateOpen(open);
+          if (!open) {
+            // Reset initial state when modal closes
+            setInitialDonateState(null);
+          }
+        }}
+      >
+        {initialDonateState && (
+          <DonateModal
+            initialIntent={initialDonateState.intent}
+            initialSelectedEntity={initialDonateState.selectedEntity}
+            initialStep={initialDonateState.step}
+          />
+        )}
+      </Dialog>
     </div>
   );
 };

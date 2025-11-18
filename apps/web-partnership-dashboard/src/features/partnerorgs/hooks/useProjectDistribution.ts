@@ -11,7 +11,7 @@ export function useProjectDistribution(
       const langQuery =
         projectId === 'all'
           ? (supabase as any)
-              .from('vw_partner_org_language_entities')
+              .from('vw_partner_org_language_entities_via_donations')
               .select('language_entity_id')
               .eq('partner_org_id', partnerOrgId!)
           : supabase
@@ -22,17 +22,30 @@ export function useProjectDistribution(
       const { data: langData } = await langQuery;
       const languageIds = langData?.map((l: any) => l.language_entity_id) || [];
 
+      // Handle empty languageIds array to avoid 400 error
+      if (languageIds.length === 0) {
+        return {
+          heatmap: [],
+          totalDownloads: 0,
+          totalListeningHours: 0,
+        };
+      }
+
       // Get heatmap data
-      const { data: heatmap } = await supabase
+      const { data: heatmap, error: heatmapError } = await supabase
         .from('vw_language_listens_heatmap')
         .select('*')
         .in('language_entity_id', languageIds);
 
+      if (heatmapError) throw heatmapError;
+
       // Get download counts from mv_language_listens_stats
-      const { data: stats } = await supabase
+      const { data: stats, error: statsError } = await supabase
         .from('mv_language_listens_stats')
-        .select('downloads, total_listened_seconds')
+        .select('language_entity_id, downloads, total_listened_seconds')
         .in('language_entity_id', languageIds);
+
+      if (statsError) throw statsError;
 
       const totalDownloads =
         (stats as any)?.reduce(
@@ -46,10 +59,41 @@ export function useProjectDistribution(
         ) || 0) / 3600
       );
 
+      // Create per-language breakdown for 'all' mode
+      const perLanguageStats = new Map<
+        string,
+        { downloads: number; listeningHours: number }
+      >();
+      if (stats && Array.isArray(stats)) {
+        for (const stat of stats as Array<{
+          language_entity_id?: string;
+          downloads?: number;
+          total_listened_seconds?: number;
+        }>) {
+          const langId = stat.language_entity_id;
+          if (langId) {
+            const existing = perLanguageStats.get(langId) || {
+              downloads: 0,
+              listeningHours: 0,
+            };
+            perLanguageStats.set(langId, {
+              downloads: existing.downloads + (stat.downloads || 0),
+              listeningHours:
+                existing.listeningHours +
+                Math.round((stat.total_listened_seconds || 0) / 3600),
+            });
+          }
+        }
+      }
+
       return {
         heatmap: heatmap || [],
         totalDownloads,
         totalListeningHours,
+        perLanguageStats:
+          projectId === 'all'
+            ? Object.fromEntries(perLanguageStats)
+            : undefined,
       };
     },
     enabled: !!(projectId && (projectId !== 'all' || partnerOrgId)),

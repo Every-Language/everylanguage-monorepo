@@ -8,7 +8,6 @@ import { useDonateFlow } from '../hooks/useDonateFlow';
 import { DonateFlow } from '../components/DonateFlow/DonateFlow';
 import { DonateInfoSection } from '../components/DonateFlow/DonateInfoSection';
 import { DonateFAQ } from '../components/DonateFlow/DonateFAQ';
-import { CartSidebar } from '../components/DonateFlow/CartSidebar';
 
 export const DonatePage: React.FC = () => {
   const searchParams = useSearchParams();
@@ -94,125 +93,19 @@ export const DonatePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Always 2-column layout: info on left, content on right */}
       <div className='flex-1 max-w-7xl w-full mx-auto px-4 py-8'>
-        {(() => {
-          // Check if we should show cart sidebar (entity selection or steps with cart)
-          const hasCart =
-            (flow.state.step === 1 &&
-              flow.state.intent?.type !== 'unrestricted') ||
-            (flow.state.step >= 2 &&
-              flow.state.step <= 4 &&
-              flow.state.selectedEntities &&
-              flow.state.selectedEntities.length > 0);
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12'>
+          {/* Left: Info Panel (information only) */}
+          <div className='lg:pr-8'>
+            <DonateInfoSection flowState={flow.state} flow={flow} />
+          </div>
 
-          const entityTypeLabel =
-            flow.state.intent?.type === 'language'
-              ? 'language'
-              : flow.state.intent?.type === 'region'
-                ? 'region'
-                : flow.state.intent?.type === 'operation'
-                  ? 'operation'
-                  : 'item';
-
-          if (hasCart) {
-            return (
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12'>
-                {/* Left: Info Panel + Step Content */}
-                <div className='space-y-8'>
-                  <DonateInfoSection flowState={flow.state} flow={flow} />
-                  <DonateFlow flow={flow} showBackButton={false} />
-                </div>
-
-                {/* Right: Cart Sidebar */}
-                <div>
-                  <div className='sticky top-4 space-y-4'>
-                    <CartSidebar
-                      selectedEntities={flow.state.selectedEntities || []}
-                      cartTotalCents={flow.state.cartTotalCents || 0}
-                      isEditable={
-                        flow.state.step === 1 &&
-                        (flow.state.selectedEntities?.length || 0) === 1
-                      }
-                      onTotalChange={newTotal => {
-                        if ((flow.state.selectedEntities?.length || 0) === 1) {
-                          flow.setCartTotalCents(newTotal);
-                          flow.setCartEdited(true);
-                        }
-                      }}
-                      onRemove={(entityId, entityType) => {
-                        flow.removeEntityFromCart(entityId, entityType);
-                      }}
-                      entityTypeLabel={entityTypeLabel}
-                    />
-                    {/* Continue button for entity selection step */}
-                    {flow.state.step === 1 && (
-                      <Button
-                        onClick={() => {
-                          const selectedEntities =
-                            flow.state.selectedEntities || [];
-                          if (selectedEntities.length === 0) return;
-
-                          const intent = flow.state.intent;
-                          if (!intent) return;
-
-                          const entityType =
-                            intent.type === 'language'
-                              ? 'language'
-                              : intent.type === 'region'
-                                ? 'region'
-                                : 'operation';
-
-                          const languageIds =
-                            entityType === 'language'
-                              ? selectedEntities.map(e => e.id)
-                              : undefined;
-                          const regionIds =
-                            entityType === 'region'
-                              ? selectedEntities.map(e => e.id)
-                              : undefined;
-                          const operationIds =
-                            entityType === 'operation'
-                              ? selectedEntities.map(e => e.id)
-                              : undefined;
-
-                          flow.setIntent({
-                            ...intent,
-                            languageEntityIds: languageIds,
-                            regionIds: regionIds,
-                            operationIds: operationIds,
-                          });
-
-                          flow.next();
-                        }}
-                        className='w-full'
-                        disabled={
-                          (flow.state.selectedEntities?.length || 0) === 0
-                        }
-                      >
-                        Continue to details
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          }
-
-          return (
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12'>
-              {/* Left: Info Panel */}
-              <div className='lg:pr-8'>
-                <DonateInfoSection flowState={flow.state} flow={flow} />
-              </div>
-
-              {/* Right: Flow Steps */}
-              <div className='lg:pl-8 max-w-2xl lg:max-w-none mx-auto w-full'>
-                <DonateFlow flow={flow} showBackButton={false} />
-              </div>
-            </div>
-          );
-        })()}
+          {/* Right: Flow Steps (all interactive content) */}
+          <div className='lg:pl-8 max-w-2xl lg:max-w-none mx-auto w-full'>
+            <DonateFlow flow={flow} showBackButton={false} />
+          </div>
+        </div>
       </div>
 
       {/* FAQ at bottom */}

@@ -1,0 +1,214 @@
+'use client';
+
+import React from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from '@/shared/components/ui/Card';
+import { Progress } from '@/shared/components/ui/Progress';
+import { CountUp } from '../components/CountUp';
+import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
+import { useProjectProgress } from '../hooks/useProjectProgress';
+import { useProjectDistribution } from '../hooks/useProjectDistribution';
+
+export const PartnerOrgOverviewPage: React.FC = () => {
+  const { orgId } = useParams<{ orgId: string }>();
+
+  const { data: projects, isLoading: projectsLoading } = usePartnerOrgProjects(
+    orgId!
+  );
+  const { data: progressData, isLoading: progressLoading } = useProjectProgress(
+    'all',
+    orgId
+  );
+  const { data: distributionData, isLoading: distributionLoading } =
+    useProjectDistribution('all', orgId);
+
+  // Get unique projects (may have multiple allocations) - ALWAYS call useMemo
+  const uniqueProjects = React.useMemo(() => {
+    if (!projects) return [];
+    const seen = new Map<string, (typeof projects)[0]>();
+    for (const project of projects) {
+      if (!seen.has(project.project_id)) {
+        seen.set(project.project_id, project);
+      }
+    }
+    return Array.from(seen.values());
+  }, [projects]);
+
+  // Calculate progress per project - ALWAYS call useMemo
+  const projectProgress = React.useMemo(() => {
+    if (!progressData || !uniqueProjects || uniqueProjects.length === 0)
+      return new Map();
+    const progressMap = new Map<string, { completed: number; total: number }>();
+
+    for (const project of uniqueProjects) {
+      const audioVersions = progressData.filter(
+        (av: any) => av.project_id === project.project_id
+      );
+      let maxCompleted = 0;
+      let totalChapters = 1189;
+
+      // Get the maximum progress across all versions (best progress)
+      for (const version of audioVersions) {
+        const summary = (version as any).audio_version_progress_summary?.[0];
+        if (summary) {
+          const completed = summary.chapters_completed || 0;
+          const total = summary.total_chapters || 1189;
+          maxCompleted = Math.max(maxCompleted, completed);
+          // Use the total from summaries (should be consistent)
+          if (totalChapters === 1189 || total !== 1189) {
+            totalChapters = total;
+          }
+        }
+      }
+
+      if (totalChapters > 0) {
+        progressMap.set(project.project_id, {
+          completed: maxCompleted,
+          total: totalChapters,
+        });
+      }
+    }
+
+    return progressMap;
+  }, [progressData, uniqueProjects]);
+
+  // Calculate distribution stats per project - ALWAYS call useMemo
+  const projectDistribution = React.useMemo(() => {
+    if (!distributionData || !uniqueProjects || uniqueProjects.length === 0)
+      return new Map();
+    const distMap = new Map<
+      string,
+      { downloads: number; listeningHours: number }
+    >();
+
+    // Use per-language stats if available (from 'all' mode)
+    if (
+      distributionData.perLanguageStats &&
+      typeof distributionData.perLanguageStats === 'object'
+    ) {
+      for (const project of uniqueProjects) {
+        const langStats = (distributionData.perLanguageStats as any)[
+          project.language_entity_id
+        ];
+        if (langStats) {
+          distMap.set(project.project_id, {
+            downloads: langStats.downloads || 0,
+            listeningHours: langStats.listeningHours || 0,
+          });
+        } else {
+          distMap.set(project.project_id, {
+            downloads: 0,
+            listeningHours: 0,
+          });
+        }
+      }
+    } else {
+      // Fallback: show zeros if no per-language breakdown
+      for (const project of uniqueProjects) {
+        distMap.set(project.project_id, {
+          downloads: 0,
+          listeningHours: 0,
+        });
+      }
+    }
+
+    return distMap;
+  }, [distributionData, uniqueProjects]);
+
+  const isLoading = projectsLoading || progressLoading || distributionLoading;
+  const _isLoading = isLoading; // Suppress unused warning if needed
+
+  if (!uniqueProjects || uniqueProjects.length === 0) {
+    return (
+      <Card className='border border-neutral-200 dark:border-neutral-800'>
+        <CardContent className='py-12 text-center text-neutral-500'>
+          No projects found for this partner organization
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className='space-y-6'>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+        {uniqueProjects.map(project => {
+          const progress = projectProgress.get(project.project_id);
+          const distribution = projectDistribution.get(project.project_id);
+
+          return (
+            <Card
+              key={project.project_id}
+              className='border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-shadow'
+            >
+              <CardHeader>
+                <CardTitle className='text-lg'>
+                  <Link
+                    href={`/partner-org/${orgId}/progress`}
+                    className='text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'
+                  >
+                    {project.language_name}
+                  </Link>
+                </CardTitle>
+                <div className='text-sm text-neutral-500'>
+                  {project.project_name}
+                </div>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                {/* Bible Progress */}
+                {progress && (
+                  <div>
+                    <div className='text-xs text-neutral-500 mb-1'>
+                      Bible Progress
+                    </div>
+                    <div className='flex items-center justify-between mb-1'>
+                      <span className='text-sm font-medium'>
+                        <CountUp value={progress.completed} /> /{' '}
+                        {progress.total} chapters
+                      </span>
+                      <span className='text-xs text-neutral-500'>
+                        {Math.round(
+                          (progress.completed / progress.total) * 100
+                        )}
+                        %
+                      </span>
+                    </div>
+                    <Progress
+                      value={(progress.completed / progress.total) * 100}
+                      className='h-2'
+                    />
+                  </div>
+                )}
+
+                {/* Distribution Stats */}
+                {distribution && (
+                  <div className='grid grid-cols-2 gap-4 pt-2 border-t border-neutral-200 dark:border-neutral-800'>
+                    <div>
+                      <div className='text-xs text-neutral-500'>Downloads</div>
+                      <div className='text-lg font-semibold'>
+                        <CountUp value={distribution.downloads} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className='text-xs text-neutral-500'>
+                        Listening Hours
+                      </div>
+                      <div className='text-lg font-semibold'>
+                        <CountUp value={distribution.listeningHours} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+};

@@ -10,11 +10,9 @@ import {
   MapControlsSection,
   type LayerState,
 } from '../sections/MapControlsSection';
-import { JPGospelAccessSection } from '../sections/JPGospelAccessSection';
 import { JPPeopleGroupsSection } from '../sections/JPPeopleGroupsSection';
 import { JPCountryStatsSection } from '../sections/JPCountryStatsSection';
 import { JPLanguageStatsSection } from '../sections/JPLanguageStatsSection';
-import { JPResourcesSection } from '../sections/JPResourcesSection';
 import { GRNLanguageSampleSection } from '../sections/GRNLanguageSampleSection';
 import { GRNGospelResourcesSection } from '../sections/GRNGospelResourcesSection';
 import { useLanguageEntity } from '../hooks/useLanguageEntity';
@@ -29,11 +27,9 @@ const SECTION_TITLES: Record<SectionType, string> = {
   'bible-progress': 'Bible Progress',
   'bible-listening': 'Bible Listening',
   'map-controls': 'Map Controls',
-  'jp-gospel-access': 'Gospel Access',
   'jp-people-groups': 'People Groups',
   'jp-country-stats': 'Country Statistics',
   'jp-language-stats': 'Language Statistics',
-  'jp-resources': 'Resources',
   'grn-language-sample': 'Language Sample',
   'grn-gospel-resources': 'Gospel Resources',
 };
@@ -213,19 +209,6 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
       }
       return null;
 
-    case 'jp-gospel-access':
-      if (selection.kind === 'language_entity') {
-        return renderSection(
-          <JPGospelAccessSection type='language' entityId={selection.id} />
-        );
-      }
-      if (selection.kind === 'region') {
-        return renderSection(
-          <JPGospelAccessSection type='region' entityId={selection.id} />
-        );
-      }
-      return null;
-
     case 'jp-people-groups':
       if (selection.kind === 'language_entity') {
         return renderSection(
@@ -251,19 +234,6 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
       if (selection.kind === 'language_entity') {
         return renderSection(
           <JPLanguageStatsSection entityId={selection.id} />
-        );
-      }
-      return null;
-
-    case 'jp-resources':
-      if (selection.kind === 'language_entity') {
-        return renderSection(
-          <JPResourcesSection type='language' entityId={selection.id} />
-        );
-      }
-      if (selection.kind === 'region') {
-        return renderSection(
-          <JPResourcesSection type='region' entityId={selection.id} />
         );
       }
       return null;

@@ -49,21 +49,57 @@ export async function searchPartnerOrgs(
 }
 
 /**
- * Fetch languages available for donation from language_funding table
- * Returns languages with funding_status 'available' or 'in_progress'
+ * Fetch partner organizations paginated in alphabetical order
+ * Used when there's no search query to display all available orgs
+ */
+export async function fetchPartnerOrgsPaginated(
+  limit: number,
+  offset: number
+): Promise<{
+  results: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+  }>;
+}> {
+  const { data, error } = await (supabase as any)
+    .from('partner_orgs')
+    .select('id, name, description')
+    .eq('is_public', true)
+    .order('name', { ascending: true })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error('Error fetching partner orgs:', error);
+    throw new Error(error.message || 'Failed to fetch organizations');
+  }
+
+  return {
+    results: (data || []).map((org: any) => ({
+      id: org.id,
+      name: org.name,
+      description: org.description,
+    })),
+  };
+}
+
+/**
+ * Fetch languages available for donation from language_funding_remaining view
+ * Returns languages with funding_status 'available' or 'in_progress' and remaining_budget_cents > 0
  */
 export async function fetchLanguagesForDonation(): Promise<
   EntityForDonation[]
 > {
   // Use explicit foreign key relationship syntax for PostgREST
   const { data, error } = await (supabase as any)
-    .from('language_funding')
+    .from('language_funding_remaining')
     .select(
-      'language_entity_id, budget_cents, language_entities!language_entity_id(id, name)'
+      'language_entity_id, remaining_budget_cents, language_entities!language_entity_id(id, name)'
     )
     .in('funding_status', ['available', 'in_progress'])
+    .gt('remaining_budget_cents', 0)
     .is('deleted_at', null)
-    .order('budget_cents', { ascending: false, nullsLast: true });
+    .order('remaining_budget_cents', { ascending: false });
 
   if (error) {
     console.error('Error fetching languages:', error);
@@ -81,13 +117,13 @@ export async function fetchLanguagesForDonation(): Promise<
     sample: data?.[0],
   });
 
-  // Include languages even if budget_cents is null (use 0 as default)
+  // Filter out languages without entity data and map to response format
   const result = (data || [])
     .filter((row: any) => row.language_entities) // Only filter out if language_entities is missing
     .map((row: any) => ({
       id: row.language_entity_id,
       name: row.language_entities.name,
-      budgetCents: row.budget_cents || 0, // Use 0 if budget not set
+      budgetCents: row.remaining_budget_cents || 0, // Use remaining budget
     }));
 
   console.log('Processed languages:', {
@@ -100,27 +136,94 @@ export async function fetchLanguagesForDonation(): Promise<
 
 /**
  * Fetch regions available for donation from region_funding view
- * Returns regions with status indicating available/in_progress
+ * Returns regions with status indicating available/in_progress and remaining_budget_cents > 0
  */
 export async function fetchRegionsForDonation(): Promise<EntityForDonation[]> {
   const { data, error } = await (supabase as any)
     .from('region_funding')
-    .select('region_id, budget_cents, region_name')
+    .select('region_id, remaining_budget_cents, region_name')
     .in('funding_status', ['available', 'in_progress'])
-    .gt('budget_cents', 0)
-    .order('budget_cents', { ascending: false });
+    .gt('remaining_budget_cents', 0)
+    .order('remaining_budget_cents', { ascending: false });
 
   if (error) {
     throw new Error(error.message || 'Failed to fetch regions');
   }
 
   return (data || [])
-    .filter((row: any) => row.region_name && row.budget_cents)
+    .filter((row: any) => row.region_name && row.remaining_budget_cents)
     .map((row: any) => ({
       id: row.region_id,
       name: row.region_name,
-      budgetCents: row.budget_cents,
+      budgetCents: row.remaining_budget_cents,
     }));
+}
+
+/**
+ * Check if a language entity has remaining budget
+ */
+export async function checkLanguageRemainingBudget(
+  languageEntityId: string
+): Promise<{
+  hasBudget: boolean;
+  remainingBudgetCents: number;
+  name: string;
+} | null> {
+  const { data, error } = await (supabase as any)
+    .from('language_funding_remaining')
+    .select(
+      'language_entity_id, remaining_budget_cents, language_entities!language_entity_id(id, name)'
+    )
+    .eq('language_entity_id', languageEntityId)
+    .gt('remaining_budget_cents', 0)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking language remaining budget:', error);
+    return null;
+  }
+
+  if (!data || !data.language_entities) {
+    return null;
+  }
+
+  return {
+    hasBudget: true,
+    remainingBudgetCents: data.remaining_budget_cents || 0,
+    name: data.language_entities.name,
+  };
+}
+
+/**
+ * Check if a region has remaining budget
+ */
+export async function checkRegionRemainingBudget(regionId: string): Promise<{
+  hasBudget: boolean;
+  remainingBudgetCents: number;
+  name: string;
+} | null> {
+  const { data, error } = await (supabase as any)
+    .from('region_funding')
+    .select('region_id, remaining_budget_cents, region_name')
+    .eq('region_id', regionId)
+    .gt('remaining_budget_cents', 0)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking region remaining budget:', error);
+    return null;
+  }
+
+  if (!data || !data.region_name) {
+    return null;
+  }
+
+  return {
+    hasBudget: true,
+    remainingBudgetCents: data.remaining_budget_cents || 0,
+    name: data.region_name,
+  };
 }
 
 /**
@@ -192,21 +295,12 @@ export async function createDonationCheckout(payload: {
   intent: {
     type: 'language' | 'region' | 'operation' | 'unrestricted';
     languageEntityId?: string;
-    languageEntityIds?: string[];
     regionId?: string;
-    regionIds?: string[];
     operationId?: string;
-    operationIds?: string[];
   };
   paymentMethod: 'card' | 'bank_transfer';
   amountCents: number;
   isRecurring: boolean;
-  donationMode?: 'adoption' | 'contribution';
-  selectedEntities?: Array<{
-    id: string;
-    type: 'language' | 'region' | 'operation';
-    budgetCents: number;
-  }>;
 }) {
   const base = (process.env.NEXT_PUBLIC_API_BASE_URL || '/api').replace(
     /\/$/,

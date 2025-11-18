@@ -142,10 +142,18 @@ export class AuthService {
   async signUp(email: string, password: string, userData?: Partial<DbUser>) {
     try {
       const supabase = getSupabaseClient();
+
+      // Get the current origin for email redirect
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/api/auth/confirm`
+          : undefined;
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo,
           data: userData,
         },
       });
@@ -157,6 +165,38 @@ export class AuthService {
       return data;
     } catch (error) {
       console.error('Error signing up:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Resend email confirmation
+   */
+  async resendConfirmationEmail(email: string) {
+    try {
+      const supabase = getSupabaseClient();
+
+      // Get the current origin for email redirect
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/api/auth/confirm`
+          : undefined;
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error resending confirmation email:', error);
       throw error;
     }
   }

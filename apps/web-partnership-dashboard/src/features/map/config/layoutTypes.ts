@@ -11,11 +11,9 @@ export type SectionType =
   | 'bible-progress'
   | 'bible-listening'
   | 'map-controls'
-  | 'jp-gospel-access'
   | 'jp-people-groups'
   | 'jp-country-stats'
   | 'jp-language-stats'
-  | 'jp-resources'
   | 'grn-language-sample'
   | 'grn-gospel-resources';
 

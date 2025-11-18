@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   useJPCountryData,
   useHasJPCountryData,
@@ -22,6 +22,84 @@ export const JPCountryStatsSection: React.FC<JPCountryStatsSectionProps> = ({
 }) => {
   const hasCountryData = useHasJPCountryData(entityId);
   const { countryStats, isLoading, error } = useJPCountryData(entityId);
+
+  // Religious breakdown data - must be called before early returns
+  const religiousData = useMemo(() => {
+    if (!countryStats) return [];
+    return [
+      {
+        name: 'Christian',
+        percent: countryStats.PercentChristianPC,
+        population: countryStats.PCChristianity,
+        color: '#3b82f6', // blue
+      },
+      {
+        name: 'Islam',
+        percent: countryStats.PercentIslam,
+        population: countryStats.PCIslam,
+        color: '#10b981', // green
+      },
+      {
+        name: 'Buddhism',
+        percent: countryStats.PercentBuddhism,
+        population: countryStats.PCBuddhism,
+        color: '#f59e0b', // amber
+      },
+      {
+        name: 'Hinduism',
+        percent: countryStats.PercentHinduism,
+        population: countryStats.PCHinduism,
+        color: '#ef4444', // red
+      },
+      {
+        name: 'Ethnic Religions',
+        percent: countryStats.PercentEthnicReligions,
+        population: countryStats.PCEthnicReligions,
+        color: '#8b5cf6', // purple
+      },
+      {
+        name: 'Non-Religious',
+        percent: countryStats.PercentNonReligious,
+        population: countryStats.PCNonReligious,
+        color: '#6b7280', // gray
+      },
+      {
+        name: 'Other',
+        percent: countryStats.PercentOtherSmall,
+        population: countryStats.PCOtherSmall,
+        color: '#ec4899', // pink
+      },
+    ]
+      .filter(item => item.percent > 0)
+      .sort((a, b) => b.percent - a.percent);
+  }, [countryStats]);
+
+  // Calculate pie chart segments - must be called before early returns
+  const pieChartData = useMemo(() => {
+    if (religiousData.length === 0) return [];
+    const total = religiousData.reduce((sum, item) => sum + item.percent, 0);
+    if (total === 0) return [];
+
+    let currentAngle = -90; // Start at top
+    return religiousData.map(item => {
+      const angle = (item.percent / total) * 360;
+      const startAngle = currentAngle;
+      currentAngle += angle;
+
+      const x1 = 50 + 50 * Math.cos((startAngle * Math.PI) / 180);
+      const y1 = 50 + 50 * Math.sin((startAngle * Math.PI) / 180);
+      const x2 = 50 + 50 * Math.cos((currentAngle * Math.PI) / 180);
+      const y2 = 50 + 50 * Math.sin((currentAngle * Math.PI) / 180);
+      const largeArcFlag = angle > 180 ? 1 : 0;
+
+      return {
+        ...item,
+        path: `M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArcFlag} 1 ${x2} ${y2} Z`,
+        startAngle,
+        angle,
+      };
+    });
+  }, [religiousData]);
 
   // Don't show section if no external ID mapping exists
   if (!hasCountryData) {
@@ -51,47 +129,6 @@ export const JPCountryStatsSection: React.FC<JPCountryStatsSectionProps> = ({
       </div>
     );
   }
-
-  // Religious breakdown data
-  const religiousData = [
-    {
-      name: 'Christian',
-      percent: countryStats.PercentChristianPC,
-      population: countryStats.PCChristianity,
-    },
-    {
-      name: 'Islam',
-      percent: countryStats.PercentIslam,
-      population: countryStats.PCIslam,
-    },
-    {
-      name: 'Buddhism',
-      percent: countryStats.PercentBuddhism,
-      population: countryStats.PCBuddhism,
-    },
-    {
-      name: 'Hinduism',
-      percent: countryStats.PercentHinduism,
-      population: countryStats.PCHinduism,
-    },
-    {
-      name: 'Ethnic Religions',
-      percent: countryStats.PercentEthnicReligions,
-      population: countryStats.PCEthnicReligions,
-    },
-    {
-      name: 'Non-Religious',
-      percent: countryStats.PercentNonReligious,
-      population: countryStats.PCNonReligious,
-    },
-    {
-      name: 'Other',
-      percent: countryStats.PercentOtherSmall,
-      population: countryStats.PCOtherSmall,
-    },
-  ]
-    .filter(item => item.percent > 0)
-    .sort((a, b) => b.percent - a.percent);
 
   return (
     <div className='space-y-4'>
@@ -155,95 +192,49 @@ export const JPCountryStatsSection: React.FC<JPCountryStatsSectionProps> = ({
         </div>
       </div>
 
-      {/* Religious Breakdown */}
+      {/* Religious Breakdown - Pie Chart */}
       <div>
-        <div className='font-semibold text-sm mb-2'>Religious Composition</div>
-        <div className='space-y-2'>
-          {religiousData.map(religion => (
-            <div key={religion.name}>
-              <div className='flex justify-between text-sm mb-1'>
-                <span>{religion.name}</span>
-                <span className='font-medium'>
-                  {religion.percent != null
-                    ? `${religion.percent.toFixed(1)}%`
-                    : 'N/A'}
-                </span>
-              </div>
-              <div className='w-full bg-neutral-200 dark:bg-neutral-800 rounded-full h-2'>
-                <div
-                  className='bg-secondary-600 dark:bg-secondary-500 h-2 rounded-full transition-all'
-                  style={{ width: `${religion.percent}%` }}
+        <div className='font-semibold text-sm mb-3'>Religious Composition</div>
+        <div className='flex items-start gap-4'>
+          {/* Pie Chart */}
+          <div className='flex-shrink-0'>
+            <svg
+              viewBox='0 0 100 100'
+              className='w-32 h-32'
+              style={{ transform: 'rotate(-90deg)' }}
+            >
+              {pieChartData.map((segment, index) => (
+                <path
+                  key={index}
+                  d={segment.path}
+                  fill={segment.color}
+                  stroke='white'
+                  strokeWidth='0.5'
                 />
-              </div>
-              {religion.population != null && (
-                <div className='text-xs text-neutral-500 mt-0.5'>
-                  {religion.population.toLocaleString()} people
+              ))}
+            </svg>
+          </div>
+          {/* Legend */}
+          <div className='flex-1 space-y-1.5'>
+            {religiousData.map(religion => (
+              <div key={religion.name} className='flex items-center gap-2'>
+                <div
+                  className='w-3 h-3 rounded-full flex-shrink-0'
+                  style={{ backgroundColor: religion.color }}
+                />
+                <div className='flex-1 flex justify-between text-xs'>
+                  <span>{religion.name}</span>
+                  <span className='font-medium'>
+                    {religion.percent != null
+                      ? `${religion.percent.toFixed(1)}%`
+                      : 'N/A'}
+                  </span>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Economic & Development Info */}
-      <div>
-        <div className='font-semibold text-sm mb-2'>Development Indicators</div>
-        <div className='text-sm space-y-1'>
-          {countryStats.WBIncome && (
-            <div className='flex justify-between'>
-              <span className='text-neutral-500'>Income Level:</span>
-              <span className='font-medium'>{countryStats.WBIncome}</span>
-            </div>
-          )}
-          {countryStats.InternetUsage != null && (
-            <div className='flex justify-between'>
-              <span className='text-neutral-500'>Internet Usage:</span>
-              <span className='font-medium'>
-                {countryStats.InternetUsage.toFixed(1)}%
-              </span>
-            </div>
-          )}
-          {countryStats.PhoneDensity != null && (
-            <div className='flex justify-between'>
-              <span className='text-neutral-500'>Phone Density:</span>
-              <span className='font-medium'>
-                {countryStats.PhoneDensity.toFixed(0)}/100
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Security Level */}
-      {countryStats.SecurityLevel && (
-        <div>
-          <div className='font-semibold text-sm mb-2'>Access & Security</div>
-          <div className='flex items-center gap-2'>
-            <div className='flex-1'>
-              <div className='text-xs text-neutral-500 mb-1'>
-                Security Level
               </div>
-              <div className='w-full bg-neutral-200 dark:bg-neutral-800 rounded-full h-2'>
-                <div
-                  className={`h-2 rounded-full transition-all ${
-                    countryStats.SecurityLevel <= 2
-                      ? 'bg-success-600'
-                      : countryStats.SecurityLevel === 3
-                        ? 'bg-warning-500'
-                        : 'bg-error-600'
-                  }`}
-                  style={{
-                    width: `${(countryStats.SecurityLevel / 5) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
-            <div className='text-lg font-bold text-neutral-700'>
-              {countryStats.SecurityLevel}/5
-            </div>
+            ))}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Data Source Attribution */}
       <div className='text-xs text-neutral-400 pt-2 border-t border-neutral-200 dark:border-neutral-800'>

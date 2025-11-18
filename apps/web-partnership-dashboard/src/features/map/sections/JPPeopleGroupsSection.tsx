@@ -1,11 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import {
-  useJPCountryData,
-  useJPLanguageData,
+  useJPCountryStats,
+  useJPLanguageStats,
+  useJPPeopleGroupsByCountryPaginated,
+  useJPPeopleGroupsByLanguagePaginated,
   useHasJPCountryData,
   useHasJPLanguageData,
 } from '../hooks/useJoshuaProject';
-import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
+import {
+  ChevronUpIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from '@heroicons/react/24/solid';
 
 // Helper function to safely convert to number
 function safeToNumber(value: unknown): number | null {
@@ -53,62 +60,64 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
   const hasCountryData = useHasJPCountryData(isRegion ? entityId : null);
   const hasLanguageData = useHasJPLanguageData(!isRegion ? entityId : null);
 
-  const countryData = useJPCountryData(isRegion ? entityId : null);
-  const languageData = useJPLanguageData(!isRegion ? entityId : null);
+  // Fetch stats for total count
+  const { data: countryStats } = useJPCountryStats(isRegion ? entityId : null);
+  const { data: languageStats } = useJPLanguageStats(
+    !isRegion ? entityId : null
+  );
 
-  const peopleGroups = isRegion
-    ? countryData.peopleGroups
-    : languageData.peopleGroups;
-  const isLoading = isRegion ? countryData.isLoading : languageData.isLoading;
-  const error = isRegion ? countryData.error : languageData.error;
-  const hasAnyData = isRegion ? hasCountryData : hasLanguageData;
-
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>('population');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [showAll, setShowAll] = useState(false);
+  const pageSize = 20;
 
-  // Sort people groups - useMemo must be called unconditionally
-  const sortedGroups = useMemo(() => {
-    if (!peopleGroups || peopleGroups.length === 0) {
-      return [];
+  // Map sort field to API sort field
+  const apiSortField = useMemo(() => {
+    switch (sortField) {
+      case 'name':
+        return 'PeopNameInCountry';
+      case 'population':
+        return 'Population';
+      case 'scale':
+        return 'JPScale';
+      case 'evangelical':
+        return 'PercentEvangelical';
+      default:
+        return 'Population';
     }
+  }, [sortField]);
 
-    const groups = [...peopleGroups];
+  // Fetch paginated people groups - hooks must be called unconditionally
+  const countryPeopleGroups = useJPPeopleGroupsByCountryPaginated(
+    isRegion ? entityId : null,
+    currentPage,
+    pageSize,
+    apiSortField,
+    sortDirection
+  );
+  const languagePeopleGroups = useJPPeopleGroupsByLanguagePaginated(
+    !isRegion ? entityId : null,
+    currentPage,
+    pageSize,
+    apiSortField,
+    sortDirection
+  );
 
-    groups.sort((a, b) => {
-      let aVal: number | string = 0;
-      let bVal: number | string = 0;
+  const {
+    data: peopleGroups = [],
+    isLoading: peopleGroupsLoading,
+    error: peopleGroupsError,
+  } = isRegion ? countryPeopleGroups : languagePeopleGroups;
 
-      switch (sortField) {
-        case 'name':
-          aVal = a.PeopNameInCountry || '';
-          bVal = b.PeopNameInCountry || '';
-          break;
-        case 'population':
-          aVal = safeToNumber(a.Population) ?? 0;
-          bVal = safeToNumber(b.Population) ?? 0;
-          break;
-        case 'scale':
-          aVal = safeToNumber(a.JPScale) ?? 0;
-          bVal = safeToNumber(b.JPScale) ?? 0;
-          break;
-        case 'evangelical':
-          aVal = safeToNumber(a.PercentEvangelical) ?? 0;
-          bVal = safeToNumber(b.PercentEvangelical) ?? 0;
-          break;
-      }
+  const hasAnyData = isRegion ? hasCountryData : hasLanguageData;
+  const totalPeopleGroups = isRegion
+    ? (countryStats?.CntPeoples ?? 0)
+    : (languageStats?.NbrPGICs ?? languageStats?.Peoples ?? 0);
+  const totalPages = Math.ceil(totalPeopleGroups / pageSize);
 
-      if (typeof aVal === 'string') {
-        const comparison = aVal.localeCompare(bVal as string);
-        return sortDirection === 'asc' ? comparison : -comparison;
-      } else {
-        const comparison = aVal - (bVal as number);
-        return sortDirection === 'asc' ? comparison : -comparison;
-      }
-    });
-
-    return groups;
-  }, [peopleGroups, sortField, sortDirection]);
+  // People groups are already sorted by API, but we keep this for client-side fallback
+  const sortedGroups = peopleGroups;
 
   // Early returns AFTER all hooks
   // Don't show section if no external ID mapping exists
@@ -116,7 +125,7 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
     return null;
   }
 
-  if (isLoading) {
+  if (peopleGroupsLoading) {
     return (
       <div className='space-y-2'>
         {[...Array(3)].map((_, i) => (
@@ -126,7 +135,7 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
     );
   }
 
-  if (error || !peopleGroups || peopleGroups.length === 0) {
+  if (peopleGroupsError || !peopleGroups || peopleGroups.length === 0) {
     return (
       <div className='text-sm text-neutral-500'>
         No people group data available
@@ -134,12 +143,7 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
     );
   }
 
-  // Pagination
-  const displayLimit = 10;
-  const displayedGroups = showAll
-    ? sortedGroups
-    : sortedGroups.slice(0, displayLimit);
-  const hasMore = sortedGroups.length > displayLimit;
+  const displayedGroups = sortedGroups;
 
   // Handle sort
   const handleSort = (field: SortField) => {
@@ -148,6 +152,8 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
     } else {
       setSortField(field);
       setSortDirection('desc');
+      // Reset to first page when changing sort field
+      setCurrentPage(1);
     }
   };
 
@@ -184,11 +190,36 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
 
   return (
     <div className='space-y-3'>
-      {/* Summary */}
+      {/* Summary and Pagination Controls */}
       <div className='flex items-center justify-between'>
         <div className='font-semibold text-sm'>
-          People Groups ({sortedGroups.length})
+          People Groups (
+          {totalPeopleGroups > 0 ? totalPeopleGroups : sortedGroups.length}{' '}
+          total)
         </div>
+        {totalPages > 1 && (
+          <div className='flex items-center gap-2'>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1 || peopleGroupsLoading}
+              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'
+            >
+              <ChevronLeftIcon className='w-5 h-5' />
+            </button>
+            <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[80px] text-center'>
+              {totalPages > 0
+                ? `Page ${currentPage} of ${totalPages}`
+                : 'No data'}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages || peopleGroupsLoading}
+              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'
+            >
+              <ChevronRightIcon className='w-5 h-5' />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Table Header - Sorting Controls */}
@@ -270,16 +301,6 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
           </div>
         ))}
       </div>
-
-      {/* Show More/Less Button */}
-      {hasMore && (
-        <button
-          onClick={() => setShowAll(!showAll)}
-          className='w-full text-center text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 font-medium py-2 border border-neutral-200 dark:border-neutral-800 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors'
-        >
-          {showAll ? 'Show Less' : `Show All (${sortedGroups.length})`}
-        </button>
-      )}
 
       {/* Data Source Attribution */}
       <div className='text-xs text-neutral-400 pt-2 border-t border-neutral-200 dark:border-neutral-800'>

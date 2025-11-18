@@ -126,10 +126,11 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
       requestAnimationFrame(updateScrollMargin);
     });
 
-    if (scrollRef.current) {
-      resizeObserver.observe(scrollRef.current);
+    const scrollElement = scrollRef.current;
+    if (scrollElement) {
+      resizeObserver.observe(scrollElement);
       // Also listen to scroll events to remeasure
-      scrollRef.current.addEventListener('scroll', updateScrollMargin, {
+      scrollElement.addEventListener('scroll', updateScrollMargin, {
         passive: true,
       });
     }
@@ -140,8 +141,8 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
     return () => {
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
-      if (scrollRef.current) {
-        scrollRef.current.removeEventListener('scroll', updateScrollMargin);
+      if (scrollElement) {
+        scrollElement.removeEventListener('scroll', updateScrollMargin);
       }
     };
   }, [scrollRef, filtered.length, query]);

@@ -32,14 +32,10 @@ export interface SelectedEntity {
 
 export interface DonationIntent {
   type: DonationIntentType;
-  // Support multiple entities for adoption mode
-  languageEntityIds?: string[]; // For 'language' type
-  regionIds?: string[]; // For 'region' type
-  operationIds?: string[]; // For 'operation' type
-  // Legacy single entity support (for backward compatibility)
-  languageEntityId?: string;
-  regionId?: string;
-  operationId?: string;
+  // Single entity IDs (no longer support multiple)
+  languageEntityId?: string; // For 'language' type
+  regionId?: string; // For 'region' type
+  operationId?: string; // For 'operation' type
   // Display name for UI
   displayName?: string;
 }
@@ -56,10 +52,8 @@ export interface DonateFlowState {
   intent?: DonationIntent;
   paymentMethod?: 'card' | 'bank_transfer';
   amount?: AmountSelection;
-  // Cart state for entity selection
-  selectedEntities?: SelectedEntity[];
-  cartTotalCents?: number; // Editable total
-  cartEdited?: boolean; // Tracks if user edited cart
+  // Selected entity for display purposes (name, budget, etc.)
+  selectedEntity?: SelectedEntity;
   // Results from checkout
   clientSecret?: string | null;
   donationId?: string;

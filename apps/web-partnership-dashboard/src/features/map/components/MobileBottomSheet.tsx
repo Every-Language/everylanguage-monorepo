@@ -4,11 +4,18 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
+import { Dialog } from '@/shared/components/ui/Dialog';
 import { type SectionType } from '../config/layoutTypes';
 import { type MapSelection } from '../inspector/state/inspectorStore';
 import { SectionRenderer } from './SectionRenderer';
 import { FadeSwitch } from './shared/FadeTransition';
 import { HeaderSkeleton, BodySkeleton } from './shared/Skeletons';
+import { DonateButton } from './DonateButton';
+import { DonateModal } from '@/features/funding/components/DonateFlow/DonateModal';
+import type {
+  DonationIntent,
+  SelectedEntity,
+} from '@/features/funding/state/types';
 
 interface MobileBottomSheetProps {
   sections: SectionType[];
@@ -50,6 +57,12 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const handleRef = React.useRef<HTMLDivElement | null>(null);
   const headerRef = React.useRef<HTMLDivElement | null>(null);
+  const [donateOpen, setDonateOpen] = React.useState(false);
+  const [initialDonateState, setInitialDonateState] = React.useState<{
+    intent: DonationIntent;
+    selectedEntity: SelectedEntity;
+    step: number;
+  } | null>(null);
 
   // Drag state
   const dragState = React.useRef({
@@ -459,11 +472,43 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                     />
                   </div>
                 ))}
+                {/* Donate button at bottom */}
+                <DonateButton
+                  selection={selection}
+                  onClick={({ intent, selectedEntity }) => {
+                    setInitialDonateState({
+                      intent,
+                      selectedEntity,
+                      step: 2, // Skip to amount entry step
+                    });
+                    setDonateOpen(true);
+                  }}
+                />
               </div>
             </FadeSwitch>
           )}
         </div>
       </div>
+
+      {/* Donate Modal */}
+      <Dialog
+        open={donateOpen}
+        onOpenChange={open => {
+          setDonateOpen(open);
+          if (!open) {
+            // Reset initial state when modal closes
+            setInitialDonateState(null);
+          }
+        }}
+      >
+        {initialDonateState && (
+          <DonateModal
+            initialIntent={initialDonateState.intent}
+            initialSelectedEntity={initialDonateState.selectedEntity}
+            initialStep={initialDonateState.step}
+          />
+        )}
+      </Dialog>
     </>
   );
 };

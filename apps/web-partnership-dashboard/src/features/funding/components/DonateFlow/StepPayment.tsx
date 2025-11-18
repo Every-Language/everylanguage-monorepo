@@ -137,14 +137,15 @@ const Inner: React.FC<{ flow: DonateFlow; clientSecret: string | null }> = ({
     );
   }
 
-  // Card payment UI
+  // Card payment UI - Hide placeholder text since we use floating labels
+  // Stripe Elements don't support conditional placeholder styling, so we hide it entirely
   const elementStyle = {
     base: {
       color: isDarkMode ? '#ffffff' : '#18181b',
       fontFamily: 'Inter, system-ui, sans-serif',
       fontSize: '16px',
       '::placeholder': {
-        color: isDarkMode ? '#737373' : '#a3a3a3',
+        color: 'transparent', // Hide placeholder - floating labels provide context instead
       },
     },
     invalid: {
@@ -254,7 +255,7 @@ export const StepPayment: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  // OPTIMIZATION: Use pre-created checkout from StepAmountAndPayment
+  // OPTIMIZATION: Use pre-created checkout from StepReviewAndPayment
   // If checkout doesn't exist yet, wait for it or show error
   React.useEffect(() => {
     const { clientSecret, donor, donorType, intent, paymentMethod, amount } =
@@ -277,7 +278,7 @@ export const StepPayment: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
     }
 
     // Otherwise, wait a bit more for checkout to be created
-    // (it should have been started in StepAmountAndPayment)
+    // (it should have been started in StepReviewAndPayment)
     const timeout = setTimeout(() => {
       if (!flow.state.clientSecret) {
         setError(

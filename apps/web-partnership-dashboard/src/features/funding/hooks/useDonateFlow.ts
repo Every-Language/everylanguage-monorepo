@@ -18,8 +18,8 @@ export function useDonateFlow() {
     setState(s => ({ ...s, donorType }));
   const setIntent = (intent: DonationIntent) => {
     setState(s => {
-      // Clear cart if intent type changes (language/region/operation switching)
-      const shouldClearCart =
+      // Clear selected entity if intent type changes
+      const shouldClearEntity =
         s.intent?.type !== intent.type &&
         (intent.type === 'language' ||
           intent.type === 'region' ||
@@ -28,14 +28,8 @@ export function useDonateFlow() {
       return {
         ...s,
         intent,
-        // Clear cart-related state when switching between language/region/operation
-        ...(shouldClearCart
-          ? {
-              selectedEntities: undefined,
-              cartTotalCents: undefined,
-              cartEdited: false,
-            }
-          : {}),
+        // Clear selected entity when switching between language/region/operation
+        ...(shouldClearEntity ? { selectedEntity: undefined } : {}),
       };
     });
   };
@@ -56,58 +50,25 @@ export function useDonateFlow() {
   const setPaymentIntentId = (paymentIntentId: string | undefined) =>
     setState(s => ({ ...s, paymentIntentId }));
 
-  // Cart management
-  const setSelectedEntities = (entities: SelectedEntity[]) =>
-    setState(s => ({ ...s, selectedEntities: entities }));
-  const setCartTotalCents = (totalCents: number) =>
-    setState(s => ({ ...s, cartTotalCents: totalCents }));
-  const setCartEdited = (edited: boolean) =>
-    setState(s => ({ ...s, cartEdited: edited }));
-
-  // Add entity to cart
-  const addEntityToCart = (entity: SelectedEntity) => {
-    setState(s => {
-      const existing = s.selectedEntities || [];
-      // Check if already in cart
-      if (existing.some(e => e.id === entity.id && e.type === entity.type)) {
-        return s;
-      }
-      const updated = [...existing, entity];
-      // Recalculate cart total as sum of budgets
-      const newTotal = updated.reduce((sum, e) => sum + e.budgetCents, 0);
-      return {
-        ...s,
-        selectedEntities: updated,
-        cartTotalCents: newTotal,
-        cartEdited: false, // Reset edited flag when adding
-      };
-    });
-  };
-
-  // Remove entity from cart
-  const removeEntityFromCart = (
-    entityId: string,
-    entityType: 'language' | 'region' | 'operation'
-  ) => {
-    setState(s => {
-      const existing = s.selectedEntities || [];
-      const updated = existing.filter(
-        e => !(e.id === entityId && e.type === entityType)
-      );
-      // Recalculate cart total
-      const newTotal = updated.reduce((sum, e) => sum + e.budgetCents, 0);
-      return {
-        ...s,
-        selectedEntities: updated,
-        cartTotalCents: newTotal,
-        cartEdited: false, // Reset edited flag when removing
-      };
-    });
-  };
+  // Selected entity management
+  const setSelectedEntity = (entity: SelectedEntity | undefined) =>
+    setState(s => ({ ...s, selectedEntity: entity }));
 
   const next = () => setState(s => ({ ...s, step: s.step + 1 }));
   const back = () => setState(s => ({ ...s, step: Math.max(0, s.step - 1) }));
   const reset = () => setState({ step: 0 });
+
+  const initializeWithState = (
+    intent: DonationIntent,
+    selectedEntity?: SelectedEntity,
+    step: number = 0
+  ) => {
+    setState({
+      step,
+      intent,
+      selectedEntity,
+    });
+  };
 
   return {
     state,
@@ -121,14 +82,11 @@ export function useDonateFlow() {
     setCustomerId,
     setPartnerOrgId,
     setPaymentIntentId,
-    setSelectedEntities,
-    setCartTotalCents,
-    setCartEdited,
-    addEntityToCart,
-    removeEntityFromCart,
+    setSelectedEntity,
     next,
     back,
     reset,
+    initializeWithState,
   };
 }
 

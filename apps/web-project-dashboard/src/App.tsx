@@ -54,6 +54,11 @@ const UsersPage = React.lazy(() =>
     default: module.UsersPage,
   }))
 );
+const ProjectUpdatesPage = React.lazy(() =>
+  import('./features/project-updates').then(module => ({
+    default: module.ProjectUpdatesPage,
+  }))
+);
 
 const MyProfilePage = React.lazy(() =>
   import('./app/pages/MyProfilePage').then(module => ({
@@ -171,6 +176,16 @@ function App() {
                     <ProtectedLayoutRoute>
                       <Suspense fallback={<PageLoadingFallback />}>
                         <UsersPage />
+                      </Suspense>
+                    </ProtectedLayoutRoute>
+                  }
+                />
+                <Route
+                  path='/project-updates'
+                  element={
+                    <ProtectedLayoutRoute>
+                      <Suspense fallback={<PageLoadingFallback />}>
+                        <ProjectUpdatesPage />
                       </Suspense>
                     </ProtectedLayoutRoute>
                   }

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
-import { ProjectSelector } from '../components/ProjectSelector';
 
 interface PartnerOrgLayoutProps {
   children: React.ReactNode;
@@ -14,7 +13,7 @@ interface PartnerOrgLayoutProps {
 export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
   children,
 }) => {
-  const { orgId, projectId } = useParams<{
+  const { orgId } = useParams<{
     orgId: string;
     projectId?: string;
   }>();
@@ -37,86 +36,76 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
     enabled: !!orgId,
   });
 
-  const currentPath = pathname;
-  const isPendingLanguages = currentPath.includes('/pending-languages');
-  const isDashboard = currentPath.includes('/dashboard');
-  const isProjectView = projectId && projectId !== 'all';
-
-  // Determine available tabs based on current view
+  // Define tabs for partner org pages
   const tabs: Array<{ to: string; label: string }> = React.useMemo(() => {
-    if (isPendingLanguages) {
-      return [
-        {
-          to: `/partner-org/${encodeURIComponent(orgId ?? '')}/pending-languages`,
-          label: 'Pending Languages',
-        },
-      ];
-    } else if (isDashboard || !projectId) {
-      return [
-        {
-          to: `/partner-org/${encodeURIComponent(orgId ?? '')}/dashboard`,
-          label: 'Dashboard',
-        },
-        {
-          to: `/partner-org/${encodeURIComponent(orgId ?? '')}/pending-languages`,
-          label: 'Pending Languages',
-        },
-      ];
-    } else {
-      // Project view
-      return [
-        {
-          to: `/partner-org/${encodeURIComponent(orgId ?? '')}/project/${encodeURIComponent(projectId)}/progress`,
-          label: 'Translation Progress',
-        },
-        {
-          to: `/partner-org/${encodeURIComponent(orgId ?? '')}/project/${encodeURIComponent(projectId)}/distribution`,
-          label: 'Distribution',
-        },
-        {
-          to: `/partner-org/${encodeURIComponent(orgId ?? '')}/project/${encodeURIComponent(projectId)}/funding`,
-          label: 'Funding',
-        },
-        {
-          to: `/partner-org/${encodeURIComponent(orgId ?? '')}/project/${encodeURIComponent(projectId)}/updates`,
-          label: 'Updates',
-        },
-      ];
-    }
-  }, [orgId, projectId, isPendingLanguages, isDashboard]);
+    const basePath = `/partner-org/${encodeURIComponent(orgId ?? '')}`;
+    return [
+      {
+        to: basePath,
+        label: 'Overview',
+      },
+      {
+        to: `${basePath}/progress`,
+        label: 'Progress',
+      },
+      {
+        to: `${basePath}/distribution`,
+        label: 'Distribution',
+      },
+      {
+        to: `${basePath}/donations`,
+        label: 'Donations',
+      },
+      {
+        to: `${basePath}/updates`,
+        label: 'Updates',
+      },
+      {
+        to: `${basePath}/members`,
+        label: 'Members',
+      },
+    ];
+  }, [orgId]);
 
   const activeTabLabel = React.useMemo(() => {
-    const current = tabs.find(t => pathname.startsWith(t.to));
+    const current = tabs.find(t => {
+      if (t.to === `/partner-org/${encodeURIComponent(orgId ?? '')}`) {
+        // Exact match for overview
+        return pathname === t.to;
+      }
+      return pathname.startsWith(t.to);
+    });
     return current?.label;
-  }, [pathname, tabs]);
+  }, [pathname, tabs, orgId]);
 
   return (
     <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950'>
       <div className='mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-6'>
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs and Back Button */}
         <div className='flex items-center justify-between'>
-          <div>
-            <div className='text-xs text-neutral-500'>
-              <Link href='/dashboard' className='hover:underline'>
-                Dashboard
-              </Link>{' '}
-              / {partner.data?.name ?? '—'}
-              {activeTabLabel && activeTabLabel !== 'Dashboard' ? (
-                <> / {activeTabLabel}</>
-              ) : null}
+          <div className='flex items-center gap-4'>
+            <Link
+              href='/dashboard'
+              className='text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+            >
+              ← Back
+            </Link>
+            <div>
+              <div className='text-xs text-neutral-500'>
+                <Link href='/dashboard' className='hover:underline'>
+                  Dashboard
+                </Link>{' '}
+                / {partner.data?.name ?? '—'}
+                {activeTabLabel && activeTabLabel !== 'Overview' ? (
+                  <> / {activeTabLabel}</>
+                ) : null}
+              </div>
+              <h1 className='text-2xl font-bold'>
+                {partner.data?.name ?? 'Partner Organization'}
+              </h1>
             </div>
-            <h1 className='text-2xl font-bold'>
-              {partner.data?.name ?? 'Partner Organization'}
-            </h1>
           </div>
         </div>
-
-        {/* Project Selector (only show in project views, not in dashboard or pending languages) */}
-        {isProjectView && !isPendingLanguages && (
-          <div className='flex items-center'>
-            <ProjectSelector />
-          </div>
-        )}
 
         {/* Tabs */}
         <div className='border-b border-neutral-200 dark:border-neutral-800'>

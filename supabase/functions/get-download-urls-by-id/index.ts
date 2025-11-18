@@ -10,6 +10,7 @@ import {
 interface RequestBody {
   mediaFileIds?: string[];
   imageIds?: string[];
+  projectUpdatesMediaIds?: string[];
   expirationHours?: number;
 }
 
@@ -18,6 +19,7 @@ interface BatchUrlResult {
   expiresIn: number;
   media?: Record<string, string>; // media_file_id -> url
   images?: Record<string, string>; // image_id -> url
+  projectUpdatesMedia?: Record<string, string>; // project_updates_media_id -> url
   errors?: Record<string, string>;
 }
 
@@ -38,9 +40,21 @@ Deno.serve(async (req: Request) => {
       return createErrorResponse('Invalid JSON in request body', 400);
     }
 
-    const { mediaFileIds = [], imageIds = [], expirationHours = 24 } = body;
-    if (mediaFileIds.length === 0 && imageIds.length === 0) {
-      return createErrorResponse('Provide mediaFileIds and/or imageIds', 400);
+    const {
+      mediaFileIds = [],
+      imageIds = [],
+      projectUpdatesMediaIds = [],
+      expirationHours = 24,
+    } = body;
+    if (
+      mediaFileIds.length === 0 &&
+      imageIds.length === 0 &&
+      projectUpdatesMediaIds.length === 0
+    ) {
+      return createErrorResponse(
+        'Provide mediaFileIds, imageIds, and/or projectUpdatesMediaIds',
+        400
+      );
     }
 
     // R2-only storage provider
@@ -135,9 +149,51 @@ Deno.serve(async (req: Request) => {
       result.images = images;
     }
 
+    // Project updates media
+    if (projectUpdatesMediaIds.length > 0) {
+      const { data, error } = await supabase
+        .from('project_updates_media')
+        .select('id, object_key')
+        .in('id', projectUpdatesMediaIds);
+      if (error) {
+        return createErrorResponse(
+          `DB error (project_updates_media): ${error.message}`,
+          500
+        );
+      }
+      const projectUpdatesMedia: Record<string, string> = {};
+      for (const row of data ?? []) {
+        const key = row.object_key;
+        if (!key) {
+          errors[row.id] = 'Missing object key';
+          continue;
+        }
+        try {
+          const base = Deno.env.get('CDN_BASE_URL') ?? '';
+          const secret = Deno.env.get('CDN_SIGNING_SECRET') ?? '';
+          let url = await createSignedCdnUrl(
+            base,
+            key,
+            secret,
+            expiresInSeconds
+          );
+          if ((Deno.env.get('ENV') ?? '').toLowerCase() === 'development') {
+            const u = new URL(url);
+            u.searchParams.set('env', 'dev');
+            url = u.toString();
+          }
+          projectUpdatesMedia[row.id] = url;
+        } catch (e) {
+          errors[row.id] = (e as Error).message;
+        }
+      }
+      result.projectUpdatesMedia = projectUpdatesMedia;
+    }
+
     if (Object.keys(errors).length > 0) {
       result.success =
-        Object.keys(errors).length < mediaFileIds.length + imageIds.length;
+        Object.keys(errors).length <
+        mediaFileIds.length + imageIds.length + projectUpdatesMediaIds.length;
       result.errors = errors;
     }
 

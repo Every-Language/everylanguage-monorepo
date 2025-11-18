@@ -192,9 +192,16 @@ export const JPGospelAccessSection: React.FC<JPGospelAccessSectionProps> = ({
           <div className='flex items-center justify-between'>
             <span className='text-sm'>Bible Translation</span>
             <div className='flex items-center gap-2'>
-              {renderStatus(stats.BibleStatus, 'Yes')}
+              {renderStatus(
+                typeof stats.BibleStatus === 'number'
+                  ? String(stats.BibleStatus)
+                  : stats.BibleStatus,
+                'Yes'
+              )}
               <span className='text-xs text-neutral-500'>
-                {stats.BibleStatus || 'Unknown'}
+                {typeof stats.BibleStatus === 'number'
+                  ? String(stats.BibleStatus)
+                  : stats.BibleStatus || 'Unknown'}
               </span>
             </div>
           </div>

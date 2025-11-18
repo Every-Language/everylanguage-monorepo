@@ -66,7 +66,7 @@ export interface JPCountry {
   PortionsYear: number | null; // Year of Portions translation
   TranslationNeedYear: number | null; // Year translation need identified
   TranslationUnspecified: string | null; // Translation status unspecified
-  BibleStatus: string; // Bible translation status
+  BibleStatus: string | number | null; // Bible translation status (can be string or number 0-5)
   BibleTranslationNeed: string; // Bible translation need description
   FIPS: string; // FIPS country code
   Longitude: number; // Longitude
@@ -91,6 +91,14 @@ export interface JPCountry {
   PoplPeoplesLR: number | null; // Population of least reached peoples
   PoplPeoplesFPG: number | null; // Population of frontier people groups
   ROL3OfficialLanguage: string | null; // Official language ISO 639-3 code
+  // Scripture access statistics
+  TranslationUnspecifiedCount: number | null; // Number of languages with unspecified translation status
+  TranslationNeeded: number | null; // Number of languages needing translation
+  TranslationStarted: number | null; // Number of languages with translation started
+  BiblePortions: number | null; // Number of languages with Bible portions
+  BibleNewTestament: number | null; // Number of languages with New Testament
+  BibleComplete: number | null; // Number of languages with complete Bible
+  JPScaleCtry: number | null; // Joshua Project Scale for country
 }
 
 /**
@@ -101,30 +109,44 @@ export interface JPLanguage {
   Language: string; // Language name
   HubCountry: string; // Hub country
   HubCountryISO: string; // Hub country ISO code
-  PoplPeoplesLR: number; // Population of peoples that are least reached
-  PoplPeoplesFPG: number; // Population of peoples in frontier people groups
-  PoplPeoples: number; // Total population speaking this language
+  PoplPeoplesLR: number | null; // Population of peoples that are least reached
+  PoplPeoplesFPG: number | null; // Population of peoples in frontier people groups
+  PoplPeoples: number | null; // Total population speaking this language (may not always be provided by API)
   JPScalePC: number | null; // Joshua Project Scale for Primary Context
   PercentChristianPC: number; // Percent Christian Primary Context
   PercentEvangelicalPC: number; // Percent Evangelical Primary Context
   BibleYear: number | null; // Year of Bible translation
-  BibleStatus: string; // Bible translation status
   NTYear: number | null; // Year of New Testament translation
   PortionsYear: number | null; // Year of Portions translation
   PrimaryReligion: string; // Primary religion
   JPScaleText: string | null; // Text description of JP Scale
   TranslationNeedQuestionable: number; // Translation need questionable flag
-  AudioRecordings: string; // Audio recordings availability
+  AudioRecordings: string | null; // Audio recordings availability (Y/N)
   BibleTranslationNeed: string; // Bible translation need
   GospelAccess: string | null; // Gospel Access level (only in some contexts)
   PercentEvangelical: number; // Percent Evangelical (available in language stats too)
-  NTPrimaryText: string; // NT primary text status
-  BiblePrimaryText: string; // Bible primary text status
-  NTPrimaryAudio: string; // NT primary audio status
-  BiblePrimaryAudio: string; // Bible primary audio status
+  NTPrimaryText: string | null; // NT primary text status
+  BiblePrimaryText: string | null; // Bible primary text status
+  NTPrimaryAudio: string | null; // NT primary audio status
+  BiblePrimaryAudio: string | null; // Bible primary audio status
   TranslationNeed: string; // Translation need status
   Countries: number; // Number of countries where spoken
   Peoples: number; // Number of people groups
+  // Additional fields from API
+  HasJesusFilm: string | null; // Y/N - Has Jesus Film
+  JF: string | null; // Y/N - Jesus Film availability
+  HasAudioRecordings: string | null; // Y/N - Has audio recordings (alternative field name)
+  BibleStatus: string | number | null; // Bible status as string or number (0-5)
+  WebLangText: string | null; // Web language text
+  Status: string | null; // Language status
+  GRN_URL: string | null; // Global Recordings Network URL
+  JF_URL: string | null; // Jesus Film URL
+  FCBH_URL: string | null; // Faith Comes By Hearing URL
+  NbrPGICs: number | null; // Number of people groups in countries
+  NbrCountries: number | null; // Number of countries
+  PercentAdherents: number | null; // Percent adherents
+  LeastReached: string | null; // Y/N - Least reached
+  RLG3: number | null; // Religion code
 }
 
 /**
@@ -172,16 +194,20 @@ export interface JPPeopleGroup {
   Longitude: number; // Longitude
   Latitude: number; // Latitude
   SecurityLevel: number; // Security level (1-5)
-  BibleStatus: string; // Bible translation status
-  BibleYear: number | null; // Year of Bible translation
-  NTYear: number | null; // Year of New Testament translation
-  PortionsYear: number | null; // Year of Portions translation
+  BibleStatus: number | string; // Bible translation status (number 0-5 or string)
+  BibleYear: string | number | null; // Year of Bible translation (can be range like "1933-2023")
+  NTYear: string | number | null; // Year of New Testament translation (can be range)
+  PortionsYear: string | number | null; // Year of Portions translation (can be range or "Yes")
   TranslationNeedYear: number | null; // Year translation need identified
+  TranslationNeedQuestionable: string | number | null; // Translation need questionable flag
   BibleTranslationNeed: string; // Bible translation need description
-  JF: string; // JESUS Film availability
+  JF: string; // JESUS Film availability (Y/N)
+  HasJesusFilm: string | null; // Y/N - Has Jesus Film
   JFLang: string; // JESUS Film language
   JFPrimaryText: string; // JESUS Film primary text
   AudioScripture: string; // Audio Scripture availability
+  HasAudioRecordings: string | null; // Y/N - Has audio recordings
+  AudioRecordings: string | null; // Y/N - Audio recordings availability
   GRN: string; // Global Recordings Network availability
   GRNLang: string; // GRN language
   FourLaws: string; // Four Spiritual Laws availability
@@ -193,12 +219,22 @@ export interface JPPeopleGroup {
   ImageURL: string | null; // Image URL
   PhotoAddress: string | null; // Photo address
   PhotoCredits: string | null; // Photo credits
-  ProfileTextExists: number; // Profile text exists flag (0/1)
+  ProfileTextExists: string | number; // Profile text exists flag (Y/N or 0/1)
   PeopleGroupURL: string; // URL to people group profile
   PeopleGroupPhotoURL: string; // URL to people group photo
   CountryURL: string; // URL to country profile
   JPScaleImageURL: string | null; // URL to JP Scale image
   Summary: string | null; // Summary text
+  Resources: Array<{
+    ROL3: string;
+    Category: string;
+    WebText: string;
+    URL: string;
+  }> | null; // Resources array
+  NTOnline: string | null; // Y/N - NT available online
+  NumberLanguagesSpoken: number | null; // Number of languages spoken
+  OfficialLang: string | null; // Official language
+  SpeakNationalLang: string | null; // Speak national language
 }
 
 /**
@@ -396,20 +432,120 @@ export async function fetchCountryStats(
 }
 
 /**
- * Fetch language statistics by ISO 639-3 code
- * Note: We use the list endpoint with ROL3 filter because the single language
- * endpoint expects Joshua Project's language code
+ * Fetch language statistics by ROL3 code (Joshua Project language code)
+ * Note: Joshua Project API uses ROL3 codes, which often match ISO 639-3 but not always.
+ * We first try the direct endpoint /v1/languages/{ROL3}.json.
+ * If that fails (404), we fall back to the list endpoint with ROL3 filter.
  */
 export async function fetchLanguageStats(
-  iso6393: string
+  rol3: string
 ): Promise<JPLanguage | null> {
   try {
-    const data = await fetchFromProxy<JPLanguage>('languages', {
-      ROL3: iso6393,
-    });
-    return data[0] || null;
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[JP Debug] Fetching language stats for ROL3 code: ${rol3}`);
+    }
+
+    // First, try direct endpoint: /v1/languages/{ROL3}.json
+    try {
+      const data = await fetchFromProxy<JPLanguage>(`languages/${rol3}`, {});
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          `[JP Debug] Fetched language stats for ROL3 ${rol3}:`,
+          data
+        );
+      }
+
+      return Array.isArray(data) ? data[0] || null : data || null;
+    } catch (directError: unknown) {
+      // If direct endpoint fails (e.g., 404), try list endpoint with filter
+      if (
+        directError instanceof Error &&
+        (directError.message.includes('404') ||
+          directError.message.includes('Failed to fetch'))
+      ) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            `[JP Debug] Direct endpoint failed for ${rol3}, trying list endpoint with filter`
+          );
+        }
+
+        // Fallback to list endpoint with ROL3 filter
+        const listData = await fetchFromProxy<JPLanguage>('languages', {
+          ROL3: rol3,
+        });
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            `[JP Debug] Fetched from list endpoint for ROL3 ${rol3}:`,
+            listData
+          );
+        }
+
+        return listData[0] || null;
+      }
+
+      // Re-throw if it's not a 404/network error
+      throw directError;
+    }
   } catch (error) {
-    console.error(`Failed to fetch language stats for ${iso6393}:`, error);
+    console.error(`Failed to fetch language stats for ROL3 ${rol3}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch people groups by FIPS code (2-letter FIPS 10-4 code)
+ *
+ * This is the preferred method as it uses FIPS codes directly from the database.
+ * Uses the `countries` parameter with FIPS 10-4 code to filter people groups.
+ * The API documentation specifies using 2-letter FIPS codes via the `countries` parameter.
+ */
+export async function fetchPeopleGroupsByFIPS(
+  fips: string,
+  page: number = 1,
+  limit: number = 100,
+  sortField?: string,
+  sortDirection?: 'asc' | 'desc'
+): Promise<JPPeopleGroup[]> {
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[JP Debug] Fetching people groups for FIPS code: ${fips}, page: ${page}, limit: ${limit}`
+      );
+    }
+
+    const params: Record<string, string | number> = {
+      countries: fips, // FIPS 10-4 code (2-letter)
+      limit,
+      page,
+      include_profile_text: 'Y',
+      include_resources: 'Y',
+    };
+
+    if (sortField) {
+      params.sort_field = sortField;
+      if (sortDirection) {
+        params.sort_direction = sortDirection;
+      }
+    }
+
+    const data = await fetchFromProxy<JPPeopleGroup>('people_groups', params);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[JP Debug] Fetched ${data.length} people groups for FIPS code: ${fips}`
+      );
+      if (data.length > 0) {
+        console.log(
+          `[JP Debug] First people group: ${data[0].PeopNameInCountry} - Country: ${data[0].Ctry}, ISO3: ${data[0].ISO3}, ROG3: ${data[0].ROG3}`
+        );
+      }
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Failed to fetch people groups for FIPS ${fips}:`, error);
     throw error;
   }
 }
@@ -417,8 +553,8 @@ export async function fetchLanguageStats(
 /**
  * Fetch people groups by country (ISO3 code)
  *
- * Uses the `countries` parameter with FIPS 10-4 code (ROG3) to filter people groups.
- * The API documentation specifies using 2-letter FIPS codes via the `countries` parameter.
+ * DEPRECATED: Use fetchPeopleGroupsByFIPS instead with FIPS code from database.
+ * This function is kept for backward compatibility.
  */
 export async function fetchPeopleGroupsByCountry(
   iso3: string,
@@ -449,6 +585,8 @@ export async function fetchPeopleGroupsByCountry(
     const data = await fetchFromProxy<JPPeopleGroup>('people_groups', {
       countries: rog3, // FIPS 10-4 code (2-letter)
       limit,
+      include_profile_text: 'Y',
+      include_resources: 'Y',
     });
 
     if (process.env.NODE_ENV === 'development') {
@@ -470,20 +608,50 @@ export async function fetchPeopleGroupsByCountry(
 }
 
 /**
- * Fetch people groups by language (ISO 639-3 code)
+ * Fetch people groups by language (ROL3 code - Joshua Project language code)
+ * Note: Joshua Project API uses ROL3 codes, which often match ISO 639-3 but not always.
  */
 export async function fetchPeopleGroupsByLanguage(
-  iso6393: string,
-  limit: number = 100
+  rol3: string,
+  page: number = 1,
+  limit: number = 100,
+  sortField?: string,
+  sortDirection?: 'asc' | 'desc'
 ): Promise<JPPeopleGroup[]> {
   try {
-    return await fetchFromProxy<JPPeopleGroup>('people_groups', {
-      ROL3: iso6393,
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[JP Debug] Fetching people groups for ROL3 code: ${rol3}, page: ${page}, limit: ${limit}`
+      );
+    }
+
+    const params: Record<string, string | number> = {
+      languages: rol3,
       limit,
-    });
+      page,
+      include_profile_text: 'Y',
+      include_resources: 'Y',
+    };
+
+    if (sortField) {
+      params.sort_field = sortField;
+      if (sortDirection) {
+        params.sort_direction = sortDirection;
+      }
+    }
+
+    const data = await fetchFromProxy<JPPeopleGroup>('people_groups', params);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[JP Debug] Fetched ${data.length} people groups for ROL3 code: ${rol3}`
+      );
+    }
+
+    return data;
   } catch (error) {
     console.error(
-      `Failed to fetch people groups for language ${iso6393}:`,
+      `Failed to fetch people groups for language ROL3 ${rol3}:`,
       error
     );
     throw error;
@@ -536,4 +704,37 @@ export function extractISO6393FromLanguageSources(
     s => s.external_id_type === 'iso-639-3' || s.external_id_type === 'iso639-3'
   );
   return iso6393Source?.external_id || null;
+}
+
+/**
+ * Extracts ROL3 code (Joshua Project language code) from language entity sources
+ * ROL3 codes are Joshua Project's own language codes, which often match ISO 639-3
+ * but not always. We try to find a dedicated ROL3 source first, then fall back to ISO 639-3.
+ */
+export function extractROL3FromLanguageSources(
+  sources: ExternalIdSource[]
+): string | null {
+  if (!sources || sources.length === 0) {
+    return null;
+  }
+
+  // First, try to find a dedicated ROL3/Joshua Project source
+  const rol3Types = [
+    'rol3',
+    'rol_3',
+    'jp_language_code',
+    'joshua_project_code',
+  ];
+  for (const type of rol3Types) {
+    const source = sources.find(
+      s => s.external_id_type?.toLowerCase() === type.toLowerCase()
+    );
+    if (source?.external_id) {
+      return source.external_id;
+    }
+  }
+
+  // Fall back to ISO 639-3 (many ROL3 codes match ISO 639-3)
+  const iso6393 = extractISO6393FromLanguageSources(sources);
+  return iso6393;
 }

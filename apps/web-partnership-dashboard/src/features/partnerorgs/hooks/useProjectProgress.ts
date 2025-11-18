@@ -10,14 +10,26 @@ export function useProjectProgress(
     queryFn: async () => {
       if (projectId === 'all') {
         // Aggregate all projects for this partner org
-        const { data: langEntities } = await (supabase as any)
-          .from('vw_partner_org_language_entities')
-          .select('language_entity_id, project_id')
+        // Get project IDs first, then query audio_versions by project_id (more reliable)
+        const { data: projects } = await (supabase as any)
+          .from('vw_partner_org_projects_via_donations')
+          .select('project_id')
           .eq('partner_org_id', partnerOrgId!);
 
-        const languageIds =
-          langEntities?.map((le: any) => le.language_entity_id) || [];
-        const { data: audioVersions } = await supabase
+        const projectIds =
+          projects
+            ?.map((p: any) => p.project_id)
+            .filter((id: any): id is string => !!id) || [];
+
+        // Handle empty projectIds array to avoid 400 error
+        if (projectIds.length === 0) {
+          return [];
+        }
+
+        // Remove duplicates
+        const uniqueProjectIds = Array.from(new Set(projectIds));
+
+        const { data: audioVersions, error } = await supabase
           .from('audio_versions')
           .select(
             `
@@ -28,10 +40,11 @@ export function useProjectProgress(
             audio_version_progress_summary (*)
           `
           )
-          .in('language_entity_id', languageIds)
+          .in('project_id', uniqueProjectIds)
           .is('deleted_at', null);
 
-        return audioVersions;
+        if (error) throw error;
+        return audioVersions || [];
       } else {
         // Single project
         const { data, error } = await supabase

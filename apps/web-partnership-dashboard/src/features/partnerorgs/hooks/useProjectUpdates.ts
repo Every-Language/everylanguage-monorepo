@@ -24,7 +24,7 @@ export function useProjectUpdates(
       if (projectId === 'all') {
         // Get updates for all partner org projects
         const { data: projects } = await (supabase as any)
-          .from('vw_partner_org_projects')
+          .from('vw_partner_org_projects_via_donations')
           .select('project_id')
           .eq('partner_org_id', partnerOrgId!);
 

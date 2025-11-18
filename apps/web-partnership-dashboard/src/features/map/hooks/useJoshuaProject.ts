@@ -14,11 +14,11 @@ import {
   type ExternalIdSource,
   fetchCountryStatsByFIPS,
   fetchLanguageStats,
-  fetchPeopleGroupsByCountry,
   fetchPeopleGroupsByLanguage,
+  fetchPeopleGroupsByFIPS,
   extractISO3FromRegionSources,
   extractFIPSFromRegionSources,
-  extractISO6393FromLanguageSources,
+  extractROL3FromLanguageSources,
 } from '../services/joshuaProjectApi';
 
 // ============================================================================
@@ -154,20 +154,19 @@ export function useJPCountryStats(
 
 /**
  * Fetches language statistics from Joshua Project for a given language entity
+ * Uses ROL3 codes (Joshua Project language codes) which often match ISO 639-3
  */
 export function useJPLanguageStats(
   languageEntityId: string | null
 ): UseQueryResult<JPLanguage | null> {
   const { data: externalIds, isLoading: idsLoading } =
     useLanguageExternalIds(languageEntityId);
-  const iso6393 = externalIds
-    ? extractISO6393FromLanguageSources(externalIds)
-    : null;
+  const rol3 = externalIds ? extractROL3FromLanguageSources(externalIds) : null;
 
   return useQuery({
-    queryKey: ['jp-language-stats', iso6393],
-    queryFn: () => fetchLanguageStats(iso6393!),
-    enabled: !!iso6393 && !idsLoading,
+    queryKey: ['jp-language-stats', rol3],
+    queryFn: () => fetchLanguageStats(rol3!),
+    enabled: !!rol3 && !idsLoading,
     ...JP_CACHE_CONFIG,
   });
 }
@@ -175,8 +174,8 @@ export function useJPLanguageStats(
 /**
  * Fetches people groups from Joshua Project for a given region
  *
- * Uses the `countries` parameter with FIPS code (ROG3) for efficient filtering.
- * The hook fetches country stats first to get the ROG3 code, then uses it to filter people groups.
+ * Uses FIPS code directly from database (region_sources) for efficient filtering.
+ * This is the preferred method as it doesn't require fetching country stats first.
  */
 export function useJPPeopleGroupsByCountry(
   regionId: string | null,
@@ -184,26 +183,71 @@ export function useJPPeopleGroupsByCountry(
 ): UseQueryResult<JPPeopleGroup[]> {
   const { data: externalIds, isLoading: idsLoading } =
     useRegionExternalIds(regionId);
-  const iso3 = externalIds ? extractISO3FromRegionSources(externalIds) : null;
-
-  // Fetch country stats to get ROG3 code (FIPS) for filtering
-  const countryStatsQuery = useJPCountryStats(regionId);
-  const rog3 = countryStatsQuery.data?.ROG3;
+  const fips = externalIds ? extractFIPSFromRegionSources(externalIds) : null;
 
   return useQuery({
-    queryKey: ['jp-people-groups-country', regionId, iso3, rog3, limit], // Include regionId to prevent cross-region caching
+    queryKey: ['jp-people-groups-country', regionId, fips, limit], // Include regionId to prevent cross-region caching
     queryFn: () => {
-      if (!iso3 || !rog3) {
+      if (!fips) {
         return Promise.resolve([]);
       }
       if (process.env.NODE_ENV === 'development') {
         console.log(
-          `[JP Debug] Fetching people groups for ISO3: ${iso3} using FIPS code: ${rog3}`
+          `[JP Debug] Fetching people groups for region ${regionId} using FIPS code: ${fips}`
         );
       }
-      return fetchPeopleGroupsByCountry(iso3, limit);
+      return fetchPeopleGroupsByFIPS(fips, 1, limit, 'Population', 'desc');
     },
-    enabled: !!iso3 && !!rog3 && !idsLoading && !countryStatsQuery.isLoading,
+    enabled: !!fips && !idsLoading,
+    ...JP_CACHE_CONFIG,
+  });
+}
+
+/**
+ * Fetches people groups from Joshua Project for a given region with pagination
+ *
+ * Uses FIPS code directly from database (region_sources) for efficient filtering.
+ * Supports pagination and sorting.
+ */
+export function useJPPeopleGroupsByCountryPaginated(
+  regionId: string | null,
+  page: number = 1,
+  limit: number = 20,
+  sortField: string = 'Population',
+  sortDirection: 'asc' | 'desc' = 'desc'
+): UseQueryResult<JPPeopleGroup[]> {
+  const { data: externalIds, isLoading: idsLoading } =
+    useRegionExternalIds(regionId);
+  const fips = externalIds ? extractFIPSFromRegionSources(externalIds) : null;
+
+  return useQuery({
+    queryKey: [
+      'jp-people-groups-country-paginated',
+      regionId,
+      fips,
+      page,
+      limit,
+      sortField,
+      sortDirection,
+    ],
+    queryFn: () => {
+      if (!fips) {
+        return Promise.resolve([]);
+      }
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          `[JP Debug] Fetching people groups (paginated) for region ${regionId} using FIPS code: ${fips}, page: ${page}`
+        );
+      }
+      return fetchPeopleGroupsByFIPS(
+        fips,
+        page,
+        limit,
+        sortField,
+        sortDirection
+      );
+    },
+    enabled: !!fips && !idsLoading,
     ...JP_CACHE_CONFIG,
   });
 }
@@ -217,14 +261,55 @@ export function useJPPeopleGroupsByLanguage(
 ): UseQueryResult<JPPeopleGroup[]> {
   const { data: externalIds, isLoading: idsLoading } =
     useLanguageExternalIds(languageEntityId);
-  const iso6393 = externalIds
-    ? extractISO6393FromLanguageSources(externalIds)
-    : null;
+  const rol3 = externalIds ? extractROL3FromLanguageSources(externalIds) : null;
 
   return useQuery({
-    queryKey: ['jp-people-groups-language', iso6393, limit],
-    queryFn: () => fetchPeopleGroupsByLanguage(iso6393!, limit),
-    enabled: !!iso6393 && !idsLoading,
+    queryKey: ['jp-people-groups-language', rol3, limit],
+    queryFn: () =>
+      fetchPeopleGroupsByLanguage(rol3!, 1, limit, 'Population', 'desc'),
+    enabled: !!rol3 && !idsLoading,
+    ...JP_CACHE_CONFIG,
+  });
+}
+
+/**
+ * Fetches people groups from Joshua Project for a given language entity with pagination
+ *
+ * Supports pagination and sorting.
+ */
+export function useJPPeopleGroupsByLanguagePaginated(
+  languageEntityId: string | null,
+  page: number = 1,
+  limit: number = 20,
+  sortField: string = 'Population',
+  sortDirection: 'asc' | 'desc' = 'desc'
+): UseQueryResult<JPPeopleGroup[]> {
+  const { data: externalIds, isLoading: idsLoading } =
+    useLanguageExternalIds(languageEntityId);
+  const rol3 = externalIds ? extractROL3FromLanguageSources(externalIds) : null;
+
+  return useQuery({
+    queryKey: [
+      'jp-people-groups-language-paginated',
+      rol3,
+      page,
+      limit,
+      sortField,
+      sortDirection,
+    ],
+    queryFn: () => {
+      if (!rol3) {
+        return Promise.resolve([]);
+      }
+      return fetchPeopleGroupsByLanguage(
+        rol3,
+        page,
+        limit,
+        sortField,
+        sortDirection
+      );
+    },
+    enabled: !!rol3 && !idsLoading,
     ...JP_CACHE_CONFIG,
   });
 }
@@ -235,10 +320,18 @@ export function useJPPeopleGroupsByLanguage(
 
 /**
  * Fetches all Joshua Project data for a region (country stats + people groups)
+ * Uses paginated hook with larger page size for initial data fetch
  */
 export function useJPCountryData(regionId: string | null) {
   const countryStats = useJPCountryStats(regionId);
-  const peopleGroups = useJPPeopleGroupsByCountry(regionId);
+  // Use paginated hook with page 1, limit 100 for initial data
+  const peopleGroups = useJPPeopleGroupsByCountryPaginated(
+    regionId,
+    1, // First page
+    100, // Larger page size for initial fetch
+    'Population',
+    'desc'
+  );
 
   // Debug logging
   if (process.env.NODE_ENV === 'development' && regionId && countryStats.data) {
@@ -260,10 +353,18 @@ export function useJPCountryData(regionId: string | null) {
 
 /**
  * Fetches all Joshua Project data for a language entity (language stats + people groups)
+ * Uses paginated hook with larger page size for initial data fetch and population calculation
  */
 export function useJPLanguageData(languageEntityId: string | null) {
   const languageStats = useJPLanguageStats(languageEntityId);
-  const peopleGroups = useJPPeopleGroupsByLanguage(languageEntityId);
+  // Use paginated hook with page 1, limit 100 for initial data and population calculation
+  const peopleGroups = useJPPeopleGroupsByLanguagePaginated(
+    languageEntityId,
+    1, // First page
+    100, // Larger page size for initial fetch
+    'Population',
+    'desc'
+  );
 
   return {
     languageStats: languageStats.data,
@@ -289,11 +390,49 @@ export function useHasJPCountryData(regionId: string | null): boolean {
 
 /**
  * Check if Joshua Project data is available for a language entity
+ * Uses ROL3 codes (Joshua Project language codes)
  */
 export function useHasJPLanguageData(languageEntityId: string | null): boolean {
   const { data: externalIds } = useLanguageExternalIds(languageEntityId);
-  const iso6393 = externalIds
-    ? extractISO6393FromLanguageSources(externalIds)
-    : null;
-  return !!iso6393;
+  const rol3 = externalIds ? extractROL3FromLanguageSources(externalIds) : null;
+  return !!rol3;
+}
+
+/**
+ * Fetches language cache data from jp_language_cache table by ISO639-3 code
+ */
+export function useJPLanguageCache(iso6393: string | null): UseQueryResult<{
+  bible_status: number | null;
+  bible_year: string | null;
+  nt_year: string | null;
+  portions_year: string | null;
+  has_audio_recordings: boolean;
+  language_name: string;
+} | null> {
+  return useQuery({
+    queryKey: ['jp-language-cache', iso6393],
+    queryFn: async () => {
+      if (!iso6393) return null;
+
+      const { data, error } = await supabase
+        .from('jp_language_cache')
+        .select(
+          'bible_status, bible_year, nt_year, portions_year, has_audio_recordings, language_name'
+        )
+        .eq('iso639_3', iso6393)
+        .single();
+
+      if (error) {
+        // Not found is okay, just return null
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        throw error;
+      }
+
+      return data;
+    },
+    enabled: !!iso6393,
+    staleTime: 60 * 60 * 1000, // 1 hour - cache data doesn't change frequently
+  });
 }

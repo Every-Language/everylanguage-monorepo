@@ -3,99 +3,106 @@
 import React from 'react';
 import { useAuth } from '@/features/auth';
 import { useRouter } from 'next/navigation';
-import { useUserEntities } from '@/features/dashboard/hooks/useUserEntities';
 import { GlobalStatsWidget } from '@/features/global-stats/components/GlobalStatsWidget';
+import { useUserPartnerOrgs } from '../hooks/useUserPartnerOrgs';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from '@/shared/components/ui/Card';
 
-const EntitySelector: React.FC = () => {
-  const router = useRouter();
+const InlineWelcome: React.FC = () => {
   const { user } = useAuth();
-  const { teams, bases, projects, partners, isLoading, loading } =
-    useUserEntities(user?.id ?? null);
-
-  const Card: React.FC<{
-    title: string;
-    items: Array<{
-      id?: string | null;
-      name?: string | null;
-      description?: string | null;
-    }>;
-    onClick: (id: string) => void;
-    loading?: boolean;
-  }> = ({ title, items, onClick, loading: isCardLoading }) => (
-    <div className='rounded-2xl p-4 sm:p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm'>
-      <div className='text-sm font-semibold mb-3'>{title}</div>
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
-        {isCardLoading &&
-          Array.from({ length: 6 }).map((_, idx) => (
-            <div
-              key={`skeleton-${idx}`}
-              className='p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/40 animate-pulse'
-            >
-              <div className='h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-2/3 mb-2' />
-              <div className='h-3 bg-neutral-100 dark:bg-neutral-800 rounded w-1/2' />
-            </div>
-          ))}
-        {!isCardLoading &&
-          items.map(i => (
-            <button
-              key={String(i.id)}
-              onClick={() => i.id && onClick(String(i.id))}
-              className='p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left'
-            >
-              <div className='font-medium'>{i.name ?? i.id}</div>
-              {i.description && (
-                <div className='text-xs text-neutral-500 line-clamp-2'>
-                  {i.description}
-                </div>
-              )}
-            </button>
-          ))}
-        {!isCardLoading && items.length === 0 && (
-          <div className='text-sm text-neutral-500'>No items</div>
-        )}
-      </div>
+  const first =
+    (user?.user_metadata as { first_name?: string })?.first_name ?? '';
+  const last = (user?.user_metadata as { last_name?: string })?.last_name ?? '';
+  const name = `${first} ${last}`.trim() || (user?.email ?? 'there');
+  return (
+    <div>
+      <div className='text-sm text-neutral-500'>Welcome back</div>
+      <div className='text-2xl font-bold'>{name}!</div>
     </div>
   );
+};
+
+const PartnerOrgCards: React.FC = () => {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { partnerOrgs, isLoading } = useUserPartnerOrgs(user?.id ?? null);
 
   return (
-    <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950'>
-      <div className='mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-6'>
-        <InlineWelcome />
-        {isLoading && (
-          <div className='text-sm text-neutral-500'>Loading your entities…</div>
-        )}
+    <div className='space-y-6'>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+        {/* Global Statistics Card */}
         <Card
-          title='Teams'
-          items={teams}
-          loading={loading?.teams}
-          onClick={id =>
-            router.push(`/team/${encodeURIComponent(id)}/dashboard`)
-          }
-        />
-        <Card
-          title='Bases'
-          items={bases}
-          loading={loading?.bases}
-          onClick={id =>
-            router.push(`/base/${encodeURIComponent(id)}/dashboard`)
-          }
-        />
-        <Card
-          title='Projects'
-          items={projects}
-          loading={loading?.projects}
-          onClick={id =>
-            router.push(`/project/${encodeURIComponent(id)}/dashboard`)
-          }
-        />
-        <Card
-          title='Partner Organizations'
-          items={partners}
-          loading={loading?.partners}
-          onClick={id =>
-            router.push(`/partner-org/${encodeURIComponent(id)}/dashboard`)
-          }
-        />
+          className='border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-shadow cursor-pointer'
+          onClick={() => router.push('/dashboard/global-statistics')}
+        >
+          <CardHeader>
+            <CardTitle className='text-lg'>
+              Global Translation Statistics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='text-sm text-neutral-500'>
+              View global translation progress and statistics across all
+              projects
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Loading skeleton */}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, idx) => (
+            <Card
+              key={`skeleton-${idx}`}
+              className='border border-neutral-200 dark:border-neutral-800'
+            >
+              <CardHeader>
+                <div className='h-5 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4 animate-pulse' />
+              </CardHeader>
+              <CardContent>
+                <div className='h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-full animate-pulse mb-2' />
+                <div className='h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-2/3 animate-pulse' />
+              </CardContent>
+            </Card>
+          ))}
+
+        {/* Partner Org Cards */}
+        {!isLoading &&
+          partnerOrgs.map(org => (
+            <Card
+              key={org.id}
+              className='border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-shadow cursor-pointer'
+              onClick={() =>
+                router.push(`/partner-org/${encodeURIComponent(org.id)}`)
+              }
+            >
+              <CardHeader>
+                <CardTitle className='text-lg'>
+                  {org.name}
+                  {org.isPersonal && (
+                    <span className='ml-2 text-xs text-neutral-500 font-normal'>
+                      (Personal)
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {org.description && (
+                  <div className='text-sm text-neutral-500 line-clamp-2'>
+                    {org.description}
+                  </div>
+                )}
+                {!org.description && (
+                  <div className='text-sm text-neutral-500'>
+                    Partner organization
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
       </div>
     </div>
   );
@@ -121,19 +128,12 @@ export const DashboardLandingPage: React.FC = () => {
     );
   }
 
-  return <EntitySelector />;
-};
-
-const InlineWelcome: React.FC = () => {
-  const { user } = useAuth();
-  const first =
-    (user?.user_metadata as { first_name?: string })?.first_name ?? '';
-  const last = (user?.user_metadata as { last_name?: string })?.last_name ?? '';
-  const name = `${first} ${last}`.trim() || (user?.email ?? 'there');
   return (
-    <div>
-      <div className='text-sm text-neutral-500'>Welcome back</div>
-      <div className='text-2xl font-bold'>{name}!</div>
+    <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950'>
+      <div className='mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-6'>
+        <InlineWelcome />
+        <PartnerOrgCards />
+      </div>
     </div>
   );
 };

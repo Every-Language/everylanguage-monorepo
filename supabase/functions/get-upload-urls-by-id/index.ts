@@ -16,6 +16,7 @@ import {
 interface RequestBody {
   mediaFileIds?: string[];
   imageIds?: string[];
+  projectUpdatesMediaIds?: string[];
   expirationHours?: number;
   originalFilenames?: Record<string, string>;
 }
@@ -31,6 +32,7 @@ interface BatchUploadUrlsResult {
   success: boolean;
   media?: UrlInfo[];
   images?: UrlInfo[];
+  projectUpdatesMedia?: UrlInfo[];
   errors?: Record<string, string>;
 }
 
@@ -68,11 +70,19 @@ Deno.serve(async (req: Request) => {
     const {
       mediaFileIds = [],
       imageIds = [],
+      projectUpdatesMediaIds = [],
       expirationHours = 24,
       originalFilenames = {},
     } = body;
-    if (mediaFileIds.length === 0 && imageIds.length === 0) {
-      return createErrorResponse('Provide mediaFileIds and/or imageIds', 400);
+    if (
+      mediaFileIds.length === 0 &&
+      imageIds.length === 0 &&
+      projectUpdatesMediaIds.length === 0
+    ) {
+      return createErrorResponse(
+        'Provide mediaFileIds, imageIds, and/or projectUpdatesMediaIds',
+        400
+      );
     }
 
     // Use service role key for database operations
@@ -87,6 +97,7 @@ Deno.serve(async (req: Request) => {
     const errors: Record<string, string> = {};
     const media: UrlInfo[] = [];
     const images: UrlInfo[] = [];
+    const projectUpdatesMedia: UrlInfo[] = [];
 
     // Helper to allocate object key (existing or new)
     const ensureKey = (
@@ -238,11 +249,99 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    if (projectUpdatesMediaIds.length > 0) {
+      const { data, error } = await supabase
+        .from('project_updates_media')
+        .select(
+          'id, object_key, original_filename, file_type, created_by, project_update_id'
+        )
+        .in('id', projectUpdatesMediaIds);
+      if (error) {
+        return createErrorResponse(`DB error: ${error.message}`, 500);
+      }
+
+      // Authorization check: verify user has project.write permission for the update's project
+      for (const row of data ?? []) {
+        // Check if user has permission via project_updates
+        const { data: updateData, error: updateError } = await supabase
+          .from('project_updates')
+          .select('project_id, deleted_at')
+          .eq('id', row.project_update_id)
+          .single();
+
+        if (updateError || !updateData || updateData.deleted_at) {
+          errors[row.id] = 'Project update not found or deleted';
+          continue;
+        }
+
+        // Check permission using has_permission function
+        const { data: hasPermission, error: permError } = await supabase.rpc(
+          'has_permission',
+          {
+            user_id: publicUserId,
+            permission: 'project.write',
+            resource_type: 'project',
+            resource_id: updateData.project_id,
+          }
+        );
+
+        if (permError || !hasPermission) {
+          errors[row.id] = 'Not authorized to upload media for this update';
+          continue;
+        }
+
+        try {
+          // Use existing object_key if available, otherwise generate new one
+          const objectKey = ensureKey(
+            row.object_key,
+            row.id,
+            row.original_filename,
+            'media'
+          );
+          const uploadUrl = await r2.getPresignedPutUrl(
+            objectKey,
+            expiresInSeconds
+          );
+
+          // Prepare update data
+          const updateData: UpdateData = {
+            object_key: objectKey,
+            storage_provider: 'r2',
+          };
+
+          // If we have new original_filename from request mapping, use it
+          const requestFilename = originalFilenames[row.id];
+          if (requestFilename && !row.original_filename) {
+            updateData.original_filename = requestFilename;
+            updateData.file_type =
+              StorageUtils.extractFileExtension(requestFilename);
+          }
+
+          // Persist object_key, provider, and metadata
+          await supabase
+            .from('project_updates_media')
+            .update(updateData)
+            .eq('id', row.id);
+
+          projectUpdatesMedia.push({
+            id: row.id,
+            objectKey,
+            uploadUrl,
+            expiresIn: expiresInSeconds,
+          });
+        } catch (e) {
+          errors[row.id] = (e as Error).message;
+        }
+      }
+    }
+
     const response: BatchUploadUrlsResult = {
       success: Object.keys(errors).length === 0,
     };
     if (media.length > 0) response.media = media;
     if (images.length > 0) response.images = images;
+    if (projectUpdatesMedia.length > 0)
+      response.projectUpdatesMedia = projectUpdatesMedia;
     if (!response.success) response.errors = errors;
 
     return createSuccessResponse(response);
