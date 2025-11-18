@@ -4,7 +4,8 @@
 -- ============================================================================
 -- UPDATE REGION_FUNDING VIEW
 -- ============================================================================
--- Drop the view first to allow changing column order
+-- Drop the view first to allow changing column structure (adding remaining_budget_cents)
+-- CASCADE will drop dependent objects (like materialized views) that depend on this view
 DROP VIEW if EXISTS region_funding cascade;
 
 

@@ -38,27 +38,46 @@ Deno.serve(async (req: Request) => {
       case 'payment_intent.canceled':
       case 'payment_intent.payment_failed': {
         const pi = event.data.object as Stripe.PaymentIntent;
-        const donationId = pi.metadata?.donation_id;
 
-        if (!donationId) {
-          console.warn(`No donation_id in PaymentIntent metadata: ${pi.id}`);
+        // Get all donation IDs from metadata (support both single and multiple)
+        const donationIdsStr =
+          pi.metadata?.donation_ids || pi.metadata?.donation_id;
+        if (!donationIdsStr) {
+          console.warn(
+            `No donation_id or donation_ids in PaymentIntent metadata: ${pi.id}`
+          );
           break;
         }
 
-        // Get donation
-        const { data: donation, error: donErr } = await supabase
+        // Parse donation IDs (comma-separated if multiple, or single)
+        const donationIds = donationIdsStr
+          .split(',')
+          .map((id: string) => id.trim())
+          .filter(Boolean);
+
+        if (donationIds.length === 0) {
+          console.warn(
+            `No valid donation IDs found in PaymentIntent metadata: ${pi.id}`
+          );
+          break;
+        }
+
+        // Get all donations linked to this PaymentIntent
+        const { data: donations, error: donErr } = await supabase
           .from('donations')
           .select('id, user_id, status')
-          .eq('id', donationId)
-          .single();
+          .in('id', donationIds);
 
-        if (donErr || !donation) {
-          console.error(`Donation not found: ${donationId}`, donErr);
+        if (donErr || !donations || donations.length === 0) {
+          console.error(
+            `Donations not found for IDs: ${donationIds.join(', ')}`,
+            donErr
+          );
           break;
         }
 
         // Map Stripe PI status to our donation status
-        let donationStatus: string = donation.status;
+        let donationStatus: string;
         if (pi.status === 'succeeded') {
           donationStatus = 'completed';
         } else if (pi.status === 'processing') {
@@ -76,23 +95,50 @@ Deno.serve(async (req: Request) => {
           donationStatus = 'failed';
         }
 
-        // Create or update payment_attempt record
-        await supabase.from('payment_attempts').upsert(
-          {
-            donation_id: donationId,
-            stripe_payment_intent_id: pi.id,
-            amount_cents: pi.amount,
-            currency_code: (pi.currency ?? 'usd').toUpperCase(),
-            status: pi.status as any, // Cast to match enum
-            stripe_event_id: event.id,
-            error_message: pi.last_payment_error?.message ?? null,
-            created_by: donation.user_id,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'stripe_payment_intent_id' }
-        );
+        // Get charge ID if available
+        const chargeId =
+          Array.isArray(pi.charges?.data) && pi.charges.data[0]?.id
+            ? pi.charges.data[0].id
+            : null;
 
-        // Update donation status
+        // Create or update payment_attempt record
+        // Note: payment_attempts has unique constraint on stripe_payment_intent_id,
+        // so there can only be ONE payment_attempt per PaymentIntent
+        // We'll link it to the first donation, but update all donations' status
+        const primaryDonation = donations[0];
+        const paymentAttemptData: any = {
+          donation_id: primaryDonation.id,
+          stripe_payment_intent_id: pi.id,
+          amount_cents: pi.amount, // Total amount (will be allocated if needed)
+          currency_code: (pi.currency ?? 'usd').toUpperCase(),
+          status: pi.status as any, // Cast to match enum
+          stripe_event_id: event.id,
+        };
+
+        // Set succeeded_at or failed_at based on status
+        if (pi.status === 'succeeded') {
+          paymentAttemptData.succeeded_at = new Date().toISOString();
+          paymentAttemptData.amount_received_cents =
+            pi.amount_received ?? pi.amount;
+        } else if (pi.status === 'failed') {
+          paymentAttemptData.failed_at = new Date().toISOString();
+          paymentAttemptData.failure_message =
+            pi.last_payment_error?.message ?? null;
+          paymentAttemptData.failure_code = pi.last_payment_error?.code ?? null;
+        }
+
+        if (chargeId) {
+          paymentAttemptData.stripe_charge_id = chargeId;
+        }
+
+        // Upsert payment attempt (unique constraint on stripe_payment_intent_id)
+        await supabase
+          .from('payment_attempts')
+          .upsert(paymentAttemptData, {
+            onConflict: 'stripe_payment_intent_id',
+          });
+
+        // Update all donations' status
         const updateData: any = {
           status: donationStatus,
         };
@@ -106,39 +152,46 @@ Deno.serve(async (req: Request) => {
         await supabase
           .from('donations')
           .update(updateData)
-          .eq('id', donationId);
+          .in(
+            'id',
+            donations.map((d: { id: string }) => d.id)
+          );
 
-        // If payment succeeded, create transaction record (accounting layer)
+        // If payment succeeded, create transaction records (accounting layer) for each donation
         if (pi.status === 'succeeded') {
-          const chargeId =
-            Array.isArray(pi.charges?.data) && pi.charges.data[0]?.id
-              ? pi.charges.data[0].id
-              : null;
-
-          // Get payment_attempt_id
+          // Get the payment_attempt we just created
           const { data: paymentAttempt } = await supabase
             .from('payment_attempts')
             .select('id')
             .eq('stripe_payment_intent_id', pi.id)
             .single();
 
-          await supabase.from('transactions').insert({
-            donation_id: donationId,
-            payment_attempt_id: paymentAttempt?.id ?? null,
-            user_id: donation.user_id,
-            project_id: null, // Will be set when admin allocates
-            operation_id: null, // Will be set when admin allocates
-            amount_cents: pi.amount_received ?? pi.amount,
-            kind: 'payment',
-            occurred_at: new Date().toISOString(),
-            stripe_charge_id: chargeId,
-            stripe_event_id: event.id,
-            description: `Donation payment via ${pi.metadata?.payment_method ?? 'card'}`,
-          });
+          const paymentAttemptId = paymentAttempt?.id ?? null;
 
-          console.log(`Transaction created for donation ${donationId}`);
+          // Create transaction for each donation
+          // Note: All transactions share the same payment_attempt_id since there's only one per PaymentIntent
+          for (const donation of donations) {
+            await supabase.from('transactions').insert({
+              donation_id: donation.id,
+              payment_attempt_id: paymentAttemptId,
+              user_id: donation.user_id,
+              project_id: null, // Will be set when admin allocates
+              operation_id: null, // Will be set when admin allocates
+              amount_cents: pi.amount_received ?? pi.amount, // Total amount (will be allocated)
+              kind: 'payment',
+              occurred_at: new Date().toISOString(),
+              stripe_charge_id: chargeId,
+              stripe_event_id: event.id,
+              description: `Donation payment via ${pi.metadata?.payment_method ?? 'card'}`,
+            });
+
+            console.log(`Transaction created for donation ${donation.id}`);
+          }
         }
 
+        console.log(
+          `Processed ${donations.length} donation(s) for PaymentIntent ${pi.id}`
+        );
         break;
       }
 
