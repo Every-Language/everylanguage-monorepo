@@ -61,6 +61,26 @@ const ExternalProjectsOverridesPage = lazy(() =>
     })
   )
 );
+const UsersPage = lazy(() =>
+  import('./features/users/pages/UsersPage').then(m => ({
+    default: m.UsersPage,
+  }))
+);
+const PartnerOrgsPage = lazy(() =>
+  import('./features/users/pages/PartnerOrgsPage').then(m => ({
+    default: m.PartnerOrgsPage,
+  }))
+);
+const TeamsPage = lazy(() =>
+  import('./features/users/pages/TeamsPage').then(m => ({
+    default: m.TeamsPage,
+  }))
+);
+const BasesPage = lazy(() =>
+  import('./features/users/pages/BasesPage').then(m => ({
+    default: m.BasesPage,
+  }))
+);
 
 function LoadingFallback() {
   return (
@@ -120,6 +140,10 @@ function App() {
               path='/statistics/external-projects'
               element={<ExternalProjectsOverridesPage />}
             />
+            <Route path='/users' element={<UsersPage />} />
+            <Route path='/users/partner-orgs' element={<PartnerOrgsPage />} />
+            <Route path='/users/teams' element={<TeamsPage />} />
+            <Route path='/users/bases' element={<BasesPage />} />
           </Route>
 
           {/* Default redirect */}

@@ -67,7 +67,7 @@ export const Progress: React.FC<ProgressProps> = ({
             strokeWidth={strokeWidth}
             stroke='currentColor'
             fill='transparent'
-            className='text-neutral-200'
+            className='text-neutral-200 dark:text-neutral-800'
           />
           {/* Progress circle */}
           <circle
@@ -131,7 +131,7 @@ export const Progress: React.FC<ProgressProps> = ({
       )}
       <div
         className={cn(
-          'bg-neutral-200 rounded-full overflow-hidden',
+          'bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden',
           heightClasses[size]
         )}
       >

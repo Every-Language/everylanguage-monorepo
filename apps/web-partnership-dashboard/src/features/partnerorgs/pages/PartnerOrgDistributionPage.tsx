@@ -11,6 +11,8 @@ import {
 import { CountUp } from '../components/CountUp';
 import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
 import { useProjectDistribution } from '../hooks/useProjectDistribution';
+import { MapShell } from '@/features/map/components/MapShell';
+import { ProjectDistributionHeatmapLayers } from '../components/ProjectDistributionHeatmapLayers';
 
 export const PartnerOrgDistributionPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
@@ -166,28 +168,39 @@ export const PartnerOrgDistributionPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Map Placeholder */}
+      {/* Distribution Map */}
       <Card className='border border-neutral-200 dark:border-neutral-800'>
         <CardHeader>
           <CardTitle>Distribution Map</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className='h-96 bg-neutral-100 dark:bg-neutral-900 rounded-lg flex items-center justify-center'>
-            <div className='text-center text-neutral-500'>
-              <div className='text-lg font-semibold mb-2'>
-                Heatmap Visualization
+          <div className='h-[600px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800'>
+            {distributionData?.heatmap &&
+            distributionData.heatmap.length > 0 ? (
+              <MapShell
+                countriesEnabled={false}
+                padding={{ top: 0, bottom: 0, left: 0, right: 0 }}
+              >
+                <ProjectDistributionHeatmapLayers
+                  enabledProjectIds={enabledProjects}
+                  projects={uniqueProjects}
+                  projectColors={projectColors}
+                  heatmapData={distributionData.heatmap}
+                />
+              </MapShell>
+            ) : (
+              <div className='h-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center'>
+                <div className='text-center text-neutral-500'>
+                  <div className='text-lg font-semibold mb-2'>
+                    No distribution data available
+                  </div>
+                  <div className='text-sm'>
+                    Heatmap data will appear here once listening data is
+                    available
+                  </div>
+                </div>
               </div>
-              <div className='text-sm'>
-                {distributionData?.heatmap &&
-                distributionData.heatmap.length > 0
-                  ? `${distributionData.heatmap.length} location points available`
-                  : 'No distribution data available'}
-              </div>
-              <div className='text-xs mt-2'>
-                TODO: Integrate map component with heatmap layers for each
-                project
-              </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>

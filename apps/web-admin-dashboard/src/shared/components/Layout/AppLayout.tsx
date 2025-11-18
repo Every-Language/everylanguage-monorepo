@@ -15,6 +15,10 @@ import {
   FolderOpen,
   ChevronDown,
   ChevronRight,
+  Users,
+  Building2,
+  UserCheck,
+  MapPin,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -102,6 +106,34 @@ const navigationItems: NavItem[] = [
     path: '/donations',
     section: 'Funding',
     icon: <HandCoins className='h-5 w-5' />,
+  },
+  {
+    id: 'users',
+    label: 'Users',
+    path: '/users',
+    section: 'USERS',
+    icon: <Users className='h-5 w-5' />,
+  },
+  {
+    id: 'partner-orgs',
+    label: 'Partner Orgs',
+    path: '/users/partner-orgs',
+    section: 'USERS',
+    icon: <Building2 className='h-5 w-5' />,
+  },
+  {
+    id: 'teams',
+    label: 'Teams',
+    path: '/users/teams',
+    section: 'USERS',
+    icon: <UserCheck className='h-5 w-5' />,
+  },
+  {
+    id: 'bases',
+    label: 'Bases',
+    path: '/users/bases',
+    section: 'USERS',
+    icon: <MapPin className='h-5 w-5' />,
   },
 ];
 

@@ -70,10 +70,11 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
   const activeTabLabel = React.useMemo(() => {
     const current = tabs.find(t => {
       if (t.to === `/partner-org/${encodeURIComponent(orgId ?? '')}`) {
-        // Exact match for overview
+        // Exact match for overview - must be exactly the base path
         return pathname === t.to;
       }
-      return pathname.startsWith(t.to);
+      // For other tabs, check if pathname starts with the tab path
+      return pathname.startsWith(t.to + '/') || pathname === t.to;
     });
     return current?.label;
   }, [pathname, tabs, orgId]);
@@ -86,9 +87,10 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
           <div className='flex items-center gap-4'>
             <Link
               href='/dashboard'
-              className='text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors'
+              aria-label='Back'
             >
-              ← Back
+              ←
             </Link>
             <div>
               <div className='text-xs text-neutral-500'>
@@ -111,8 +113,12 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
         <div className='border-b border-neutral-200 dark:border-neutral-800'>
           <nav className='-mb-px flex gap-4 overflow-x-auto'>
             {tabs.map(t => {
+              // For overview tab, require exact match
+              // For other tabs, check if pathname starts with the tab path
               const isActive =
-                pathname === t.to || pathname.startsWith(t.to + '/');
+                t.to === `/partner-org/${encodeURIComponent(orgId ?? '')}`
+                  ? pathname === t.to
+                  : pathname.startsWith(t.to + '/') || pathname === t.to;
               return (
                 <Link
                   key={t.to}

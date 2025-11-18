@@ -1,5 +1,5 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { R2StorageService } from '../_shared/r2-storage-service.ts';
 import { StorageUtils } from '../_shared/storage-utils.ts';
 import {

@@ -17,7 +17,7 @@ import { useToast } from '@/shared/theme/hooks/useToast';
 interface MapShellProps {
   children?: React.ReactNode;
   countriesEnabled?: boolean;
-  padding?: { top: number; bottom: number; left: number; right: number };
+  padding: { top: number; bottom: number; left: number; right: number };
 }
 
 export const MapShell: React.FC<MapShellProps> = ({
@@ -148,6 +148,36 @@ export const MapShell: React.FC<MapShellProps> = ({
     if (!map) return;
     applyAtmosphere(map, resolvedTheme);
   }, [resolvedTheme, applyAtmosphere]);
+
+  // Track previous padding to detect structural changes (breakpoint crossings)
+  const prevPaddingRef = React.useRef<typeof padding | null>(null);
+
+  // Update map padding when structure changes (e.g., crossing breakpoint)
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const prevPadding = prevPaddingRef.current;
+    const hasStructuralChange =
+      !prevPadding ||
+      prevPadding.left !== padding.left ||
+      prevPadding.right !== padding.right;
+
+    prevPaddingRef.current = padding;
+
+    // Only trigger resize if padding structure changed (breakpoint crossing)
+    // This prevents blinking when resizing within the same breakpoint
+    if (hasStructuralChange) {
+      const frameId = requestAnimationFrame(() => {
+        const underlyingMap = map.getMap();
+        if (underlyingMap) {
+          underlyingMap.resize();
+        }
+      });
+
+      return () => cancelAnimationFrame(frameId);
+    }
+  }, [padding]);
 
   const handleMapClick = React.useCallback(
     async (e: maplibregl.MapLayerMouseEvent) => {

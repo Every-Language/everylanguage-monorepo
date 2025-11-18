@@ -1,6 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
-import Stripe from 'https://esm.sh/stripe@14.25.0?target=deno';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import Stripe from 'npm:stripe@14.25.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
   createSuccessResponse,
   createErrorResponse,

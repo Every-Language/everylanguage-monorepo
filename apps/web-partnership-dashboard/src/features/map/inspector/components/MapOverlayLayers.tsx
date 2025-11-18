@@ -68,17 +68,22 @@ export const MapOverlayLayers: React.FC<{ countriesEnabled?: boolean }> = ({
 
   const fc: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features };
 
+  // Reduce prominence when a region is selected (to make project pins more visible)
+  const isRegionSelected = selection?.kind === 'region';
+  const fillOpacity = isRegionSelected ? 0.15 : 0.25;
+  const lineWidth = isRegionSelected ? 1.5 : 2;
+
   return (
     <Source id='selection-overlay' type='geojson' data={fc}>
       <Layer
         id='selection-fill'
         type='fill'
-        paint={{ 'fill-color': '#ad915a', 'fill-opacity': 0.25 }}
+        paint={{ 'fill-color': '#ad915a', 'fill-opacity': fillOpacity }}
       />
       <Layer
         id='selection-outline'
         type='line'
-        paint={{ 'line-color': '#ad915a', 'line-width': 2 }}
+        paint={{ 'line-color': '#ad915a', 'line-width': lineWidth }}
       />
     </Source>
   );

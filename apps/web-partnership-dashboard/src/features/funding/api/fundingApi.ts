@@ -302,57 +302,54 @@ export async function createDonationCheckout(payload: {
   amountCents: number;
   isRecurring: boolean;
 }) {
-  const base = (process.env.NEXT_PUBLIC_API_BASE_URL || '/api').replace(
-    /\/$/,
-    ''
-  );
-
-  const url = `${base}/create-donation-checkout`;
   console.log('🔵 Creating donation checkout:', {
-    url,
     payload: JSON.parse(JSON.stringify(payload)), // Deep clone to see actual values
   });
   console.log('🔵 Intent in payload:', JSON.stringify(payload.intent, null, 2));
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  console.log('🔵 Response status:', res.status, res.statusText);
-
-  if (!res.ok) {
-    let message = 'Failed to create donation checkout';
-    let errorDetails: any = null;
-    try {
-      const text = await res.text();
-      console.error('🔴 Raw error response:', text);
-      const j = JSON.parse(text);
-      errorDetails = j;
-      if (j?.error) message = j.error;
-      if (j?.details) {
-        console.error('🔴 Error details:', j.details);
-        message = `${message}: ${j.details}`;
-      }
-    } catch (e) {
-      console.error('🔴 Failed to parse error response', e);
-      message = `${message} (${res.status} ${res.statusText})`;
+  const { data, error } = await supabase.functions.invoke(
+    'create-donation-checkout',
+    {
+      body: payload,
     }
-    console.error('🔴 Full error context:', {
-      status: res.status,
-      statusText: res.statusText,
-      errorDetails,
-      url,
-    });
+  );
+
+  if (error) {
+    console.error('🔴 Edge function error:', error);
+    let message = 'Failed to create donation checkout';
+    if (error.message) {
+      message = error.message;
+    }
     throw new Error(message);
   }
-  const json = await res.json();
-  const data =
-    json && typeof json === 'object' && 'data' in json
-      ? (json as any).data
-      : json;
-  return data as {
+
+  // Handle the response structure from supabase.functions.invoke()
+  // invoke() returns { data: edgeFunctionResponse, error: ... }
+  // The edge function returns { success: true, data: {...} }
+  // So we need data.data to get the actual payload
+  const functionResponse = data?.data;
+  if (!functionResponse) {
+    throw new Error('Invalid response format from Edge function');
+  }
+
+  // Extract the actual data from the edge function response
+  if (
+    functionResponse &&
+    typeof functionResponse === 'object' &&
+    'success' in functionResponse &&
+    'data' in functionResponse
+  ) {
+    return functionResponse.data as {
+      clientSecret: string | null;
+      paymentIntentId: string;
+      donationId: string;
+      customerId: string;
+      partnerOrgId: string | null;
+    };
+  }
+
+  // Fallback: return the response as-is if structure is different
+  return functionResponse as {
     clientSecret: string | null;
     paymentIntentId: string;
     donationId: string;

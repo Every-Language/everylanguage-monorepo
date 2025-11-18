@@ -8,7 +8,13 @@ import { BibleTranslationStats } from './BibleTranslationStats';
 import { EveryLanguageProjectStats } from './EveryLanguageProjectStats';
 import { RecentActivityFeed } from './RecentActivityFeed';
 
-export const GlobalStatsWidget: React.FC = () => {
+type GlobalStatsWidgetProps = {
+  compact?: boolean; // For use in map inspector panel
+};
+
+export const GlobalStatsWidget: React.FC<GlobalStatsWidgetProps> = ({
+  compact = false,
+}) => {
   const bibleStatsQuery = useGlobalStatistics();
   const projectStatusQuery = useActiveProjectsWithProgress();
   const activityFeedQuery = useRecentActivityFeed(12);
@@ -30,6 +36,7 @@ export const GlobalStatsWidget: React.FC = () => {
       <BibleTranslationStats
         data={bibleStatsQuery.data?.data}
         isLoading={bibleStatsQuery.isLoading}
+        compact={compact}
       />
 
       <EveryLanguageProjectStats

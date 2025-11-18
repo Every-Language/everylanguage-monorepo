@@ -71,25 +71,31 @@ export const PartnerOrgProgressPage: React.FC = () => {
       {uniqueProjects.map(project => {
         const versions = projectProgressMap.get(project.project_id) || [];
 
-        // Aggregate progress across all versions for this project
-        // For overall progress, we want the maximum completed chapters across all versions
-        // (since different versions might have different progress)
-        let chaptersDone = 0;
-        let chaptersTotal = 1189; // Default to standard Bible chapter count
+        // Find the best progress across all versions (audio and text)
+        let bestChaptersDone = 0;
+        let bestChaptersTotal = 1189; // Default to standard Bible chapter count
+        let bestVersionType: 'audio' | 'text' | null = null;
 
         if (versions.length > 0) {
-          // Get the maximum progress across all versions
+          // Get the maximum progress across all versions (audio and text)
           for (const version of versions) {
-            const summary = (version as any)
-              ?.audio_version_progress_summary?.[0];
+            const summary = (version as any)?.progress_summary?.[0];
             if (summary) {
-              const completed = summary.chapters_completed || 0;
+              let completed = 0;
               const total = summary.total_chapters || 1189;
+
+              // Handle both audio and text versions
+              if (version.version_type === 'audio') {
+                completed = summary.chapters_with_audio || 0;
+              } else if (version.version_type === 'text') {
+                completed = summary.complete_chapters || 0;
+              }
+
               // Take the max completed chapters (best progress)
-              chaptersDone = Math.max(chaptersDone, completed);
-              // Use the total from the first summary (should be consistent)
-              if (chaptersTotal === 1189) {
-                chaptersTotal = total;
+              if (completed > bestChaptersDone) {
+                bestChaptersDone = completed;
+                bestChaptersTotal = total;
+                bestVersionType = version.version_type;
               }
             }
           }
@@ -98,62 +104,36 @@ export const PartnerOrgProgressPage: React.FC = () => {
         return (
           <Card
             key={project.project_id}
-            className='border border-neutral-200 dark:border-neutral-800'
+            className='border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900'
           >
             <CardHeader>
-              <CardTitle>
+              <CardTitle className='text-neutral-900 dark:text-neutral-100'>
                 {project.language_name} • {project.project_name}
               </CardTitle>
             </CardHeader>
-            <CardContent className='space-y-4'>
-              {/* Overall Progress */}
+            <CardContent>
+              {/* Best Progress */}
               <div>
                 <div className='flex items-center justify-between mb-2'>
-                  <span className='text-sm text-neutral-500'>
-                    Overall Progress
+                  <span className='text-sm text-neutral-500 dark:text-neutral-400'>
+                    {bestVersionType === 'audio'
+                      ? 'Audio'
+                      : bestVersionType === 'text'
+                        ? 'Text'
+                        : 'Bible'}{' '}
+                    Progress
                   </span>
-                  <span className='text-sm font-medium'>
-                    <CountUp value={chaptersDone} /> / {chaptersTotal} chapters
+                  <span className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                    <CountUp value={bestChaptersDone} /> / {bestChaptersTotal}{' '}
+                    chapters
                   </span>
                 </div>
                 <AnimatedProgress
-                  value={chaptersDone}
-                  max={chaptersTotal}
+                  value={bestChaptersDone}
+                  max={bestChaptersTotal}
                   color='accent'
                 />
               </div>
-
-              {/* Audio Versions */}
-              {versions.length > 0 && (
-                <div>
-                  <div className='text-sm font-medium mb-2'>Audio Versions</div>
-                  <div className='space-y-2'>
-                    {versions.map((version: any) => {
-                      const summary =
-                        version.audio_version_progress_summary?.[0];
-                      const vChaptersDone = summary?.chapters_completed || 0;
-                      const vChaptersTotal = summary?.total_chapters || 1189;
-
-                      return (
-                        <div key={version.id} className='text-sm'>
-                          <div className='flex items-center justify-between mb-1'>
-                            <span>{version.name}</span>
-                            <span className='text-neutral-500'>
-                              {vChaptersDone} / {vChaptersTotal}
-                            </span>
-                          </div>
-                          <AnimatedProgress
-                            value={vChaptersDone}
-                            max={vChaptersTotal}
-                            color='accent'
-                            className='h-1'
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         );

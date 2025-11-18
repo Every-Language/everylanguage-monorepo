@@ -111,7 +111,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
           sectionId='global-stats'
           defaultExpanded={true}
         >
-          <GlobalStatsWidget />
+          <GlobalStatsWidget compact={true} />
         </CollapsibleSection>
       );
     }

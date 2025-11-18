@@ -47,30 +47,42 @@ export const PartnerOrgOverviewPage: React.FC = () => {
     const progressMap = new Map<string, { completed: number; total: number }>();
 
     for (const project of uniqueProjects) {
-      const audioVersions = progressData.filter(
-        (av: any) => av.project_id === project.project_id
+      const versions = progressData.filter(
+        (v: any) => v.project_id === project.project_id
       );
-      let maxCompleted = 0;
-      let totalChapters = 1189;
 
-      // Get the maximum progress across all versions (best progress)
-      for (const version of audioVersions) {
-        const summary = (version as any).audio_version_progress_summary?.[0];
-        if (summary) {
-          const completed = summary.chapters_completed || 0;
-          const total = summary.total_chapters || 1189;
-          maxCompleted = Math.max(maxCompleted, completed);
-          // Use the total from summaries (should be consistent)
-          if (totalChapters === 1189 || total !== 1189) {
-            totalChapters = total;
+      // Find the best progress across all versions (audio and text)
+      let bestChaptersDone = 0;
+      let bestChaptersTotal = 1189; // Default to standard Bible chapter count
+
+      if (versions.length > 0) {
+        // Get the maximum progress across all versions (audio and text)
+        for (const version of versions) {
+          const summary = (version as any)?.progress_summary?.[0];
+          if (summary) {
+            let completed = 0;
+            const total = summary.total_chapters || 1189;
+
+            // Handle both audio and text versions
+            if (version.version_type === 'audio') {
+              completed = summary.chapters_with_audio || 0;
+            } else if (version.version_type === 'text') {
+              completed = summary.complete_chapters || 0;
+            }
+
+            // Take the max completed chapters (best progress)
+            if (completed > bestChaptersDone) {
+              bestChaptersDone = completed;
+              bestChaptersTotal = total;
+            }
           }
         }
       }
 
-      if (totalChapters > 0) {
+      if (bestChaptersTotal > 0) {
         progressMap.set(project.project_id, {
-          completed: maxCompleted,
-          total: totalChapters,
+          completed: bestChaptersDone,
+          total: bestChaptersTotal,
         });
       }
     }
@@ -150,12 +162,12 @@ export const PartnerOrgOverviewPage: React.FC = () => {
                 <CardTitle className='text-lg'>
                   <Link
                     href={`/partner-org/${orgId}/progress`}
-                    className='text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'
+                    className='text-accent-600 hover:text-accent-700 dark:text-accent-600 dark:hover:text-accent-500'
                   >
                     {project.language_name}
                   </Link>
                 </CardTitle>
-                <div className='text-sm text-neutral-500'>
+                <div className='text-sm text-neutral-500 dark:text-neutral-400'>
                   {project.project_name}
                 </div>
               </CardHeader>
@@ -163,15 +175,15 @@ export const PartnerOrgOverviewPage: React.FC = () => {
                 {/* Bible Progress */}
                 {progress && (
                   <div>
-                    <div className='text-xs text-neutral-500 mb-1'>
+                    <div className='text-xs text-neutral-500 dark:text-neutral-400 mb-1'>
                       Bible Progress
                     </div>
                     <div className='flex items-center justify-between mb-1'>
-                      <span className='text-sm font-medium'>
+                      <span className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
                         <CountUp value={progress.completed} /> /{' '}
                         {progress.total} chapters
                       </span>
-                      <span className='text-xs text-neutral-500'>
+                      <span className='text-xs text-neutral-500 dark:text-neutral-400'>
                         {Math.round(
                           (progress.completed / progress.total) * 100
                         )}
@@ -189,16 +201,18 @@ export const PartnerOrgOverviewPage: React.FC = () => {
                 {distribution && (
                   <div className='grid grid-cols-2 gap-4 pt-2 border-t border-neutral-200 dark:border-neutral-800'>
                     <div>
-                      <div className='text-xs text-neutral-500'>Downloads</div>
-                      <div className='text-lg font-semibold'>
+                      <div className='text-xs text-neutral-500 dark:text-neutral-400'>
+                        Downloads
+                      </div>
+                      <div className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
                         <CountUp value={distribution.downloads} />
                       </div>
                     </div>
                     <div>
-                      <div className='text-xs text-neutral-500'>
+                      <div className='text-xs text-neutral-500 dark:text-neutral-400'>
                         Listening Hours
                       </div>
-                      <div className='text-lg font-semibold'>
+                      <div className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
                         <CountUp value={distribution.listeningHours} />
                       </div>
                     </div>

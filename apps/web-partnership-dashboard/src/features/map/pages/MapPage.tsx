@@ -4,6 +4,7 @@ import { useSelection } from '../inspector/state/inspectorStore';
 import { MapOverlayLayers } from '../inspector/components/MapOverlayLayers';
 import { RouteSync } from '../inspector/components/RouteSync';
 import { MapAnalyticsLayers } from '../analytics/MapAnalyticsLayers';
+import { MapProjectsLayer } from '../projects/MapProjectsLayer';
 import { InspectorPanel } from '../components/InspectorPanel';
 import { MobileBottomSheet } from '../components/MobileBottomSheet';
 import { MobileSheetProvider } from '../context/MobileSheetProvider';
@@ -39,19 +40,38 @@ export const MapPage: React.FC = () => {
     setMobileSheetDragging(isDragging);
   }, []);
 
+  // Track window width to recalculate padding on resize
+  const [windowWidth, setWindowWidth] = React.useState<number | undefined>(
+    typeof window !== 'undefined' ? window.innerWidth : undefined
+  );
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Calculate map padding for desktop inspector panels
   const mapPadding = React.useMemo(() => {
-    // Only apply padding on desktop
-    if (typeof window === 'undefined') return undefined;
-    const isDesktop = window.innerWidth >= 768; // md breakpoint
+    // Default to no padding
+    const defaultPadding = { top: 0, bottom: 0, left: 0, right: 0 };
+
+    if (typeof window === 'undefined' || windowWidth === undefined) {
+      return defaultPadding;
+    }
+    const isDesktop = windowWidth >= 768; // md breakpoint
 
     if (!isDesktop) {
-      return undefined; // No padding on mobile
+      return defaultPadding; // No padding on mobile
     }
 
     // Calculate panel width: 50vw with max of 480px, plus 16px spacing (left-4/right-4)
-    const viewportWidth = window.innerWidth;
-    const panelWidth = Math.min(viewportWidth * 0.5, 480) + 16;
+    const panelWidth = Math.min(windowWidth * 0.5, 480) + 16;
 
     // Determine which side has a panel
     const hasLeftPanel = layout.panels.some(p => p.position === 'left');
@@ -63,7 +83,7 @@ export const MapPage: React.FC = () => {
       left: hasLeftPanel ? panelWidth : 0,
       right: hasRightPanel ? panelWidth : 0,
     };
-  }, [layout.panels]);
+  }, [layout.panels, windowWidth]);
 
   return (
     <div className='h-full w-full'>
@@ -77,6 +97,7 @@ export const MapPage: React.FC = () => {
           <MapFocusHandler />
           <MapOverlayLayers countriesEnabled={layers.countries} />
           <MapAnalyticsLayers show={layers.listening} />
+          <MapProjectsLayer show={layers.projects} />
 
           {/* Desktop panels */}
           <div className='hidden md:block'>

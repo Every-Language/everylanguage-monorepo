@@ -36,7 +36,7 @@ const PartnerOrgCards: React.FC = () => {
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
         {/* Global Statistics Card */}
         <Card
-          className='border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-shadow cursor-pointer'
+          className='border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-accent-300 dark:hover:border-accent-700 hover:scale-[1.02] transition-all duration-200 cursor-pointer'
           onClick={() => router.push('/dashboard/global-statistics')}
         >
           <CardHeader>
@@ -74,7 +74,7 @@ const PartnerOrgCards: React.FC = () => {
           partnerOrgs.map(org => (
             <Card
               key={org.id}
-              className='border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-shadow cursor-pointer'
+              className='border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-accent-300 dark:hover:border-accent-700 hover:scale-[1.02] transition-all duration-200 cursor-pointer'
               onClick={() =>
                 router.push(`/partner-org/${encodeURIComponent(org.id)}`)
               }

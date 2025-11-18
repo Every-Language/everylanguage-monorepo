@@ -13,6 +13,7 @@ type BibleStats = {
 type BibleTranslationStatsProps = {
   data?: BibleStats;
   isLoading?: boolean;
+  compact?: boolean; // For use in map inspector panel
 };
 
 const numberFormatter = new Intl.NumberFormat();
@@ -21,21 +22,21 @@ const cards = [
   {
     key: 'full',
     label: 'Full Audio Bible',
-    color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20',
+    color: 'text-accent-600 bg-accent-50 dark:bg-accent-900/20',
     valueKey: 'full_audio_bible_percentage' as const,
     countKey: 'full_audio_bible_count' as const,
   },
   {
     key: 'audio',
     label: 'Audio Portions',
-    color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
+    color: 'text-accent-600 bg-accent-50 dark:bg-accent-900/20',
     valueKey: 'audio_portions_percentage' as const,
     countKey: 'audio_portions_count' as const,
   },
   {
     key: 'text',
     label: 'Text Portions',
-    color: 'text-violet-600 bg-violet-50 dark:bg-violet-900/20',
+    color: 'text-accent-600 bg-accent-50 dark:bg-accent-900/20',
     valueKey: 'text_portions_percentage' as const,
     countKey: 'text_portions_count' as const,
   },
@@ -44,6 +45,7 @@ const cards = [
 export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
   data,
   isLoading,
+  compact = false,
 }) => {
   return (
     <section className='rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm p-6 space-y-6'>
@@ -66,9 +68,13 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
           >
             <p className='text-sm font-medium text-neutral-500'>{card.label}</p>
             {isLoading ? (
-              <div className='mt-3 h-10 w-24 rounded-lg bg-neutral-200 dark:bg-neutral-800 animate-pulse' />
+              <div
+                className={`mt-3 ${compact ? 'h-8 w-20' : 'h-10 w-24'} rounded-lg bg-neutral-200 dark:bg-neutral-800 animate-pulse`}
+              />
             ) : (
-              <div className={`mt-2 text-4xl font-bold ${card.color}`}>
+              <div
+                className={`mt-2 ${compact ? 'text-2xl' : 'text-4xl'} font-bold ${card.color}`}
+              >
                 {(data?.[card.valueKey] ?? 0).toFixed(2).replace(/\.00$/, '')}%
               </div>
             )}
