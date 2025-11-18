@@ -16,7 +16,7 @@ Deno.serve(async (req: Request) => {
     httpClient: Stripe.createFetchHttpClient(),
     apiVersion: '2023-10-16',
   });
-  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET_DONATIONS') ?? '';
+  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -26,7 +26,32 @@ Deno.serve(async (req: Request) => {
   try {
     const sig = req.headers.get('stripe-signature') ?? '';
     const bodyText = await req.text();
-    const event = stripe.webhooks.constructEvent(bodyText, sig, webhookSecret);
+
+    // Log webhook attempt for debugging
+    console.log('Webhook received:', {
+      hasSignature: !!sig,
+      signatureLength: sig.length,
+      bodyLength: bodyText.length,
+      hasWebhookSecret: !!webhookSecret,
+      webhookSecretLength: webhookSecret.length,
+    });
+
+    if (!webhookSecret) {
+      console.error('STRIPE_WEBHOOK_SECRET is not set!');
+      return createErrorResponse('Webhook secret not configured', 500);
+    }
+
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(bodyText, sig, webhookSecret);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Webhook signature verification failed:', errorMessage);
+      return createErrorResponse(
+        `Webhook signature verification failed: ${errorMessage}`,
+        400
+      );
+    }
 
     console.log(`Processing webhook event: ${event.type} (${event.id})`);
 
@@ -132,11 +157,9 @@ Deno.serve(async (req: Request) => {
         }
 
         // Upsert payment attempt (unique constraint on stripe_payment_intent_id)
-        await supabase
-          .from('payment_attempts')
-          .upsert(paymentAttemptData, {
-            onConflict: 'stripe_payment_intent_id',
-          });
+        await supabase.from('payment_attempts').upsert(paymentAttemptData, {
+          onConflict: 'stripe_payment_intent_id',
+        });
 
         // Update all donations' status
         const updateData: any = {

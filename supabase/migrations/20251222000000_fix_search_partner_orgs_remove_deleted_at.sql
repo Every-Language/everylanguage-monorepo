@@ -1,6 +1,7 @@
 -- Fix search_partner_orgs function to remove deleted_at check
 -- The partner_orgs table doesn't have a deleted_at column
 -- Also fixes type mismatch: similarity() returns REAL, not DOUBLE PRECISION
+-- Drop function with exact signature to ensure clean recreation
 DROP FUNCTION if EXISTS public.search_partner_orgs (TEXT, INTEGER);
 
 
