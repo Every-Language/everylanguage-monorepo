@@ -9,6 +9,18 @@ import {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return createCorsResponse();
+
+  // Allow GET for health check / debugging
+  if (req.method === 'GET') {
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
+    return createSuccessResponse({
+      status: 'ok',
+      hasWebhookSecret: !!webhookSecret,
+      webhookSecretLength: webhookSecret.length,
+      endpoint: 'stripe-webhook-donations',
+    });
+  }
+
   if (req.method !== 'POST')
     return createErrorResponse('Method not allowed', 405);
 
@@ -34,22 +46,47 @@ Deno.serve(async (req: Request) => {
       bodyLength: bodyText.length,
       hasWebhookSecret: !!webhookSecret,
       webhookSecretLength: webhookSecret.length,
+      webhookSecretPrefix: webhookSecret.substring(0, 10) + '...',
     });
 
     if (!webhookSecret) {
       console.error('STRIPE_WEBHOOK_SECRET is not set!');
-      return createErrorResponse('Webhook secret not configured', 500);
+      return createErrorResponse(
+        'Webhook secret not configured',
+        500,
+        'STRIPE_WEBHOOK_SECRET environment variable is missing'
+      );
+    }
+
+    if (!sig) {
+      console.error('Missing stripe-signature header');
+      return createErrorResponse(
+        'Missing signature',
+        400,
+        'stripe-signature header is required'
+      );
     }
 
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(bodyText, sig, webhookSecret);
+      // Use constructEventAsync for Deno Edge Functions (async crypto required)
+      event = await stripe.webhooks.constructEventAsync(
+        bodyText,
+        sig,
+        webhookSecret
+      );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Webhook signature verification failed:', errorMessage);
+      console.error('Webhook signature verification failed:', {
+        error: errorMessage,
+        signatureLength: sig.length,
+        bodyLength: bodyText.length,
+        webhookSecretLength: webhookSecret.length,
+      });
       return createErrorResponse(
         `Webhook signature verification failed: ${errorMessage}`,
-        400
+        400,
+        'Check that STRIPE_WEBHOOK_SECRET matches the webhook endpoint secret'
       );
     }
 
@@ -372,7 +409,16 @@ Deno.serve(async (req: Request) => {
 
     return createSuccessResponse({ received: true });
   } catch (e) {
-    console.error('Webhook error:', e);
-    return createErrorResponse((e as Error).message, 400);
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    const errorStack = e instanceof Error ? e.stack : undefined;
+    console.error('Webhook error:', {
+      message: errorMessage,
+      stack: errorStack,
+      error: e,
+    });
+    return createErrorResponse(
+      `Webhook processing error: ${errorMessage}`,
+      400
+    );
   }
 });
