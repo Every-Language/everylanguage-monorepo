@@ -25,24 +25,14 @@ interface RequestBody {
   };
   intent: {
     type: 'language' | 'region' | 'operation' | 'unrestricted';
-    // Support both single and multiple entities
+    // Single entity IDs only
     languageEntityId?: string;
-    languageEntityIds?: string[];
     regionId?: string;
-    regionIds?: string[];
     operationId?: string;
-    operationIds?: string[];
   };
   paymentMethod: 'card' | 'bank_transfer';
   amountCents: number;
   isRecurring: boolean;
-  // New fields for cart-based donations
-  donationMode?: 'adoption' | 'contribution';
-  selectedEntities?: Array<{
-    id: string;
-    type: 'language' | 'region' | 'operation';
-    budgetCents: number;
-  }>;
 }
 
 Deno.serve(async (req: Request) => {
@@ -61,8 +51,6 @@ Deno.serve(async (req: Request) => {
       paymentMethod,
       amountCents,
       isRecurring,
-      donationMode,
-      selectedEntities,
     } = body;
 
     // Debug: Log the received intent
@@ -71,7 +59,6 @@ Deno.serve(async (req: Request) => {
       JSON.stringify(intent, null, 2)
     );
     console.log('🔵 Intent type:', intent?.type);
-    console.log('🔵 languageEntityIds:', intent?.languageEntityIds);
     console.log('🔵 languageEntityId:', intent?.languageEntityId);
 
     // Validation
@@ -83,51 +70,25 @@ Deno.serve(async (req: Request) => {
       return createErrorResponse('Missing donation intent', 400);
     }
 
-    // Determine donation mode (default to adoption if not provided)
-    const finalDonationMode = donationMode || 'adoption';
-
-    // Validate intent has required IDs (support both single and array formats)
+    // Validate intent has required IDs (single IDs only)
     if (intent.type === 'language') {
-      console.log('🔵 Validating language intent:', {
-        languageEntityIds: intent.languageEntityIds,
-        languageEntityIdsLength: intent.languageEntityIds?.length,
-        languageEntityId: intent.languageEntityId,
-        hasLanguageIds:
-          (intent.languageEntityIds && intent.languageEntityIds.length > 0) ||
-          !!intent.languageEntityId,
-      });
-      const hasLanguageIds =
-        (intent.languageEntityIds && intent.languageEntityIds.length > 0) ||
-        !!intent.languageEntityId;
-      if (!hasLanguageIds) {
-        console.error('❌ Missing language entity IDs:', {
-          intent,
-          languageEntityIds: intent.languageEntityIds,
-          languageEntityId: intent.languageEntityId,
-        });
+      if (!intent.languageEntityId) {
+        console.error('❌ Missing language entity ID:', { intent });
         return createErrorResponse(
-          'languageEntityId or languageEntityIds required for language intent',
+          'languageEntityId required for language intent',
           400
         );
       }
     }
     if (intent.type === 'region') {
-      const hasRegionIds =
-        (intent.regionIds && intent.regionIds.length > 0) || !!intent.regionId;
-      if (!hasRegionIds) {
-        return createErrorResponse(
-          'regionId or regionIds required for region intent',
-          400
-        );
+      if (!intent.regionId) {
+        return createErrorResponse('regionId required for region intent', 400);
       }
     }
     if (intent.type === 'operation') {
-      const hasOperationIds =
-        (intent.operationIds && intent.operationIds.length > 0) ||
-        !!intent.operationId;
-      if (!hasOperationIds) {
+      if (!intent.operationId) {
         return createErrorResponse(
-          'operationId or operationIds required for operation intent',
+          'operationId required for operation intent',
           400
         );
       }
@@ -298,155 +259,45 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 4. Create donation record(s) (business logic layer)
+    // 4. Create donation record (business logic layer)
     // Map frontend payment method to database enum value
     // Frontend uses 'bank_transfer' but database enum uses 'us_bank_account'
     const dbPaymentMethod =
       paymentMethod === 'bank_transfer' ? 'us_bank_account' : paymentMethod;
 
-    // Determine which donations to create based on mode
-    const donationsToCreate: Array<{
-      intent_type: 'language' | 'region' | 'operation' | 'unrestricted';
-      intent_language_entity_id?: string | null;
-      intent_region_id?: string | null;
-      intent_operation_id?: string | null;
-      amount_cents: number;
-    }> = [];
-
-    if (finalDonationMode === 'contribution') {
-      // Contribution mode: single donation with edited amount
-      const entityId =
-        intent.type === 'language'
-          ? intent.languageEntityIds?.[0] || intent.languageEntityId
-          : intent.type === 'region'
-            ? intent.regionIds?.[0] || intent.regionId
-            : intent.operationIds?.[0] || intent.operationId;
-
-      donationsToCreate.push({
-        intent_type: intent.type,
-        intent_language_entity_id:
-          intent.type === 'language' ? entityId || null : null,
-        intent_region_id: intent.type === 'region' ? entityId || null : null,
-        intent_operation_id:
-          intent.type === 'operation' ? entityId || null : null,
-        amount_cents: amountCents,
-      });
-    } else {
-      // Adoption mode: one donation per entity
-      if (intent.type === 'language') {
-        const languageIds =
-          intent.languageEntityIds ||
-          (intent.languageEntityId ? [intent.languageEntityId] : []);
-        const sumOfBudgets =
-          selectedEntities?.reduce((sum, e) => sum + e.budgetCents, 0) || 0;
-
-        // Create one donation per language
-        for (const langId of languageIds) {
-          const entity = selectedEntities?.find(e => e.id === langId);
-          donationsToCreate.push({
-            intent_type: 'language',
-            intent_language_entity_id: langId,
-            amount_cents:
-              entity?.budgetCents || sumOfBudgets / languageIds.length,
-          });
-        }
-
-        // If total > sum, create unrestricted donation with leftover
-        if (amountCents > sumOfBudgets) {
-          donationsToCreate.push({
-            intent_type: 'unrestricted',
-            amount_cents: amountCents - sumOfBudgets,
-          });
-        }
-      } else if (intent.type === 'region') {
-        const regionIds =
-          intent.regionIds || (intent.regionId ? [intent.regionId] : []);
-        const sumOfBudgets =
-          selectedEntities?.reduce((sum, e) => sum + e.budgetCents, 0) || 0;
-
-        // Create one donation per region
-        for (const regionId of regionIds) {
-          const entity = selectedEntities?.find(e => e.id === regionId);
-          donationsToCreate.push({
-            intent_type: 'region',
-            intent_region_id: regionId,
-            amount_cents:
-              entity?.budgetCents || sumOfBudgets / regionIds.length,
-          });
-        }
-
-        // If total > sum, create unrestricted donation with leftover
-        if (amountCents > sumOfBudgets) {
-          donationsToCreate.push({
-            intent_type: 'unrestricted',
-            amount_cents: amountCents - sumOfBudgets,
-          });
-        }
-      } else if (intent.type === 'operation') {
-        const operationIds =
-          intent.operationIds ||
-          (intent.operationId ? [intent.operationId] : []);
-        const sumOfBudgets =
-          selectedEntities?.reduce((sum, e) => sum + e.budgetCents, 0) || 0;
-
-        // Create one donation per operation
-        for (const operationId of operationIds) {
-          const entity = selectedEntities?.find(e => e.id === operationId);
-          donationsToCreate.push({
-            intent_type: 'operation',
-            intent_operation_id: operationId,
-            amount_cents:
-              entity?.budgetCents || sumOfBudgets / operationIds.length,
-          });
-        }
-
-        // If total > sum, create unrestricted donation with leftover
-        if (amountCents > sumOfBudgets) {
-          donationsToCreate.push({
-            intent_type: 'unrestricted',
-            amount_cents: amountCents - sumOfBudgets,
-          });
-        }
-      } else {
-        // Unrestricted: single donation
-        donationsToCreate.push({
-          intent_type: 'unrestricted',
-          amount_cents: amountCents,
-        });
-      }
-    }
-
-    // Create all donations
-    const donationInserts = donationsToCreate.map(d => ({
+    // Create single donation with user-entered amount
+    const donationInsert = {
       user_id: userId,
       partner_org_id: finalPartnerOrgId,
-      intent_type: d.intent_type,
-      intent_language_entity_id: d.intent_language_entity_id ?? null,
-      intent_region_id: d.intent_region_id ?? null,
-      intent_operation_id: d.intent_operation_id ?? null,
-      amount_cents: d.amount_cents,
+      intent_type: intent.type,
+      intent_language_entity_id:
+        intent.type === 'language' ? (intent.languageEntityId ?? null) : null,
+      intent_region_id:
+        intent.type === 'region' ? (intent.regionId ?? null) : null,
+      intent_operation_id:
+        intent.type === 'operation' ? (intent.operationId ?? null) : null,
+      amount_cents: amountCents,
       currency_code: 'USD',
       status: 'draft' as const, // Will move to pending when payment is initiated
       payment_method: dbPaymentMethod,
       is_recurring: isRecurring,
       stripe_customer_id: customer.id,
-      donation_mode: finalDonationMode,
       created_by: userId,
-    }));
+    };
 
     const { data: donations, error: donationErr } = await supabase
       .from('donations')
-      .insert(donationInserts)
+      .insert(donationInsert)
       .select('id');
 
     if (donationErr || !donations || donations.length === 0) {
-      console.error('Failed to create donations', {
+      console.error('Failed to create donation', {
         error: donationErr,
         errorMessage: donationErr?.message,
         errorCode: donationErr?.code,
         errorDetails: donationErr?.details,
         errorHint: donationErr?.hint,
-        donationInserts,
+        donationInsert,
       });
       return createErrorResponse(
         `Failed to create donation: ${donationErr?.message || 'Unknown error'}`,
@@ -455,9 +306,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Use first donation ID for response (for backward compatibility)
+    // Single donation ID
     const donationId = donations[0].id;
-    const allDonationIds = donations.map((d: { id: string }) => d.id);
+    const allDonationIds = [donationId];
 
     // 5. Create Stripe PaymentIntent (payment provider layer) with retry
     let paymentIntent: Stripe.PaymentIntent;
@@ -476,7 +327,6 @@ Deno.serve(async (req: Request) => {
             donation_ids: allDonationIds.join(','), // Store all donation IDs
             donation_id: donationId, // Keep for backward compatibility
             intent_type: intent.type,
-            donation_mode: finalDonationMode,
           },
         });
       } else {
@@ -495,7 +345,6 @@ Deno.serve(async (req: Request) => {
             donation_id: donationId, // Keep for backward compatibility
             intent_type: intent.type,
             payment_method: 'bank_transfer',
-            donation_mode: finalDonationMode,
           },
         });
       }
