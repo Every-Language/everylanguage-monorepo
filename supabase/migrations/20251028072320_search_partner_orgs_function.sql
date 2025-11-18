@@ -34,7 +34,7 @@ BEGIN
     po.id,
     po.name,
     po.description,
-    similarity(po.name, search_query) as similarity_score
+    similarity(po.name, search_query)::double precision as similarity_score
   FROM partner_orgs po
   WHERE 
     po.is_public = true
