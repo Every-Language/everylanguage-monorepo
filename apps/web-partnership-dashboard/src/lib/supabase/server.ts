@@ -14,9 +14,13 @@ export const createClient = async () => {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      'Missing Supabase environment variables. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY'
-    );
+    const missingVars: string[] = [];
+    if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
+    if (!supabaseKey) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+
+    const errorMessage = `Missing Supabase environment variables: ${missingVars.join(', ')}. Environment: ${process.env.NODE_ENV || 'unknown'}`;
+    console.error('[Supabase Client]', errorMessage);
+    throw new Error(errorMessage);
   }
 
   return createServerClient<Database>(supabaseUrl, supabaseKey, {

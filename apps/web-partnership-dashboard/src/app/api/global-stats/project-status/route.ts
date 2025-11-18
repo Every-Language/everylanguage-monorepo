@@ -39,9 +39,21 @@ export async function GET(): Promise<NextResponse> {
       projects: (projectsResult.data ?? []) as ActiveProject[],
     });
   } catch (error) {
-    console.error('[global-stats:project-status] Failed to load', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[global-stats:project-status] Failed to load', {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    // In development/preview, include more error details
+    const isDev =
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERCEL_ENV === 'preview';
     return NextResponse.json(
-      { error: 'Unable to load project status summary' },
+      {
+        error: 'Unable to load project status summary',
+        ...(isDev && { details: errorMessage }),
+      },
       { status: 500 }
     );
   }

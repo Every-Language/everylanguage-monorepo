@@ -36,7 +36,7 @@ fi
 # Vercel configuration
 VERCEL_PROJECT_DASHBOARD="everylanguage-project-dashboard"
 VERCEL_PARTNERSHIP_DASHBOARD="everylanguage-partnership-dashboard"
-VERCEL_TEAM_ID="matts-projects-04f21572"
+VERCEL_TEAM_ID="matthew-projects"
 
 echo -e "${BLUE}================================================${NC}"
 echo -e "${BLUE}Vercel Secret Deployment${NC}"
@@ -187,6 +187,18 @@ if [ -f "$SECRETS_DIR/.env.shared" ]; then
             # Deploy to production environment
             deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "production"
             deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+            
+            # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
+            if [[ "$key" == "VITE_SUPABASE_URL" ]]; then
+                deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_URL" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+                deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_URL" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+            elif [[ "$key" == "VITE_SUPABASE_PUBLISHABLE_KEY" ]] || [[ "$key" == "VITE_SUPABASE_ANON_KEY" ]]; then
+                deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+                deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+            elif [[ "$key" == "VITE_STRIPE_PUBLISHABLE_KEY" ]]; then
+                deploy_vercel_secret "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+                deploy_vercel_secret "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+            fi
         fi
         # Deploy NEXT_PUBLIC_* variables for Next.js apps (partnership dashboard)
         if [[ "$key" =~ ^NEXT_PUBLIC_ ]]; then
@@ -213,27 +225,42 @@ echo -e "${BLUE}1. Deploying Development Secrets (Preview)${NC}"
 echo -e "${YELLOW}Vercel Preview Environment:${NC}"
 
 # Get project ID for derivations
-DEV_PROJECT_ID=$(get_env_value "SUPABASE_PROJECT_ID" "$SECRETS_DIR/.env.development")
+DEV_PROJECT_ID=$(get_env_value "SUPABASE_PROJECT_ID" "$SECRETS_DIR/.env.development" || true)
 
 # Deploy derived VITE variables
 if [ -n "$DEV_PROJECT_ID" ]; then
     VITE_SUPABASE_URL=$(derive_supabase_url "$DEV_PROJECT_ID")
     deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PROJECT_DASHBOARD" "preview"
     deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
+    deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
 fi
 
 # Deploy VITE_SUPABASE_PUBLISHABLE_KEY from SUPABASE_PUBLISHABLE_KEY
-VITE_SUPABASE_PUBLISHABLE_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development")
+VITE_SUPABASE_PUBLISHABLE_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development" || true)
 if [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
     deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "preview"
     deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
+    deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+fi
+
+# Deploy VITE_SUPABASE_ANON_KEY if it exists (alternative name)
+VITE_SUPABASE_ANON_KEY=$(get_env_value "VITE_SUPABASE_ANON_KEY" "$SECRETS_DIR/.env.development" || true)
+if [ -n "$VITE_SUPABASE_ANON_KEY" ]; then
+    deploy_vercel_secret "VITE_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PROJECT_DASHBOARD" "preview"
+    deploy_vercel_secret "VITE_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
+    deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
 fi
 
 # Deploy VITE_STRIPE_PUBLISHABLE_KEY from STRIPE_PUBLISHABLE_KEY
-VITE_STRIPE_PUBLISHABLE_KEY=$(get_env_value "STRIPE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development")
+VITE_STRIPE_PUBLISHABLE_KEY=$(get_env_value "STRIPE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development" || true)
 if [ -n "$VITE_STRIPE_PUBLISHABLE_KEY" ]; then
     deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "preview"
     deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
+    deploy_vercel_secret "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
 fi
 
 # Deploy any other VITE_* variables that might exist (for backward compatibility)
@@ -263,27 +290,42 @@ echo -e "${BLUE}2. Deploying Production Secrets${NC}"
 echo -e "${YELLOW}Vercel Production Environment:${NC}"
 
 # Get project ID for derivations
-PROD_PROJECT_ID=$(get_env_value "SUPABASE_PROJECT_ID" "$SECRETS_DIR/.env.production")
+PROD_PROJECT_ID=$(get_env_value "SUPABASE_PROJECT_ID" "$SECRETS_DIR/.env.production" || true)
 
 # Deploy derived VITE variables
 if [ -n "$PROD_PROJECT_ID" ]; then
     VITE_SUPABASE_URL=$(derive_supabase_url "$PROD_PROJECT_ID")
     deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PROJECT_DASHBOARD" "production"
     deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
+    deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
 fi
 
 # Deploy VITE_SUPABASE_PUBLISHABLE_KEY from SUPABASE_PUBLISHABLE_KEY
-VITE_SUPABASE_PUBLISHABLE_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production")
+VITE_SUPABASE_PUBLISHABLE_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production" || true)
 if [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
     deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "production"
     deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
+    deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+fi
+
+# Deploy VITE_SUPABASE_ANON_KEY if it exists (alternative name)
+VITE_SUPABASE_ANON_KEY=$(get_env_value "VITE_SUPABASE_ANON_KEY" "$SECRETS_DIR/.env.production" || true)
+if [ -n "$VITE_SUPABASE_ANON_KEY" ]; then
+    deploy_vercel_secret "VITE_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PROJECT_DASHBOARD" "production"
+    deploy_vercel_secret "VITE_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
+    deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
 fi
 
 # Deploy VITE_STRIPE_PUBLISHABLE_KEY from STRIPE_PUBLISHABLE_KEY
-VITE_STRIPE_PUBLISHABLE_KEY=$(get_env_value "STRIPE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production")
+VITE_STRIPE_PUBLISHABLE_KEY=$(get_env_value "STRIPE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production" || true)
 if [ -n "$VITE_STRIPE_PUBLISHABLE_KEY" ]; then
     deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "production"
     deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
+    deploy_vercel_secret "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
 fi
 
 # Deploy any other VITE_* variables that might exist (for backward compatibility)

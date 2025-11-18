@@ -110,9 +110,21 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       items: combined,
     });
   } catch (error) {
-    console.error('[global-stats:activity-feed] Failed to load', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[global-stats:activity-feed] Failed to load', {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    // In development/preview, include more error details
+    const isDev =
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERCEL_ENV === 'preview';
     return NextResponse.json(
-      { error: 'Unable to load recent activity feed' },
+      {
+        error: 'Unable to load recent activity feed',
+        ...(isDev && { details: errorMessage }),
+      },
       { status: 500 }
     );
   }

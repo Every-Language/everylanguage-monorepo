@@ -88,9 +88,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       },
     });
   } catch (error) {
-    console.error('Joshua Project API proxy error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Joshua Project API proxy error:', {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    // In development/preview, include more error details
+    const isDev =
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERCEL_ENV === 'preview';
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        ...(isDev && { details: errorMessage }),
+      },
       { status: 500 }
     );
   }
