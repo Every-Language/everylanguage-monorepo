@@ -1,15 +1,19 @@
 -- Database function: search_partner_orgs
 -- Fuzzy search for public partner organizations using trigram similarity
-CREATE OR REPLACE FUNCTION public.search_partner_orgs (search_query TEXT, max_results INTEGER DEFAULT 10) returns TABLE (
+-- Drop function first if it exists with different signature to allow changing return type
+DROP FUNCTION if EXISTS public.search_partner_orgs (TEXT, INTEGER);
+
+
+CREATE FUNCTION public.search_partner_orgs (search_query TEXT, max_results INTEGER DEFAULT 10) returns TABLE (
   id UUID,
   name TEXT,
   description TEXT,
-  similarity_score DOUBLE PRECISION
+  similarity_score REAL
 ) language plpgsql security definer
 SET
   search_path TO 'public' AS $$
 DECLARE
-  similarity_threshold double precision;
+  similarity_threshold REAL;
 BEGIN
   -- Validate input
   IF length(trim(search_query)) < 2 THEN
@@ -29,12 +33,13 @@ BEGIN
   END CASE;
 
   -- Return matching public partner orgs
+  -- similarity() returns REAL, which matches our return type
   RETURN QUERY
   SELECT 
     po.id,
     po.name,
     po.description,
-    similarity(po.name, search_query)::double precision as similarity_score
+    similarity(po.name, search_query) AS similarity_score
   FROM partner_orgs po
   WHERE 
     po.is_public = true

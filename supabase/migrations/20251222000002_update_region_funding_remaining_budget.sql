@@ -4,7 +4,11 @@
 -- ============================================================================
 -- UPDATE REGION_FUNDING VIEW
 -- ============================================================================
-CREATE OR REPLACE VIEW region_funding AS
+-- Drop the view first to allow changing column order
+DROP VIEW if EXISTS region_funding cascade;
+
+
+CREATE VIEW region_funding AS
 WITH
   -- Get all languages directly linked to region
   direct_languages AS (

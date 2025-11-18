@@ -1,15 +1,19 @@
 -- Fix search_partner_orgs function to remove deleted_at check
 -- The partner_orgs table doesn't have a deleted_at column
-CREATE OR REPLACE FUNCTION public.search_partner_orgs (search_query TEXT, max_results INTEGER DEFAULT 10) returns TABLE (
+-- Also fixes type mismatch: similarity() returns REAL, not DOUBLE PRECISION
+DROP FUNCTION if EXISTS public.search_partner_orgs (TEXT, INTEGER);
+
+
+CREATE FUNCTION public.search_partner_orgs (search_query TEXT, max_results INTEGER DEFAULT 10) returns TABLE (
   id UUID,
   name TEXT,
   description TEXT,
-  similarity_score DOUBLE PRECISION
+  similarity_score REAL
 ) language plpgsql security definer
 SET
   search_path TO 'public' AS $$
 DECLARE
-  similarity_threshold double precision;
+  similarity_threshold REAL;
 BEGIN
   -- Validate input
   IF length(trim(search_query)) < 2 THEN
@@ -17,24 +21,24 @@ BEGIN
   END IF;
 
   -- Set similarity threshold based on query length
-  CASE 
-    WHEN length(trim(search_query)) >= 8 THEN
-      similarity_threshold := 0.15;
-    WHEN length(trim(search_query)) >= 5 THEN  
-      similarity_threshold := 0.25;
-    WHEN length(trim(search_query)) >= 3 THEN
-      similarity_threshold := 0.35;
-    ELSE
-      similarity_threshold := 0.4;
-  END CASE;
+  IF length(trim(search_query)) >= 8 THEN
+    similarity_threshold := 0.15;
+  ELSIF length(trim(search_query)) >= 5 THEN
+    similarity_threshold := 0.25;
+  ELSIF length(trim(search_query)) >= 3 THEN
+    similarity_threshold := 0.35;
+  ELSE
+    similarity_threshold := 0.4;
+  END IF;
 
   -- Return matching public partner orgs
+  -- similarity() returns REAL, which matches our return type
   RETURN QUERY
   SELECT 
     po.id,
     po.name,
     po.description,
-    similarity(po.name, search_query)::double precision as similarity_score
+    similarity(po.name, search_query) AS similarity_score
   FROM partner_orgs po
   WHERE 
     po.is_public = true
