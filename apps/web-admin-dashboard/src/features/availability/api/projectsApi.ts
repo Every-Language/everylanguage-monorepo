@@ -1,11 +1,16 @@
 import { supabase } from '@/shared/services/supabase';
 import type { Project, LanguageEntity, Region } from '@/types';
 import type { Database } from '@everylanguage/shared-types';
+import {
+  extractLocation,
+  locationToPostGIS,
+} from '@/shared/utils/locationUtils';
 
-export interface ProjectWithDetails extends Project {
+export interface ProjectWithDetails extends Omit<Project, 'location'> {
   target_language?: LanguageEntity | null;
   source_language?: LanguageEntity | null;
   region?: Region | null;
+  location?: { lat: number; lng: number } | null;
   progress?: {
     completed_chapters: number;
     total_chapters: number;
@@ -19,6 +24,7 @@ export interface UpdateProjectData {
   target_language_entity_id?: string;
   source_language_entity_id?: string;
   region_id?: string | null;
+  location?: { lat: number; lng: number } | null;
   project_status?: Database['public']['Enums']['project_status'];
   funding_status?: Database['public']['Enums']['funding_status'];
 }
@@ -310,7 +316,10 @@ export const projectsApi = {
       }
     }
 
-    return { ...data, progress } as ProjectWithDetails;
+    // Extract location from PostGIS geometry
+    const location = extractLocation(data.location);
+
+    return { ...data, progress, location } as ProjectWithDetails;
   },
 
   /**
@@ -320,18 +329,38 @@ export const projectsApi = {
     projectId: string,
     updates: UpdateProjectData
   ): Promise<void> {
+    // Convert location to PostGIS format if provided
+    const locationValue =
+      updates.location !== undefined
+        ? locationToPostGIS(updates.location)
+        : undefined;
+
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.description !== undefined)
+      updateData.description = updates.description;
+    if (updates.target_language_entity_id !== undefined) {
+      updateData.target_language_entity_id = updates.target_language_entity_id;
+    }
+    if (updates.source_language_entity_id !== undefined) {
+      updateData.source_language_entity_id = updates.source_language_entity_id;
+    }
+    if (updates.region_id !== undefined)
+      updateData.region_id = updates.region_id;
+    if (updates.project_status !== undefined) {
+      updateData.project_status = updates.project_status;
+    }
+    if (updates.funding_status !== undefined) {
+      updateData.funding_status = updates.funding_status;
+    }
+    if (locationValue !== undefined) updateData.location = locationValue;
+
     const { error } = await supabase
       .from('projects')
-      .update({
-        name: updates.name,
-        description: updates.description,
-        target_language_entity_id: updates.target_language_entity_id,
-        source_language_entity_id: updates.source_language_entity_id,
-        region_id: updates.region_id,
-        project_status: updates.project_status,
-        funding_status: updates.funding_status,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', projectId)
       .is('deleted_at', null);
 

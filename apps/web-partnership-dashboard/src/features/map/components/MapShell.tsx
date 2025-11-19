@@ -14,6 +14,10 @@ import { useToast } from '@/shared/theme/hooks/useToast';
 // MapLibre CSS should be imported by the app's CSS pipeline or here
 // import 'maplibre-gl/dist/maplibre-gl.css';
 
+// Zoom limits: minZoom for globe at ~80% viewport, maxZoom for city-level detail
+const MIN_ZOOM = 1.0;
+const MAX_ZOOM = 11.0;
+
 interface MapShellProps {
   children?: React.ReactNode;
   countriesEnabled?: boolean;
@@ -251,6 +255,8 @@ export const MapShell: React.FC<MapShellProps> = ({
             onLoad={handleMapLoad}
             onClick={handleMapClick}
             padding={padding}
+            minZoom={MIN_ZOOM}
+            maxZoom={MAX_ZOOM}
           >
             <NavigationControl position='bottom-right' />
             {children}

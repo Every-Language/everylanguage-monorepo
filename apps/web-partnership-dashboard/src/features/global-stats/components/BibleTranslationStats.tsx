@@ -47,18 +47,20 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
   isLoading,
   compact = false,
 }) => {
-  return (
-    <section className='rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm p-6 space-y-6'>
-      <header className='space-y-1'>
-        <p className='text-sm font-semibold text-neutral-500'>
-          Global Coverage
-        </p>
-        <h2 className='text-2xl font-bold'>Bible Translation Progress</h2>
-        <p className='text-sm text-neutral-500'>
-          Share of {numberFormatter.format(data?.total_languages ?? 0)} tracked
-          languages with access to scripture today.
-        </p>
-      </header>
+  const content = (
+    <>
+      {!compact && (
+        <header className='space-y-1'>
+          <p className='text-sm font-semibold text-neutral-500'>
+            Global Coverage
+          </p>
+          <h2 className='text-2xl font-bold'>Bible Translation Progress</h2>
+          <p className='text-sm text-neutral-500'>
+            Share of {numberFormatter.format(data?.total_languages ?? 0)}{' '}
+            tracked languages with access to scripture today.
+          </p>
+        </header>
+      )}
 
       <div className='grid gap-4 md:grid-cols-3'>
         {cards.map(card => (
@@ -90,6 +92,16 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
           </article>
         ))}
       </div>
+    </>
+  );
+
+  if (compact) {
+    return <div className='space-y-6'>{content}</div>;
+  }
+
+  return (
+    <section className='rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm p-6 space-y-6'>
+      {content}
     </section>
   );
 };

@@ -6,6 +6,7 @@ import { regionsApi } from '../../regions/api/regionsApi';
 import { X, Edit, Save, Search } from 'lucide-react';
 import type { Database } from '@everylanguage/shared-types';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
+import { LocationPicker } from '@/shared/components/LocationPicker/LocationPicker';
 
 interface ViewProjectModalProps {
   projectId: string;
@@ -36,6 +37,9 @@ export function ViewProjectModal({
   const [targetLanguageId, setTargetLanguageId] = useState<string>('');
   const [sourceLanguageId, setSourceLanguageId] = useState<string>('');
   const [regionId, setRegionId] = useState<string | null>(null);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
   const [projectStatus, setProjectStatus] =
     useState<ProjectStatus>('precreated');
   const [fundingStatus, setFundingStatus] = useState<FundingStatus>('unfunded');
@@ -59,6 +63,7 @@ export function ViewProjectModal({
       setTargetLanguageId(project.target_language_entity_id);
       setSourceLanguageId(project.source_language_entity_id);
       setRegionId(project.region_id);
+      setLocation(project.location || null);
       setProjectStatus(project.project_status);
       setFundingStatus(project.funding_status);
     }
@@ -105,6 +110,7 @@ export function ViewProjectModal({
         target_language_entity_id: targetLanguageId,
         source_language_entity_id: sourceLanguageId,
         region_id: regionId,
+        location,
         project_status: projectStatus,
         funding_status: fundingStatus,
       });
@@ -266,33 +272,6 @@ export function ViewProjectModal({
                   </p>
                 )}
               </div>
-              {editingInfo && (
-                <div className='flex gap-2 pt-2'>
-                  <button
-                    onClick={() => {
-                      setEditingInfo(false);
-                      setName(project.name);
-                      setDescription(project.description || '');
-                      setTargetLanguageId(project.target_language_entity_id);
-                      setSourceLanguageId(project.source_language_entity_id);
-                      setRegionId(project.region_id);
-                      setProjectStatus(project.project_status);
-                      setFundingStatus(project.funding_status);
-                    }}
-                    className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={updateProjectMutation.isPending}
-                    className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                  >
-                    <Save className='h-4 w-4' />
-                    {updateProjectMutation.isPending ? 'Saving...' : 'Save'}
-                  </button>
-                </div>
-              )}
             </div>
           </section>
 
@@ -541,6 +520,43 @@ export function ViewProjectModal({
             </div>
           </section>
 
+          {/* Location */}
+          <section>
+            <div className='flex items-center justify-between mb-4'>
+              <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
+                Location
+              </h3>
+            </div>
+            <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg'>
+              {editingInfo ? (
+                <LocationPicker
+                  location={location}
+                  onLocationChange={setLocation}
+                  height='400px'
+                />
+              ) : (
+                <div>
+                  {project.location ? (
+                    <div className='space-y-2'>
+                      <div className='text-sm text-neutral-900 dark:text-neutral-100'>
+                        <span className='font-medium'>Latitude:</span>{' '}
+                        {project.location.lat.toFixed(6)}
+                      </div>
+                      <div className='text-sm text-neutral-900 dark:text-neutral-100'>
+                        <span className='font-medium'>Longitude:</span>{' '}
+                        {project.location.lng.toFixed(6)}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className='text-sm text-neutral-500 dark:text-neutral-400'>
+                      No location set
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+
           {/* Status */}
           <section>
             <div className='flex items-center justify-between mb-4'>
@@ -671,6 +687,38 @@ export function ViewProjectModal({
             </div>
           </section>
         </div>
+
+        {/* Footer with Save/Cancel buttons */}
+        {editingInfo && (
+          <div className='border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 bg-white dark:bg-neutral-900'>
+            <div className='flex gap-2 justify-end'>
+              <button
+                onClick={() => {
+                  setEditingInfo(false);
+                  setName(project.name);
+                  setDescription(project.description || '');
+                  setTargetLanguageId(project.target_language_entity_id);
+                  setSourceLanguageId(project.source_language_entity_id);
+                  setRegionId(project.region_id);
+                  setLocation(project.location || null);
+                  setProjectStatus(project.project_status);
+                  setFundingStatus(project.funding_status);
+                }}
+                className='px-4 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={updateProjectMutation.isPending}
+                className='px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
+              >
+                <Save className='h-4 w-4' />
+                {updateProjectMutation.isPending ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

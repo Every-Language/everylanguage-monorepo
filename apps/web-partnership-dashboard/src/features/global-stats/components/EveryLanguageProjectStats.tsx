@@ -21,6 +21,7 @@ type Props = {
   summary?: ProjectSummary;
   projects?: ProjectRow[];
   isLoading?: boolean;
+  compact?: boolean; // For use in map inspector panel
 };
 
 const numberFormatter = new Intl.NumberFormat();
@@ -29,18 +30,21 @@ export const EveryLanguageProjectStats: React.FC<Props> = ({
   summary,
   projects = [],
   isLoading,
+  compact = false,
 }) => {
-  return (
-    <section className='rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm p-6 space-y-6'>
-      <header className='space-y-1'>
-        <p className='text-sm font-semibold text-neutral-500'>
-          Every Language Projects
-        </p>
-        <h2 className='text-2xl font-bold'>Project Status</h2>
-        <p className='text-sm text-neutral-500'>
-          Snapshot of active initiatives and their current progress.
-        </p>
-      </header>
+  const content = (
+    <>
+      {!compact && (
+        <header className='space-y-1'>
+          <p className='text-sm font-semibold text-neutral-500'>
+            Every Language Projects
+          </p>
+          <h2 className='text-2xl font-bold'>Project Status</h2>
+          <p className='text-sm text-neutral-500'>
+            Snapshot of active initiatives and their current progress.
+          </p>
+        </header>
+      )}
 
       <div className='grid gap-4 md:grid-cols-3'>
         <SummaryCard
@@ -128,6 +132,16 @@ export const EveryLanguageProjectStats: React.FC<Props> = ({
           </div>
         )}
       </div>
+    </>
+  );
+
+  if (compact) {
+    return <div className='space-y-6'>{content}</div>;
+  }
+
+  return (
+    <section className='rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm p-6 space-y-6'>
+      {content}
     </section>
   );
 };

@@ -17,7 +17,14 @@ import { GRNLanguageSampleSection } from '../sections/GRNLanguageSampleSection';
 import { GRNGospelResourcesSection } from '../sections/GRNGospelResourcesSection';
 import { useLanguageEntity } from '../hooks/useLanguageEntity';
 import { CollapsibleSection } from './shared/CollapsibleSection';
-import { GlobalStatsWidget } from '@/features/global-stats/components/GlobalStatsWidget';
+import { BibleTranslationStats } from '@/features/global-stats/components/BibleTranslationStats';
+import { EveryLanguageProjectStats } from '@/features/global-stats/components/EveryLanguageProjectStats';
+import { RecentActivityFeed } from '@/features/global-stats/components/RecentActivityFeed';
+import {
+  useActiveProjectsWithProgress,
+  useGlobalStatistics,
+  useRecentActivityFeed,
+} from '@/features/global-stats/hooks/useGlobalStats';
 
 // Mapping of section types to display names
 const SECTION_TITLES: Record<SectionType, string> = {
@@ -58,6 +65,11 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
     selection?.kind === 'language_entity' ? selection.id : ''
   );
   const descendantIds = languageData.descendants.data ?? [];
+
+  // Global stats hooks (called unconditionally to satisfy rules of hooks)
+  const bibleStatsQuery = useGlobalStatistics();
+  const projectStatusQuery = useActiveProjectsWithProgress();
+  const activityFeedQuery = useRecentActivityFeed(12);
 
   // Helper function to get section title (dynamic for linked-entities)
   const getSectionTitle = (sectionType: SectionType): string => {
@@ -106,13 +118,45 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
     }
     if (type === 'info') {
       return (
-        <CollapsibleSection
-          title='Global translation snapshot'
-          sectionId='global-stats'
-          defaultExpanded={true}
-        >
-          <GlobalStatsWidget compact={true} />
-        </CollapsibleSection>
+        <div className='space-y-4'>
+          <CollapsibleSection
+            title='Bible Translation Progress'
+            sectionId='bible-translation-progress'
+            defaultExpanded={true}
+            variant='card'
+          >
+            <BibleTranslationStats
+              data={bibleStatsQuery.data?.data}
+              isLoading={bibleStatsQuery.isLoading}
+              compact={true}
+            />
+          </CollapsibleSection>
+          <CollapsibleSection
+            title='Every Language Projects'
+            sectionId='every-language-projects'
+            defaultExpanded={true}
+            variant='card'
+          >
+            <EveryLanguageProjectStats
+              summary={projectStatusQuery.data?.summary}
+              projects={projectStatusQuery.data?.projects}
+              isLoading={projectStatusQuery.isLoading}
+              compact={true}
+            />
+          </CollapsibleSection>
+          <CollapsibleSection
+            title='Recent Activity'
+            sectionId='recent-activity'
+            defaultExpanded={true}
+            variant='card'
+          >
+            <RecentActivityFeed
+              items={activityFeedQuery.data?.items}
+              isLoading={activityFeedQuery.isLoading}
+              compact={true}
+            />
+          </CollapsibleSection>
+        </div>
       );
     }
     return null;

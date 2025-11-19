@@ -23,6 +23,7 @@ type ActivityItem =
 type Props = {
   items?: ActivityItem[];
   isLoading?: boolean;
+  compact?: boolean; // For use in map inspector panel
 };
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -41,20 +42,23 @@ const typeLabels: Record<ActivityItem['type'], string> = {
 export const RecentActivityFeed: React.FC<Props> = ({
   items = [],
   isLoading,
+  compact = false,
 }) => {
   const hasActivity = items.length > 0;
 
-  return (
-    <section className='rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm p-6 space-y-6'>
-      <header className='space-y-1'>
-        <p className='text-sm font-semibold text-neutral-500'>
-          Recent Activity
-        </p>
-        <h2 className='text-2xl font-bold'>What&apos;s new</h2>
-        <p className='text-sm text-neutral-500'>
-          Latest Bible audio uploads and public project updates.
-        </p>
-      </header>
+  const content = (
+    <>
+      {!compact && (
+        <header className='space-y-1'>
+          <p className='text-sm font-semibold text-neutral-500'>
+            Recent Activity
+          </p>
+          <h2 className='text-2xl font-bold'>What&apos;s new</h2>
+          <p className='text-sm text-neutral-500'>
+            Latest Bible audio uploads and public project updates.
+          </p>
+        </header>
+      )}
 
       {isLoading ? (
         <SkeletonList />
@@ -116,6 +120,16 @@ export const RecentActivityFeed: React.FC<Props> = ({
           ))}
         </ul>
       )}
+    </>
+  );
+
+  if (compact) {
+    return <div className='space-y-6'>{content}</div>;
+  }
+
+  return (
+    <section className='rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm p-6 space-y-6'>
+      {content}
     </section>
   );
 };

@@ -220,7 +220,7 @@ export function AppLayout({ children }: LayoutProps) {
         </div>
 
         {/* Navigation */}
-        <nav className='flex-1 overflow-hidden py-4'>
+        <nav className='flex-1 overflow-y-auto py-4'>
           {Object.entries(groupedItems).map(([section, items]) => (
             <div key={section} className='mb-6'>
               {sidebarOpen && section !== 'Main' && (
