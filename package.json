@@ -10,6 +10,7 @@
     "supabase"
   ],
   "scripts": {
+    "checkall": "turbo run lint && turbo run type-check && turbo run build",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",

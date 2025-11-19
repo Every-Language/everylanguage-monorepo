@@ -47,6 +47,14 @@ interface SectionRendererProps {
   scrollRef?: React.RefObject<HTMLDivElement | null>;
   layers?: LayerState;
   onLayersChange?: (next: LayerState) => void;
+  globalListeningSettings?: {
+    timePeriodHours: number;
+    colorGradient: import('../analytics/types').ColorGradient;
+  };
+  onGlobalListeningSettingsChange?: (settings: {
+    timePeriodHours: number;
+    colorGradient: import('../analytics/types').ColorGradient;
+  }) => void;
 }
 
 /**
@@ -59,6 +67,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
   scrollRef,
   layers,
   onLayersChange,
+  globalListeningSettings,
+  onGlobalListeningSettingsChange,
 }) => {
   // Get descendant IDs for language entities (used by progress and listening sections)
   const languageData = useLanguageEntity(
@@ -112,6 +122,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             value={layers}
             onChange={onLayersChange}
             embeddable
+            globalListeningSettings={globalListeningSettings}
+            onGlobalListeningSettingsChange={onGlobalListeningSettingsChange}
           />
         </CollapsibleSection>
       );
@@ -248,6 +260,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             value={layers}
             onChange={onLayersChange}
             embeddable
+            globalListeningSettings={globalListeningSettings}
+            onGlobalListeningSettingsChange={onGlobalListeningSettingsChange}
           />
         );
       }

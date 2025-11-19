@@ -5,6 +5,8 @@ import { MapOverlayLayers } from '../inspector/components/MapOverlayLayers';
 import { RouteSync } from '../inspector/components/RouteSync';
 import { MapAnalyticsLayers } from '../analytics/MapAnalyticsLayers';
 import { MapProjectsLayer } from '../projects/MapProjectsLayer';
+import { GlobalListeningHeatmapLayer } from '../analytics/GlobalListeningHeatmapLayer';
+import { DEFAULT_COLOR_GRADIENT } from '../analytics/constants';
 import { InspectorPanel } from '../components/InspectorPanel';
 import { MobileBottomSheet } from '../components/MobileBottomSheet';
 import { MobileSheetProvider } from '../context/MobileSheetProvider';
@@ -21,6 +23,11 @@ export const MapPage: React.FC = () => {
     projects: true,
     countries: true,
     listening: true,
+    globalListening: false,
+  });
+  const [globalListeningSettings, setGlobalListeningSettings] = React.useState({
+    timePeriodHours: 168, // Default: 1 week
+    colorGradient: DEFAULT_COLOR_GRADIENT,
   });
   const selection = useSelection();
   const layout = DEFAULT_LAYOUT; // Can be made dynamic in future for user preferences
@@ -98,6 +105,11 @@ export const MapPage: React.FC = () => {
           <MapOverlayLayers countriesEnabled={layers.countries} />
           <MapAnalyticsLayers show={layers.listening} />
           <MapProjectsLayer show={layers.projects} />
+          <GlobalListeningHeatmapLayer
+            show={layers.globalListening}
+            timePeriodHours={globalListeningSettings.timePeriodHours}
+            colorGradient={globalListeningSettings.colorGradient}
+          />
 
           {/* Desktop panels */}
           <div className='hidden md:block'>
@@ -108,6 +120,8 @@ export const MapPage: React.FC = () => {
                 selection={selection}
                 layers={layers}
                 onLayersChange={setLayers}
+                globalListeningSettings={globalListeningSettings}
+                onGlobalListeningSettingsChange={setGlobalListeningSettings}
               />
             ))}
           </div>

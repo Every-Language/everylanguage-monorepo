@@ -1,5 +1,7 @@
 import React from 'react';
 import { type LayerKey } from '../components/LayerToggles';
+import { GlobalListeningSettingsSection } from './GlobalListeningSettingsSection';
+import type { ColorGradient } from '../analytics/types';
 
 export type LayerState = Record<LayerKey, boolean>;
 
@@ -7,6 +9,14 @@ interface MapControlsSectionProps {
   value: LayerState;
   onChange: (next: LayerState) => void;
   embeddable?: boolean;
+  globalListeningSettings?: {
+    timePeriodHours: number;
+    colorGradient: ColorGradient;
+  };
+  onGlobalListeningSettingsChange?: (settings: {
+    timePeriodHours: number;
+    colorGradient: ColorGradient;
+  }) => void;
 }
 
 /**
@@ -17,18 +27,24 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
   value,
   onChange,
   embeddable = true,
+  globalListeningSettings,
+  onGlobalListeningSettingsChange,
 }) => {
   const toggle = (k: LayerKey) => onChange({ ...value, [k]: !value[k] });
 
   const content = (
     <div>
       <div className='text-sm font-medium mb-2'>Layers</div>
-      {(['countries', 'listening', 'projects'] as LayerKey[]).map(k => (
+      {(
+        ['countries', 'listening', 'projects', 'globalListening'] as LayerKey[]
+      ).map(k => (
         <label
           key={k}
           className='flex items-center justify-between text-sm py-1 select-none'
         >
-          <span className='capitalize'>{k}</span>
+          <span className='capitalize'>
+            {k === 'globalListening' ? 'Global Listening' : k}
+          </span>
           <span className='relative inline-flex items-center'>
             <input
               type='checkbox'
@@ -42,6 +58,28 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
           </span>
         </label>
       ))}
+      {value.globalListening &&
+        globalListeningSettings &&
+        onGlobalListeningSettingsChange && (
+          <div className='mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700'>
+            <GlobalListeningSettingsSection
+              timePeriodHours={globalListeningSettings.timePeriodHours}
+              colorGradient={globalListeningSettings.colorGradient}
+              onTimePeriodChange={hours =>
+                onGlobalListeningSettingsChange({
+                  ...globalListeningSettings,
+                  timePeriodHours: hours,
+                })
+              }
+              onColorGradientChange={gradient =>
+                onGlobalListeningSettingsChange({
+                  ...globalListeningSettings,
+                  colorGradient: gradient,
+                })
+              }
+            />
+          </div>
+        )}
     </div>
   );
 

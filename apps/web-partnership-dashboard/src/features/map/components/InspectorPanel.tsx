@@ -8,6 +8,7 @@ import { Dialog } from '@/shared/components/ui/Dialog';
 import { type PanelConfig } from '../config/layoutTypes';
 import { type MapSelection } from '../inspector/state/inspectorStore';
 import { type LayerState } from '../sections/MapControlsSection';
+import type { ColorGradient } from '../analytics/types';
 import { SectionRenderer } from './SectionRenderer';
 import { FadeSwitch } from './shared/FadeTransition';
 import { HeaderSkeleton, BodySkeleton } from './shared/Skeletons';
@@ -23,6 +24,14 @@ interface InspectorPanelProps {
   selection: MapSelection | null;
   layers?: LayerState;
   onLayersChange?: (next: LayerState) => void;
+  globalListeningSettings?: {
+    timePeriodHours: number;
+    colorGradient: ColorGradient;
+  };
+  onGlobalListeningSettingsChange?: (settings: {
+    timePeriodHours: number;
+    colorGradient: ColorGradient;
+  }) => void;
 }
 
 /**
@@ -34,6 +43,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   selection,
   layers,
   onLayersChange,
+  globalListeningSettings,
+  onGlobalListeningSettingsChange,
 }) => {
   const router = useRouter();
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
@@ -187,6 +198,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     scrollRef={scrollRef}
                     layers={layers}
                     onLayersChange={onLayersChange}
+                    globalListeningSettings={globalListeningSettings}
+                    onGlobalListeningSettingsChange={
+                      onGlobalListeningSettingsChange
+                    }
                   />
                 </div>
               ))}
