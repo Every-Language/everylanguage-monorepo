@@ -20,7 +20,7 @@ CREATE OR REPLACE FUNCTION public.get_global_sessions_heatmap (
   most_recent_chapter_listen TIMESTAMPTZ,
   languages JSONB,
   age_normalized DOUBLE PRECISION
-) language sql stable security invoker
+) language sql stable security definer
 SET
   search_path = public AS $$
   WITH
