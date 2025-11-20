@@ -1,6 +1,6 @@
 import { supabase } from '@/shared/services/supabase';
 import type { GlobalHeatmapPoint } from './types';
-import { getGridSizeForZoom, getPointLimitForZoom } from './constants';
+import { getPointLimitForZoom } from './constants';
 
 export type UUID = string;
 
@@ -363,6 +363,7 @@ export async function fetchLanguageNames(
 }
 
 // Global sessions heatmap: fetch sessions aggregated by grid location
+// Uses optimized PostGIS RPC function for efficient spatial and time filtering
 export async function fetchGlobalSessionsHeatmap(params: {
   bbox: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
   timePeriodHours: number;
@@ -371,133 +372,70 @@ export async function fetchGlobalSessionsHeatmap(params: {
   const { bbox, timePeriodHours, zoom } = params;
   const [minLng, minLat, maxLng, maxLat] = bbox;
 
-  // Get grid size and point limit for zoom level
-  const gridSize = getGridSizeForZoom(zoom);
+  // Get point limit for zoom level
+  // Note: grid size is fixed at 0.5° in the view to prevent points from jumping on zoom
   const pointLimit = getPointLimitForZoom(zoom);
 
-  // Calculate time threshold
-  const timeThreshold = new Date();
-  timeThreshold.setHours(timeThreshold.getHours() - timePeriodHours);
-
-  // Build bounding box geometry for PostGIS query
-  // Use ST_MakeEnvelope to create a bounding box
-  const { data, error } = await (supabase as any).rpc(
-    'get_global_sessions_heatmap',
+  // Call optimized RPC function that queries the view with PostGIS spatial filtering
+  // This maintains consistent grid positions (no jumping on zoom) while providing efficient bbox filtering
+  // Function uses SECURITY DEFINER to bypass RLS policies for analytics aggregation
+  const { data: rpcData, error: rpcError } = await (supabase as any).rpc(
+    'get_global_sessions_heatmap_from_view',
     {
       p_min_lng: minLng,
       p_min_lat: minLat,
       p_max_lng: maxLng,
       p_max_lat: maxLat,
-      p_time_threshold: timeThreshold.toISOString(),
-      p_grid_size: gridSize,
-      p_limit: pointLimit,
+      p_time_period_hours: timePeriodHours,
+      p_point_limit: pointLimit,
     }
   );
 
-  if (error) {
-    // Fallback: query view directly if RPC doesn't exist yet
-    // We'll create the RPC function in a migration, but for now use direct query
-    const { data: viewData, error: viewError } = await (supabase as any)
-      .from('vw_global_sessions_heatmap')
-      .select(
-        'grid, session_count, total_duration_seconds, most_recent_session_start, most_recent_chapter_listen, languages, intensity'
-      );
+  if (rpcError) throw rpcError;
+  if (!rpcData) return [];
 
-    if (viewError) throw viewError;
-    if (!viewData) return [];
-
-    // Filter by bbox and time period in JavaScript (less efficient but works)
-    const filtered = (
-      viewData as Array<{
-        grid?: { type?: string; coordinates?: [number, number] };
-        session_count?: number;
-        total_duration_seconds?: number;
-        most_recent_session_start?: string;
-        most_recent_chapter_listen?: string | null;
-        languages?: string[] | null;
-        intensity?: number;
-      }>
-    )
-      .filter(row => {
-        if (
-          !row.grid ||
-          row.grid.type !== 'Point' ||
-          !Array.isArray(row.grid.coordinates)
-        ) {
-          return false;
-        }
-        const [lon, lat] = row.grid.coordinates;
-        if (lon < minLng || lon > maxLng || lat < minLat || lat > maxLat) {
-          return false;
-        }
-        if (row.most_recent_session_start) {
-          const sessionStart = new Date(row.most_recent_session_start);
-          if (sessionStart < timeThreshold) {
-            return false;
-          }
-        }
-        return true;
-      })
-      .slice(0, pointLimit)
-      .map(row => {
-        const [lon, lat] = row.grid!.coordinates as [number, number];
-        const sessionStart = row.most_recent_session_start
-          ? new Date(row.most_recent_session_start)
-          : null;
-        const ageNormalized = sessionStart
-          ? Math.max(
-              0,
-              Math.min(
-                1,
-                1 -
-                  (Date.now() - sessionStart.getTime()) /
-                    (timePeriodHours * 60 * 60 * 1000)
-              )
-            )
-          : 0;
-
-        return {
-          lon,
-          lat,
-          intensity: Number(row.intensity ?? 0),
-          sessionCount: Number(row.session_count ?? 0),
-          totalDurationSeconds: Number(row.total_duration_seconds ?? 0),
-          mostRecentSessionStart: row.most_recent_session_start ?? null,
-          mostRecentChapterListen: row.most_recent_chapter_listen ?? null,
-          languages: Array.isArray(row.languages) ? row.languages : [],
-          ageNormalized,
-        };
-      });
-
-    return filtered;
-  }
-
-  if (!data) return [];
-
-  // Transform RPC response to GlobalHeatmapPoint[]
+  // Map RPC response directly to GlobalHeatmapPoint[]
+  // RPC already returns lon/lat (not geometry), age_normalized, and formatted languages
   return (
-    data as Array<{
-      lon: number;
-      lat: number;
-      intensity: number;
-      session_count: number;
-      total_duration_seconds: number;
-      most_recent_session_start: string | null;
-      most_recent_chapter_listen: string | null;
-      languages: string[];
-      age_normalized: number;
+    rpcData as Array<{
+      lon?: number;
+      lat?: number;
+      intensity?: number;
+      session_count?: number;
+      total_duration_seconds?: number;
+      most_recent_session_start?: string | null;
+      most_recent_chapter_listen?: string | null;
+      languages?: string[] | any; // JSONB array - Supabase may return as array or string
+      age_normalized?: number;
     }>
-  ).map(row => ({
-    lon: Number(row.lon),
-    lat: Number(row.lat),
-    intensity: Number(row.intensity),
-    sessionCount: Number(row.session_count),
-    totalDurationSeconds: Number(row.total_duration_seconds),
-    mostRecentSessionStart: row.most_recent_session_start,
-    mostRecentChapterListen: row.most_recent_chapter_listen,
-    languages: Array.isArray(row.languages) ? row.languages : [],
-    ageNormalized: Number(row.age_normalized),
-  }));
+  ).map(row => {
+    // Handle languages - Supabase RPC returns JSONB which may be parsed or string
+    let languagesArray: string[] = [];
+    if (row.languages) {
+      if (Array.isArray(row.languages)) {
+        languagesArray = row.languages;
+      } else if (typeof row.languages === 'string') {
+        try {
+          const parsed = JSON.parse(row.languages);
+          languagesArray = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          // Ignore parse errors, use empty array
+        }
+      }
+    }
+
+    return {
+      lon: Number(row.lon ?? 0),
+      lat: Number(row.lat ?? 0),
+      intensity: Number(row.intensity ?? 0),
+      sessionCount: Number(row.session_count ?? 0),
+      totalDurationSeconds: Number(row.total_duration_seconds ?? 0),
+      mostRecentSessionStart: row.most_recent_session_start ?? null,
+      mostRecentChapterListen: row.most_recent_chapter_listen ?? null,
+      languages: languagesArray,
+      ageNormalized: Number(row.age_normalized ?? 0),
+    };
+  });
 }
 
 // -------- Unified MV aggregations (mv_language_listens_stats) --------

@@ -90,7 +90,7 @@ export const GlobalListeningHeatmapLayer: React.FC<
     [number, number, number, number] | null
   >(null);
   const [zoom, setZoom] = React.useState<number>(1.5);
-  const [fadeOpacity, setFadeOpacity] = React.useState<number>(1);
+  // Removed fadeOpacity - not needed since we keep previous data during fetch
   const [pulseAnimationTime, setPulseAnimationTime] = React.useState<number>(0);
   const [hoveredPoint, setHoveredPoint] = React.useState<{
     point: GlobalHeatmapPoint;
@@ -99,9 +99,6 @@ export const GlobalListeningHeatmapLayer: React.FC<
     y: number;
   } | null>(null);
   const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
-  const fadeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
 
@@ -139,18 +136,20 @@ export const GlobalListeningHeatmapLayer: React.FC<
         }
 
         debounceTimerRef.current = setTimeout(() => {
-          // Fade out old data
-          setFadeOpacity(0);
+          // Only update if bounds have changed significantly (avoid unnecessary fetches)
+          // Compare with previous bounds to prevent refetching on tiny movements
+          const boundsChanged =
+            !viewportBounds ||
+            Math.abs(expandedBounds[0] - viewportBounds[0]) > 0.01 ||
+            Math.abs(expandedBounds[1] - viewportBounds[1]) > 0.01 ||
+            Math.abs(expandedBounds[2] - viewportBounds[2]) > 0.01 ||
+            Math.abs(expandedBounds[3] - viewportBounds[3]) > 0.01;
 
-          // After fade out, update bounds and fade in
-          if (fadeTimeoutRef.current) {
-            clearTimeout(fadeTimeoutRef.current);
-          }
-
-          fadeTimeoutRef.current = setTimeout(() => {
+          if (boundsChanged) {
+            // Update bounds immediately - React Query will keep previous data while fetching
+            // This prevents the blinking effect
             setViewportBounds(expandedBounds);
-            setFadeOpacity(1);
-          }, 300); // Match fade duration
+          }
         }, 300);
       } catch (error) {
         console.debug('Error updating viewport:', error);
@@ -172,10 +171,9 @@ export const GlobalListeningHeatmapLayer: React.FC<
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
-      if (fadeTimeoutRef.current) {
-        clearTimeout(fadeTimeoutRef.current);
-      }
     };
+    // viewportBounds intentionally excluded from deps - we only read it for comparison, not to trigger re-runs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapRef, show]);
 
   // Fetch heatmap data based on viewport
@@ -187,13 +185,18 @@ export const GlobalListeningHeatmapLayer: React.FC<
       timePeriodHours,
       zoom,
     ],
-    queryFn: () =>
-      fetchGlobalSessionsHeatmap({
+    queryFn: () => {
+      return fetchGlobalSessionsHeatmap({
         bbox: viewportBounds!,
         timePeriodHours,
         zoom,
-      }),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+      });
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes (increased from 2 minutes - RPC is faster, less frequent updates needed)
+    gcTime: 10 * 60 * 1000, // 10 minutes garbage collection time (keep cached data longer)
+    // Keep previous data while fetching to prevent blinking
+    placeholderData: previousData =>
+      previousData as GlobalHeatmapPoint[] | undefined,
   });
 
   // Fetch language names for hover tooltip
@@ -228,6 +231,12 @@ export const GlobalListeningHeatmapLayer: React.FC<
 
     const handleMouseMove = (e: maplibregl.MapLayerMouseEvent) => {
       try {
+        // Check if layer exists before querying
+        if (!map.getLayer('global-listening-heatmap-layer')) {
+          setHoveredPoint(null);
+          return;
+        }
+
         const features = map.queryRenderedFeatures(e.point, {
           layers: ['global-listening-heatmap-layer'],
         });
@@ -319,44 +328,42 @@ export const GlobalListeningHeatmapLayer: React.FC<
   }, [show]);
 
   // Apply pulsing effect to heatmap intensity dynamically
+  // Pulse multiplies the constant intensity (adds 0-20% boost)
   React.useEffect(() => {
     if (!show || !mapRef.current) return;
 
     const map = mapRef.current.getMap() as maplibregl.Map | undefined;
     if (!map || !map.getLayer('global-listening-heatmap-layer')) return;
 
-    // Calculate base intensity multiplier based on pulse
-    // Pulse ranges from 0 to 1, so we add 0.1 to 0.3 multiplier (10-30% increase)
+    // Calculate pulse multiplier (1.0 to 1.2, adding 0-20% boost)
     const pulseMultiplier = 1 + pulseAnimationTime * 0.2;
 
     try {
-      // Update intensity with pulse effect
+      // Multiply the constant intensity by pulse multiplier
       map.setPaintProperty(
         'global-listening-heatmap-layer',
         'heatmap-intensity',
-        [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          0,
-          0.8 * pulseMultiplier,
-          6,
-          1.2 * pulseMultiplier,
-          9,
-          1.6 * pulseMultiplier,
-        ]
+        1.6 * pulseMultiplier // Constant 1.6 * pulse (1.0 to 1.2)
       );
     } catch (error) {
       // Layer might not be loaded yet, ignore
-      console.debug('Error updating heatmap intensity:', error);
+      console.debug('Error updating heatmap intensity pulse:', error);
     }
   }, [show, pulseAnimationTime, mapRef]);
 
-  if (!show || !heatmapQuery.data || heatmapQuery.data.length === 0) {
+  // Keep showing previous data while loading new data to prevent blinking
+  const displayData = heatmapQuery.data;
+
+  if (
+    !show ||
+    !displayData ||
+    !Array.isArray(displayData) ||
+    displayData.length === 0
+  ) {
     return null;
   }
 
-  const featureCollection = toFeatureCollection(heatmapQuery.data);
+  const featureCollection = toFeatureCollection(displayData);
   const colorExpression = colorGradientToExpression(colorGradient);
 
   return (
@@ -370,48 +377,152 @@ export const GlobalListeningHeatmapLayer: React.FC<
           id='global-listening-heatmap-layer'
           type='heatmap'
           paint={{
+            // HEATMAP-WEIGHT: Controls how much each data point contributes to the heat
+            // Data-driven: scales with session count AND total duration
+            // Higher session count and duration = higher weight = stronger contribution
+            // Combines both factors: sessionCount (log scale) + normalized duration
             'heatmap-weight': [
               'interpolate',
               ['linear'],
-              ['get', 'weight'],
+              [
+                '+',
+                // Session count component (log scale, 0-1 range)
+                [
+                  'interpolate',
+                  ['linear'],
+                  ['log10', ['+', ['get', 'sessionCount'], 1]],
+                  0,
+                  0, // log10(1) = 0 → 0
+                  1,
+                  0.5, // log10(10) = 1 → 0.5
+                  2,
+                  0.8, // log10(100) = 2 → 0.8
+                  3,
+                  1.0, // log10(1000) = 3 → 1.0
+                ],
+                // Duration component (normalized, 0-0.5 range)
+                // Duration in hours, normalized to 0-0.5 contribution
+                [
+                  'interpolate',
+                  ['linear'],
+                  [
+                    'log10',
+                    [
+                      '+',
+                      [
+                        '/',
+                        ['get', 'totalDurationSeconds'],
+                        3600, // Convert seconds to hours
+                      ],
+                      1,
+                    ],
+                  ],
+                  0,
+                  0, // log10(1 hour) = 0 → 0
+                  1,
+                  0.1, // log10(10 hours) = 1 → 0.1
+                  2,
+                  0.2, // log10(100 hours) = 2 → 0.2
+                  3,
+                  0.3, // log10(1000 hours) = 3 → 0.3
+                  4,
+                  0.5, // log10(10000 hours) = 4 → 0.5
+                ],
+              ],
               0,
-              0,
-              8,
-              1,
+              0, // Combined 0 → weight 0
+              0.5,
+              0.3, // Combined 0.5 → weight 0.3
+              1.0,
+              0.6, // Combined 1.0 → weight 0.6
+              1.5,
+              1.0, // Combined 1.5 → weight 1.0 (max)
             ],
-            'heatmap-intensity': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              0,
-              0.8,
-              6,
-              1.2,
-              9,
-              1.6,
-            ],
+
+            // HEATMAP-INTENSITY: Multiplier for the overall heatmap strength (GLOBAL, not per-point)
+            // Higher = brighter/more intense heatmap
+            // Lower = dimmer/subtler heatmap
+            // This affects how "hot" the colors appear
+            // NOTE: This is GLOBAL - affects entire layer uniformly
+            // Per-point variation is handled by heatmap-weight instead
+            // Constant value (not zoom-based)
+            'heatmap-intensity': 1,
+
+            // HEATMAP-RADIUS: Size of each heat point in pixels
+            // Larger radius = bigger, more spread out heat blobs
+            // Smaller radius = tighter, more concentrated heat
+            // This is the "spread" of heat around each data point
+            // Data-driven: scales with session count AND total duration (not zoom)
             'heatmap-radius': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              0,
-              2,
-              4,
-              10,
-              8,
-              22,
-              12,
-              30,
+              '+', // Add base radius to combined session+duration boost
+              10, // Base radius (constant, not zoom-based)
+              [
+                '+',
+                // Session count component
+                [
+                  'interpolate',
+                  ['linear'],
+                  ['log10', ['+', ['get', 'sessionCount'], 1]],
+                  0,
+                  0, // log10(1) = 0 → no boost
+                  1,
+                  3, // log10(10) = 1 → small boost (3px)
+                  2,
+                  8, // log10(100) = 2 → medium boost (8px)
+                  3,
+                  12, // log10(1000) = 3 → large boost (12px)
+                ],
+                // Duration component (in hours)
+                [
+                  'interpolate',
+                  ['linear'],
+                  [
+                    'log10',
+                    [
+                      '+',
+                      [
+                        '/',
+                        ['get', 'totalDurationSeconds'],
+                        3600, // Convert seconds to hours
+                      ],
+                      1,
+                    ],
+                  ],
+                  0,
+                  0, // log10(1 hour) = 0 → no boost
+                  1,
+                  2, // log10(10 hours) = 1 → small boost (2px)
+                  2,
+                  5, // log10(100 hours) = 2 → medium boost (5px)
+                  3,
+                  8, // log10(1000 hours) = 3 → large boost (8px)
+                  4,
+                  12, // log10(10000 hours) = 4 → extra boost (12px)
+                ],
+              ],
             ],
-            'heatmap-opacity': [
-              'interpolate',
-              ['linear'],
-              ['get', 'ageNormalized'],
-              0,
-              0.3 * fadeOpacity, // Older points: lower opacity
-              1,
-              0.7 * fadeOpacity, // Recent points: higher opacity
-            ],
+            // [
+            //   'interpolate',
+            //   ['linear'],
+            //   ['zoom'],
+            //   0,   // At zoom level 0,
+            //   20,  //   radius = 20px (large blobs for global view)
+            //   2,   // At zoom level 2,
+            //   25,  //   radius = 15px
+            //   4,   // At zoom level 4 (continent/country view),
+            //   30,  //   radius = 12px (increased from 10px for mid-zoom)
+            //   8,   // At zoom level 8 (city view),
+            //   25,  //   radius = 22px
+            //   12,  // At zoom level 12 (street view),
+            //   20,  //   radius = 30px
+            // ],
+
+            // HEATMAP-OPACITY: Overall transparency of the heatmap layer
+            // 0.0 = completely transparent (invisible)
+            // 1.0 = completely opaque (fully visible)
+            // Lower opacity = more subtle, lets map features show through
+            // Higher opacity = more prominent, dominates the map
+            'heatmap-opacity': 0.7,
             'heatmap-color': colorExpression,
           }}
         />

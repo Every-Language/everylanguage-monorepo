@@ -6,6 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchProjectsWithLocation } from './api';
 import { useMapContext } from '../context/MapContext';
 import { useTheme } from '@/shared/theme';
+import { useProjectProgress } from '../../partnerorgs/hooks/useProjectProgress';
+import { Progress } from '@/shared/components/ui/Progress';
 import type * as maplibregl from 'maplibre-gl';
 
 interface HoveredProject {
@@ -32,6 +34,9 @@ export const MapProjectsLayer: React.FC<{ show: boolean }> = ({ show }) => {
     queryFn: fetchProjectsWithLocation,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Fetch progress data for the hovered project
+  const progressQuery = useProjectProgress(hoveredProject?.id || '', undefined);
 
   // Convert projects to GeoJSON FeatureCollection
   const featureCollection = React.useMemo(() => {
@@ -376,7 +381,7 @@ export const MapProjectsLayer: React.FC<{ show: boolean }> = ({ show }) => {
           offset={[0, -8]}
           className='projects-popup'
         >
-          <div className='px-2 py-1 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 rounded border border-neutral-200 dark:border-neutral-700 shadow-sm'>
+          <div className='px-2 py-1.5 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 rounded border border-neutral-200 dark:border-neutral-700 shadow-sm min-w-[180px]'>
             <div className='font-semibold text-sm mb-1 text-neutral-900 dark:text-neutral-100'>
               Project
             </div>
@@ -384,10 +389,73 @@ export const MapProjectsLayer: React.FC<{ show: boolean }> = ({ show }) => {
               {hoveredProject.name}
             </div>
             {hoveredProject.targetLanguageName && (
-              <div className='text-xs text-neutral-600 dark:text-neutral-400 mt-0.5'>
+              <div className='text-xs text-neutral-600 dark:text-neutral-400 mt-0.5 mb-2'>
                 {hoveredProject.targetLanguageName}
               </div>
             )}
+            {/* Progress bar */}
+            {(() => {
+              const progressData = progressQuery.data;
+              if (!progressData || progressData.length === 0) {
+                return null;
+              }
+
+              // Find the best progress across all versions (audio and text)
+              let bestChaptersDone = 0;
+              let bestChaptersTotal = 1189; // Default to standard Bible chapter count
+
+              for (const version of progressData) {
+                const summary = (version as any)?.progress_summary?.[0];
+                if (summary) {
+                  let completed = 0;
+                  const total = summary.total_chapters || 1189;
+
+                  // Handle both audio and text versions
+                  if (version.version_type === 'audio') {
+                    completed = summary.chapters_with_audio || 0;
+                  } else if (version.version_type === 'text') {
+                    completed = summary.complete_chapters || 0;
+                  }
+
+                  // Take the max completed chapters (best progress)
+                  if (completed > bestChaptersDone) {
+                    bestChaptersDone = completed;
+                    bestChaptersTotal = total;
+                  }
+                }
+              }
+
+              if (bestChaptersTotal === 0) {
+                return null;
+              }
+
+              const percentage = Math.round(
+                (bestChaptersDone / bestChaptersTotal) * 100
+              );
+
+              return (
+                <div className='mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700'>
+                  <div className='flex items-center justify-between mb-1'>
+                    <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                      Progress
+                    </span>
+                    <span className='text-xs font-medium text-neutral-900 dark:text-neutral-100'>
+                      {bestChaptersDone} / {bestChaptersTotal}
+                    </span>
+                  </div>
+                  <Progress
+                    value={bestChaptersDone}
+                    max={bestChaptersTotal}
+                    color='accent'
+                    size='sm'
+                    className='h-1.5'
+                  />
+                  <div className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 text-right'>
+                    {percentage}%
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </Popup>
       )}

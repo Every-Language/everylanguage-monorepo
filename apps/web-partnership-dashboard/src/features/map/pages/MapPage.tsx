@@ -6,7 +6,10 @@ import { RouteSync } from '../inspector/components/RouteSync';
 import { MapAnalyticsLayers } from '../analytics/MapAnalyticsLayers';
 import { MapProjectsLayer } from '../projects/MapProjectsLayer';
 import { GlobalListeningHeatmapLayer } from '../analytics/GlobalListeningHeatmapLayer';
-import { DEFAULT_COLOR_GRADIENT } from '../analytics/constants';
+import {
+  DEFAULT_COLOR_GRADIENT,
+  DEFAULT_TIME_PERIOD_HOURS,
+} from '../analytics/constants';
 import { InspectorPanel } from '../components/InspectorPanel';
 import { MobileBottomSheet } from '../components/MobileBottomSheet';
 import { MobileSheetProvider } from '../context/MobileSheetProvider';
@@ -25,8 +28,11 @@ export const MapPage: React.FC = () => {
     listening: true,
     globalListening: false,
   });
-  const [globalListeningSettings, setGlobalListeningSettings] = React.useState({
-    timePeriodHours: 168, // Default: 1 week
+  const [globalListeningSettings, setGlobalListeningSettings] = React.useState<{
+    timePeriodHours: number;
+    colorGradient: typeof DEFAULT_COLOR_GRADIENT;
+  }>({
+    timePeriodHours: DEFAULT_TIME_PERIOD_HOURS, // Default: 1 month
     colorGradient: DEFAULT_COLOR_GRADIENT,
   });
   const selection = useSelection();

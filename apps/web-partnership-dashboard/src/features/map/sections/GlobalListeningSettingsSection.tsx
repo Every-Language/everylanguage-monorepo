@@ -3,9 +3,11 @@
 import React from 'react';
 import type { ColorGradient } from '../analytics/types';
 import {
-  TIME_PERIOD_OPTIONS,
-  DEFAULT_COLOR_GRADIENT,
+  TIME_PERIOD_SLIDER_OPTIONS,
+  getSliderIndexFromHours,
+  getHoursFromSliderIndex,
 } from '../analytics/constants';
+import { Slider } from '../../../shared/components/ui/Slider';
 
 interface GlobalListeningSettingsSectionProps {
   timePeriodHours: number;
@@ -18,64 +20,46 @@ export const GlobalListeningSettingsSection: React.FC<
   GlobalListeningSettingsSectionProps
 > = ({
   timePeriodHours,
-  colorGradient,
+  colorGradient: _colorGradient, // Keep prop for API compatibility, but UI removed
   onTimePeriodChange,
-  onColorGradientChange,
+  onColorGradientChange: _onColorGradientChange, // Keep prop for API compatibility, but UI removed
 }) => {
+  const sliderIndex = getSliderIndexFromHours(timePeriodHours);
+  const currentLabel =
+    TIME_PERIOD_SLIDER_OPTIONS[sliderIndex]?.label ?? '1 month';
+
+  const handleSliderChange = (value: number[]) => {
+    const newIndex = value[0];
+    const newHours = getHoursFromSliderIndex(newIndex);
+    onTimePeriodChange(newHours);
+  };
+
   return (
     <div className='space-y-4'>
       <div>
-        <label className='text-sm font-medium mb-2 block'>Time Period</label>
-        <select
-          value={timePeriodHours}
-          onChange={e => onTimePeriodChange(Number(e.target.value))}
-          className='w-full px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900'
-        >
-          {TIME_PERIOD_OPTIONS.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className='text-sm font-medium mb-2 block'>Color Gradient</label>
-        <div className='space-y-2'>
-          {/* Preset gradients */}
-          <div className='grid grid-cols-2 gap-2'>
-            <button
-              onClick={() => onColorGradientChange(DEFAULT_COLOR_GRADIENT)}
-              className={`px-3 py-2 text-xs border rounded-md ${
-                JSON.stringify(colorGradient) ===
-                JSON.stringify(DEFAULT_COLOR_GRADIENT)
-                  ? 'border-primary-600 bg-primary-50 dark:bg-primary-900'
-                  : 'border-neutral-200 dark:border-neutral-700'
-              }`}
-            >
-              Blue → Red
-            </button>
-            <button
-              onClick={() =>
-                onColorGradientChange([
-                  { position: 0, color: 'rgba(0,0,0,0)' },
-                  { position: 0.2, color: 'rgba(34, 197, 94, 0.35)' },
-                  { position: 0.4, color: 'rgba(59, 130, 246, 0.55)' },
-                  { position: 0.6, color: 'rgba(168, 85, 247, 0.7)' },
-                  { position: 0.8, color: 'rgba(236, 72, 153, 0.85)' },
-                  { position: 1, color: 'rgba(239, 68, 68, 0.95)' },
-                ])
-              }
-              className={`px-3 py-2 text-xs border rounded-md ${
-                JSON.stringify(colorGradient) !==
-                JSON.stringify(DEFAULT_COLOR_GRADIENT)
-                  ? 'border-primary-600 bg-primary-50 dark:bg-primary-900'
-                  : 'border-neutral-200 dark:border-neutral-700'
-              }`}
-            >
-              Green → Purple
-            </button>
-          </div>
+        <div className='flex items-center justify-between mb-2'>
+          <label className='text-sm font-medium'>Time Period</label>
+          <span className='text-sm text-neutral-600 dark:text-neutral-400'>
+            {currentLabel}
+          </span>
+        </div>
+        <Slider
+          value={[sliderIndex]}
+          onValueChange={handleSliderChange}
+          min={0}
+          max={TIME_PERIOD_SLIDER_OPTIONS.length - 1}
+          step={1}
+          className='w-full'
+        />
+        {/* Show labels below slider */}
+        <div className='flex justify-between mt-2 text-xs text-neutral-500 dark:text-neutral-400'>
+          <span>{TIME_PERIOD_SLIDER_OPTIONS[0]?.label}</span>
+          <span>
+            {
+              TIME_PERIOD_SLIDER_OPTIONS[TIME_PERIOD_SLIDER_OPTIONS.length - 1]
+                ?.label
+            }
+          </span>
         </div>
       </div>
     </div>

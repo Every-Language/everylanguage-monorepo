@@ -21,17 +21,34 @@ export const POINT_LIMITS_BY_ZOOM: Record<number, number> = {
   7: 20000, // High zoom: more points
 };
 
-// Default time period options (in hours)
-export const TIME_PERIOD_OPTIONS = [
-  { value: 1, label: '1 hour' },
-  { value: 6, label: '6 hours' },
-  { value: 12, label: '12 hours' },
+// Time period options for slider (in hours)
+// Range from 1 day to 1 year (max)
+export const TIME_PERIOD_SLIDER_OPTIONS = [
   { value: 24, label: '1 day' },
-  { value: 72, label: '3 days' },
-  { value: 168, label: '1 week' },
+  { value: 168, label: '1 week' }, // 7 days
   { value: 336, label: '2 weeks' },
-  { value: 720, label: '1 month' },
-];
+  { value: 720, label: '1 month' }, // ~30 days
+  { value: 1440, label: '2 months' }, // ~60 days
+  { value: 2160, label: '3 months' }, // ~90 days
+  { value: 4320, label: '6 months' }, // ~180 days
+  { value: 8760, label: '1 year' }, // ~365 days
+] as const;
+
+// Default time period: 1 month (720 hours)
+export const DEFAULT_TIME_PERIOD_HOURS = 720;
+
+// Helper to get slider index from hours value
+export function getSliderIndexFromHours(hours: number): number {
+  const index = TIME_PERIOD_SLIDER_OPTIONS.findIndex(
+    opt => opt.value === hours
+  );
+  return index >= 0 ? index : 3; // Default to 1 month if not found
+}
+
+// Helper to get hours value from slider index
+export function getHoursFromSliderIndex(index: number): number {
+  return TIME_PERIOD_SLIDER_OPTIONS[index]?.value ?? DEFAULT_TIME_PERIOD_HOURS;
+}
 
 // Default color gradient (blue to red)
 export const DEFAULT_COLOR_GRADIENT = [
