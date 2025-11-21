@@ -1,6 +1,6 @@
--- 20251225000022_fix_grn_coordinates_transform_duplicates.sql
--- Fix duplicate (language_entity_id, region_id) pairs in transform function
--- Add DISTINCT to to_upsert CTE to prevent ON CONFLICT errors
+-- 20251225000023_optimize_grn_coordinates_transform_performance.sql
+-- Optimize the transform function to use DISTINCT ON instead of correlated subquery
+-- This improves performance when processing large datasets
 CREATE OR REPLACE FUNCTION transform_grn_coordinates_cache_to_language_entities_regions () returns TABLE (
   processed INTEGER,
   matched INTEGER,
@@ -82,8 +82,7 @@ BEGIN
         LEFT JOIN language_matches lm ON c.grn_number = lm.grn_number
         LEFT JOIN region_matches rm ON c.country_name = rm.country_name
     ),
-    -- Prepare upserts (only where both matches found) - DISTINCT to prevent duplicates
-    -- Use window function to pick first location efficiently
+    -- Prepare upserts (only where both matches found) - Use DISTINCT ON for better performance
     to_upsert AS (
       SELECT DISTINCT ON (md.language_entity_id, md.region_id)
         md.language_entity_id,
@@ -400,4 +399,4 @@ END;
 $$;
 
 
-comment ON function transform_grn_coordinates_cache_to_language_entities_regions () IS 'Transforms GRN coordinates cache into language_entities_regions. Matches GRN numbers to language_entity_ids and country names to region_ids. Only updates rows where location_source IS NULL or location_source = ''GRN'' to preserve manual entries. Fixed to handle duplicate (language_entity_id, region_id) pairs.';
+comment ON function transform_grn_coordinates_cache_to_language_entities_regions () IS 'Transforms GRN coordinates cache into language_entities_regions. Matches GRN numbers to language_entity_ids and country names to region_ids. Only updates rows where location_source IS NULL or location_source = ''GRN'' to preserve manual entries. Optimized with DISTINCT ON for better performance on large datasets.';
