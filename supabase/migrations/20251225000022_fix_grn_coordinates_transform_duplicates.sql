@@ -83,9 +83,8 @@ BEGIN
         LEFT JOIN region_matches rm ON c.country_name = rm.country_name
     ),
     -- Prepare upserts (only where both matches found) - DISTINCT to prevent duplicates
-    -- Use window function to pick first location efficiently
     to_upsert AS (
-      SELECT DISTINCT ON (md.language_entity_id, md.region_id)
+      SELECT DISTINCT
         md.language_entity_id,
         md.region_id,
         md.location
@@ -95,7 +94,6 @@ BEGIN
         md.language_entity_id IS NOT NULL
         AND md.region_id IS NOT NULL
         AND md.location IS NOT NULL
-      ORDER BY md.language_entity_id, md.region_id, md.cache_id
     ),
     -- Count statistics
     stats AS (
