@@ -12,6 +12,21 @@ type JpCacheRow = {
   portions_year: string | null;
   has_audio_recordings: boolean;
   grn_url: string | null;
+  status: string | null;
+  country_code: string | null;
+  hub_country: string | null;
+  translation_need_questionable: boolean | null;
+  percent_adherents: number | null;
+  percent_evangelical: number | null;
+  has_jesus_film: boolean | null;
+  jf_url: string | null;
+  jp_scale: number | null;
+  least_reached: boolean | null;
+  religion_code: string | null;
+  primary_religion: string | null;
+  fcbh_url: string | null;
+  nbr_pgics: number | null;
+  nbr_countries: number | null;
   last_synced_at: string;
   updated_at: string;
 };
@@ -141,6 +156,37 @@ function normalizeLanguage(
     (getField(payload, ['GRN', 'GRNLink', 'GRN_URL']) as string | undefined) ??
     null;
 
+  // Extract new fields
+  const status = toCleanString(getField(payload, ['Status']));
+  const countryCode = toCleanString(getField(payload, ['ROG3', 'rog3']));
+  const hubCountry = toCleanString(getField(payload, ['HubCountry']));
+  const translationNeedQuestionable = coerceBoolean(
+    getField(payload, ['TranslationNeedQuestionable'])
+  )
+    ? true
+    : null;
+  const percentAdherents = coerceNumber(
+    getField(payload, ['PercentAdherents'])
+  );
+  const percentEvangelical = coerceNumber(
+    getField(payload, ['PercentEvangelical'])
+  );
+  const hasJesusFilm = coerceBoolean(getField(payload, ['HasJesusFilm']))
+    ? true
+    : null;
+  const jfUrl = toCleanString(getField(payload, ['JF_URL', 'JFUrl']));
+  const jpScale = coerceNumber(getField(payload, ['JPScale', 'jpScale']));
+  const leastReached = coerceBoolean(getField(payload, ['LeastReached']))
+    ? true
+    : null;
+  const religionCode = toCleanString(getField(payload, ['RLG3', 'rlg3']));
+  const primaryReligion = toCleanString(getField(payload, ['PrimaryReligion']));
+  const fcbhUrl = toCleanString(getField(payload, ['FCBH_URL', 'FCBHUrl']));
+  const nbrPgics = coerceNumber(getField(payload, ['NbrPGICs', 'NbrPGICs']));
+  const nbrCountries = coerceNumber(
+    getField(payload, ['NbrCountries', 'NbrCountries'])
+  );
+
   return {
     iso639_3: normalizedIso,
     language_name: languageName,
@@ -150,6 +196,21 @@ function normalizeLanguage(
     portions_year: portionsYear,
     has_audio_recordings: hasAudio,
     grn_url: grnUrl,
+    status,
+    country_code: countryCode,
+    hub_country: hubCountry,
+    translation_need_questionable: translationNeedQuestionable,
+    percent_adherents: percentAdherents,
+    percent_evangelical: percentEvangelical,
+    has_jesus_film: hasJesusFilm,
+    jf_url: jfUrl,
+    jp_scale: jpScale,
+    least_reached: leastReached,
+    religion_code: religionCode,
+    primary_religion: primaryReligion,
+    fcbh_url: fcbhUrl,
+    nbr_pgics: nbrPgics,
+    nbr_countries: nbrCountries,
     last_synced_at: timestamp,
     updated_at: timestamp,
   };

@@ -22,11 +22,11 @@ type GeoJSONResponse = {
 };
 
 type GrnCoordinateCacheRow = {
-  grn_number: number;
+  grn_number: number | null;
   language_name: string | null;
   iso_code: string | null;
-  country_name: string;
-  location: string; // PostGIS POINT as WKT or GeoJSON
+  country_name: string | null;
+  location: string | null; // PostGIS POINT as GeoJSON (null if invalid)
   last_synced_at: string;
   updated_at: string;
 };
@@ -111,35 +111,35 @@ async function fetchAllCoordinates(): Promise<GeoJSONFeature[]> {
 function normalizeCoordinate(
   feature: GeoJSONFeature,
   timestamp: string
-): GrnCoordinateCacheRow | null {
+): GrnCoordinateCacheRow {
   const grnNumber = coerceNumber(feature.properties.grn_number);
-  const countryName = feature.properties.c1?.trim();
+  const countryName = feature.properties.c1?.trim() || null;
+  const languageName = feature.properties.nam_label?.trim() || null;
+  const isoCode = feature.properties.iso?.trim() || null;
 
-  if (!grnNumber || !countryName) {
-    return null;
-  }
-
-  const [lon, lat] = feature.geometry.coordinates;
+  // Try to extract coordinates (allow invalid/null)
+  let locationGeoJSON: string | null = null;
+  const coords = feature.geometry?.coordinates;
   if (
-    typeof lon !== 'number' ||
-    typeof lat !== 'number' ||
-    !Number.isFinite(lon) ||
-    !Number.isFinite(lat)
+    Array.isArray(coords) &&
+    coords.length === 2 &&
+    typeof coords[0] === 'number' &&
+    typeof coords[1] === 'number' &&
+    Number.isFinite(coords[0]) &&
+    Number.isFinite(coords[1])
   ) {
-    return null;
+    // Create PostGIS POINT as GeoJSON for Supabase
+    // Supabase PostgREST will convert GeoJSON to PostGIS geometry automatically
+    locationGeoJSON = JSON.stringify({
+      type: 'Point',
+      coordinates: [coords[0], coords[1]],
+    });
   }
-
-  // Create PostGIS POINT as GeoJSON for Supabase
-  // Supabase PostgREST will convert GeoJSON to PostGIS geometry automatically
-  const locationGeoJSON = JSON.stringify({
-    type: 'Point',
-    coordinates: [lon, lat],
-  });
 
   return {
     grn_number: grnNumber,
-    language_name: feature.properties.nam_label?.trim() || null,
-    iso_code: feature.properties.iso?.trim() || null,
+    language_name: languageName,
+    iso_code: isoCode,
     country_name: countryName,
     location: locationGeoJSON,
     last_synced_at: timestamp,
@@ -173,20 +173,40 @@ Deno.serve(async req => {
     console.log(`Fetched ${allFeatures.length} total features`);
 
     const now = new Date().toISOString();
-    const upserts: GrnCoordinateCacheRow[] = allFeatures
-      .map(feature => normalizeCoordinate(feature, now))
-      .filter((row): row is GrnCoordinateCacheRow => Boolean(row));
 
-    console.log(`Normalized ${upserts.length} coordinates`);
-
-    // Track all (grn_number, country_name) pairs for full sync
-    const apiKeys = new Set(
-      upserts.map(u => `${u.grn_number}:${u.country_name}`)
+    // Normalize ALL features (cache everything, even invalid entries)
+    const upserts: GrnCoordinateCacheRow[] = allFeatures.map(feature =>
+      normalizeCoordinate(feature, now)
     );
 
-    // Batch upsert
+    console.log(
+      `Fetched ${allFeatures.length} features, caching all entries (including invalid ones)`
+    );
+
+    // Track valid (grn_number, country_name) pairs for full sync deduplication
+    // Only entries with both grn_number and country_name can be deduplicated
+    const validKeys = new Set<string>();
+    for (const row of upserts) {
+      if (row.grn_number !== null && row.country_name !== null) {
+        validKeys.add(`${row.grn_number}:${row.country_name}`);
+      }
+    }
+
+    // Batch upsert - cache everything
+    // For entries with both grn_number and country_name, use upsert (update if exists)
+    // For entries without both, use insert (no unique constraint)
     let upserted = 0;
-    for (const batch of chunkArray(upserts, UPSERT_BATCH_SIZE)) {
+
+    // Split into entries with both fields (can be upserted) and entries without (must be inserted)
+    const entriesWithBothFields = upserts.filter(
+      b => b.grn_number !== null && b.country_name !== null
+    );
+    const entriesWithoutBothFields = upserts.filter(
+      b => b.grn_number === null || b.country_name === null
+    );
+
+    // Upsert entries with both fields (can use unique constraint)
+    for (const batch of chunkArray(entriesWithBothFields, UPSERT_BATCH_SIZE)) {
       const { error } = await supabase
         .from('grn_language_coordinates_cache')
         .upsert(
@@ -195,7 +215,7 @@ Deno.serve(async req => {
             language_name: b.language_name,
             iso_code: b.iso_code,
             country_name: b.country_name,
-            location: JSON.parse(b.location), // Parse GeoJSON string to object for Supabase
+            location: b.location ? JSON.parse(b.location) : null,
             last_synced_at: b.last_synced_at,
             updated_at: b.updated_at,
           })),
@@ -212,52 +232,96 @@ Deno.serve(async req => {
       }
 
       upserted += batch.length;
-      console.log(`Upserted batch: ${upserted}/${upserts.length}`);
+      console.log(
+        `Upserted batch: ${upserted}/${entriesWithBothFields.length}`
+      );
+    }
+
+    // Insert entries without both fields (no unique constraint, always insert)
+    if (entriesWithoutBothFields.length > 0) {
+      for (const batch of chunkArray(
+        entriesWithoutBothFields,
+        UPSERT_BATCH_SIZE
+      )) {
+        const { error } = await supabase
+          .from('grn_language_coordinates_cache')
+          .insert(
+            batch.map(b => ({
+              grn_number: b.grn_number,
+              language_name: b.language_name,
+              iso_code: b.iso_code,
+              country_name: b.country_name,
+              location: b.location ? JSON.parse(b.location) : null,
+              last_synced_at: b.last_synced_at,
+              updated_at: b.updated_at,
+            }))
+          );
+
+        if (error) {
+          console.error('GRN coordinates cache insert failed', error);
+          throw new Error(
+            `Failed to insert GRN coordinates cache: ${error.message}`
+          );
+        }
+
+        upserted += batch.length;
+        console.log(`Inserted batch: ${upserted}/${upserts.length}`);
+      }
     }
 
     // Full sync: Delete rows not in current API response
+    // Only delete entries that have both grn_number and country_name (can be uniquely identified)
     console.log('Performing full sync: deleting removed entries...');
     const { data: allCacheRows, error: fetchError } = await supabase
       .from('grn_language_coordinates_cache')
-      .select('grn_number, country_name');
+      .select('id, grn_number, country_name')
+      .not('grn_number', 'is', null)
+      .not('country_name', 'is', null);
 
     let deleted = 0;
     if (fetchError) {
       console.error('Failed to fetch cache rows for cleanup', fetchError);
     } else {
       const toDelete = (allCacheRows || []).filter(
-        row => !apiKeys.has(`${row.grn_number}:${row.country_name}`)
+        row =>
+          row.grn_number !== null &&
+          row.country_name !== null &&
+          !validKeys.has(`${row.grn_number}:${row.country_name}`)
       );
 
       if (toDelete.length > 0) {
-        // Delete in batches - need to delete each row individually due to composite key
-        for (const deleteBatch of chunkArray(toDelete, UPSERT_BATCH_SIZE)) {
-          for (const row of deleteBatch) {
-            const { error: deleteError } = await supabase
-              .from('grn_language_coordinates_cache')
-              .delete()
-              .eq('grn_number', row.grn_number)
-              .eq('country_name', row.country_name);
+        // Delete by ID (more efficient than composite key)
+        const deleteIds = toDelete.map(row => row.id);
+        for (const deleteBatch of chunkArray(deleteIds, UPSERT_BATCH_SIZE)) {
+          const { error: deleteError } = await supabase
+            .from('grn_language_coordinates_cache')
+            .delete()
+            .in('id', deleteBatch);
 
-            if (deleteError) {
-              console.error(
-                `Failed to delete cache row ${row.grn_number}:${row.country_name}`,
-                deleteError
-              );
-            } else {
-              deleted++;
-            }
+          if (deleteError) {
+            console.error('Failed to delete cache rows', deleteError);
+          } else {
+            deleted += deleteBatch.length;
           }
         }
         console.log(`Deleted ${deleted} removed entries`);
       }
     }
 
+    // Count invalid entries for reporting
+    const invalidCount = upserts.filter(
+      row =>
+        row.grn_number === null ||
+        row.country_name === null ||
+        row.location === null
+    ).length;
+
     const summary = {
       success: true,
-      upserted: upserts.length,
+      fetched: allFeatures.length,
+      cached: upserted,
+      invalid_entries: invalidCount,
       deleted: deleted,
-      total_fetched: allFeatures.length,
     };
 
     console.log('GRN coordinates sync summary:', JSON.stringify(summary));

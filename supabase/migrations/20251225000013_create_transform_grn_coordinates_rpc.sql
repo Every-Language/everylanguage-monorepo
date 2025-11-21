@@ -147,6 +147,137 @@ BEGIN
     language_entities_regions.location_source IS NULL
     OR language_entities_regions.location_source = 'GRN';
 
+  -- Track unmatched entries in grn_coordinates_unmatched table
+  -- Delete existing unmatched entries for cache entries we're processing (to refresh)
+  DELETE FROM grn_coordinates_unmatched
+  WHERE cache_id IN (
+    SELECT id FROM grn_language_coordinates_cache
+    WHERE grn_number IS NOT NULL 
+      AND country_name IS NOT NULL 
+      AND location IS NOT NULL
+  );
+
+  -- Insert unmatched entries using matched_data CTE logic
+  -- We need to recalculate matched_data since we can't reference CTEs after INSERT
+  INSERT INTO grn_coordinates_unmatched (
+    cache_id,
+    grn_number,
+    language_name,
+    iso_code,
+    country_name,
+    skip_reason
+  )
+  SELECT
+    c.id,
+    c.grn_number,
+    c.language_name,
+    c.iso_code,
+    c.country_name,
+    CASE
+      WHEN NOT EXISTS (
+        SELECT 1
+        FROM language_entity_sources les
+        WHERE les.external_id = c.grn_number::TEXT
+          AND les.external_id_type IN (
+            'grn_language_number',
+            'grn_language_id',
+            'grn_id',
+            'grn',
+            'rolv_code'
+          )
+          AND les.is_external = TRUE
+          AND les.deleted_at IS NULL
+      ) AND NOT EXISTS (
+        SELECT 1
+        FROM regions r
+        WHERE (
+            LOWER(TRIM(r.name)) = LOWER(TRIM(c.country_name))
+            OR EXISTS (
+              SELECT 1
+              FROM region_aliases ra
+              WHERE ra.region_id = r.id
+                AND LOWER(TRIM(ra.alias_name)) = LOWER(TRIM(c.country_name))
+                AND ra.deleted_at IS NULL
+            )
+          )
+          AND r.level = 'country'
+          AND r.deleted_at IS NULL
+      ) THEN 'no_language_entity_and_region'
+      WHEN NOT EXISTS (
+        SELECT 1
+        FROM language_entity_sources les
+        WHERE les.external_id = c.grn_number::TEXT
+          AND les.external_id_type IN (
+            'grn_language_number',
+            'grn_language_id',
+            'grn_id',
+            'grn',
+            'rolv_code'
+          )
+          AND les.is_external = TRUE
+          AND les.deleted_at IS NULL
+      ) THEN 'no_language_entity'
+      ELSE 'no_region'
+    END AS skip_reason
+  FROM
+    grn_language_coordinates_cache c
+  WHERE
+    -- Only track entries that couldn't be matched (have required fields but no match)
+    c.grn_number IS NOT NULL
+    AND c.country_name IS NOT NULL
+    AND c.location IS NOT NULL
+    AND (
+      -- No language entity match
+      NOT EXISTS (
+        SELECT 1
+        FROM language_entity_sources les
+        WHERE les.external_id = c.grn_number::TEXT
+          AND les.external_id_type IN (
+            'grn_language_number',
+            'grn_language_id',
+            'grn_id',
+            'grn',
+            'rolv_code'
+          )
+          AND les.is_external = TRUE
+          AND les.deleted_at IS NULL
+      )
+      OR
+      -- Has language entity but no region match
+      (
+        EXISTS (
+          SELECT 1
+          FROM language_entity_sources les
+          WHERE les.external_id = c.grn_number::TEXT
+            AND les.external_id_type IN (
+              'grn_language_number',
+              'grn_language_id',
+              'grn_id',
+              'grn',
+              'rolv_code'
+            )
+            AND les.is_external = TRUE
+            AND les.deleted_at IS NULL
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM regions r
+          WHERE (
+              LOWER(TRIM(r.name)) = LOWER(TRIM(c.country_name))
+              OR EXISTS (
+                SELECT 1
+                FROM region_aliases ra
+                WHERE ra.region_id = r.id
+                  AND LOWER(TRIM(ra.alias_name)) = LOWER(TRIM(c.country_name))
+                  AND ra.deleted_at IS NULL
+              )
+            )
+            AND r.level = 'country'
+            AND r.deleted_at IS NULL
+        )
+      )
+    );
+
   -- Calculate statistics separately (can't reference CTEs after INSERT)
   SELECT
     COUNT(*),
@@ -181,9 +312,13 @@ BEGIN
             AND r.level = 'country'
             AND r.deleted_at IS NULL
         )
+        AND c.location IS NOT NULL
     ),
     COUNT(*) FILTER (
-      WHERE NOT EXISTS (
+      WHERE c.grn_number IS NOT NULL
+        AND c.country_name IS NOT NULL
+        AND c.location IS NOT NULL
+        AND NOT EXISTS (
           SELECT 1
           FROM language_entity_sources les
           WHERE les.external_id = c.grn_number::TEXT
@@ -199,7 +334,10 @@ BEGIN
         )
     ),
     COUNT(*) FILTER (
-      WHERE EXISTS (
+      WHERE c.grn_number IS NOT NULL
+        AND c.country_name IS NOT NULL
+        AND c.location IS NOT NULL
+        AND EXISTS (
           SELECT 1
           FROM language_entity_sources les
           WHERE les.external_id = c.grn_number::TEXT
@@ -241,7 +379,11 @@ BEGIN
     v_skipped_no_region,
     v_upserted
   FROM
-    grn_language_coordinates_cache c;
+    grn_language_coordinates_cache c
+  WHERE
+    c.grn_number IS NOT NULL
+    AND c.country_name IS NOT NULL
+    AND c.location IS NOT NULL;
 
   -- Return results
   RETURN QUERY

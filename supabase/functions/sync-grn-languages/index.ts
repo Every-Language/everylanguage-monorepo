@@ -5,13 +5,44 @@ type GrnLanguageFeed = {
   languages?: { language?: GrnLanguageEntry | GrnLanguageEntry[] };
 };
 
+type GrnAlternateName = {
+  name?: string;
+  ietf?: string;
+  best?: string;
+};
+
+type GrnMediaId = {
+  org_key?: number;
+  code?: string;
+};
+
+type GrnProgram = {
+  id?: number;
+  state?: number;
+  title?: string;
+  vernacular_title?: string;
+  programType?: number;
+  copyright_key?: number;
+  picture?: string;
+  youtubeVideoId?: string;
+  duration?: number;
+  tracks?: number;
+  [key: string]: unknown;
+};
+
 type GrnLanguageEntry = {
   id?: number | string;
   iso?: string;
   name?: string;
+  nameIetf?: string;
+  audioSample?: boolean;
+  ietf?: string;
   parent?: number | string;
+  parentId?: number | string;
+  mediaIds?: GrnMediaId[];
+  alternateNames?: GrnAlternateName[];
   programs?: {
-    program?: unknown;
+    program?: GrnProgram | GrnProgram[];
   };
 };
 
@@ -22,6 +53,12 @@ type GrnCacheRow = {
   has_recordings: boolean;
   program_count: number;
   parent_id: number | null;
+  name_ietf: string | null;
+  audio_sample: boolean | null;
+  ietf: string | null;
+  media_ids: GrnMediaId[] | null; // JSONB - Supabase will serialize
+  alternate_names: GrnAlternateName[] | null; // JSONB - Supabase will serialize
+  programs: GrnProgram[] | null; // JSONB - Supabase will serialize
   last_synced_at: string;
   updated_at: string;
 };
@@ -52,23 +89,32 @@ function coerceNumber(value: unknown): number | null {
 function getProgramInfo(programsField: unknown): {
   hasRecordings: boolean;
   count: number;
+  programsArray: GrnProgram[];
 } {
   const programs =
     (programsField as { program?: unknown } | undefined)?.program ?? [];
 
   if (Array.isArray(programs)) {
-    return { hasRecordings: programs.length > 0, count: programs.length };
+    return {
+      hasRecordings: programs.length > 0,
+      count: programs.length,
+      programsArray: programs as GrnProgram[],
+    };
   }
 
   if (programs && typeof programs === 'object') {
-    return { hasRecordings: true, count: 1 };
+    return {
+      hasRecordings: true,
+      count: 1,
+      programsArray: [programs as GrnProgram],
+    };
   }
 
   if (typeof programs === 'string' && programs.trim().length > 0) {
-    return { hasRecordings: true, count: 1 };
+    return { hasRecordings: true, count: 1, programsArray: [] };
   }
 
-  return { hasRecordings: false, count: 0 };
+  return { hasRecordings: false, count: 0, programsArray: [] };
 }
 
 function normalizeLanguages(payload: unknown): GrnLanguageEntry[] {
@@ -132,13 +178,44 @@ Deno.serve(async req => {
 
         const programInfo = getProgramInfo(entry.programs);
 
+        // Extract parent ID (can be from 'parent' or 'parentId' field)
+        const parentId =
+          coerceNumber(entry.parent) || coerceNumber(entry.parentId);
+
+        // Prepare JSONB fields - Supabase will serialize these automatically
+        const mediaIds =
+          entry.mediaIds &&
+          Array.isArray(entry.mediaIds) &&
+          entry.mediaIds.length > 0
+            ? entry.mediaIds
+            : null;
+
+        const alternateNames =
+          entry.alternateNames &&
+          Array.isArray(entry.alternateNames) &&
+          entry.alternateNames.length > 0
+            ? entry.alternateNames
+            : null;
+
+        const programs =
+          programInfo.programsArray.length > 0
+            ? programInfo.programsArray
+            : null;
+
         return {
           grn_language_id: grnId,
           iso639_3: entry.iso?.trim() || null,
           language_name: entry.name?.trim() || `GRN ${grnId}`,
           has_recordings: programInfo.hasRecordings,
           program_count: programInfo.count,
-          parent_id: coerceNumber(entry.parent),
+          parent_id: parentId,
+          name_ietf: entry.nameIetf?.trim() || null,
+          audio_sample:
+            typeof entry.audioSample === 'boolean' ? entry.audioSample : null,
+          ietf: entry.ietf?.trim() || null,
+          media_ids: mediaIds,
+          alternate_names: alternateNames,
+          programs: programs,
           last_synced_at: now,
           updated_at: now,
         };
