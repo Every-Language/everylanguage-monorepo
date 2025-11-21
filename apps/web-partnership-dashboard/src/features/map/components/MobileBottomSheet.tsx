@@ -34,6 +34,10 @@ interface MobileBottomSheetProps {
     timePeriodHours: number;
     colorGradient: ColorGradient;
   }) => void;
+  languagesSettings?: {
+    clustered: boolean;
+  };
+  onLanguagesSettingsChange?: (settings: { clustered: boolean }) => void;
 }
 
 type SheetState = 'collapsed' | 'half' | 'full';
@@ -67,6 +71,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   onLayersChange,
   globalListeningSettings,
   onGlobalListeningSettingsChange,
+  languagesSettings,
+  onLanguagesSettingsChange,
 }) => {
   const router = useRouter();
   const sheetRef = React.useRef<HTMLDivElement | null>(null);
@@ -491,6 +497,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                       onGlobalListeningSettingsChange={
                         onGlobalListeningSettingsChange
                       }
+                      languagesSettings={languagesSettings}
+                      onLanguagesSettingsChange={onLanguagesSettingsChange}
                     />
                   </div>
                 ))}

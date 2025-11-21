@@ -33,6 +33,10 @@ interface InspectorPanelProps {
     timePeriodHours: number;
     colorGradient: ColorGradient;
   }) => void;
+  languagesSettings?: {
+    clustered: boolean;
+  };
+  onLanguagesSettingsChange?: (settings: { clustered: boolean }) => void;
 }
 
 /**
@@ -46,6 +50,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   onLayersChange,
   globalListeningSettings,
   onGlobalListeningSettingsChange,
+  languagesSettings,
+  onLanguagesSettingsChange,
 }) => {
   const router = useRouter();
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
@@ -212,6 +218,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     onGlobalListeningSettingsChange={
                       onGlobalListeningSettingsChange
                     }
+                    languagesSettings={languagesSettings}
+                    onLanguagesSettingsChange={onLanguagesSettingsChange}
                   />
                 </div>
               ))}

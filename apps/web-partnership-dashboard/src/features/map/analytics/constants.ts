@@ -16,9 +16,10 @@ export const GRID_SIZES_BY_ZOOM: Record<number, number> = {
 
 // Point limits by zoom level
 export const POINT_LIMITS_BY_ZOOM: Record<number, number> = {
-  0: 5000, // Low zoom: fewer points
-  4: 10000, // Mid zoom: moderate points
-  7: 20000, // High zoom: more points
+  0: 10000, // Low zoom: fewer points
+  4: 20000, // Mid zoom: moderate points
+  7: 40000, // High zoom: more points
+  10: 80000, // Very high zoom: even more points
 };
 
 // Time period options for slider (in hours)

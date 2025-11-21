@@ -14,14 +14,6 @@ const SUPABASE_SERVICE_ROLE_KEY =
 const JOSHUA_PROJECT_API_KEY =
   Deno.env.get('JOSHUA_PROJECT_API_KEY') || 'df55560938a7';
 
-// Import the sync functions
-const jpSyncCode = await Deno.readTextFile(
-  './functions/sync-jp-languages/index.ts'
-);
-const grnSyncCode = await Deno.readTextFile(
-  './functions/sync-grn-languages/index.ts'
-);
-
 async function testJPSync() {
   console.log('Testing JP sync function...\n');
 
@@ -31,18 +23,7 @@ async function testJPSync() {
   Deno.env.set('JOSHUA_PROJECT_API_KEY', JOSHUA_PROJECT_API_KEY);
 
   try {
-    // Create a minimal request object
-    const req = new Request('http://localhost/functions/v1/sync-jp-languages', {
-      method: 'POST',
-    });
-
-    // Evaluate the JP sync function code in a context
-    const jpModule = await import(
-      `./functions/sync-jp-languages/index.ts?${Date.now()}`
-    );
-
-    // The function exports Deno.serve, so we need to call it differently
-    // Actually, let's just test by making a small fetch to verify the API works
+    // Test by making a small fetch to verify the API works
     console.log('Fetching a small sample from JP API to verify connection...');
     const testUrl = `https://api.joshuaproject.net/v1/languages.json?api_key=${JOSHUA_PROJECT_API_KEY}&limit=2`;
     const testResponse = await fetch(testUrl);

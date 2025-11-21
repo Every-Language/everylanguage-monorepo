@@ -35,6 +35,11 @@ export const MapPage: React.FC = () => {
     timePeriodHours: DEFAULT_TIME_PERIOD_HOURS, // Default: 1 month
     colorGradient: DEFAULT_COLOR_GRADIENT,
   });
+  const [languagesSettings, setLanguagesSettings] = React.useState<{
+    clustered: boolean;
+  }>({
+    clustered: false, // Default: show individual points
+  });
   const selection = useSelection();
   const layout = DEFAULT_LAYOUT; // Can be made dynamic in future for user preferences
   const [mobileSheetHeight, setMobileSheetHeight] = React.useState<number>();
@@ -115,7 +120,10 @@ export const MapPage: React.FC = () => {
             timePeriodHours={globalListeningSettings.timePeriodHours}
             colorGradient={globalListeningSettings.colorGradient}
           />
-          <MapLanguagesLayer show={layers.languages} />
+          <MapLanguagesLayer
+            show={layers.languages}
+            clustered={languagesSettings.clustered}
+          />
 
           {/* Desktop panels */}
           <div className='hidden md:block'>
@@ -128,6 +136,8 @@ export const MapPage: React.FC = () => {
                 onLayersChange={setLayers}
                 globalListeningSettings={globalListeningSettings}
                 onGlobalListeningSettingsChange={setGlobalListeningSettings}
+                languagesSettings={languagesSettings}
+                onLanguagesSettingsChange={setLanguagesSettings}
               />
             ))}
           </div>
@@ -143,6 +153,8 @@ export const MapPage: React.FC = () => {
               onLayersChange={setLayers}
               globalListeningSettings={globalListeningSettings}
               onGlobalListeningSettingsChange={setGlobalListeningSettings}
+              languagesSettings={languagesSettings}
+              onLanguagesSettingsChange={setLanguagesSettings}
             />
           </div>
         </MapShell>

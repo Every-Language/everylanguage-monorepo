@@ -1,6 +1,7 @@
 import React from 'react';
 import { type LayerKey } from '../components/LayerToggles';
 import { GlobalListeningSettingsSection } from './GlobalListeningSettingsSection';
+import { LanguagesSettingsSection } from './LanguagesSettingsSection';
 import type { ColorGradient } from '../analytics/types';
 
 export type LayerState = Record<LayerKey, boolean>;
@@ -17,6 +18,10 @@ interface MapControlsSectionProps {
     timePeriodHours: number;
     colorGradient: ColorGradient;
   }) => void;
+  languagesSettings?: {
+    clustered: boolean;
+  };
+  onLanguagesSettingsChange?: (settings: { clustered: boolean }) => void;
 }
 
 /**
@@ -29,6 +34,8 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
   embeddable = true,
   globalListeningSettings,
   onGlobalListeningSettingsChange,
+  languagesSettings,
+  onLanguagesSettingsChange,
 }) => {
   const toggle = (k: LayerKey) => onChange({ ...value, [k]: !value[k] });
 
@@ -80,6 +87,19 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
             />
           </div>
         )}
+      {value.languages && languagesSettings && onLanguagesSettingsChange && (
+        <div className='mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700'>
+          <LanguagesSettingsSection
+            clustered={languagesSettings.clustered}
+            onClusteredChange={clustered =>
+              onLanguagesSettingsChange({
+                ...languagesSettings,
+                clustered,
+              })
+            }
+          />
+        </div>
+      )}
     </div>
   );
 

@@ -55,6 +55,10 @@ interface SectionRendererProps {
     timePeriodHours: number;
     colorGradient: import('../analytics/types').ColorGradient;
   }) => void;
+  languagesSettings?: {
+    clustered: boolean;
+  };
+  onLanguagesSettingsChange?: (settings: { clustered: boolean }) => void;
 }
 
 /**
@@ -69,6 +73,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
   onLayersChange,
   globalListeningSettings,
   onGlobalListeningSettingsChange,
+  languagesSettings,
+  onLanguagesSettingsChange,
 }) => {
   // Get descendant IDs for language entities (used by progress and listening sections)
   const languageData = useLanguageEntity(
@@ -124,6 +130,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             embeddable
             globalListeningSettings={globalListeningSettings}
             onGlobalListeningSettingsChange={onGlobalListeningSettingsChange}
+            languagesSettings={languagesSettings}
+            onLanguagesSettingsChange={onLanguagesSettingsChange}
           />
         </CollapsibleSection>
       );
@@ -262,6 +270,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             embeddable
             globalListeningSettings={globalListeningSettings}
             onGlobalListeningSettingsChange={onGlobalListeningSettingsChange}
+            languagesSettings={languagesSettings}
+            onLanguagesSettingsChange={onLanguagesSettingsChange}
           />
         );
       }

@@ -45,6 +45,9 @@
     "tests/unit/bible-package-builder.test.ts",
     "tests/unit/bible-package-splitter.test.ts",
     "tests/integration/multi-package-system.test.ts",
+    "scripts/test-sync-direct.ts",
+    "scripts/test-sync-functions.ts",
+    "scripts/test-sync-logic.ts",
     "coverage"
   ]
 }

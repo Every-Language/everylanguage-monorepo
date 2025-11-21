@@ -13,11 +13,27 @@ import type { LanguageWithLocation } from './types';
 
 interface MapLanguagesLayerProps {
   show: boolean;
+  clustered?: boolean;
 }
 
 interface HoveredLanguage {
   language: LanguageWithLocation;
   coordinates: [number, number];
+}
+
+// Helper function to calculate bible status score (0-3)
+// Used for clustering to calculate average status
+function getBibleStatusScore(language: LanguageWithLocation): number {
+  if (language.has_full_audio_bible === true) {
+    return 3; // Full audio bible = highest score
+  }
+  if (language.has_audio_portions === true) {
+    return 2; // Audio portions = medium-high score
+  }
+  if (language.has_text_portions === true) {
+    return 1; // Text portions = low score
+  }
+  return 0; // No translation = lowest score
 }
 
 // Helper function to determine color based on bible translation status
@@ -89,6 +105,7 @@ function toFeatureCollection(
       language_name: lang.language_name,
       region_name: lang.region_name,
       color: getBibleStatusColor(lang),
+      bible_status_score: getBibleStatusScore(lang), // For clustering aggregation
       has_full_audio_bible: lang.has_full_audio_bible,
       has_audio_portions: lang.has_audio_portions,
       has_text_portions: lang.has_text_portions,
@@ -100,11 +117,22 @@ function toFeatureCollection(
 
 export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
   show,
+  clustered = false,
 }) => {
   const { mapRef } = useMapContext();
   const { resolvedTheme } = useTheme();
   const router = useRouter();
   const setSelection = useSetSelection();
+
+  // Debug logging for clustering state
+  React.useEffect(() => {
+    if (show) {
+      console.log('[MapLanguagesLayer] Clustering state:', {
+        clustered,
+        show,
+      });
+    }
+  }, [clustered, show]);
   const [viewportBounds, setViewportBounds] = React.useState<
     [number, number, number, number] | null
   >(null);
@@ -228,14 +256,20 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
 
     const handleMouseMove = (e: maplibregl.MapLayerMouseEvent) => {
       try {
-        // Check if layer exists before querying
-        if (!map.getLayer('languages-layer')) {
+        // Determine which layers to query based on clustering mode
+        const layerIds = clustered
+          ? ['languages-clusters', 'languages-unclustered']
+          : ['languages-layer'];
+
+        // Check if any layer exists
+        const hasLayer = layerIds.some(id => map.getLayer(id));
+        if (!hasLayer) {
           setHoveredLanguage(null);
           return;
         }
 
         const features = map.queryRenderedFeatures(e.point, {
-          layers: ['languages-layer'],
+          layers: layerIds,
         });
 
         // Update cursor style
@@ -245,6 +279,9 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
         if (features.length > 0) {
           const feature = features[0];
           const props = feature.properties as {
+            cluster?: boolean;
+            cluster_id?: number;
+            point_count?: number;
             language_entity_id?: string;
             language_name?: string;
             region_name?: string;
@@ -257,6 +294,12 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
             number,
             number,
           ];
+
+          // Skip clusters for hover (only show tooltip for individual points)
+          if (props.cluster) {
+            setHoveredLanguage(null);
+            return;
+          }
 
           if (
             props.language_entity_id &&
@@ -286,12 +329,18 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
 
     const handleClick = (e: maplibregl.MapLayerMouseEvent) => {
       try {
-        if (!map.getLayer('languages-layer')) {
+        // Determine which layers to query based on clustering mode
+        const layerIds = clustered
+          ? ['languages-clusters', 'languages-unclustered']
+          : ['languages-layer'];
+
+        const hasLayer = layerIds.some(id => map.getLayer(id));
+        if (!hasLayer) {
           return;
         }
 
         const features = map.queryRenderedFeatures(e.point, {
-          layers: ['languages-layer'],
+          layers: layerIds,
         });
 
         if (features.length > 0) {
@@ -300,9 +349,47 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
 
           const feature = features[0];
           const props = feature.properties as {
+            cluster?: boolean;
+            cluster_id?: number;
+            point_count?: number;
             language_entity_id?: string;
           };
 
+          // Handle cluster click - zoom in
+          if (props.cluster && clustered) {
+            const clusterId = props.cluster_id;
+            const pointCount = props.point_count;
+            if (clusterId !== undefined && pointCount !== undefined) {
+              const source = map.getSource(
+                'languages-source'
+              ) as maplibregl.GeoJSONSource;
+              if (
+                source &&
+                typeof source.getClusterExpansionZoom === 'function'
+              ) {
+                // TypeScript types don't include callback, but runtime API supports it
+                (source.getClusterExpansionZoom as any)(
+                  clusterId,
+                  (err: Error | null, zoom?: number) => {
+                    if (err || zoom === undefined) return;
+                    const mapInstance = mapRef.current?.getMap();
+                    if (mapInstance) {
+                      const coords = (feature.geometry as GeoJSON.Point)
+                        .coordinates as [number, number];
+                      mapInstance.easeTo({
+                        center: coords,
+                        zoom: zoom,
+                        duration: 500,
+                      });
+                    }
+                  }
+                );
+              }
+            }
+            return;
+          }
+
+          // Handle individual point click
           if (props.language_entity_id) {
             // Set selection
             setSelection({
@@ -334,7 +421,49 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
       map.off('click', handleClick);
       map.off('mouseleave', handleMouseLeave);
     };
-  }, [mapRef, show, languagesQuery.data, router, setSelection]);
+  }, [mapRef, show, clustered, languagesQuery.data, router, setSelection]);
+
+  // Debug logging for feature collection
+  React.useEffect(() => {
+    if (show && featureCollection.features.length > 0) {
+      console.log('[MapLanguagesLayer] Feature collection:', {
+        featureCount: featureCollection.features.length,
+        clustered,
+        sampleFeatures: featureCollection.features.slice(0, 3).map(f => ({
+          id: f.properties.language_entity_id,
+          hasScore:
+            typeof (f.properties as any).bible_status_score === 'number',
+        })),
+      });
+    }
+  }, [show, featureCollection, clustered]);
+
+  // Clean up old layers when switching clustering modes
+  React.useEffect(() => {
+    if (!show) return;
+
+    const map = mapRef.current?.getMap() as maplibregl.Map | undefined;
+    if (!map) return;
+
+    // Remove old layers if they exist (in case of mode switch)
+    const oldLayerIds = clustered
+      ? ['languages-layer'] // Remove individual layer when switching to clustered
+      : [
+          'languages-clusters',
+          'languages-cluster-count',
+          'languages-unclustered',
+        ]; // Remove cluster layers when switching to individual
+
+    oldLayerIds.forEach(layerId => {
+      if (map.getLayer(layerId)) {
+        try {
+          map.removeLayer(layerId);
+        } catch {
+          // Layer might not exist, ignore
+        }
+      }
+    });
+  }, [clustered, show, mapRef]);
 
   // Keep showing previous data while loading new data
   const displayData = languagesQuery.data;
@@ -351,29 +480,125 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
 
   return (
     <>
-      <Source id='languages-source' type='geojson' data={featureCollection}>
-        {/* Main language markers */}
-        <Layer
-          id='languages-layer'
-          type='circle'
-          paint={{
-            'circle-radius': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              0,
-              3,
-              6,
-              5,
-              12,
-              8,
-            ],
-            'circle-color': ['get', 'color'],
-            'circle-stroke-color': markerStrokeColor,
-            'circle-stroke-width': 1.5,
-            'circle-opacity': 0.9,
-          }}
-        />
+      <Source
+        key={`languages-source-${clustered ? 'clustered' : 'individual'}`}
+        id='languages-source'
+        type='geojson'
+        data={featureCollection}
+        {...(clustered
+          ? {
+              cluster: true,
+              clusterRadius: 50,
+              clusterMaxZoom: 4, // Clusters break apart into individual points when zoom >= 8
+              clusterProperties: {
+                // Aggregate bible status scores for average calculation
+                sum_score: ['+', ['get', 'bible_status_score']],
+              },
+            }
+          : {
+              cluster: false,
+            })}
+      >
+        {clustered ? (
+          [
+            /* Cluster circles */
+            <Layer
+              key='languages-clusters'
+              id='languages-clusters'
+              type='circle'
+              filter={['has', 'point_count']}
+              paint={{
+                'circle-color': [
+                  'interpolate',
+                  ['linear'],
+                  ['/', ['get', 'sum_score'], ['get', 'point_count']],
+                  0,
+                  '#ef4444', // Red
+                  1,
+                  '#f59e0b', // Orange
+                  2,
+                  '#f59e0b', // Orange
+                  3,
+                  '#10b981', // Green
+                ],
+                'circle-radius': [
+                  'step',
+                  ['get', 'point_count'],
+                  20, // Base radius for small clusters
+                  100,
+                  30, // Medium clusters
+                  750,
+                  40, // Large clusters
+                ],
+                'circle-stroke-color': markerStrokeColor,
+                'circle-stroke-width': 2,
+                'circle-opacity': 0.8,
+              }}
+            />,
+            /* Cluster count labels */
+            <Layer
+              key='languages-cluster-count'
+              id='languages-cluster-count'
+              type='symbol'
+              filter={['has', 'point_count']}
+              layout={{
+                'text-field': '{point_count_abbreviated}',
+                'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+                'text-size': 12,
+              }}
+              paint={{
+                'text-color': '#ffffff',
+              }}
+            />,
+            /* Unclustered points */
+            <Layer
+              key='languages-unclustered'
+              id='languages-unclustered'
+              type='circle'
+              filter={['!', ['has', 'point_count']]}
+              paint={{
+                'circle-radius': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0,
+                  3,
+                  6,
+                  5,
+                  12,
+                  8,
+                ],
+                'circle-color': ['get', 'color'],
+                'circle-stroke-color': markerStrokeColor,
+                'circle-stroke-width': 1.5,
+                'circle-opacity': 0.9,
+              }}
+            />,
+          ]
+        ) : (
+          /* Individual points (non-clustered mode) */
+          <Layer
+            id='languages-layer'
+            type='circle'
+            paint={{
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0,
+                3,
+                6,
+                5,
+                12,
+                8,
+              ],
+              'circle-color': ['get', 'color'],
+              'circle-stroke-color': markerStrokeColor,
+              'circle-stroke-width': 1.5,
+              'circle-opacity': 0.9,
+            }}
+          />
+        )}
       </Source>
 
       {/* Hover tooltip popup */}

@@ -16,6 +16,18 @@ export async function fetchLanguagesWithLocation(params: {
   // Get point limit for zoom level (reuse from analytics constants)
   const pointLimit = getPointLimitForZoom(zoom);
 
+  // Debug logging
+  const startTime = performance.now();
+  console.log('[fetchLanguagesWithLocation] Request:', {
+    bbox: { minLng, minLat, maxLng, maxLat },
+    zoom,
+    pointLimit,
+    bboxSize: {
+      lngSpan: maxLng - minLng,
+      latSpan: maxLat - minLat,
+    },
+  });
+
   // Call RPC function with bbox filtering
   const { data: rpcData, error: rpcError } = await (supabase as any).rpc(
     'get_all_language_coordinates',
@@ -29,8 +41,62 @@ export async function fetchLanguagesWithLocation(params: {
     }
   );
 
-  if (rpcError) throw rpcError;
-  if (!rpcData) return [];
+  const queryTime = performance.now() - startTime;
+
+  if (rpcError) {
+    console.error('[fetchLanguagesWithLocation] RPC Error:', rpcError);
+    throw rpcError;
+  }
+
+  if (!rpcData) {
+    console.warn('[fetchLanguagesWithLocation] No data returned');
+    return [];
+  }
+
+  // Debug logging for results
+  const resultCount = rpcData.length;
+  const hitLimit = resultCount >= pointLimit;
+  const coordinateRange =
+    resultCount > 0
+      ? {
+          minLng: Math.min(...rpcData.map((r: any) => r.longitude)),
+          maxLng: Math.max(...rpcData.map((r: any) => r.longitude)),
+          minLat: Math.min(...rpcData.map((r: any) => r.latitude)),
+          maxLat: Math.max(...rpcData.map((r: any) => r.latitude)),
+        }
+      : null;
+
+  console.log('[fetchLanguagesWithLocation] Response:', {
+    resultCount,
+    queryTimeMs: queryTime.toFixed(2),
+    limit: pointLimit,
+    hitLimit,
+    bboxRequested: { minLng, minLat, maxLng, maxLat },
+    coordinateRange,
+    // Check if coordinate range matches bbox (within reasonable tolerance)
+    coordinateRangeMatchesBbox:
+      coordinateRange &&
+      Math.abs(coordinateRange.minLng - minLng) < 1 &&
+      Math.abs(coordinateRange.maxLng - maxLng) < 1 &&
+      Math.abs(coordinateRange.minLat - minLat) < 1 &&
+      Math.abs(coordinateRange.maxLat - maxLat) < 1,
+    sampleCoordinates: rpcData.slice(0, 5).map((r: any) => ({
+      lng: r.longitude,
+      lat: r.latitude,
+      name: r.language_name,
+      inBbox:
+        r.longitude >= minLng &&
+        r.longitude <= maxLng &&
+        r.latitude >= minLat &&
+        r.latitude <= maxLat,
+    })),
+  });
+
+  if (hitLimit) {
+    console.warn(
+      `[fetchLanguagesWithLocation] WARNING: Hit point limit of ${pointLimit}. Some points may be missing from viewport.`
+    );
+  }
 
   // Map RPC response to LanguageWithLocation[]
   return (

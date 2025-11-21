@@ -75,9 +75,11 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
                 {isLoading ? (
                   <span className='inline-block h-3 w-32 rounded bg-neutral-200 dark:bg-neutral-800 animate-pulse' />
                 ) : (
-                  `${numberFormatter.format(
-                    data?.full_audio_bible_count ?? 0
-                  )} languages`
+                  <>
+                    {numberFormatter.format(data?.full_audio_bible_count ?? 0)}{' '}
+                    of {numberFormatter.format(data?.total_languages ?? 0)}{' '}
+                    languages
+                  </>
                 )}
               </p>
             </div>
