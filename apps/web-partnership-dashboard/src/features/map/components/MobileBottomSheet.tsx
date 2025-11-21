@@ -16,12 +16,24 @@ import type {
   DonationIntent,
   SelectedEntity,
 } from '@/features/funding/state/types';
+import { type LayerState } from '../sections/MapControlsSection';
+import type { ColorGradient } from '../analytics/types';
 
 interface MobileBottomSheetProps {
   sections: SectionType[];
   selection: MapSelection | null;
   onHeightChange?: (height: number, snapPoints: number[]) => void;
   onDraggingChange?: (isDragging: boolean) => void;
+  layers?: LayerState;
+  onLayersChange?: (next: LayerState) => void;
+  globalListeningSettings?: {
+    timePeriodHours: number;
+    colorGradient: ColorGradient;
+  };
+  onGlobalListeningSettingsChange?: (settings: {
+    timePeriodHours: number;
+    colorGradient: ColorGradient;
+  }) => void;
 }
 
 type SheetState = 'collapsed' | 'half' | 'full';
@@ -51,6 +63,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   selection,
   onHeightChange,
   onDraggingChange,
+  layers,
+  onLayersChange,
+  globalListeningSettings,
+  onGlobalListeningSettingsChange,
 }) => {
   const router = useRouter();
   const sheetRef = React.useRef<HTMLDivElement | null>(null);
@@ -469,6 +485,12 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                       type={sectionType}
                       selection={selection}
                       scrollRef={contentRef as React.RefObject<HTMLDivElement>}
+                      layers={layers}
+                      onLayersChange={onLayersChange}
+                      globalListeningSettings={globalListeningSettings}
+                      onGlobalListeningSettingsChange={
+                        onGlobalListeningSettingsChange
+                      }
                     />
                   </div>
                 ))}

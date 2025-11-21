@@ -176,18 +176,17 @@ export const MapProjectsLayer: React.FC<{ show: boolean }> = ({ show }) => {
 
     const handleMouseMove = (e: maplibregl.MapLayerMouseEvent) => {
       try {
+        // Check if main layer exists before querying
+        if (!map.getLayer('projects-layer')) {
+          return;
+        }
+
         // Build layers array - only include pulse layer if it exists
         const layersToQuery = ['projects-layer'];
         if (visibleProjectsCollection.features.length > 0) {
-          // Check if layer exists before querying
-          const style = map.getStyle();
-          if (style && style.layers) {
-            const layerExists = style.layers.some(
-              layer => layer.id === 'projects-pulse-layer'
-            );
-            if (layerExists) {
-              layersToQuery.push('projects-pulse-layer');
-            }
+          // Check if pulse layer exists before querying
+          if (map.getLayer('projects-pulse-layer')) {
+            layersToQuery.push('projects-pulse-layer');
           }
         }
 

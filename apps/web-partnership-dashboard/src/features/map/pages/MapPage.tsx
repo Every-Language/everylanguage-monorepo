@@ -3,9 +3,9 @@ import { MapShell } from '../components/MapShell';
 import { useSelection } from '../inspector/state/inspectorStore';
 import { MapOverlayLayers } from '../inspector/components/MapOverlayLayers';
 import { RouteSync } from '../inspector/components/RouteSync';
-import { MapAnalyticsLayers } from '../analytics/MapAnalyticsLayers';
 import { MapProjectsLayer } from '../projects/MapProjectsLayer';
 import { GlobalListeningHeatmapLayer } from '../analytics/GlobalListeningHeatmapLayer';
+import { MapLanguagesLayer } from '../languages/MapLanguagesLayer';
 import {
   DEFAULT_COLOR_GRADIENT,
   DEFAULT_TIME_PERIOD_HOURS,
@@ -23,10 +23,10 @@ import { MapFocusHandler } from '../components/MapFocusHandler';
  */
 export const MapPage: React.FC = () => {
   const [layers, setLayers] = React.useState({
-    projects: true,
-    countries: true,
-    listening: true,
+    projects: false,
+    countries: false,
     globalListening: false,
+    languages: false,
   });
   const [globalListeningSettings, setGlobalListeningSettings] = React.useState<{
     timePeriodHours: number;
@@ -109,13 +109,13 @@ export const MapPage: React.FC = () => {
           <RouteSync />
           <MapFocusHandler />
           <MapOverlayLayers countriesEnabled={layers.countries} />
-          <MapAnalyticsLayers show={layers.listening} />
           <MapProjectsLayer show={layers.projects} />
           <GlobalListeningHeatmapLayer
             show={layers.globalListening}
             timePeriodHours={globalListeningSettings.timePeriodHours}
             colorGradient={globalListeningSettings.colorGradient}
           />
+          <MapLanguagesLayer show={layers.languages} />
 
           {/* Desktop panels */}
           <div className='hidden md:block'>
@@ -139,6 +139,10 @@ export const MapPage: React.FC = () => {
               selection={selection}
               onHeightChange={handleMobileSheetHeight}
               onDraggingChange={handleMobileSheetDragging}
+              layers={layers}
+              onLayersChange={setLayers}
+              globalListeningSettings={globalListeningSettings}
+              onGlobalListeningSettingsChange={setGlobalListeningSettings}
             />
           </div>
         </MapShell>

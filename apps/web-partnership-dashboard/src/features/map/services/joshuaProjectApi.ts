@@ -311,12 +311,6 @@ async function fetchCountryByFIPS(rog3: string): Promise<JPCountry | null> {
     // Use the single country endpoint: /countries/{id}.json where id is FIPS code
     const url = buildProxyUrl(`countries/${rog3}`);
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[JP Debug] Fetching country by FIPS code: ${rog3}, URL: ${url}`
-      );
-    }
-
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -333,14 +327,6 @@ async function fetchCountryByFIPS(rog3: string): Promise<JPCountry | null> {
 
     // Single endpoint returns an array with one item
     const result = Array.isArray(data) && data.length > 0 ? data[0] : null;
-
-    if (process.env.NODE_ENV === 'development' && result) {
-      console.log(`[JP Debug] Country fetched by FIPS ${rog3}:`, {
-        Ctry: result.Ctry,
-        ISO3: result.ISO3,
-        ROG3: result.ROG3,
-      });
-    }
 
     return result;
   } catch (error) {
@@ -361,20 +347,8 @@ export async function fetchCountryStatsByFIPS(
   rog3: string
 ): Promise<JPCountry | null> {
   try {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[JP Debug] Fetching country stats by FIPS code: ${rog3}`);
-    }
-
     // Use the single country endpoint directly: /countries/{FIPS}.json
     const countryData = await fetchCountryByFIPS(rog3);
-
-    if (process.env.NODE_ENV === 'development' && countryData) {
-      console.log(`[JP Debug] Country stats result:`, {
-        Ctry: countryData.Ctry,
-        ISO3: countryData.ISO3,
-        ROG3: countryData.ROG3,
-      });
-    }
 
     return countryData;
   } catch (error) {
@@ -395,12 +369,6 @@ export async function fetchCountryStats(
   iso3: string
 ): Promise<JPCountry | null> {
   try {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(
-        `[JP Debug] fetchCountryStats called with ISO3: ${iso3}. Consider using fetchCountryStatsByFIPS with FIPS code from database.`
-      );
-    }
-
     // Fallback: fetch all countries and find the matching one
     const countries = await fetchFromProxy<JPCountry>('countries', {
       limit: 300,
@@ -409,19 +377,10 @@ export async function fetchCountryStats(
     const matchingCountry = countries.find(c => c.ISO3 === iso3);
 
     if (!matchingCountry || !matchingCountry.ROG3) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(`[JP Debug] No country found for ISO3: ${iso3}`);
-      }
       return null;
     }
 
     const rog3 = matchingCountry.ROG3;
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[JP Debug] Found FIPS code ${rog3} for ISO3 ${iso3}, fetching single country endpoint`
-      );
-    }
 
     // Use the single country endpoint directly: /countries/{FIPS}.json
     return await fetchCountryStatsByFIPS(rog3);
@@ -441,20 +400,9 @@ export async function fetchLanguageStats(
   rol3: string
 ): Promise<JPLanguage | null> {
   try {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[JP Debug] Fetching language stats for ROL3 code: ${rol3}`);
-    }
-
     // First, try direct endpoint: /v1/languages/{ROL3}.json
     try {
       const data = await fetchFromProxy<JPLanguage>(`languages/${rol3}`, {});
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          `[JP Debug] Fetched language stats for ROL3 ${rol3}:`,
-          data
-        );
-      }
 
       return Array.isArray(data) ? data[0] || null : data || null;
     } catch (directError: unknown) {
@@ -464,23 +412,10 @@ export async function fetchLanguageStats(
         (directError.message.includes('404') ||
           directError.message.includes('Failed to fetch'))
       ) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            `[JP Debug] Direct endpoint failed for ${rol3}, trying list endpoint with filter`
-          );
-        }
-
         // Fallback to list endpoint with ROL3 filter
         const listData = await fetchFromProxy<JPLanguage>('languages', {
           ROL3: rol3,
         });
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            `[JP Debug] Fetched from list endpoint for ROL3 ${rol3}:`,
-            listData
-          );
-        }
 
         return listData[0] || null;
       }
@@ -509,12 +444,6 @@ export async function fetchPeopleGroupsByFIPS(
   sortDirection?: 'asc' | 'desc'
 ): Promise<JPPeopleGroup[]> {
   try {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[JP Debug] Fetching people groups for FIPS code: ${fips}, page: ${page}, limit: ${limit}`
-      );
-    }
-
     const params: Record<string, string | number> = {
       countries: fips, // FIPS 10-4 code (2-letter)
       limit,
@@ -531,17 +460,6 @@ export async function fetchPeopleGroupsByFIPS(
     }
 
     const data = await fetchFromProxy<JPPeopleGroup>('people_groups', params);
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[JP Debug] Fetched ${data.length} people groups for FIPS code: ${fips}`
-      );
-      if (data.length > 0) {
-        console.log(
-          `[JP Debug] First people group: ${data[0].PeopNameInCountry} - Country: ${data[0].Ctry}, ISO3: ${data[0].ISO3}, ROG3: ${data[0].ROG3}`
-        );
-      }
-    }
 
     return data;
   } catch (error) {
@@ -565,21 +483,10 @@ export async function fetchPeopleGroupsByCountry(
     const countryStats = await fetchCountryStats(iso3);
 
     if (!countryStats || !countryStats.ROG3) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(
-          `[JP Debug] No ROG3 found for ISO3 ${iso3}, cannot fetch people groups`
-        );
-      }
       return [];
     }
 
     const rog3 = countryStats.ROG3; // This is the FIPS 10-4 code (2-letter)
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[JP Debug] Fetching people groups for ISO3: ${iso3} using FIPS code (ROG3): ${rog3}`
-      );
-    }
 
     // Use the `countries` parameter with FIPS code (ROG3) - this works correctly!
     const data = await fetchFromProxy<JPPeopleGroup>('people_groups', {
@@ -588,17 +495,6 @@ export async function fetchPeopleGroupsByCountry(
       include_profile_text: 'Y',
       include_resources: 'Y',
     });
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[JP Debug] Fetched ${data.length} people groups for FIPS code: ${rog3} (ISO3: ${iso3})`
-      );
-      if (data.length > 0) {
-        console.log(
-          `[JP Debug] First people group: ${data[0].PeopNameInCountry} - Country: ${data[0].Ctry}, ISO3: ${data[0].ISO3}, ROG3: ${data[0].ROG3}`
-        );
-      }
-    }
 
     return data;
   } catch (error) {
@@ -619,12 +515,6 @@ export async function fetchPeopleGroupsByLanguage(
   sortDirection?: 'asc' | 'desc'
 ): Promise<JPPeopleGroup[]> {
   try {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[JP Debug] Fetching people groups for ROL3 code: ${rol3}, page: ${page}, limit: ${limit}`
-      );
-    }
-
     const params: Record<string, string | number> = {
       languages: rol3,
       limit,
@@ -641,12 +531,6 @@ export async function fetchPeopleGroupsByLanguage(
     }
 
     const data = await fetchFromProxy<JPPeopleGroup>('people_groups', params);
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[JP Debug] Fetched ${data.length} people groups for ROL3 code: ${rol3}`
-      );
-    }
 
     return data;
   } catch (error) {

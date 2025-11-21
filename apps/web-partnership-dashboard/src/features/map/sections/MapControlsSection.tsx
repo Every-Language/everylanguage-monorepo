@@ -36,7 +36,7 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
     <div>
       <div className='text-sm font-medium mb-2'>Layers</div>
       {(
-        ['countries', 'listening', 'projects', 'globalListening'] as LayerKey[]
+        ['countries', 'projects', 'globalListening', 'languages'] as LayerKey[]
       ).map(k => (
         <label
           key={k}

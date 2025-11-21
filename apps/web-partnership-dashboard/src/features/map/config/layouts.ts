@@ -29,6 +29,7 @@ export const SINGLE_PANEL_LAYOUT: LayoutConfig = {
   ],
   mobilePanel: {
     sections: [
+      'map-controls',
       'hierarchy',
       'info',
       'linked-entities',
@@ -72,6 +73,7 @@ export const TWO_PANEL_LAYOUT: LayoutConfig = {
   ],
   mobilePanel: {
     sections: [
+      'map-controls',
       'hierarchy',
       'info',
       'linked-entities',
@@ -111,6 +113,7 @@ export const LEFT_PANEL_LAYOUT: LayoutConfig = {
   ],
   mobilePanel: {
     sections: [
+      'map-controls',
       'hierarchy',
       'info',
       'linked-entities',

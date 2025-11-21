@@ -103,41 +103,17 @@ export function useJPCountryStats(
   const fips = externalIds ? extractFIPSFromRegionSources(externalIds) : null;
   const iso3 = externalIds ? extractISO3FromRegionSources(externalIds) : null; // Fallback
 
-  // Debug logging
-  if (process.env.NODE_ENV === 'development' && regionId) {
-    console.log('[JP Debug] Region ID:', regionId);
-    console.log('[JP Debug] External IDs found:', externalIds);
-    console.log('[JP Debug] Extracted FIPS:', fips);
-    console.log('[JP Debug] Extracted ISO3 (fallback):', iso3);
-  }
-
   return useQuery({
     queryKey: ['jp-country-stats', regionId, fips || iso3], // Include regionId to prevent cross-region caching
     queryFn: async () => {
       // Prefer FIPS code from database (more efficient)
       if (fips) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[JP Debug] Fetching country stats by FIPS code:', fips);
-        }
         const result = await fetchCountryStatsByFIPS(fips);
-        if (process.env.NODE_ENV === 'development' && result) {
-          console.log('[JP Debug] Country stats fetched:', {
-            Ctry: result.Ctry,
-            ISO3: result.ISO3,
-            ROG3: result.ROG3,
-          });
-        }
         return result;
       }
 
       // Fallback to ISO3 if FIPS not available (shouldn't happen after seed is run)
       if (iso3) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(
-            '[JP Debug] FIPS code not found, falling back to ISO3:',
-            iso3
-          );
-        }
         // Import fetchCountryStats for fallback
         const { fetchCountryStats } = await import(
           '../services/joshuaProjectApi'
@@ -191,11 +167,6 @@ export function useJPPeopleGroupsByCountry(
       if (!fips) {
         return Promise.resolve([]);
       }
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          `[JP Debug] Fetching people groups for region ${regionId} using FIPS code: ${fips}`
-        );
-      }
       return fetchPeopleGroupsByFIPS(fips, 1, limit, 'Population', 'desc');
     },
     enabled: !!fips && !idsLoading,
@@ -233,11 +204,6 @@ export function useJPPeopleGroupsByCountryPaginated(
     queryFn: () => {
       if (!fips) {
         return Promise.resolve([]);
-      }
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          `[JP Debug] Fetching people groups (paginated) for region ${regionId} using FIPS code: ${fips}, page: ${page}`
-        );
       }
       return fetchPeopleGroupsByFIPS(
         fips,
@@ -332,15 +298,6 @@ export function useJPCountryData(regionId: string | null) {
     'Population',
     'desc'
   );
-
-  // Debug logging
-  if (process.env.NODE_ENV === 'development' && regionId && countryStats.data) {
-    console.log('[JP Debug] useJPCountryData - Country stats:', {
-      Ctry: countryStats.data.Ctry,
-      ISO3: countryStats.data.ISO3,
-      ROG3: countryStats.data.ROG3,
-    });
-  }
 
   return {
     countryStats: countryStats.data,

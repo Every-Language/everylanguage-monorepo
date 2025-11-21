@@ -4,131 +4,6 @@ import { getPointLimitForZoom } from './constants';
 
 export type UUID = string;
 
-export type HeatmapPoint = {
-  lon: number;
-  lat: number;
-  count: number;
-  lastAt: string | null;
-};
-
-export const fetchLanguageListensHeatmap = async (
-  languageEntityId: UUID
-): Promise<HeatmapPoint[]> => {
-  const { data, error } = await (supabase as any)
-    .from('vw_language_listens_heatmap')
-    .select('grid, event_count, last_event_at')
-    .eq('language_entity_id', languageEntityId);
-
-  if (error) throw error;
-  if (!data) return [];
-
-  return (
-    data as Array<{
-      grid?: { type?: string; coordinates?: [number, number] };
-      event_count?: number;
-      last_event_at?: string;
-    }>
-  )
-    .filter(
-      row =>
-        row.grid &&
-        row.grid.type === 'Point' &&
-        Array.isArray(row.grid.coordinates)
-    )
-    .map(row => ({
-      lon: (row.grid!.coordinates as [number, number])[0],
-      lat: (row.grid!.coordinates as [number, number])[1],
-      count: Number(row.event_count ?? 0),
-      lastAt: row.last_event_at ?? null,
-    }));
-};
-
-// Country-scoped: fetch ISO country codes for all descendant countries under a region
-export const fetchCountryCodesForRegion = async (
-  regionId: UUID
-): Promise<Array<{ country_region_id: string; country_code: string }>> => {
-  // Get hierarchy and pick descendant/self countries
-  const { data: hier, error: err1 } = await (supabase as any).rpc(
-    'get_region_hierarchy',
-    {
-      region_id: regionId,
-      generations_up: 0,
-      generations_down: 6,
-    }
-  );
-  if (err1) throw err1;
-  const rows = (hier ?? []) as Array<{
-    hierarchy_region_id: string;
-    hierarchy_region_level: string;
-    relationship_type: 'self' | 'ancestor' | 'descendant' | 'sibling';
-  }>;
-  // Include self + descendants; we will rely on region_properties to filter to countries
-  const countryIds = rows
-    .filter(
-      r =>
-        r.relationship_type === 'self' || r.relationship_type === 'descendant'
-    )
-    .map(r => r.hierarchy_region_id);
-  if (countryIds.length === 0) return [];
-
-  const { data: props, error: err2 } = await supabase
-    .from('region_properties')
-    .select('region_id,value')
-    .eq('key', 'iso3166-1-alpha2')
-    .in('region_id', countryIds);
-  if (err2) throw err2;
-  return (props ?? [])
-    .filter((p: any) => !!p && typeof p?.value === 'string')
-    .map((p: any) => ({
-      country_region_id: p.region_id,
-      country_code: (p.value || '').toUpperCase(),
-    }));
-};
-
-// Self-only ISO2 code for a region if it is a country (or has the property set)
-
-// Region-scoped: rows for a given region_id from vw_country_language_listens_heatmap
-export const fetchRegionLanguageListensHeatmap = async (
-  regionId: UUID
-): Promise<
-  Array<{
-    language_entity_id: string;
-    grid: { type: string; coordinates: [number, number] };
-    event_count: number;
-    last_event_at: string | null;
-  }>
-> => {
-  const { data, error } = await (supabase as any)
-    .from('vw_country_language_listens_heatmap')
-    .select('language_entity_id, grid, event_count, last_event_at')
-    .eq('region_id', regionId);
-
-  if (error) throw error;
-  const rows = (data ?? []) as Array<{
-    language_entity_id?: string;
-    grid?: { type?: string; coordinates?: [number, number] };
-    event_count?: number;
-    last_event_at?: string | null;
-  }>;
-  return rows
-    .filter(
-      r =>
-        !!r.language_entity_id &&
-        r.grid &&
-        r.grid.type === 'Point' &&
-        Array.isArray(r.grid.coordinates)
-    )
-    .map(r => ({
-      language_entity_id: r.language_entity_id as string,
-      grid: {
-        type: 'Point',
-        coordinates: r.grid!.coordinates as [number, number],
-      },
-      event_count: Number(r.event_count ?? 0),
-      last_event_at: r.last_event_at ?? null,
-    }));
-};
-
 // -------- Analytics (Materialized Views) --------
 
 export type DownloadsByCountry = {
@@ -364,12 +239,15 @@ export async function fetchLanguageNames(
 
 // Global sessions heatmap: fetch sessions aggregated by grid location
 // Uses optimized PostGIS RPC function for efficient spatial and time filtering
+// Supports optional language and region filtering
 export async function fetchGlobalSessionsHeatmap(params: {
   bbox: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
   timePeriodHours: number;
   zoom: number;
+  languageEntityId?: string | null; // Optional: Filter by language entity ID
+  regionId?: string | null; // Optional: Filter by region ID
 }): Promise<GlobalHeatmapPoint[]> {
-  const { bbox, timePeriodHours, zoom } = params;
+  const { bbox, timePeriodHours, zoom, languageEntityId, regionId } = params;
   const [minLng, minLat, maxLng, maxLat] = bbox;
 
   // Get point limit for zoom level
@@ -377,7 +255,7 @@ export async function fetchGlobalSessionsHeatmap(params: {
   const pointLimit = getPointLimitForZoom(zoom);
 
   // Call optimized RPC function that queries the view with PostGIS spatial filtering
-  // This maintains consistent grid positions (no jumping on zoom) while providing efficient bbox filtering
+  // When filters are provided, queries sessions table directly and filters before aggregation
   // Function uses SECURITY DEFINER to bypass RLS policies for analytics aggregation
   const { data: rpcData, error: rpcError } = await (supabase as any).rpc(
     'get_global_sessions_heatmap_from_view',
@@ -388,6 +266,8 @@ export async function fetchGlobalSessionsHeatmap(params: {
       p_max_lat: maxLat,
       p_time_period_hours: timePeriodHours,
       p_point_limit: pointLimit,
+      p_language_entity_id: languageEntityId ?? null,
+      p_region_id: regionId ?? null,
     }
   );
 

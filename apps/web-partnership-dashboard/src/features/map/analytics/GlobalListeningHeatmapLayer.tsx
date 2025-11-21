@@ -5,6 +5,7 @@ import { Source, Layer } from 'react-map-gl/maplibre';
 import * as maplibregl from 'maplibre-gl';
 import { useQuery } from '@tanstack/react-query';
 import { useMapContext } from '../context/MapContext';
+import { useSelection } from '../inspector/state/inspectorStore';
 import { fetchGlobalSessionsHeatmap, fetchLanguageNames } from './api';
 import type { GlobalHeatmapPoint, ColorGradient } from './types';
 import type { ExpressionSpecification } from '@maplibre/maplibre-gl-style-spec';
@@ -86,10 +87,16 @@ export const GlobalListeningHeatmapLayer: React.FC<
   GlobalListeningHeatmapLayerProps
 > = ({ show, timePeriodHours, colorGradient }) => {
   const { mapRef } = useMapContext();
+  const selection = useSelection();
   const [viewportBounds, setViewportBounds] = React.useState<
     [number, number, number, number] | null
   >(null);
   const [zoom, setZoom] = React.useState<number>(1.5);
+
+  // Extract filter values from selection
+  const languageEntityId =
+    selection?.kind === 'language_entity' ? selection.id : null;
+  const regionId = selection?.kind === 'region' ? selection.id : null;
   // Removed fadeOpacity - not needed since we keep previous data during fetch
   const [pulseAnimationTime, setPulseAnimationTime] = React.useState<number>(0);
   const [hoveredPoint, setHoveredPoint] = React.useState<{
@@ -111,6 +118,9 @@ export const GlobalListeningHeatmapLayer: React.FC<
 
     const updateViewport = () => {
       try {
+        // Check if map is loaded before trying to get bounds
+        if (!map.loaded()) return;
+
         const bounds = map.getBounds();
         if (!bounds) return;
 
@@ -156,8 +166,14 @@ export const GlobalListeningHeatmapLayer: React.FC<
       }
     };
 
-    // Initial update
-    updateViewport();
+    // If map is already loaded, update viewport immediately
+    // Otherwise, wait for the 'load' event
+    if (map.loaded()) {
+      updateViewport();
+    } else {
+      // Wait for map to load before getting bounds
+      map.once('load', updateViewport);
+    }
 
     // Update on map move/zoom
     map.on('moveend', updateViewport);
@@ -165,6 +181,7 @@ export const GlobalListeningHeatmapLayer: React.FC<
     map.on('resize', updateViewport);
 
     return () => {
+      map.off('load', updateViewport);
       map.off('moveend', updateViewport);
       map.off('zoomend', updateViewport);
       map.off('resize', updateViewport);
@@ -184,12 +201,16 @@ export const GlobalListeningHeatmapLayer: React.FC<
       viewportBounds,
       timePeriodHours,
       zoom,
+      languageEntityId,
+      regionId,
     ],
     queryFn: () => {
       return fetchGlobalSessionsHeatmap({
         bbox: viewportBounds!,
         timePeriodHours,
         zoom,
+        languageEntityId: languageEntityId ?? undefined,
+        regionId: regionId ?? undefined,
       });
     },
     staleTime: 5 * 60 * 1000, // 5 minutes (increased from 2 minutes - RPC is faster, less frequent updates needed)

@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/shared/services/supabase';
 import { Dialog } from '@/shared/components/ui/Dialog';
 import { type PanelConfig } from '../config/layoutTypes';
@@ -153,22 +154,31 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               showBackButton={!!selection}
             />
           ) : selection ? (
-            <div className='flex items-center gap-3'>
-              <button
-                onClick={() => router.back()}
-                aria-label='Back'
-                className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800'
-              >
-                ←
-              </button>
-              <div>
-                <div className='text-xs uppercase tracking-wide text-neutral-500'>
-                  {headerSubtitle}
-                </div>
-                <div className='text-lg font-semibold leading-tight'>
-                  {headerTitle}
+            <div className='flex items-center justify-between gap-3'>
+              <div className='flex items-center gap-3 flex-1 min-w-0'>
+                <button
+                  onClick={() => router.back()}
+                  aria-label='Back'
+                  className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-shrink-0'
+                >
+                  ←
+                </button>
+                <div className='min-w-0'>
+                  <div className='text-xs uppercase tracking-wide text-neutral-500'>
+                    {headerSubtitle}
+                  </div>
+                  <div className='text-lg font-semibold leading-tight truncate'>
+                    {headerTitle}
+                  </div>
                 </div>
               </div>
+              <button
+                onClick={() => router.push('/map')}
+                aria-label='Close'
+                className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-shrink-0 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+              >
+                <XMarkIcon className='h-5 w-5' />
+              </button>
             </div>
           ) : (
             <div>
