@@ -30,10 +30,10 @@ DECLARE
   v_error_message TEXT;
 BEGIN
   -- Process each cache entry
+  -- Note: jp_people_groups_cache doesn't have deleted_at, we process all entries
   FOR v_cache_row IN
     SELECT *
     FROM jp_people_groups_cache
-    WHERE deleted_at IS NULL
     ORDER BY people_id3_rog3
   LOOP
     BEGIN
