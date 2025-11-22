@@ -1,8 +1,6 @@
 import React, { useMemo } from 'react';
-import {
-  useJPLanguageData,
-  useHasJPLanguageData,
-} from '../hooks/useJoshuaProject';
+import { useHasJPLanguageData } from '../hooks/useJoshuaProject';
+import { useJPLanguageDataCache } from '../hooks/useJPLanguageDataCache';
 import {
   UsersIcon,
   GlobeAltIcon,
@@ -26,7 +24,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
 }) => {
   const hasLanguageData = useHasJPLanguageData(entityId);
   const { languageStats, peopleGroups, isLoading, error } =
-    useJPLanguageData(entityId);
+    useJPLanguageDataCache(entityId);
 
   // Calculate population from people groups if not provided by API
   const calculatedPopulation = useMemo(() => {
@@ -135,11 +133,6 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
           </div>
           <div className='text-sm text-neutral-700 dark:text-neutral-300'>
             <span className='font-medium'>{languageStats.HubCountry}</span>
-            {languageStats.HubCountryISO && (
-              <span className='text-neutral-500 dark:text-neutral-400 ml-2'>
-                ({languageStats.HubCountryISO})
-              </span>
-            )}
           </div>
         </div>
       )}
@@ -479,35 +472,6 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                 </span>
               </div>
             )}
-            {(languageStats.BiblePrimaryText ||
-              languageStats.NTPrimaryText) && (
-              <div className='flex justify-between'>
-                <span className='text-neutral-500'>Primary Text:</span>
-                <span className='font-medium'>
-                  {languageStats.BiblePrimaryText ||
-                    languageStats.NTPrimaryText}
-                </span>
-              </div>
-            )}
-            {(languageStats.BiblePrimaryAudio ||
-              languageStats.NTPrimaryAudio) && (
-              <div className='flex justify-between'>
-                <span className='text-neutral-500'>Primary Audio:</span>
-                <span className='font-medium'>
-                  {languageStats.BiblePrimaryAudio ||
-                    languageStats.NTPrimaryAudio}
-                </span>
-              </div>
-            )}
-            {languageStats.BibleTranslationNeed &&
-              languageStats.BibleTranslationNeed !== 'Unknown' && (
-                <div className='flex justify-between'>
-                  <span className='text-neutral-500'>Translation Need:</span>
-                  <span className='font-medium'>
-                    {languageStats.BibleTranslationNeed}
-                  </span>
-                </div>
-              )}
           </div>
         </div>
       </div>
@@ -533,11 +497,6 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
               } text-white font-bold rounded-full w-10 h-10 flex items-center justify-center text-lg`}
             >
               {languageStats.JPScalePC}
-            </div>
-            <div className='text-sm text-neutral-700 dark:text-neutral-300'>
-              {languageStats.JPScaleText && (
-                <div className='font-medium'>{languageStats.JPScaleText}</div>
-              )}
             </div>
           </div>
         </div>

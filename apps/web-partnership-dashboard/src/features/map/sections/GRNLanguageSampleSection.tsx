@@ -1,10 +1,6 @@
 import React from 'react';
-import {
-  useGRNLanguageFeed,
-  useGRNSetFeed,
-  useHasGRNData,
-  useGRNTrackUrl,
-} from '../hooks/useGRN';
+import { useGRNSetFeed, useHasGRNData, useGRNTrackUrl } from '../hooks/useGRN';
+import { useGRNLanguageDataCache } from '../hooks/useGRNLanguageDataCache';
 import { InlineAudioPlayer } from '../components/InlineAudioPlayer';
 
 type GRNLanguageSampleSectionProps = {
@@ -19,7 +15,11 @@ export const GRNLanguageSampleSection: React.FC<
   GRNLanguageSampleSectionProps
 > = ({ entityId }) => {
   const hasGRNData = useHasGRNData(entityId);
-  const { data: languageFeed, isLoading, error } = useGRNLanguageFeed(entityId);
+  const {
+    data: languageFeed,
+    isLoading,
+    error,
+  } = useGRNLanguageDataCache(entityId);
 
   // Get the first program from the language feed
   const firstProgram = languageFeed?.programs?.program?.[0];

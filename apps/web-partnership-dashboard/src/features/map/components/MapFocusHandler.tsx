@@ -2,9 +2,12 @@
 
 import React from 'react';
 import { useSelection } from '../inspector/state/inspectorStore';
-import { useLanguageEntity } from '../hooks/useLanguageEntity';
+import { useLanguageEntityLocation } from '../hooks/useLanguageEntityLocation';
 import { useRegion } from '../hooks/useRegion';
 import { useMapFocus } from '../hooks/useMapFocus';
+import { useMapFlyTo } from '../hooks/useMapFlyTo';
+import { useMapContext } from '../context/MapContext';
+import { useMobileSheet } from '../context/MobileSheetContext';
 
 /**
  * MapFocusHandler handles map zoom/pan when selection changes.
@@ -12,43 +15,90 @@ import { useMapFocus } from '../hooks/useMapFocus';
  */
 export const MapFocusHandler: React.FC = () => {
   const selection = useSelection();
+  const { flyTo } = useMapContext();
+  const mobileSheet = useMobileSheet();
 
-  // For language entities, get primary region data
-  const languageData = useLanguageEntity(
+  // For language entities, use new location-based logic
+  const languageLocation = useLanguageEntityLocation(
     selection?.kind === 'language_entity' ? selection.id : ''
   );
-  const primaryRegionId =
-    selection?.kind === 'language_entity'
-      ? languageData.primaryRegion.data?.regionId
-      : null;
-  const primaryRegionData = useRegion(primaryRegionId ?? '');
 
-  // For regions, get region data directly
+  // For fallback: if no location but has regions, use first region's bbox/boundary
+  const fallbackRegionData = useRegion(
+    selection?.kind === 'language_entity' &&
+      !languageLocation.location &&
+      languageLocation.hasAnyRegions &&
+      languageLocation.firstRegionId
+      ? languageLocation.firstRegionId
+      : ''
+  );
+
+  // For regions, get region data directly (unchanged logic)
   const regionData = useRegion(
     selection?.kind === 'region' ? selection.id : ''
   );
 
-  // Determine bbox and boundary based on selection type
-  const bbox =
-    selection?.kind === 'language_entity'
-      ? primaryRegionId
-        ? primaryRegionData.bbox.data
-        : null
-      : selection?.kind === 'region'
-        ? regionData.bbox.data
-        : null;
+  // Determine what to do based on selection type
+  // For language entities: prioritize location point, then fallback to region, then reset
+  const languageCoordinates =
+    selection?.kind === 'language_entity' && languageLocation.location
+      ? languageLocation.location.coordinates
+      : null;
 
-  const boundary =
-    selection?.kind === 'language_entity'
-      ? primaryRegionId
-        ? primaryRegionData.boundary.data
-        : null
-      : selection?.kind === 'region'
-        ? regionData.boundary.data
-        : null;
+  const languageFallbackBbox =
+    selection?.kind === 'language_entity' &&
+    !languageLocation.location &&
+    languageLocation.hasAnyRegions &&
+    !languageLocation.isLoading
+      ? fallbackRegionData.bbox.data
+      : null;
+  const languageFallbackBoundary =
+    selection?.kind === 'language_entity' &&
+    !languageLocation.location &&
+    languageLocation.hasAnyRegions &&
+    !languageLocation.isLoading
+      ? fallbackRegionData.boundary.data
+      : null;
 
-  // Always call useMapFocus when we have a selection
-  useMapFocus(bbox ?? null, boundary ?? null, selection?.id);
+  // For regions: use bbox/boundary (unchanged)
+  const regionBbox = selection?.kind === 'region' ? regionData.bbox.data : null;
+  const regionBoundary =
+    selection?.kind === 'region' ? regionData.boundary.data : null;
+
+  // Use location point for language entities (highest priority)
+  useMapFlyTo(languageCoordinates, 5, selection?.id);
+
+  // Use region bbox/boundary for language fallback or region selection
+  // Only use language fallback if we don't have coordinates
+  const bboxToUse = languageCoordinates
+    ? null
+    : (languageFallbackBbox ?? regionBbox);
+  const boundaryToUse = languageCoordinates
+    ? null
+    : (languageFallbackBoundary ?? regionBoundary);
+  useMapFocus(bboxToUse, boundaryToUse, selection?.id);
+
+  // Handle reset to default for language entities with no regions
+  React.useEffect(() => {
+    if (
+      selection?.kind === 'language_entity' &&
+      !languageLocation.isLoading &&
+      !languageLocation.location &&
+      !languageLocation.hasAnyRegions &&
+      !mobileSheet.isDragging
+    ) {
+      // Reset to default view state: longitude: 0, latitude: 20, zoom: 1.5
+      flyTo({ longitude: 0, latitude: 20, zoom: 1.5 });
+    }
+  }, [
+    selection?.kind,
+    selection?.id,
+    languageLocation.isLoading,
+    languageLocation.location,
+    languageLocation.hasAnyRegions,
+    mobileSheet.isDragging,
+    flyTo,
+  ]);
 
   return null;
 };

@@ -1,8 +1,6 @@
 import React, { useMemo } from 'react';
-import {
-  useJPCountryData,
-  useHasJPCountryData,
-} from '../hooks/useJoshuaProject';
+import { useHasJPCountryData } from '../hooks/useJoshuaProject';
+import { useJPCountryDataCache } from '../hooks/useJPCountryDataCache';
 import {
   UsersIcon,
   GlobeAltIcon,
@@ -22,7 +20,7 @@ export const JPCountryStatsSection: React.FC<JPCountryStatsSectionProps> = ({
   entityId,
 }) => {
   const hasCountryData = useHasJPCountryData(entityId);
-  const { countryStats, isLoading, error } = useJPCountryData(entityId);
+  const { countryStats, isLoading, error } = useJPCountryDataCache(entityId);
 
   // Religious breakdown data - must be called before early returns
   const religiousData = useMemo(() => {

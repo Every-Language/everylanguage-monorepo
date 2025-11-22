@@ -21,51 +21,119 @@ interface HoveredLanguage {
   coordinates: [number, number];
 }
 
-// Helper function to calculate bible status score (0-3)
+// Helper function to calculate bible status score (0-4)
 // Used for clustering to calculate average status
+// Score mapping:
+// - 4 = Full Bible (green)
+// - 3 = New Testament (yellow)
+// - 2 = Portions (orange/red)
+// - 0 = No Scripture (red)
 function getBibleStatusScore(language: LanguageWithLocation): number {
-  if (language.has_full_audio_bible === true) {
-    return 3; // Full audio bible = highest score
+  const category = getBibleStatusCategory(language);
+  switch (category) {
+    case 'full_bible':
+      return 4; // Full Bible = highest score
+    case 'new_testament':
+      return 3; // New Testament = high score
+    case 'portions':
+      return 2; // Portions = medium score
+    case 'no_scripture':
+      return 0; // No Scripture = lowest score
   }
-  if (language.has_audio_portions === true) {
-    return 2; // Audio portions = medium-high score
-  }
-  if (language.has_text_portions === true) {
-    return 1; // Text portions = low score
-  }
-  return 0; // No translation = lowest score
 }
 
 // Helper function to determine color based on bible translation status
+// Color scheme:
+// - green = full bible (bible_status = 5 OR has_full_audio_bible)
+// - yellow = full new testament but no old testament (bible_status = 4)
+// - orange = portions OR audio recordings (JP or GRN) OR jesus film
+// - red = no scripture
 function getBibleStatusColor(language: LanguageWithLocation): string {
-  if (language.has_full_audio_bible === true) {
+  // Green: Full Bible (bible_status = 5 OR has_full_audio_bible)
+  if (language.bible_status === 5 || language.has_full_audio_bible === true) {
     return '#10b981'; // Green - success-600
   }
-  if (
-    language.has_audio_portions === true ||
-    language.has_text_portions === true
-  ) {
-    return '#f59e0b'; // Orange - warning-500
+
+  // Yellow: Full New Testament but no Old Testament (bible_status = 4)
+  if (language.bible_status === 4) {
+    return '#eab308'; // Yellow - warning-500 (lighter yellow)
   }
+
+  // Orange: Portions OR audio recordings (JP or GRN) OR jesus film
+  if (
+    language.has_text_portions === true ||
+    language.has_audio_portions === true ||
+    language.has_jesus_film === true ||
+    (language.bible_status !== null &&
+      language.bible_status > 0 &&
+      language.bible_status < 4)
+  ) {
+    return '#eb6a38'; // Orange
+  }
+
+  // Red: No scripture
   return '#ef4444'; // Red - error-600
 }
 
-// Helper function to get bible status text
+// Helper function to get bible status text and category
+// Returns: 'full_bible' | 'new_testament' | 'portions' | 'no_scripture'
+function getBibleStatusCategory(
+  language: LanguageWithLocation
+): 'full_bible' | 'new_testament' | 'portions' | 'no_scripture' {
+  // Full Bible (bible_status = 5 OR has_full_audio_bible)
+  if (language.bible_status === 5 || language.has_full_audio_bible === true) {
+    return 'full_bible';
+  }
+
+  // Full New Testament but no Old Testament (bible_status = 4)
+  if (language.bible_status === 4) {
+    return 'new_testament';
+  }
+
+  // Portions OR audio recordings (JP or GRN) OR jesus film
+  if (
+    language.has_text_portions === true ||
+    language.has_audio_portions === true ||
+    language.has_jesus_film === true ||
+    (language.bible_status !== null &&
+      language.bible_status > 0 &&
+      language.bible_status < 4)
+  ) {
+    return 'portions';
+  }
+
+  // No scripture
+  return 'no_scripture';
+}
+
+// Helper function to get bible status text label
 function getBibleStatusText(language: LanguageWithLocation): string {
-  const statuses: string[] = [];
-  if (language.has_full_audio_bible === true) {
-    statuses.push('Full Audio Bible');
+  const category = getBibleStatusCategory(language);
+  switch (category) {
+    case 'full_bible':
+      return 'Full Bible';
+    case 'new_testament':
+      return 'New Testament';
+    case 'portions':
+      return 'Portions';
+    case 'no_scripture':
+      return 'No Scripture';
   }
-  if (language.has_audio_portions === true) {
-    statuses.push('Audio Portions');
+}
+
+// Helper function to get bible status pill color
+function getBibleStatusPillColor(language: LanguageWithLocation): string {
+  const category = getBibleStatusCategory(language);
+  switch (category) {
+    case 'full_bible':
+      return 'bg-success-600'; // Green
+    case 'new_testament':
+      return 'bg-warning-500'; // Yellow
+    case 'portions':
+      return 'bg-[#eb6a38]'; // Orange
+    case 'no_scripture':
+      return 'bg-error-600'; // Red
   }
-  if (language.has_text_portions === true) {
-    statuses.push('Text Portions');
-  }
-  if (statuses.length === 0) {
-    return 'No Translation';
-  }
-  return statuses.join(', ');
 }
 
 // Convert languages to GeoJSON FeatureCollection
@@ -93,6 +161,8 @@ function toFeatureCollection(
       has_full_audio_bible: boolean | null;
       has_audio_portions: boolean | null;
       has_text_portions: boolean | null;
+      bible_status: number | null;
+      has_jesus_film: boolean | null;
     }
   >[] = languages.map(lang => ({
     type: 'Feature',
@@ -109,6 +179,8 @@ function toFeatureCollection(
       has_full_audio_bible: lang.has_full_audio_bible,
       has_audio_portions: lang.has_audio_portions,
       has_text_portions: lang.has_text_portions,
+      bible_status: lang.bible_status,
+      has_jesus_film: lang.has_jesus_film,
     },
   }));
 
@@ -289,6 +361,8 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
             has_full_audio_bible?: boolean | null;
             has_audio_portions?: boolean | null;
             has_text_portions?: boolean | null;
+            bible_status?: number | null;
+            has_jesus_film?: boolean | null;
           };
           const coords = (feature.geometry as GeoJSON.Point).coordinates as [
             number,
@@ -513,13 +587,13 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
                   ['linear'],
                   ['/', ['get', 'sum_score'], ['get', 'point_count']],
                   0,
-                  '#ef4444', // Red
-                  1,
-                  '#f59e0b', // Orange
+                  '#ef4444', // Red - no scripture
                   2,
-                  '#f59e0b', // Orange
+                  '#eb6a38', // Orange - portions
                   3,
-                  '#10b981', // Green
+                  '#eab308', // Yellow - new testament
+                  4,
+                  '#10b981', // Green - full bible
                 ],
                 'circle-radius': [
                   'step',
@@ -624,11 +698,15 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
             </div>
             {/* Bible status breakdown */}
             <div className='mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700'>
-              <div className='text-xs font-medium mb-1 text-neutral-900 dark:text-neutral-100'>
+              <div className='text-xs font-medium mb-1.5 text-neutral-900 dark:text-neutral-100'>
                 Bible Translation Status
               </div>
-              <div className='text-xs text-neutral-600 dark:text-neutral-400'>
-                {getBibleStatusText(hoveredLanguage.language)}
+              <div className='flex items-center gap-2'>
+                <span
+                  className={`${getBibleStatusPillColor(hoveredLanguage.language)} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}
+                >
+                  {getBibleStatusText(hoveredLanguage.language)}
+                </span>
               </div>
             </div>
           </div>

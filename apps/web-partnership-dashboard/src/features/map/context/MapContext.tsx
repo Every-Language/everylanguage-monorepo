@@ -49,7 +49,7 @@ export const MapProvider: React.FC<{
       map.flyTo({
         center: [opts.longitude, opts.latitude],
         zoom: opts.zoom ?? 4,
-        speed: 0.8,
+        speed: 0.5,
         curve: 1.2,
         essential: true,
       });

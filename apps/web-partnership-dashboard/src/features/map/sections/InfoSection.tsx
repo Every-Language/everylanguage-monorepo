@@ -11,6 +11,9 @@ type InfoSectionProps = {
 /**
  * Info Section displays aliases ("Also known as") and stats (properties)
  * for both languages and regions
+ *
+ * Note: Map focusing for language entities is handled by MapFocusHandler.
+ * This component only handles region map focusing when used standalone.
  */
 export const InfoSection: React.FC<InfoSectionProps> = ({ type, entityId }) => {
   const languageData = useLanguageEntity(entityId);
@@ -20,23 +23,9 @@ export const InfoSection: React.FC<InfoSectionProps> = ({ type, entityId }) => {
   const properties =
     type === 'language' ? languageData.properties : regionData.properties;
 
-  // Map focusing: for language, use primary region's bbox/boundary; for region, use direct bbox/boundary
-  const primaryRegionId =
-    type === 'language' ? languageData.primaryRegion.data?.regionId : null;
-  const primaryRegionData = useRegion(primaryRegionId ?? '');
-
-  const bbox =
-    type === 'language'
-      ? primaryRegionId
-        ? primaryRegionData.bbox.data
-        : null
-      : regionData.bbox.data;
-  const boundary =
-    type === 'language'
-      ? primaryRegionId
-        ? primaryRegionData.boundary.data
-        : null
-      : regionData.boundary.data;
+  // Map focusing: only for regions (language entity focusing is handled by MapFocusHandler)
+  const bbox = type === 'region' ? regionData.bbox.data : null;
+  const boundary = type === 'region' ? regionData.boundary.data : null;
 
   useMapFocus(bbox ?? null, boundary ?? null, entityId);
 

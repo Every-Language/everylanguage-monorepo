@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
-import {
-  useGRNLanguageFeed,
-  useGRNSetFeed,
-  useHasGRNData,
-  useGRNTrackUrl,
-} from '../hooks/useGRN';
+import { useGRNSetFeed, useHasGRNData, useGRNTrackUrl } from '../hooks/useGRN';
+import { useGRNLanguageDataCache } from '../hooks/useGRNLanguageDataCache';
 import { InlineAudioPlayer } from '../components/InlineAudioPlayer';
 import { YouTubeEmbed } from '../components/YouTubeEmbed';
 import type { GRNProgram, GRNTrack } from '../services/grnApi';
@@ -213,7 +209,11 @@ export const GRNGospelResourcesSection: React.FC<
   GRNGospelResourcesSectionProps
 > = ({ entityId }) => {
   const hasGRNData = useHasGRNData(entityId);
-  const { data: languageFeed, isLoading, error } = useGRNLanguageFeed(entityId);
+  const {
+    data: languageFeed,
+    isLoading,
+    error,
+  } = useGRNLanguageDataCache(entityId);
 
   // Debug logging
   React.useEffect(() => {

@@ -2,11 +2,13 @@ import React, { useMemo, useState } from 'react';
 import {
   useJPCountryStats,
   useJPLanguageStats,
-  useJPPeopleGroupsByCountryPaginated,
-  useJPPeopleGroupsByLanguagePaginated,
   useHasJPCountryData,
   useHasJPLanguageData,
 } from '../hooks/useJoshuaProject';
+import {
+  useJPPeopleGroupsByCountryCache,
+  useJPPeopleGroupsByLanguageCache,
+} from '../hooks/useJPPeopleGroupsCache';
 import {
   ChevronUpIcon,
   ChevronDownIcon,
@@ -88,15 +90,15 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
     }
   }, [sortField]);
 
-  // Fetch paginated people groups - hooks must be called unconditionally
-  const countryPeopleGroups = useJPPeopleGroupsByCountryPaginated(
+  // Fetch paginated people groups from cache - hooks must be called unconditionally
+  const countryPeopleGroups = useJPPeopleGroupsByCountryCache(
     isRegion ? entityId : null,
     currentPage,
     pageSize,
     apiSortField,
     sortDirection
   );
-  const languagePeopleGroups = useJPPeopleGroupsByLanguagePaginated(
+  const languagePeopleGroups = useJPPeopleGroupsByLanguageCache(
     !isRegion ? entityId : null,
     currentPage,
     pageSize,

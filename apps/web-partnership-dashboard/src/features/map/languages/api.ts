@@ -62,6 +62,8 @@ export async function fetchLanguagesWithLocation(params: {
       has_full_audio_bible?: boolean | null;
       has_audio_portions?: boolean | null;
       has_text_portions?: boolean | null;
+      bible_status?: number | null;
+      has_jesus_film?: boolean | null;
       iso639_3?: string | null;
       rolv_code?: string | null;
       bible_stats_computed_at?: string | null;
@@ -87,6 +89,8 @@ export async function fetchLanguagesWithLocation(params: {
       has_full_audio_bible: row.has_full_audio_bible ?? null,
       has_audio_portions: row.has_audio_portions ?? null,
       has_text_portions: row.has_text_portions ?? null,
+      bible_status: row.bible_status ?? null,
+      has_jesus_film: row.has_jesus_film ?? null,
       iso639_3: row.iso639_3 ?? null,
       rolv_code: row.rolv_code ?? null,
       bible_stats_computed_at: row.bible_stats_computed_at ?? null,
