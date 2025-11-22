@@ -347,7 +347,12 @@ entrypoint = "./functions/sync-grn-languages/index.ts"
 [functions.sync-jp-people-groups]
 enabled = true
 verify_jwt = false
-entrypoint = "./functions/sync-grn-languages/index.ts"
+entrypoint = "./functions/sync-jp-people-groups/index.ts"
+
+[functions.sync-jp-countries]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/sync-jp-countries/index.ts"
 
 [functions.stripe-webhook-donations]
 enabled = true
