@@ -14,6 +14,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { DonateModal } from '@/features/funding/components/DonateFlow/DonateModal';
 import { useAuth } from '@/features/auth';
 import { useTheme } from '@/shared/theme';
+import { useDonateEnabled } from '@/shared/hooks/useFeatureFlags';
 import { ChevronDown } from 'lucide-react';
 
 const routeLabel = (pathname: string): string => {
@@ -125,6 +126,7 @@ export const AppHeader: React.FC = () => {
   const label =
     intendedSection === 'dashboard' ? 'Dashboard' : routeLabel(pathname);
   const [donateOpen, setDonateOpen] = React.useState(false);
+  const donateEnabled = useDonateEnabled();
 
   // Hide search bar on dashboard routes
   const isDashboardRoute =
@@ -191,13 +193,21 @@ export const AppHeader: React.FC = () => {
         <ThemeDropdown />
         <AuthMenu />
         {/* Donate button to the right of the login/auth */}
-        <Button variant='primary' size='sm' onClick={() => setDonateOpen(true)}>
-          Donate
-        </Button>
+        {donateEnabled && (
+          <Button
+            variant='primary'
+            size='sm'
+            onClick={() => setDonateOpen(true)}
+          >
+            Donate
+          </Button>
+        )}
       </div>
-      <Dialog open={donateOpen} onOpenChange={setDonateOpen}>
-        <DonateModal />
-      </Dialog>
+      {donateEnabled && (
+        <Dialog open={donateOpen} onOpenChange={setDonateOpen}>
+          <DonateModal />
+        </Dialog>
+      )}
     </header>
   );
 };

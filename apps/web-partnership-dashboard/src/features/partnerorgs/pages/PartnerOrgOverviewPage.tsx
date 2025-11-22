@@ -14,6 +14,7 @@ import { CountUp } from '../components/CountUp';
 import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
 import { useProjectProgress } from '../hooks/useProjectProgress';
 import { useProjectDistribution } from '../hooks/useProjectDistribution';
+import { ProjectCardSkeleton } from '@/shared/components/ui/Skeletons';
 
 export const PartnerOrgOverviewPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
@@ -42,7 +43,12 @@ export const PartnerOrgOverviewPage: React.FC = () => {
 
   // Calculate progress per project - ALWAYS call useMemo
   const projectProgress = React.useMemo(() => {
-    if (!progressData || !uniqueProjects || uniqueProjects.length === 0)
+    if (
+      !progressData ||
+      !Array.isArray(progressData) ||
+      !uniqueProjects ||
+      uniqueProjects.length === 0
+    )
       return new Map();
     const progressMap = new Map<string, { completed: number; total: number }>();
 
@@ -101,11 +107,11 @@ export const PartnerOrgOverviewPage: React.FC = () => {
 
     // Use per-language stats if available (from 'all' mode)
     if (
-      distributionData.perLanguageStats &&
-      typeof distributionData.perLanguageStats === 'object'
+      (distributionData as any).perLanguageStats &&
+      typeof (distributionData as any).perLanguageStats === 'object'
     ) {
       for (const project of uniqueProjects) {
-        const langStats = (distributionData.perLanguageStats as any)[
+        const langStats = ((distributionData as any).perLanguageStats as any)[
           project.language_entity_id
         ];
         if (langStats) {
@@ -133,9 +139,12 @@ export const PartnerOrgOverviewPage: React.FC = () => {
     return distMap;
   }, [distributionData, uniqueProjects]);
 
-  const isLoading = projectsLoading || progressLoading || distributionLoading;
-  const _isLoading = isLoading; // Suppress unused warning if needed
+  // Show skeleton while loading projects
+  if (projectsLoading) {
+    return <ProjectCardSkeleton count={3} />;
+  }
 
+  // Show empty state only after projects have loaded
   if (!uniqueProjects || uniqueProjects.length === 0) {
     return (
       <Card className='border border-neutral-200 dark:border-neutral-800'>
@@ -173,7 +182,16 @@ export const PartnerOrgOverviewPage: React.FC = () => {
               </CardHeader>
               <CardContent className='space-y-4'>
                 {/* Bible Progress */}
-                {progress && (
+                {progressLoading ? (
+                  <div>
+                    <div className='h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/3 animate-pulse mb-2' />
+                    <div className='flex items-center justify-between mb-1'>
+                      <div className='h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-24 animate-pulse' />
+                      <div className='h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-8 animate-pulse' />
+                    </div>
+                    <div className='h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full animate-pulse' />
+                  </div>
+                ) : progress ? (
                   <div>
                     <div className='text-xs text-neutral-500 dark:text-neutral-400 mb-1'>
                       Bible Progress
@@ -195,10 +213,21 @@ export const PartnerOrgOverviewPage: React.FC = () => {
                       className='h-2'
                     />
                   </div>
-                )}
+                ) : null}
 
                 {/* Distribution Stats */}
-                {distribution && (
+                {distributionLoading ? (
+                  <div className='grid grid-cols-2 gap-4 pt-2 border-t border-neutral-200 dark:border-neutral-800'>
+                    <div>
+                      <div className='h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-16 animate-pulse mb-2' />
+                      <div className='h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-20 animate-pulse' />
+                    </div>
+                    <div>
+                      <div className='h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-20 animate-pulse mb-2' />
+                      <div className='h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-16 animate-pulse' />
+                    </div>
+                  </div>
+                ) : distribution ? (
                   <div className='grid grid-cols-2 gap-4 pt-2 border-t border-neutral-200 dark:border-neutral-800'>
                     <div>
                       <div className='text-xs text-neutral-500 dark:text-neutral-400'>
@@ -217,7 +246,7 @@ export const PartnerOrgOverviewPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                )}
+                ) : null}
               </CardContent>
             </Card>
           );

@@ -6,7 +6,10 @@ import * as maplibregl from 'maplibre-gl';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMapContext } from '../context/MapContext';
-import { useSetSelection } from '../inspector/state/inspectorStore';
+import {
+  useSetSelection,
+  useSelectionMode,
+} from '../inspector/state/inspectorStore';
 import { useTheme } from '@/shared/theme';
 import { fetchPeopleGroupsWithLocation } from './api';
 import type { PeopleGroupWithLocation } from './types';
@@ -14,6 +17,7 @@ import type { PeopleGroupWithLocation } from './types';
 interface MapPeopleGroupsLayerProps {
   show: boolean;
   clustered?: boolean;
+  opacity?: number;
 }
 
 interface HoveredPeopleGroup {
@@ -23,42 +27,52 @@ interface HoveredPeopleGroup {
 
 // Helper function to calculate JPScale score (0-5) for clustering
 // Used for clustering to calculate average status
-function getJPScaleScore(peopleGroup: PeopleGroupWithLocation): number {
-  if (peopleGroup.least_reached === true) return 1; // Least reached = highest priority (lowest scale)
-  if (peopleGroup.frontier === true) return 2; // Frontier = high priority
-  if (peopleGroup.jpscale !== null) return peopleGroup.jpscale;
-  return 3; // Default to middle if unknown
+function getBibleStatusScore(peopleGroup: PeopleGroupWithLocation): number {
+  const bibleStatus = peopleGroup.primary_language_bible_status;
+
+  // Full Bible (bible_status = 5)
+  if (bibleStatus === 5) return 5;
+
+  // Full New Testament (bible_status = 4)
+  if (bibleStatus === 4) return 4;
+
+  // Portions (bible_status = 1-3)
+  if (bibleStatus !== null && bibleStatus > 0 && bibleStatus < 4) return 2;
+
+  // No scripture (bible_status = 0 or null)
+  return 0;
 }
 
-// Helper function to determine color based on people group status
-// Color scheme:
-// - red = least reached (least_reached = true) or JPScale 1
-// - orange = frontier (frontier = true) or JPScale 2
-// - yellow = JPScale 3
-// - green = JPScale 4-5
+// Helper function to determine color based on primary language bible translation status
+// Color scheme (same as languages):
+// - green = full bible (primary_language_bible_status = 5)
+// - yellow = full new testament but no old testament (primary_language_bible_status = 4)
+// - orange = portions (primary_language_bible_status = 1-3) OR has audio recordings OR has jesus film
+// - red = no scripture (primary_language_bible_status = 0 or null)
 function getPeopleGroupColor(peopleGroup: PeopleGroupWithLocation): string {
-  // Red: Least reached or JPScale 1
-  if (peopleGroup.least_reached === true || peopleGroup.jpscale === 1) {
-    return '#ef4444'; // Red - error-600
-  }
+  const bibleStatus = peopleGroup.primary_language_bible_status;
 
-  // Orange: Frontier or JPScale 2
-  if (peopleGroup.frontier === true || peopleGroup.jpscale === 2) {
-    return '#eb6a38'; // Orange
-  }
-
-  // Yellow: JPScale 3
-  if (peopleGroup.jpscale === 3) {
-    return '#eab308'; // Yellow - warning-500
-  }
-
-  // Green: JPScale 4-5
-  if (peopleGroup.jpscale === 4 || peopleGroup.jpscale === 5) {
+  // Green: Full Bible (bible_status = 5)
+  if (bibleStatus === 5) {
     return '#10b981'; // Green - success-600
   }
 
-  // Default: Gray if no status info
-  return '#6b7280'; // Gray - neutral-500
+  // Yellow: Full New Testament but no Old Testament (bible_status = 4)
+  if (bibleStatus === 4) {
+    return '#eab308'; // Yellow - warning-500
+  }
+
+  // Orange: Portions OR audio recordings OR jesus film
+  if (
+    (bibleStatus !== null && bibleStatus > 0 && bibleStatus < 4) ||
+    peopleGroup.has_audio_recordings === true ||
+    peopleGroup.has_jesus_film === true
+  ) {
+    return '#eb6a38'; // Orange
+  }
+
+  // Red: No scripture
+  return '#ef4444'; // Red - error-600
 }
 
 // Helper function to get status text label
@@ -112,7 +126,7 @@ function toFeatureCollection(
       people_group_name: string;
       region_name: string;
       color: string;
-      jpscale_score: number; // For clustering aggregation
+      bible_status_score: number; // For clustering aggregation
       jpscale: number | null;
       least_reached: boolean | null;
       frontier: boolean | null;
@@ -128,7 +142,7 @@ function toFeatureCollection(
       people_group_name: pg.people_group_name,
       region_name: pg.region_name,
       color: getPeopleGroupColor(pg),
-      jpscale_score: getJPScaleScore(pg), // For clustering aggregation
+      bible_status_score: getBibleStatusScore(pg), // For clustering aggregation
       jpscale: pg.jpscale,
       least_reached: pg.least_reached,
       frontier: pg.frontier,
@@ -141,11 +155,13 @@ function toFeatureCollection(
 export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
   show,
   clustered = false,
+  opacity = 1.0,
 }) => {
   const { mapRef } = useMapContext();
   const { resolvedTheme } = useTheme();
   const router = useRouter();
   const setSelection = useSetSelection();
+  const selectionMode = useSelectionMode();
 
   // Debug logging for clustering state
   React.useEffect(() => {
@@ -415,6 +431,9 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
 
           // Handle individual point click
           if (props.people_group_id) {
+            // Only allow selection if in people_group mode
+            if (selectionMode !== 'people_group') return;
+
             // Set selection
             setSelection({
               kind: 'people_group',
@@ -455,7 +474,8 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
         clustered,
         sampleFeatures: featureCollection.features.slice(0, 3).map(f => ({
           id: f.properties.people_group_id,
-          hasScore: typeof (f.properties as any).jpscale_score === 'number',
+          hasScore:
+            typeof (f.properties as any).bible_status_score === 'number',
         })),
       });
     }
@@ -514,8 +534,8 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
               clusterRadius: 50,
               clusterMaxZoom: 4, // Clusters break apart into individual points when zoom >= 4
               clusterProperties: {
-                // Aggregate JPScale scores for average calculation
-                sum_score: ['+', ['get', 'jpscale_score']],
+                // Aggregate Bible status scores for average calculation
+                sum_score: ['+', ['get', 'bible_status_score']],
               },
             }
           : {
@@ -535,14 +555,14 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
                   'interpolate',
                   ['linear'],
                   ['/', ['get', 'sum_score'], ['get', 'point_count']],
-                  1,
-                  '#ef4444', // Red - least reached
+                  0,
+                  '#ef4444', // Red - no scripture
                   2,
-                  '#eb6a38', // Orange - frontier
-                  3,
-                  '#eab308', // Yellow - scale 3
+                  '#eb6a38', // Orange - portions
+                  4,
+                  '#eab308', // Yellow - new testament
                   5,
-                  '#10b981', // Green - scale 4-5
+                  '#10b981', // Green - full bible
                 ],
                 'circle-radius': [
                   'step',
@@ -555,7 +575,7 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
                 ],
                 'circle-stroke-color': markerStrokeColor,
                 'circle-stroke-width': 2,
-                'circle-opacity': 0.8,
+                'circle-opacity': opacity * 0.8,
               }}
             />,
             /* Cluster count labels */
@@ -594,7 +614,7 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
                 'circle-color': ['get', 'color'],
                 'circle-stroke-color': markerStrokeColor,
                 'circle-stroke-width': 1.5,
-                'circle-opacity': 0.9,
+                'circle-opacity': opacity * 0.9,
               }}
             />,
           ]
@@ -618,7 +638,7 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
               'circle-color': ['get', 'color'],
               'circle-stroke-color': markerStrokeColor,
               'circle-stroke-width': 1.5,
-              'circle-opacity': 0.9,
+              'circle-opacity': opacity * 0.9,
             }}
           />
         )}

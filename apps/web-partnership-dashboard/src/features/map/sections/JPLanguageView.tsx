@@ -154,9 +154,9 @@ export const JPLanguageView: React.FC<JPLanguageViewProps> = ({ entityId }) => {
           <div className='text-sm text-neutral-500'>No people groups found</div>
         ) : (
           <div className='space-y-3'>
-            {peopleGroups.map((group: JPPeopleGroup) => (
+            {peopleGroups.map((group: JPPeopleGroup, index: number) => (
               <PeopleGroupCardWrapper
-                key={`${group.PeopleID3}-${group.ROG3}`}
+                key={`${group.PeopleID3}-${group.RegionName || group.Ctry || index}`}
                 group={group}
                 entityId={entityId}
               />

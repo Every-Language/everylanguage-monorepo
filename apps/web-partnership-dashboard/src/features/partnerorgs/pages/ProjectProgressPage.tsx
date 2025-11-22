@@ -108,7 +108,11 @@ export const ProjectProgressPage: React.FC = () => {
     );
   }
 
-  if (!audioVersions || audioVersions.length === 0) {
+  if (
+    !audioVersions ||
+    !Array.isArray(audioVersions) ||
+    audioVersions.length === 0
+  ) {
     return (
       <Card className='border border-neutral-200 dark:border-neutral-800'>
         <CardContent className='py-12 text-center text-neutral-500'>

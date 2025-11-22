@@ -13,6 +13,10 @@ import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
 import { useProjectDistribution } from '../hooks/useProjectDistribution';
 import { MapShell } from '@/features/map/components/MapShell';
 import { ProjectDistributionHeatmapLayers } from '../components/ProjectDistributionHeatmapLayers';
+import {
+  StatsCardSkeleton,
+  MapSkeleton,
+} from '@/shared/components/ui/Skeletons';
 
 export const PartnerOrgDistributionPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
@@ -34,8 +38,6 @@ export const PartnerOrgDistributionPage: React.FC = () => {
       setEnabledProjects(new Set(uniqueProjectIds));
     }
   }, [projects]);
-
-  const isLoading = projectsLoading || distributionLoading;
 
   // Get unique projects - must be called before early return
   const uniqueProjects = React.useMemo(() => {
@@ -68,8 +70,21 @@ export const PartnerOrgDistributionPage: React.FC = () => {
     return colorMap;
   }, [uniqueProjects]);
 
-  if (isLoading) {
-    return <div className='text-neutral-500'>Loading distribution data...</div>;
+  // Show skeleton while loading projects
+  if (projectsLoading) {
+    return (
+      <div className='space-y-6'>
+        <StatsCardSkeleton count={2} />
+        <Card className='border border-neutral-200 dark:border-neutral-800'>
+          <CardHeader>
+            <CardTitle>Distribution Map</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MapSkeleton height='600px' />
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const toggleProject = (projectId: string) => {
@@ -131,42 +146,53 @@ export const PartnerOrgDistributionPage: React.FC = () => {
       )}
 
       {/* Statistics */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-        <Card className='border border-neutral-200 dark:border-neutral-800'>
-          <CardHeader>
-            <CardTitle className='text-sm text-neutral-500'>
-              App Downloads
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-3xl font-bold tracking-tight'>
-              <CountUp value={distributionData?.totalDownloads || 0} />
-            </div>
-            <div className='text-xs text-neutral-500 mt-1'>
-              {enabledProjects.size > 0
-                ? `${enabledProjects.size} project${enabledProjects.size > 1 ? 's' : ''} selected`
-                : 'No projects selected'}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className='border border-neutral-200 dark:border-neutral-800'>
-          <CardHeader>
-            <CardTitle className='text-sm text-neutral-500'>
-              Total Minutes Listened
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-3xl font-bold tracking-tight'>
-              <CountUp
-                value={(distributionData?.totalListeningHours || 0) * 60}
-              />
-            </div>
-            <div className='text-xs text-neutral-500 mt-1'>
-              {Math.round(distributionData?.totalListeningHours || 0)} hours
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {distributionLoading ? (
+        <StatsCardSkeleton count={2} />
+      ) : (
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+          <Card className='border border-neutral-200 dark:border-neutral-800'>
+            <CardHeader>
+              <CardTitle className='text-sm text-neutral-500'>
+                App Downloads
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className='text-3xl font-bold tracking-tight'>
+                <CountUp
+                  value={(distributionData as any)?.totalDownloads || 0}
+                />
+              </div>
+              <div className='text-xs text-neutral-500 mt-1'>
+                {enabledProjects.size > 0
+                  ? `${enabledProjects.size} project${enabledProjects.size > 1 ? 's' : ''} selected`
+                  : 'No projects selected'}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className='border border-neutral-200 dark:border-neutral-800'>
+            <CardHeader>
+              <CardTitle className='text-sm text-neutral-500'>
+                Total Minutes Listened
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className='text-3xl font-bold tracking-tight'>
+                <CountUp
+                  value={
+                    ((distributionData as any)?.totalListeningHours || 0) * 60
+                  }
+                />
+              </div>
+              <div className='text-xs text-neutral-500 mt-1'>
+                {Math.round(
+                  (distributionData as any)?.totalListeningHours || 0
+                )}{' '}
+                hours
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Distribution Map */}
       <Card className='border border-neutral-200 dark:border-neutral-800'>
@@ -174,34 +200,39 @@ export const PartnerOrgDistributionPage: React.FC = () => {
           <CardTitle>Distribution Map</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className='h-[600px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800'>
-            {distributionData?.heatmap &&
-            distributionData.heatmap.length > 0 ? (
-              <MapShell
-                countriesEnabled={false}
-                padding={{ top: 0, bottom: 0, left: 0, right: 0 }}
-              >
-                <ProjectDistributionHeatmapLayers
-                  enabledProjectIds={enabledProjects}
-                  projects={uniqueProjects}
-                  projectColors={projectColors}
-                  heatmapData={distributionData.heatmap}
-                />
-              </MapShell>
-            ) : (
-              <div className='h-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center'>
-                <div className='text-center text-neutral-500'>
-                  <div className='text-lg font-semibold mb-2'>
-                    No distribution data available
-                  </div>
-                  <div className='text-sm'>
-                    Heatmap data will appear here once listening data is
-                    available
+          {distributionLoading ? (
+            <MapSkeleton height='600px' />
+          ) : (
+            <div className='h-[600px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800'>
+              {(distributionData as any)?.heatmap &&
+              Array.isArray((distributionData as any).heatmap) &&
+              (distributionData as any).heatmap.length > 0 ? (
+                <MapShell
+                  countriesEnabled={false}
+                  padding={{ top: 0, bottom: 0, left: 0, right: 0 }}
+                >
+                  <ProjectDistributionHeatmapLayers
+                    enabledProjectIds={enabledProjects}
+                    projects={uniqueProjects}
+                    projectColors={projectColors}
+                    heatmapData={(distributionData as any).heatmap}
+                  />
+                </MapShell>
+              ) : (
+                <div className='h-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center'>
+                  <div className='text-center text-neutral-500'>
+                    <div className='text-lg font-semibold mb-2'>
+                      No distribution data available
+                    </div>
+                    <div className='text-sm'>
+                      Heatmap data will appear here once listening data is
+                      available
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

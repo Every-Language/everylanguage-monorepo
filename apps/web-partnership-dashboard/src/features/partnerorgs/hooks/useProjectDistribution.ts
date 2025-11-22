@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 
 export function useProjectDistribution(
@@ -31,20 +31,22 @@ export function useProjectDistribution(
         };
       }
 
-      // Get heatmap data
-      const { data: heatmap, error: heatmapError } = await supabase
-        .from('vw_language_listens_heatmap')
-        .select('*')
-        .in('language_entity_id', languageIds);
+      // Get heatmap data and stats in parallel
+      const [heatmapResult, statsResult] = await Promise.all([
+        supabase
+          .from('vw_language_listens_heatmap')
+          .select('*')
+          .in('language_entity_id', languageIds),
+        supabase
+          .from('mv_language_listens_stats')
+          .select('language_entity_id, downloads, total_listened_seconds')
+          .in('language_entity_id', languageIds),
+      ]);
 
+      const { data: heatmap, error: heatmapError } = heatmapResult;
       if (heatmapError) throw heatmapError;
 
-      // Get download counts from mv_language_listens_stats
-      const { data: stats, error: statsError } = await supabase
-        .from('mv_language_listens_stats')
-        .select('language_entity_id, downloads, total_listened_seconds')
-        .in('language_entity_id', languageIds);
-
+      const { data: stats, error: statsError } = statsResult;
       if (statsError) throw statsError;
 
       const totalDownloads =
@@ -97,5 +99,7 @@ export function useProjectDistribution(
       };
     },
     enabled: !!(projectId && (projectId !== 'all' || partnerOrgId)),
+    staleTime: 5 * 60 * 1000, // 5 minutes - distribution data doesn't change frequently
+    placeholderData: keepPreviousData, // Keep previous data while fetching new data for smoother transitions
   });
 }

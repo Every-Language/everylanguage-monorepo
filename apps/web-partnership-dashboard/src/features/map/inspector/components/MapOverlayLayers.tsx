@@ -9,9 +9,10 @@ import {
 } from '../hooks/overlay';
 
 // Minimal overlay that highlights the selected region or the union of regions for a language.
-export const MapOverlayLayers: React.FC<{ countriesEnabled?: boolean }> = ({
-  countriesEnabled = true,
-}) => {
+export const MapOverlayLayers: React.FC<{
+  countriesEnabled?: boolean;
+  opacity?: number;
+}> = ({ countriesEnabled = true, opacity = 1.0 }) => {
   const selection = useSelection();
 
   const projectRegionIdQuery = useQuery({
@@ -70,7 +71,8 @@ export const MapOverlayLayers: React.FC<{ countriesEnabled?: boolean }> = ({
 
   // Reduce prominence when a region is selected (to make project pins more visible)
   const isRegionSelected = selection?.kind === 'region';
-  const fillOpacity = isRegionSelected ? 0.15 : 0.25;
+  const baseFillOpacity = isRegionSelected ? 0.15 : 0.25;
+  const fillOpacity = baseFillOpacity * opacity;
   const lineWidth = isRegionSelected ? 1.5 : 2;
 
   return (

@@ -3,8 +3,9 @@ import type { MetadataRoute } from 'next';
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL || 'https://everylanguage.app';
+  const donateEnabled = process.env.NEXT_PUBLIC_ENABLE_DONATE !== 'false';
 
-  return [
+  const routes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -17,12 +18,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'daily',
       priority: 1,
     },
-    {
+  ];
+
+  if (donateEnabled) {
+    routes.push({
       url: `${baseUrl}/donate`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,
-    },
+    });
+  }
+
+  routes.push(
     {
       url: `${baseUrl}/login`,
       lastModified: new Date(),
@@ -34,6 +41,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.5,
-    },
-  ];
+    }
+  );
+
+  return routes;
 }

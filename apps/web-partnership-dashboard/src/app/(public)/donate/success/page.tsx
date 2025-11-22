@@ -1,10 +1,25 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useDonateEnabled } from '@/shared/hooks/useFeatureFlags';
 
 export const dynamic = 'force-dynamic';
 
 export default function DonateSuccessPage() {
+  const router = useRouter();
+  const donateEnabled = useDonateEnabled();
+
+  useEffect(() => {
+    if (!donateEnabled) {
+      router.replace('/map');
+    }
+  }, [donateEnabled, router]);
+
+  if (!donateEnabled) {
+    return null;
+  }
   return (
     <div className='flex min-h-screen items-center justify-center p-4'>
       <div className='text-center max-w-md'>

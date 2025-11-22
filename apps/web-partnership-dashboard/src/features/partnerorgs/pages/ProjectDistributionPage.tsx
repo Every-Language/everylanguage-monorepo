@@ -34,7 +34,7 @@ export const ProjectDistributionPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className='text-3xl font-bold tracking-tight'>
-              <CountUp value={data?.totalDownloads || 0} />
+              <CountUp value={(data as any)?.totalDownloads || 0} />
             </div>
           </CardContent>
         </Card>
@@ -46,7 +46,7 @@ export const ProjectDistributionPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className='text-3xl font-bold tracking-tight'>
-              <CountUp value={data?.totalListeningHours || 0} />
+              <CountUp value={(data as any)?.totalListeningHours || 0} />
             </div>
           </CardContent>
         </Card>
@@ -64,8 +64,10 @@ export const ProjectDistributionPage: React.FC = () => {
                 Heatmap Visualization
               </div>
               <div className='text-sm'>
-                {data?.heatmap && data.heatmap.length > 0
-                  ? `${data.heatmap.length} location points available`
+                {(data as any)?.heatmap &&
+                Array.isArray((data as any).heatmap) &&
+                (data as any).heatmap.length > 0
+                  ? `${(data as any).heatmap.length} location points available`
                   : 'No distribution data available'}
               </div>
               <div className='text-xs mt-2'>
@@ -77,25 +79,27 @@ export const ProjectDistributionPage: React.FC = () => {
       </Card>
 
       {/* Heatmap data preview (for debugging) */}
-      {data?.heatmap && data.heatmap.length > 0 && (
-        <Card className='border border-neutral-200 dark:border-neutral-800'>
-          <CardHeader>
-            <CardTitle>Location Data Preview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-xs font-mono overflow-auto max-h-64'>
-              <pre className='text-neutral-600 dark:text-neutral-400'>
-                {JSON.stringify(data.heatmap.slice(0, 5), null, 2)}
-              </pre>
-              {data.heatmap.length > 5 && (
-                <div className='text-neutral-500 mt-2'>
-                  ... and {data.heatmap.length - 5} more locations
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {(data as any)?.heatmap &&
+        Array.isArray((data as any).heatmap) &&
+        (data as any).heatmap.length > 0 && (
+          <Card className='border border-neutral-200 dark:border-neutral-800'>
+            <CardHeader>
+              <CardTitle>Location Data Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className='text-xs font-mono overflow-auto max-h-64'>
+                <pre className='text-neutral-600 dark:text-neutral-400'>
+                  {JSON.stringify((data as any).heatmap.slice(0, 5), null, 2)}
+                </pre>
+                {(data as any).heatmap.length > 5 && (
+                  <div className='text-neutral-500 mt-2'>
+                    ... and {(data as any).heatmap.length - 5} more locations
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
     </div>
   );
 };

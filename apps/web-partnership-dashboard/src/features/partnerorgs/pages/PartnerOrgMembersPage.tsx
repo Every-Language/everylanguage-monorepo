@@ -9,6 +9,7 @@ import {
   CardContent,
 } from '@/shared/components/ui/Card';
 import { usePartnerOrgMembers } from '../hooks/usePartnerOrgMembers';
+import { MemberCardSkeleton } from '@/shared/components/ui/Skeletons';
 
 export const PartnerOrgMembersPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
@@ -16,7 +17,7 @@ export const PartnerOrgMembersPage: React.FC = () => {
   const { data: members, isLoading } = usePartnerOrgMembers(orgId!);
 
   if (isLoading) {
-    return <div className='text-neutral-500'>Loading members...</div>;
+    return <MemberCardSkeleton count={5} />;
   }
 
   if (!members || members.length === 0) {

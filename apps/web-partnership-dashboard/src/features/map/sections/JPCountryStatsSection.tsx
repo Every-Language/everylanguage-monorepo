@@ -166,27 +166,6 @@ export const JPCountryStatsSection: React.FC<JPCountryStatsSectionProps> = ({
         </div>
       </div>
 
-      {/* Geographic Info */}
-      <div>
-        <div className='font-semibold text-sm mb-2'>Geographic Region</div>
-        <div className='text-sm space-y-1'>
-          <div className='flex justify-between'>
-            <span className='text-neutral-500'>Continent:</span>
-            <span className='font-medium'>{countryStats.ContinentName}</span>
-          </div>
-          <div className='flex justify-between'>
-            <span className='text-neutral-500'>Region:</span>
-            <span className='font-medium'>{countryStats.RegionName}</span>
-          </div>
-          {countryStats.WindowStatus && (
-            <div className='flex justify-between'>
-              <span className='text-neutral-500'>Window 10/40:</span>
-              <span className='font-medium'>{countryStats.WindowStatus}</span>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Religious Breakdown - Pie Chart */}
       <div>
         <div className='font-semibold text-sm mb-3'>Religious Composition</div>

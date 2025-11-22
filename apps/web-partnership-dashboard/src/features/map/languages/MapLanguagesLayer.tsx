@@ -6,7 +6,10 @@ import * as maplibregl from 'maplibre-gl';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMapContext } from '../context/MapContext';
-import { useSetSelection } from '../inspector/state/inspectorStore';
+import {
+  useSetSelection,
+  useSelectionMode,
+} from '../inspector/state/inspectorStore';
 import { useTheme } from '@/shared/theme';
 import { fetchLanguagesWithLocation } from './api';
 import type { LanguageWithLocation } from './types';
@@ -14,6 +17,7 @@ import type { LanguageWithLocation } from './types';
 interface MapLanguagesLayerProps {
   show: boolean;
   clustered?: boolean;
+  opacity?: number;
 }
 
 interface HoveredLanguage {
@@ -190,11 +194,13 @@ function toFeatureCollection(
 export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
   show,
   clustered = false,
+  opacity = 1.0,
 }) => {
   const { mapRef } = useMapContext();
   const { resolvedTheme } = useTheme();
   const router = useRouter();
   const setSelection = useSetSelection();
+  const selectionMode = useSelectionMode();
 
   // Debug logging for clustering state
   React.useEffect(() => {
@@ -465,6 +471,9 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
 
           // Handle individual point click
           if (props.language_entity_id) {
+            // Only allow selection if in language mode
+            if (selectionMode !== 'language') return;
+
             // Set selection
             setSelection({
               kind: 'language_entity',
@@ -606,7 +615,7 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
                 ],
                 'circle-stroke-color': markerStrokeColor,
                 'circle-stroke-width': 2,
-                'circle-opacity': 0.8,
+                'circle-opacity': opacity * 0.8,
               }}
             />,
             /* Cluster count labels */
@@ -645,7 +654,7 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
                 'circle-color': ['get', 'color'],
                 'circle-stroke-color': markerStrokeColor,
                 'circle-stroke-width': 1.5,
-                'circle-opacity': 0.9,
+                'circle-opacity': opacity * 0.9,
               }}
             />,
           ]
@@ -669,7 +678,7 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
               'circle-color': ['get', 'color'],
               'circle-stroke-color': markerStrokeColor,
               'circle-stroke-width': 1.5,
-              'circle-opacity': 0.9,
+              'circle-opacity': opacity * 0.9,
             }}
           />
         )}

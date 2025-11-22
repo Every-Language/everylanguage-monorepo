@@ -116,7 +116,7 @@ export const DonateButton: React.FC<DonateButtonProps> = ({
   };
 
   return (
-    <div className='pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-3'>
+    <div className='space-y-3'>
       {/* Amount needed section */}
       <div className='space-y-1'>
         <div className='text-sm text-neutral-600 dark:text-neutral-400'>

@@ -33,19 +33,25 @@ export function usePeopleGroupStatsContextual(
         )
         .eq('region_id', regionId)
         .eq('people_group_id', peopleGroupId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to avoid 404 errors
 
       if (error) {
         // If no data found, return null (not an error)
-        if (error.code === 'PGRST116') {
+        // PGRST116 = no rows returned, PGRST301 = resource not found
+        if (error.code === 'PGRST116' || error.code === 'PGRST301') {
           return null;
         }
         throw error;
+      }
+
+      if (!data) {
+        return null;
       }
 
       return data as PeopleGroupStatsContextual;
     },
     enabled: !!peopleGroupId && !!regionId,
     staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: false, // Don't retry on 404s
   });
 }

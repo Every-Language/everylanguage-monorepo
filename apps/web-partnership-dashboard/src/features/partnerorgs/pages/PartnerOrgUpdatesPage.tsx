@@ -9,6 +9,7 @@ import {
   CardContent,
 } from '@/shared/components/ui/Card';
 import { usePartnerOrgUpdates } from '../hooks/usePartnerOrgUpdates';
+import { FeedItemSkeleton } from '@/shared/components/ui/Skeletons';
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -28,7 +29,7 @@ export const PartnerOrgUpdatesPage: React.FC = () => {
   const { data: updates, isLoading } = usePartnerOrgUpdates(orgId!);
 
   if (isLoading) {
-    return <div className='text-neutral-500'>Loading updates...</div>;
+    return <FeedItemSkeleton count={5} />;
   }
 
   if (!updates || updates.length === 0) {

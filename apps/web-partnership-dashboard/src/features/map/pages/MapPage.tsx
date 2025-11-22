@@ -1,6 +1,9 @@
 import React from 'react';
 import { MapShell } from '../components/MapShell';
-import { useSelection } from '../inspector/state/inspectorStore';
+import {
+  useSelection,
+  useSelectionMode,
+} from '../inspector/state/inspectorStore';
 import { MapOverlayLayers } from '../inspector/components/MapOverlayLayers';
 import { RouteSync } from '../inspector/components/RouteSync';
 import { MapProjectsLayer } from '../projects/MapProjectsLayer';
@@ -16,6 +19,7 @@ import { MobileBottomSheet } from '../components/MobileBottomSheet';
 import { MobileSheetProvider } from '../context/MobileSheetProvider';
 import { DEFAULT_LAYOUT } from '../config/layouts';
 import { MapFocusHandler } from '../components/MapFocusHandler';
+import { useProjectsEnabled } from '@/shared/hooks/useFeatureFlags';
 
 /**
  * MapPage - Main map view with configurable inspector panels
@@ -23,13 +27,47 @@ import { MapFocusHandler } from '../components/MapFocusHandler';
  * Supports both desktop (multi-panel) and mobile (bottom sheet) layouts
  */
 export const MapPage: React.FC = () => {
-  const [layers, setLayers] = React.useState({
-    projects: false,
-    countries: false,
-    globalListening: false,
-    languages: false,
-    peopleGroups: false,
-  });
+  const selectionMode = useSelectionMode();
+  const selection = useSelection();
+  const projectsEnabled = useProjectsEnabled();
+
+  // Initialize layer state based on selection mode
+  const getInitialLayers = React.useCallback(() => {
+    switch (selectionMode) {
+      case 'language':
+        return {
+          projects: false,
+          countries: false,
+          globalListening: false,
+          languages: true, // Always on
+          peopleGroups: false,
+        };
+      case 'region':
+        return {
+          projects: false,
+          countries: true, // Always on
+          globalListening: false,
+          languages: false,
+          peopleGroups: false,
+        };
+      case 'people_group':
+        return {
+          projects: false,
+          countries: false,
+          globalListening: false,
+          languages: false,
+          peopleGroups: true, // Always on
+        };
+    }
+  }, [selectionMode]);
+
+  const [layers, setLayers] = React.useState(getInitialLayers);
+
+  // Reset layers when mode changes
+  React.useEffect(() => {
+    setLayers(getInitialLayers());
+  }, [selectionMode, getInitialLayers]);
+
   const [globalListeningSettings, setGlobalListeningSettings] = React.useState<{
     timePeriodHours: number;
     colorGradient: typeof DEFAULT_COLOR_GRADIENT;
@@ -47,7 +85,6 @@ export const MapPage: React.FC = () => {
   }>({
     clustered: false, // Default: show individual points
   });
-  const selection = useSelection();
   const layout = DEFAULT_LAYOUT; // Can be made dynamic in future for user preferences
   const [mobileSheetHeight, setMobileSheetHeight] = React.useState<number>();
   const [mobileSnapPoints, setMobileSnapPoints] = React.useState<number[]>();
@@ -110,6 +147,20 @@ export const MapPage: React.FC = () => {
     };
   }, [layout.panels, windowWidth]);
 
+  // Calculate opacity for each layer - always 100% opacity when enabled
+  const getLayerOpacity = React.useCallback(
+    (layerType: 'languages' | 'peopleGroups' | 'countries') => {
+      const FULL_OPACITY = 1.0;
+      // Return full opacity if layer is enabled, otherwise 0
+      return layers[layerType] ? FULL_OPACITY : 0;
+    },
+    [layers]
+  );
+
+  const languagesOpacity = getLayerOpacity('languages');
+  const peopleGroupsOpacity = getLayerOpacity('peopleGroups');
+  const countriesOpacity = getLayerOpacity('countries');
+
   return (
     <div className='h-full w-full'>
       <MobileSheetProvider
@@ -120,8 +171,11 @@ export const MapPage: React.FC = () => {
         <MapShell countriesEnabled={layers.countries} padding={mapPadding}>
           <RouteSync />
           <MapFocusHandler />
-          <MapOverlayLayers countriesEnabled={layers.countries} />
-          <MapProjectsLayer show={layers.projects} />
+          <MapOverlayLayers
+            countriesEnabled={layers.countries}
+            opacity={countriesOpacity}
+          />
+          {projectsEnabled && <MapProjectsLayer show={layers.projects} />}
           <GlobalListeningHeatmapLayer
             show={layers.globalListening}
             timePeriodHours={globalListeningSettings.timePeriodHours}
@@ -130,10 +184,12 @@ export const MapPage: React.FC = () => {
           <MapLanguagesLayer
             show={layers.languages}
             clustered={languagesSettings.clustered}
+            opacity={languagesOpacity}
           />
           <MapPeopleGroupsLayer
             show={layers.peopleGroups}
             clustered={peopleGroupsSettings.clustered}
+            opacity={peopleGroupsOpacity}
           />
 
           {/* Desktop panels */}
@@ -158,7 +214,6 @@ export const MapPage: React.FC = () => {
           {/* Mobile bottom sheet */}
           <div className='md:hidden'>
             <MobileBottomSheet
-              sections={layout.mobilePanel?.sections ?? []}
               selection={selection}
               onHeightChange={handleMobileSheetHeight}
               onDraggingChange={handleMobileSheetDragging}

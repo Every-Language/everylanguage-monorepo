@@ -395,7 +395,11 @@ export const MapProjectsLayer: React.FC<{ show: boolean }> = ({ show }) => {
             {/* Progress bar */}
             {(() => {
               const progressData = progressQuery.data;
-              if (!progressData || progressData.length === 0) {
+              if (
+                !progressData ||
+                !Array.isArray(progressData) ||
+                progressData.length === 0
+              ) {
                 return null;
               }
 

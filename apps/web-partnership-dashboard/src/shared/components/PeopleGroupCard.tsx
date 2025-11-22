@@ -17,6 +17,8 @@ export type PeopleGroupCardProps = {
   showCountryCount?: boolean; // default: false
   showPrimaryLanguageBibleStatus?: boolean; // default: true
   showImage?: boolean; // default: false
+  showRegionName?: boolean; // default: false
+  regionName?: string; // Region name to display
   // Click handler
   onClick?: (peopleGroupId: string) => void;
   // Selection state
@@ -42,11 +44,12 @@ function usePeopleGroupStats(peopleGroupId: string | null) {
           'people_group_id, name, population, language_count, country_count, primary_language_bible_status, image_url'
         )
         .eq('people_group_id', peopleGroupId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to avoid 404 errors
 
       if (error) {
         // If no data found, return null (not an error)
-        if (error.code === 'PGRST116') {
+        // PGRST116 = no rows returned, PGRST301 = resource not found
+        if (error.code === 'PGRST116' || error.code === 'PGRST301') {
           return null;
         }
         throw error;
@@ -65,6 +68,7 @@ function usePeopleGroupStats(peopleGroupId: string | null) {
     },
     enabled: !!peopleGroupId,
     staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: false, // Don't retry on 404s
   });
 }
 
@@ -77,6 +81,8 @@ export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
   showCountryCount = false,
   showPrimaryLanguageBibleStatus = true,
   showImage = false,
+  showRegionName = false,
+  regionName,
   onClick,
   isSelected,
   className = '',
@@ -156,6 +162,11 @@ export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
                     src={imageUrl}
                     alt={displayName}
                     className='w-full h-full object-cover'
+                    onError={e => {
+                      // Hide image on 404 error
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
                   />
                 </div>
               </div>
@@ -164,44 +175,53 @@ export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
             <div className='flex-1 space-y-2 min-w-0'>
               {/* Name */}
               {showName && (
-                <div
-                  className={`text-sm font-medium ${isSelected ? 'text-accent-600' : 'text-neutral-900 dark:text-neutral-100'}`}
-                >
-                  {displayName}
+                <div className='space-y-0.5'>
+                  <div
+                    className={`text-sm font-medium ${isSelected ? 'text-accent-600' : 'text-neutral-900 dark:text-neutral-100'}`}
+                  >
+                    {displayName}
+                  </div>
+                  {showRegionName && regionName && (
+                    <div className='text-xs text-neutral-500 dark:text-neutral-400'>
+                      {regionName}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Stats Grid */}
-              <div className='flex flex-wrap items-center gap-3 text-xs'>
-                {/* Population */}
-                {showPopulation && population != null && (
-                  <div className='text-neutral-600 dark:text-neutral-400'>
-                    <span className='font-medium'>
-                      {formatPopulationCompact(population)}
-                    </span>{' '}
-                    <span className='text-neutral-500'>people</span>
-                  </div>
-                )}
+              <div className='flex flex-wrap items-center justify-between gap-3 text-xs'>
+                <div className='flex flex-wrap items-center gap-3'>
+                  {/* Population */}
+                  {showPopulation && population != null && population > 0 && (
+                    <div className='text-neutral-600 dark:text-neutral-400'>
+                      <span className='font-medium'>
+                        {formatPopulationCompact(population)}
+                      </span>{' '}
+                      <span className='text-neutral-500'>people</span>
+                    </div>
+                  )}
 
-                {/* Language Count */}
-                {showLanguageCount && languageCount != null && (
-                  <div className='text-neutral-600 dark:text-neutral-400'>
-                    <span className='font-medium'>{languageCount}</span>{' '}
-                    <span className='text-neutral-500'>languages</span>
-                  </div>
-                )}
+                  {/* Language Count */}
+                  {showLanguageCount && languageCount != null && (
+                    <div className='text-neutral-600 dark:text-neutral-400'>
+                      <span className='font-medium'>{languageCount}</span>{' '}
+                      <span className='text-neutral-500'>languages</span>
+                    </div>
+                  )}
 
-                {/* Country Count */}
-                {showCountryCount && countryCount != null && (
-                  <div className='text-neutral-600 dark:text-neutral-400'>
-                    <span className='font-medium'>{countryCount}</span>{' '}
-                    <span className='text-neutral-500'>countries</span>
-                  </div>
-                )}
+                  {/* Country Count */}
+                  {showCountryCount && countryCount != null && (
+                    <div className='text-neutral-600 dark:text-neutral-400'>
+                      <span className='font-medium'>{countryCount}</span>{' '}
+                      <span className='text-neutral-500'>countries</span>
+                    </div>
+                  )}
+                </div>
 
-                {/* Primary Language Bible Status */}
+                {/* Primary Language Bible Status - Right aligned */}
                 {showPrimaryLanguageBibleStatus && (
-                  <div>
+                  <div className='ml-auto'>
                     <BibleStatusBadge
                       bibleStatus={primaryLanguageBibleStatus}
                       size='sm'

@@ -44,45 +44,47 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
         <article className='rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 p-6'>
           <div className='flex items-center gap-6'>
             {isLoading ? (
-              <div className='h-24 w-24 rounded-full bg-neutral-200 dark:bg-neutral-800 animate-pulse' />
-            ) : (
-              <CircularProgress
-                value={data?.full_audio_bible_percentage ?? 0}
-                size={compact ? 80 : 96}
-                strokeWidth={8}
-                color='accent'
-                showPercentage={false}
-              >
-                <div className='text-center'>
-                  <div
-                    className={`${compact ? 'text-lg' : 'text-xl'} font-bold text-accent-600 dark:text-accent-500`}
-                  >
-                    {(data?.full_audio_bible_percentage ?? 0)
-                      .toFixed(1)
-                      .replace(/\.0$/, '')}
-                    %
-                  </div>
+              <>
+                <div className='h-24 w-24 rounded-full bg-neutral-200 dark:bg-neutral-800 animate-pulse flex-shrink-0' />
+                <div className='flex-1 space-y-2'>
+                  <div className='h-6 bg-neutral-200 dark:bg-neutral-800 rounded w-40 animate-pulse' />
+                  <div className='h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-48 animate-pulse' />
                 </div>
-              </CircularProgress>
-            )}
-            <div className='flex-1'>
-              <h3
-                className={`${compact ? 'text-lg' : 'text-2xl'} font-bold text-accent-600 dark:text-accent-500`}
-              >
-                Full Audio Bible
-              </h3>
-              <p className='mt-2 text-sm text-neutral-500'>
-                {isLoading ? (
-                  <span className='inline-block h-3 w-32 rounded bg-neutral-200 dark:bg-neutral-800 animate-pulse' />
-                ) : (
-                  <>
+              </>
+            ) : (
+              <>
+                <CircularProgress
+                  value={data?.full_audio_bible_percentage ?? 0}
+                  size={compact ? 80 : 96}
+                  strokeWidth={8}
+                  color='accent'
+                  showPercentage={false}
+                >
+                  <div className='text-center'>
+                    <div
+                      className={`${compact ? 'text-lg' : 'text-xl'} font-bold text-accent-600 dark:text-accent-500`}
+                    >
+                      {(data?.full_audio_bible_percentage ?? 0)
+                        .toFixed(1)
+                        .replace(/\.0$/, '')}
+                      %
+                    </div>
+                  </div>
+                </CircularProgress>
+                <div className='flex-1'>
+                  <h3
+                    className={`${compact ? 'text-lg' : 'text-2xl'} font-bold text-accent-600 dark:text-accent-500`}
+                  >
+                    Full Audio Bible
+                  </h3>
+                  <p className='mt-2 text-sm text-neutral-500'>
                     {numberFormatter.format(data?.full_audio_bible_count ?? 0)}{' '}
                     of {numberFormatter.format(data?.total_languages ?? 0)}{' '}
                     languages
-                  </>
-                )}
-              </p>
-            </div>
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </article>
 
@@ -92,43 +94,46 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
           <article className='rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 p-4'>
             <div className='flex items-center gap-4'>
               {isLoading ? (
-                <div className='h-16 w-16 rounded-full bg-neutral-200 dark:bg-neutral-800 animate-pulse' />
-              ) : (
-                <CircularProgress
-                  value={data?.audio_portions_percentage ?? 0}
-                  size={compact ? 64 : 80}
-                  strokeWidth={6}
-                  color='secondary'
-                  showPercentage={false}
-                >
-                  <div className='text-center'>
-                    <div
-                      className={`${compact ? 'text-sm' : 'text-base'} font-bold text-secondary-600 dark:text-secondary-500`}
-                    >
-                      {(data?.audio_portions_percentage ?? 0)
-                        .toFixed(1)
-                        .replace(/\.0$/, '')}
-                      %
-                    </div>
+                <>
+                  <div className='h-16 w-16 rounded-full bg-neutral-200 dark:bg-neutral-800 animate-pulse flex-shrink-0' />
+                  <div className='flex-1 space-y-2'>
+                    <div className='h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-24 animate-pulse' />
+                    <div className='h-3 bg-neutral-200 dark:bg-neutral-800 rounded w-20 animate-pulse' />
                   </div>
-                </CircularProgress>
+                </>
+              ) : (
+                <>
+                  <CircularProgress
+                    value={data?.audio_portions_percentage ?? 0}
+                    size={compact ? 64 : 80}
+                    strokeWidth={6}
+                    color='secondary'
+                    showPercentage={false}
+                  >
+                    <div className='text-center'>
+                      <div
+                        className={`${compact ? 'text-sm' : 'text-base'} font-bold text-secondary-600 dark:text-secondary-500`}
+                      >
+                        {(data?.audio_portions_percentage ?? 0)
+                          .toFixed(1)
+                          .replace(/\.0$/, '')}
+                        %
+                      </div>
+                    </div>
+                  </CircularProgress>
+                  <div className='flex-1'>
+                    <p
+                      className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-secondary-600 dark:text-secondary-500`}
+                    >
+                      Audio Portions
+                    </p>
+                    <p className='mt-1 text-xs text-neutral-500'>
+                      {numberFormatter.format(data?.audio_portions_count ?? 0)}{' '}
+                      languages
+                    </p>
+                  </div>
+                </>
               )}
-              <div className='flex-1'>
-                <p
-                  className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-secondary-600 dark:text-secondary-500`}
-                >
-                  Audio Portions
-                </p>
-                <p className='mt-1 text-xs text-neutral-500'>
-                  {isLoading ? (
-                    <span className='inline-block h-3 w-20 rounded bg-neutral-200 dark:bg-neutral-800 animate-pulse' />
-                  ) : (
-                    `${numberFormatter.format(
-                      data?.audio_portions_count ?? 0
-                    )} languages`
-                  )}
-                </p>
-              </div>
             </div>
           </article>
 
@@ -136,43 +141,46 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
           <article className='rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 p-4'>
             <div className='flex items-center gap-4'>
               {isLoading ? (
-                <div className='h-16 w-16 rounded-full bg-neutral-200 dark:bg-neutral-800 animate-pulse' />
-              ) : (
-                <CircularProgress
-                  value={data?.text_portions_percentage ?? 0}
-                  size={compact ? 64 : 80}
-                  strokeWidth={6}
-                  color='primary'
-                  showPercentage={false}
-                >
-                  <div className='text-center'>
-                    <div
-                      className={`${compact ? 'text-sm' : 'text-base'} font-bold text-primary-600 dark:text-primary-500`}
-                    >
-                      {(data?.text_portions_percentage ?? 0)
-                        .toFixed(1)
-                        .replace(/\.0$/, '')}
-                      %
-                    </div>
+                <>
+                  <div className='h-16 w-16 rounded-full bg-neutral-200 dark:bg-neutral-800 animate-pulse flex-shrink-0' />
+                  <div className='flex-1 space-y-2'>
+                    <div className='h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-20 animate-pulse' />
+                    <div className='h-3 bg-neutral-200 dark:bg-neutral-800 rounded w-20 animate-pulse' />
                   </div>
-                </CircularProgress>
+                </>
+              ) : (
+                <>
+                  <CircularProgress
+                    value={data?.text_portions_percentage ?? 0}
+                    size={compact ? 64 : 80}
+                    strokeWidth={6}
+                    color='primary'
+                    showPercentage={false}
+                  >
+                    <div className='text-center'>
+                      <div
+                        className={`${compact ? 'text-sm' : 'text-base'} font-bold text-primary-600 dark:text-primary-500`}
+                      >
+                        {(data?.text_portions_percentage ?? 0)
+                          .toFixed(1)
+                          .replace(/\.0$/, '')}
+                        %
+                      </div>
+                    </div>
+                  </CircularProgress>
+                  <div className='flex-1'>
+                    <p
+                      className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-primary-600 dark:text-primary-500`}
+                    >
+                      Text Portions
+                    </p>
+                    <p className='mt-1 text-xs text-neutral-500'>
+                      {numberFormatter.format(data?.text_portions_count ?? 0)}{' '}
+                      languages
+                    </p>
+                  </div>
+                </>
               )}
-              <div className='flex-1'>
-                <p
-                  className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-primary-600 dark:text-primary-500`}
-                >
-                  Text Portions
-                </p>
-                <p className='mt-1 text-xs text-neutral-500'>
-                  {isLoading ? (
-                    <span className='inline-block h-3 w-20 rounded bg-neutral-200 dark:bg-neutral-800 animate-pulse' />
-                  ) : (
-                    `${numberFormatter.format(
-                      data?.text_portions_count ?? 0
-                    )} languages`
-                  )}
-                </p>
-              </div>
             </div>
           </article>
         </div>

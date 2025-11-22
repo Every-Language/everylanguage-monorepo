@@ -111,6 +111,8 @@ const PeopleGroupCardWrapper: React.FC<{
       showLanguageCount={false}
       showCountryCount={false}
       showImage={false}
+      showRegionName={true}
+      regionName={group.RegionName || group.Ctry || undefined}
       isSelected={
         selection?.kind === 'people_group' && selection.id === peopleGroupId
       }
@@ -330,9 +332,9 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
 
       {/* People Groups List */}
       <div className='space-y-2'>
-        {displayedGroups.map(group => (
+        {displayedGroups.map((group, index) => (
           <PeopleGroupCardWrapper
-            key={`${group.PeopleID3}-${group.ROG3}`}
+            key={`${group.PeopleID3}-${group.RegionName || group.Ctry || index}`}
             group={group}
             type={type}
             entityId={entityId}

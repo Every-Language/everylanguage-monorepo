@@ -12,6 +12,7 @@ import { AnimatedProgress } from '../components/AnimatedProgress';
 import { CountUp } from '../components/CountUp';
 import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
 import { useProjectProgress } from '../hooks/useProjectProgress';
+import { ProjectCardSkeleton } from '@/shared/components/ui/Skeletons';
 
 export const PartnerOrgProgressPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
@@ -38,7 +39,12 @@ export const PartnerOrgProgressPage: React.FC = () => {
 
   // Group progress data by project - ALWAYS call useMemo before any returns
   const projectProgressMap = React.useMemo(() => {
-    if (!progressData || !uniqueProjects || uniqueProjects.length === 0)
+    if (
+      !progressData ||
+      !Array.isArray(progressData) ||
+      !uniqueProjects ||
+      uniqueProjects.length === 0
+    )
       return new Map();
     const map = new Map<string, any[]>();
 
@@ -54,8 +60,12 @@ export const PartnerOrgProgressPage: React.FC = () => {
     return map;
   }, [progressData, uniqueProjects]);
 
-  const _isLoading = projectsLoading || progressLoading; // Suppress unused warning
+  // Show skeleton while loading projects
+  if (projectsLoading) {
+    return <ProjectCardSkeleton count={3} />;
+  }
 
+  // Show empty state only after projects have loaded
   if (!uniqueProjects || uniqueProjects.length === 0) {
     return (
       <Card className='border border-neutral-200 dark:border-neutral-800'>
@@ -113,27 +123,37 @@ export const PartnerOrgProgressPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               {/* Best Progress */}
-              <div>
-                <div className='flex items-center justify-between mb-2'>
-                  <span className='text-sm text-neutral-500 dark:text-neutral-400'>
-                    {bestVersionType === 'audio'
-                      ? 'Audio'
-                      : bestVersionType === 'text'
-                        ? 'Text'
-                        : 'Bible'}{' '}
-                    Progress
-                  </span>
-                  <span className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
-                    <CountUp value={bestChaptersDone} /> / {bestChaptersTotal}{' '}
-                    chapters
-                  </span>
+              {progressLoading ? (
+                <div>
+                  <div className='flex items-center justify-between mb-2'>
+                    <div className='h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-24 animate-pulse' />
+                    <div className='h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-32 animate-pulse' />
+                  </div>
+                  <div className='h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full animate-pulse' />
                 </div>
-                <AnimatedProgress
-                  value={bestChaptersDone}
-                  max={bestChaptersTotal}
-                  color='accent'
-                />
-              </div>
+              ) : (
+                <div>
+                  <div className='flex items-center justify-between mb-2'>
+                    <span className='text-sm text-neutral-500 dark:text-neutral-400'>
+                      {bestVersionType === 'audio'
+                        ? 'Audio'
+                        : bestVersionType === 'text'
+                          ? 'Text'
+                          : 'Bible'}{' '}
+                      Progress
+                    </span>
+                    <span className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                      <CountUp value={bestChaptersDone} /> / {bestChaptersTotal}{' '}
+                      chapters
+                    </span>
+                  </div>
+                  <AnimatedProgress
+                    value={bestChaptersDone}
+                    max={bestChaptersTotal}
+                    color='accent'
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         );

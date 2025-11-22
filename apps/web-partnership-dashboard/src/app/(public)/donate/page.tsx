@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { DonateClientPage } from './client';
+import { env } from '@/lib/env';
 
 export const metadata: Metadata = {
   title: 'Support Bible Translation | Every Language',
@@ -15,5 +17,10 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default function DonatePage() {
+  // Redirect to map if donate feature is disabled
+  if (!env.NEXT_PUBLIC_ENABLE_DONATE) {
+    redirect('/map');
+  }
+
   return <DonateClientPage />;
 }

@@ -14,6 +14,9 @@ export const env = {
     process.env.NEXT_PUBLIC_STRIPE_PK ||
     '',
   NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '',
+  NEXT_PUBLIC_ENABLE_DONATE: process.env.NEXT_PUBLIC_ENABLE_DONATE !== 'false',
+  NEXT_PUBLIC_ENABLE_PROJECTS:
+    process.env.NEXT_PUBLIC_ENABLE_PROJECTS !== 'false',
 } as const;
 
 // Server-side only environment variables

@@ -118,54 +118,56 @@ export const LanguageCard: React.FC<LanguageCardProps> = ({
             )}
 
             {/* Stats Grid */}
-            <div className='flex flex-wrap items-center gap-3 text-xs'>
-              {/* Population */}
-              {showPopulation && population != null && (
-                <div className='text-neutral-600 dark:text-neutral-400'>
-                  <span className='font-medium'>
-                    {formatPopulationCompact(population)}
-                  </span>{' '}
-                  <span className='text-neutral-500'>people</span>
-                </div>
-              )}
+            <div className='flex flex-wrap items-center justify-between gap-3 text-xs'>
+              <div className='flex flex-wrap items-center gap-3'>
+                {/* Population */}
+                {showPopulation && population != null && population > 0 && (
+                  <div className='text-neutral-600 dark:text-neutral-400'>
+                    <span className='font-medium'>
+                      {formatPopulationCompact(population)}
+                    </span>{' '}
+                    <span className='text-neutral-500'>people</span>
+                  </div>
+                )}
 
-              {/* Country Count */}
-              {showCountryCount && countryCount != null && (
-                <div className='text-neutral-600 dark:text-neutral-400'>
-                  <span className='font-medium'>{countryCount}</span>{' '}
-                  <span className='text-neutral-500'>countries</span>
-                </div>
-              )}
+                {/* Country Count */}
+                {showCountryCount && countryCount != null && (
+                  <div className='text-neutral-600 dark:text-neutral-400'>
+                    <span className='font-medium'>{countryCount}</span>{' '}
+                    <span className='text-neutral-500'>countries</span>
+                  </div>
+                )}
 
-              {/* People Group Count */}
-              {showPeopleGroupCount && peopleGroupCount != null && (
-                <div className='text-neutral-600 dark:text-neutral-400'>
-                  <span className='font-medium'>{peopleGroupCount}</span>{' '}
-                  <span className='text-neutral-500'>people groups</span>
-                </div>
-              )}
+                {/* People Group Count */}
+                {showPeopleGroupCount && peopleGroupCount != null && (
+                  <div className='text-neutral-600 dark:text-neutral-400'>
+                    <span className='font-medium'>{peopleGroupCount}</span>{' '}
+                    <span className='text-neutral-500'>people groups</span>
+                  </div>
+                )}
 
-              {/* Bible Status */}
+                {/* Audio Recordings */}
+                {showAudioRecordings && (
+                  <div className='flex items-center gap-1 text-neutral-600 dark:text-neutral-400'>
+                    {hasAudioRecordings ? (
+                      <>
+                        <Check className='w-3 h-3 text-success-600' />
+                        <span>Audio</span>
+                      </>
+                    ) : (
+                      <>
+                        <X className='w-3 h-3 text-neutral-400' />
+                        <span className='text-neutral-500'>No audio</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Bible Status - Right aligned */}
               {showBibleStatus && (
-                <div>
+                <div className='ml-auto'>
                   <BibleStatusBadge bibleStatus={bibleStatus} size='sm' />
-                </div>
-              )}
-
-              {/* Audio Recordings */}
-              {showAudioRecordings && (
-                <div className='flex items-center gap-1 text-neutral-600 dark:text-neutral-400'>
-                  {hasAudioRecordings ? (
-                    <>
-                      <Check className='w-3 h-3 text-success-600' />
-                      <span>Audio</span>
-                    </>
-                  ) : (
-                    <>
-                      <X className='w-3 h-3 text-neutral-400' />
-                      <span className='text-neutral-500'>No audio</span>
-                    </>
-                  )}
                 </div>
               )}
             </div>

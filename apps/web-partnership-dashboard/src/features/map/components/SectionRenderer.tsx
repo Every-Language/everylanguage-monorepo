@@ -1,11 +1,11 @@
 import React from 'react';
 import { type SectionType } from '../config/layoutTypes';
-import { type MapSelection } from '../inspector/state/inspectorStore';
+import {
+  type MapSelection,
+  type SelectionMode,
+} from '../inspector/state/inspectorStore';
 import { HierarchySection } from '../sections/HierarchySection';
 import { LinkedEntitiesSection } from '../sections/LinkedEntitiesSection';
-import { InfoSection } from '../sections/InfoSection';
-import { BibleProgressSection } from '../sections/BibleProgressSection';
-import { BibleListeningSection } from '../sections/BibleListeningSection';
 import {
   MapControlsSection,
   type LayerState,
@@ -16,24 +16,12 @@ import { JPLanguageStatsSection } from '../sections/JPLanguageStatsSection';
 import { PeopleGroupStatsSection } from '../sections/PeopleGroupStatsSection';
 import { GRNLanguageSampleSection } from '../sections/GRNLanguageSampleSection';
 import { GRNGospelResourcesSection } from '../sections/GRNGospelResourcesSection';
-import { useLanguageEntity } from '../hooks/useLanguageEntity';
 import { CollapsibleSection } from './shared/CollapsibleSection';
-import { BibleTranslationStats } from '@/features/global-stats/components/BibleTranslationStats';
-import { EveryLanguageProjectStats } from '@/features/global-stats/components/EveryLanguageProjectStats';
-import { RecentActivityFeed } from '@/features/global-stats/components/RecentActivityFeed';
-import {
-  useActiveProjectsWithProgress,
-  useGlobalStatistics,
-  useRecentActivityFeed,
-} from '@/features/global-stats/hooks/useGlobalStats';
 
 // Mapping of section types to display names
 const SECTION_TITLES: Record<SectionType, string> = {
   hierarchy: 'Hierarchy',
   'linked-entities': 'Related',
-  info: 'Information',
-  'bible-progress': 'Bible Progress',
-  'bible-listening': 'Bible Listening',
   'map-controls': 'Map Controls',
   'jp-people-groups': 'People Groups',
   'jp-country-stats': 'Country Statistics',
@@ -65,6 +53,7 @@ interface SectionRendererProps {
     clustered: boolean;
   };
   onPeopleGroupsSettingsChange?: (settings: { clustered: boolean }) => void;
+  selectionMode?: SelectionMode;
 }
 
 /**
@@ -83,18 +72,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
   onLanguagesSettingsChange,
   peopleGroupsSettings,
   onPeopleGroupsSettingsChange,
+  selectionMode = 'language',
 }) => {
-  // Get descendant IDs for language entities (used by progress and listening sections)
-  const languageData = useLanguageEntity(
-    selection?.kind === 'language_entity' ? selection.id : ''
-  );
-  const descendantIds = languageData.descendants.data ?? [];
-
-  // Global stats hooks (called unconditionally to satisfy rules of hooks)
-  const bibleStatsQuery = useGlobalStatistics();
-  const projectStatusQuery = useActiveProjectsWithProgress();
-  const activityFeedQuery = useRecentActivityFeed(12);
-
   // Helper function to get section title (dynamic for linked-entities)
   const getSectionTitle = (sectionType: SectionType): string => {
     if (sectionType === 'linked-entities' && selection) {
@@ -136,6 +115,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             value={layers}
             onChange={onLayersChange}
             embeddable
+            selectionMode={selectionMode}
             globalListeningSettings={globalListeningSettings}
             onGlobalListeningSettingsChange={onGlobalListeningSettingsChange}
             languagesSettings={languagesSettings}
@@ -144,49 +124,6 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             onPeopleGroupsSettingsChange={onPeopleGroupsSettingsChange}
           />
         </CollapsibleSection>
-      );
-    }
-    if (type === 'info') {
-      return (
-        <div className='space-y-4'>
-          <CollapsibleSection
-            title='Bible Translation Progress'
-            sectionId='bible-translation-progress'
-            defaultExpanded={true}
-            variant='card'
-          >
-            <BibleTranslationStats
-              data={bibleStatsQuery.data?.data}
-              isLoading={bibleStatsQuery.isLoading}
-              compact={true}
-            />
-          </CollapsibleSection>
-          <CollapsibleSection
-            title='Every Language Projects'
-            sectionId='every-language-projects'
-            defaultExpanded={true}
-            variant='card'
-          >
-            <EveryLanguageProjectStats
-              summary={projectStatusQuery.data?.summary}
-              projects={projectStatusQuery.data?.projects}
-              isLoading={projectStatusQuery.isLoading}
-              compact={true}
-            />
-          </CollapsibleSection>
-          <CollapsibleSection
-            title='Recent Activity'
-            sectionId='recent-activity'
-            defaultExpanded={true}
-            variant='card'
-          >
-            <RecentActivityFeed
-              items={activityFeedQuery.data?.items}
-              isLoading={activityFeedQuery.isLoading}
-              compact={true}
-            />
-          </CollapsibleSection>
-        </div>
       );
     }
     return null;
@@ -254,50 +191,6 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
       }
       return null;
 
-    case 'info':
-      if (selection.kind === 'language_entity') {
-        return renderSection(
-          <InfoSection type='language' entityId={selection.id} />
-        );
-      }
-      if (selection.kind === 'region') {
-        return renderSection(
-          <InfoSection type='region' entityId={selection.id} />
-        );
-      }
-      return null;
-
-    case 'bible-progress':
-      if (selection.kind === 'language_entity') {
-        return renderSection(
-          <BibleProgressSection
-            languageId={selection.id}
-            descendantIds={descendantIds}
-            includeDescendants={descendantIds.length > 1}
-          />
-        );
-      }
-      // Progress section only applies to languages
-      return null;
-
-    case 'bible-listening':
-      if (selection.kind === 'language_entity') {
-        return renderSection(
-          <BibleListeningSection
-            type='language'
-            entityId={selection.id}
-            descendantIds={descendantIds}
-            includeDescendants={descendantIds.length > 1}
-          />
-        );
-      }
-      if (selection.kind === 'region') {
-        return renderSection(
-          <BibleListeningSection type='region' entityId={selection.id} />
-        );
-      }
-      return null;
-
     case 'map-controls':
       if (layers && onLayersChange) {
         return renderSection(
@@ -305,6 +198,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             value={layers}
             onChange={onLayersChange}
             embeddable
+            selectionMode={selectionMode}
             globalListeningSettings={globalListeningSettings}
             onGlobalListeningSettingsChange={onGlobalListeningSettingsChange}
             languagesSettings={languagesSettings}

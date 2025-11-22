@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 
 export function useProjectProgress(
@@ -56,20 +56,30 @@ export function useProjectProgress(
           return [];
         }
 
-        // Query audio_versions first
-        const { data: audioVersions, error: versionsError } = (await supabase
-          .from('audio_versions')
-          .select('id, name, language_entity_id, project_id')
-          .in('project_id', validProjectIds)
-          .is('deleted_at', null)) as {
-          data: Array<{
-            id: string;
-            name: string;
-            language_entity_id: string | null;
-            project_id: string | null;
-          }> | null;
-          error: { message: string } | null;
-        };
+        // Query audio_versions and text_versions in parallel
+        const [audioVersionsResult, textVersionsResult] = await Promise.all([
+          supabase
+            .from('audio_versions')
+            .select('id, name, language_entity_id, project_id')
+            .in('project_id', validProjectIds)
+            .is('deleted_at', null),
+          supabase
+            .from('text_versions')
+            .select('id, name, language_entity_id, project_id')
+            .in('project_id', validProjectIds)
+            .is('deleted_at', null),
+        ]);
+
+        const { data: audioVersions, error: versionsError } =
+          audioVersionsResult as {
+            data: Array<{
+              id: string;
+              name: string;
+              language_entity_id: string | null;
+              project_id: string | null;
+            }> | null;
+            error: { message: string } | null;
+          };
 
         if (versionsError) {
           console.error('Error fetching audio versions:', versionsError);
@@ -77,76 +87,78 @@ export function useProjectProgress(
           throw versionsError;
         }
 
-        // Query text versions for the same projects
-        const { data: textVersions, error: textVersionsError } = (await supabase
-          .from('text_versions')
-          .select('id, name, language_entity_id, project_id')
-          .in('project_id', validProjectIds)
-          .is('deleted_at', null)) as {
-          data: Array<{
-            id: string;
-            name: string;
-            language_entity_id: string | null;
-            project_id: string | null;
-          }> | null;
-          error: { message: string } | null;
-        };
+        const { data: textVersions, error: textVersionsError } =
+          textVersionsResult as {
+            data: Array<{
+              id: string;
+              name: string;
+              language_entity_id: string | null;
+              project_id: string | null;
+            }> | null;
+            error: { message: string } | null;
+          };
 
         if (textVersionsError) {
           console.error('Error fetching text versions:', textVersionsError);
           // Continue with just audio versions
         }
 
-        // Query audio progress summaries separately (view doesn't support relationship syntax)
+        // Query audio and text progress summaries in parallel
         const audioVersionIds = (audioVersions || [])
           .map(av => av.id)
           .filter((id): id is string => !!id);
-
-        let audioSummaries: any[] | null = null;
-        if (audioVersionIds.length > 0) {
-          const { data: summariesData, error: summariesError } = await (
-            supabase as any
-          )
-            .from('audio_version_progress_summary')
-            .select(
-              'audio_version_id, chapters_with_audio, total_chapters, books_complete, total_books, covered_verses, total_verses'
-            )
-            .in('audio_version_id', audioVersionIds);
-
-          if (summariesError) {
-            console.error(
-              'Error fetching audio progress summaries:',
-              summariesError
-            );
-          } else {
-            audioSummaries = summariesData;
-          }
-        }
-
-        // Query text progress summaries
         const textVersionIds = (textVersions || [])
           .map((tv: any) => tv.id)
           .filter((id: any): id is string => !!id);
 
-        let textSummaries: any[] | null = null;
-        if (textVersionIds.length > 0) {
-          const { data: summariesData, error: summariesError } = await (
-            supabase as any
-          )
-            .from('text_version_progress_summary')
-            .select(
-              'text_version_id, complete_chapters, total_chapters, books_complete, total_books, covered_verses, total_verses'
-            )
-            .in('text_version_id', textVersionIds);
+        const summaryPromises: Promise<any>[] = [];
+        if (audioVersionIds.length > 0) {
+          summaryPromises.push(
+            (supabase as any)
+              .from('audio_version_progress_summary')
+              .select(
+                'audio_version_id, chapters_with_audio, total_chapters, books_complete, total_books, covered_verses, total_verses'
+              )
+              .in('audio_version_id', audioVersionIds)
+          );
+        } else {
+          summaryPromises.push(Promise.resolve({ data: null, error: null }));
+        }
 
-          if (summariesError) {
-            console.error(
-              'Error fetching text progress summaries:',
-              summariesError
-            );
-          } else {
-            textSummaries = summariesData;
-          }
+        if (textVersionIds.length > 0) {
+          summaryPromises.push(
+            (supabase as any)
+              .from('text_version_progress_summary')
+              .select(
+                'text_version_id, complete_chapters, total_chapters, books_complete, total_books, covered_verses, total_verses'
+              )
+              .in('text_version_id', textVersionIds)
+          );
+        } else {
+          summaryPromises.push(Promise.resolve({ data: null, error: null }));
+        }
+
+        const [audioSummariesResult, textSummariesResult] =
+          await Promise.all(summaryPromises);
+
+        let audioSummaries: any[] | null = null;
+        if (audioSummariesResult.error) {
+          console.error(
+            'Error fetching audio progress summaries:',
+            audioSummariesResult.error
+          );
+        } else {
+          audioSummaries = audioSummariesResult.data;
+        }
+
+        let textSummaries: any[] | null = null;
+        if (textSummariesResult.error) {
+          console.error(
+            'Error fetching text progress summaries:',
+            textSummariesResult.error
+          );
+        } else {
+          textSummaries = textSummariesResult.data;
         }
 
         // Combine audio and text versions with their summaries
@@ -201,93 +213,107 @@ export function useProjectProgress(
 
         return allVersions;
       } else {
-        // Single project
-        const { data: audioVersions, error: versionsError } = (await supabase
-          .from('audio_versions')
-          .select('id, name, language_entity_id, project_id')
-          .eq('project_id', projectId)
-          .is('deleted_at', null)) as {
-          data: Array<{
-            id: string;
-            name: string;
-            language_entity_id: string | null;
-            project_id: string | null;
-          }> | null;
-          error: { message: string } | null;
-        };
+        // Single project - queries will be parallelized below
+
+        // Query text versions for the same project (in parallel with audio)
+        const [audioVersionsResult, textVersionsResult] = await Promise.all([
+          supabase
+            .from('audio_versions')
+            .select('id, name, language_entity_id, project_id')
+            .eq('project_id', projectId)
+            .is('deleted_at', null),
+          supabase
+            .from('text_versions')
+            .select('id, name, language_entity_id, project_id')
+            .eq('project_id', projectId)
+            .is('deleted_at', null),
+        ]);
+
+        const { data: audioVersions, error: versionsError } =
+          audioVersionsResult as {
+            data: Array<{
+              id: string;
+              name: string;
+              language_entity_id: string | null;
+              project_id: string | null;
+            }> | null;
+            error: { message: string } | null;
+          };
 
         if (versionsError) throw versionsError;
 
-        // Query text versions for the same project
-        const { data: textVersions, error: textVersionsError } = (await supabase
-          .from('text_versions')
-          .select('id, name, language_entity_id, project_id')
-          .eq('project_id', projectId)
-          .is('deleted_at', null)) as {
-          data: Array<{
-            id: string;
-            name: string;
-            language_entity_id: string | null;
-            project_id: string | null;
-          }> | null;
-          error: { message: string } | null;
-        };
+        const { data: textVersions, error: textVersionsError } =
+          textVersionsResult as {
+            data: Array<{
+              id: string;
+              name: string;
+              language_entity_id: string | null;
+              project_id: string | null;
+            }> | null;
+            error: { message: string } | null;
+          };
 
         if (textVersionsError) {
           console.error('Error fetching text versions:', textVersionsError);
           // Continue with just audio versions
         }
 
-        // Query audio progress summaries separately
+        // Query audio and text progress summaries in parallel
         const audioVersionIds = (audioVersions || [])
           .map(av => av.id)
           .filter((id): id is string => !!id);
-
-        let audioSummaries: any[] | null = null;
-        if (audioVersionIds.length > 0) {
-          const { data: summariesData, error: summariesError } = await (
-            supabase as any
-          )
-            .from('audio_version_progress_summary')
-            .select(
-              'audio_version_id, chapters_with_audio, total_chapters, books_complete, total_books, covered_verses, total_verses'
-            )
-            .in('audio_version_id', audioVersionIds);
-
-          if (summariesError) {
-            console.error(
-              'Error fetching audio progress summaries:',
-              summariesError
-            );
-          } else {
-            audioSummaries = summariesData;
-          }
-        }
-
-        // Query text progress summaries
         const textVersionIds = (textVersions || [])
           .map((tv: any) => tv.id)
           .filter((id: any): id is string => !!id);
 
-        let textSummaries: any[] | null = null;
-        if (textVersionIds.length > 0) {
-          const { data: summariesData, error: summariesError } = await (
-            supabase as any
-          )
-            .from('text_version_progress_summary')
-            .select(
-              'text_version_id, complete_chapters, total_chapters, books_complete, total_books, covered_verses, total_verses'
-            )
-            .in('text_version_id', textVersionIds);
+        const summaryPromises: Promise<any>[] = [];
+        if (audioVersionIds.length > 0) {
+          summaryPromises.push(
+            (supabase as any)
+              .from('audio_version_progress_summary')
+              .select(
+                'audio_version_id, chapters_with_audio, total_chapters, books_complete, total_books, covered_verses, total_verses'
+              )
+              .in('audio_version_id', audioVersionIds)
+          );
+        } else {
+          summaryPromises.push(Promise.resolve({ data: null, error: null }));
+        }
 
-          if (summariesError) {
-            console.error(
-              'Error fetching text progress summaries:',
-              summariesError
-            );
-          } else {
-            textSummaries = summariesData;
-          }
+        if (textVersionIds.length > 0) {
+          summaryPromises.push(
+            (supabase as any)
+              .from('text_version_progress_summary')
+              .select(
+                'text_version_id, complete_chapters, total_chapters, books_complete, total_books, covered_verses, total_verses'
+              )
+              .in('text_version_id', textVersionIds)
+          );
+        } else {
+          summaryPromises.push(Promise.resolve({ data: null, error: null }));
+        }
+
+        const [audioSummariesResult, textSummariesResult] =
+          await Promise.all(summaryPromises);
+
+        let audioSummaries: any[] | null = null;
+        if (audioSummariesResult.error) {
+          console.error(
+            'Error fetching audio progress summaries:',
+            audioSummariesResult.error
+          );
+        } else {
+          audioSummaries = audioSummariesResult.data;
+        }
+
+        let textSummaries: any[] | null = null;
+        if (textSummariesResult.error) {
+          console.error(
+            'Error fetching text progress summaries:',
+            textSummariesResult.error
+          );
+        } else {
+          textSummaries = textSummariesResult.data;
         }
 
         // Combine audio and text versions with their summaries
@@ -344,5 +370,7 @@ export function useProjectProgress(
       }
     },
     enabled: !!(projectId && (projectId !== 'all' || partnerOrgId)),
+    staleTime: 5 * 60 * 1000, // 5 minutes - progress data doesn't change frequently
+    placeholderData: keepPreviousData, // Keep previous data while fetching new data for smoother transitions
   });
 }

@@ -16,7 +16,7 @@ type LinkedEntitiesSectionProps = {
   type: 'languages' | 'regions';
   parentId: string;
   parentType?: 'language_entity' | 'region' | 'people_group';
-  scrollRef?: React.RefObject<HTMLDivElement>;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 };
 
 type EntityItem = {
@@ -100,7 +100,11 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
             }
           );
           if (error) throw error;
-          return (data ?? []) as EntityItem[];
+          const items = (data ?? []) as EntityItem[];
+          // Deduplicate by id to prevent duplicate key errors
+          const dedup = new Map<string, EntityItem>();
+          for (const it of items) if (!dedup.has(it.id)) dedup.set(it.id, it);
+          return Array.from(dedup.values());
         }
       } else {
         // type === 'regions'
@@ -218,10 +222,15 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
   }, [scrollRef, filtered.length, query]);
 
   const useVirtual = filtered.length > 50;
+  const gapSize = 8; // gap-2 = 0.5rem = 8px
+  const baseSize = type === 'languages' ? 72 : 92;
   const rowVirtualizer = useVirtualizer({
     count: useVirtual ? filtered.length : 0,
     getScrollElement: () => scrollRef?.current ?? null,
-    estimateSize: () => (type === 'languages' ? 72 : 92),
+    estimateSize: index => {
+      // Include gap after each item except the last one
+      return baseSize + (index < filtered.length - 1 ? gapSize : 0);
+    },
     overscan: 10,
     scrollMargin,
   });
@@ -250,12 +259,14 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
         >
           {rowVirtualizer.getVirtualItems().map(v => {
             const item = filtered[v.index];
+            const isLast = v.index === filtered.length - 1;
             return (
               <div
                 key={item.id}
-                className='absolute top-0 left-0 w-full p-0.5'
+                className='absolute top-0 left-0 w-full'
                 style={{
                   transform: `translateY(${v.start - scrollMargin}px)`,
+                  paddingBottom: isLast ? 0 : `${gapSize}px`,
                 }}
               >
                 {type === 'languages' ? (

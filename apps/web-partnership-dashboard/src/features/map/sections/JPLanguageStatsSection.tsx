@@ -125,124 +125,11 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
         </div>
       </div>
 
-      {/* Hub Country */}
-      {languageStats.HubCountry && (
-        <div>
-          <div className='font-semibold text-sm mb-2 text-neutral-900 dark:text-neutral-100'>
-            Hub Country
-          </div>
-          <div className='text-sm text-neutral-700 dark:text-neutral-300'>
-            <span className='font-medium'>{languageStats.HubCountry}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Unreached Populations */}
-      {((languageStats.PoplPeoplesLR != null &&
-        languageStats.PoplPeoplesLR > 0) ||
-        (languageStats.PoplPeoplesFPG != null &&
-          languageStats.PoplPeoplesFPG > 0)) && (
-        <div>
-          <div className='font-semibold text-sm mb-2 text-neutral-900 dark:text-neutral-100'>
-            Unreached Populations
-          </div>
-          <div className='space-y-2'>
-            {languageStats.PoplPeoplesLR != null &&
-              languageStats.PoplPeoplesLR > 0 && (
-                <div className='flex justify-between items-center'>
-                  <span className='text-sm text-neutral-600 dark:text-neutral-400'>
-                    Least Reached
-                  </span>
-                  <div className='text-right'>
-                    <div className='font-medium text-sm text-neutral-900 dark:text-neutral-100'>
-                      {formatPopulationCompact(languageStats.PoplPeoplesLR)}
-                    </div>
-                    {calculatedPopulation != null &&
-                      calculatedPopulation > 0 && (
-                        <div className='text-xs text-neutral-500 dark:text-neutral-400'>
-                          {(
-                            (languageStats.PoplPeoplesLR /
-                              calculatedPopulation) *
-                            100
-                          ).toFixed(1)}
-                          %
-                        </div>
-                      )}
-                  </div>
-                </div>
-              )}
-            {languageStats.PoplPeoplesFPG != null &&
-              languageStats.PoplPeoplesFPG > 0 && (
-                <div className='flex justify-between items-center'>
-                  <span className='text-sm text-neutral-600 dark:text-neutral-400'>
-                    Frontier People Groups
-                  </span>
-                  <div className='text-right'>
-                    <div className='font-medium text-sm text-neutral-900 dark:text-neutral-100'>
-                      {formatPopulationCompact(languageStats.PoplPeoplesFPG)}
-                    </div>
-                    {calculatedPopulation != null &&
-                      calculatedPopulation > 0 && (
-                        <div className='text-xs text-neutral-500 dark:text-neutral-400'>
-                          {(
-                            (languageStats.PoplPeoplesFPG /
-                              calculatedPopulation) *
-                            100
-                          ).toFixed(1)}
-                          %
-                        </div>
-                      )}
-                  </div>
-                </div>
-              )}
-          </div>
-        </div>
-      )}
-
-      {/* Religious Context */}
-      {languageStats.PrimaryReligion && (
-        <div>
-          <div className='font-semibold text-sm mb-2 text-neutral-900 dark:text-neutral-100'>
-            Religious Context
-          </div>
-          <div className='text-sm space-y-1'>
-            <div className='flex justify-between'>
-              <span className='text-neutral-500 dark:text-neutral-400'>
-                Primary Religion:
-              </span>
-              <span className='font-medium text-neutral-900 dark:text-neutral-100'>
-                {languageStats.PrimaryReligion}
-              </span>
-            </div>
-            {languageStats.PercentChristianPC != null && (
-              <div className='flex justify-between'>
-                <span className='text-neutral-500 dark:text-neutral-400'>
-                  % Christian:
-                </span>
-                <span className='font-medium text-secondary-600 dark:text-secondary-400'>
-                  {languageStats.PercentChristianPC.toFixed(1)}%
-                </span>
-              </div>
-            )}
-            {languageStats.PercentEvangelicalPC != null && (
-              <div className='flex justify-between'>
-                <span className='text-neutral-500 dark:text-neutral-400'>
-                  % Evangelical:
-                </span>
-                <span className='font-medium text-accent-600 dark:text-accent-400'>
-                  {languageStats.PercentEvangelicalPC.toFixed(1)}%
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Gospel / Bible Access */}
+      {/* Bible Translation Status */}
       <div>
         <div className='font-semibold text-sm mb-3 flex items-center gap-2 text-neutral-900 dark:text-neutral-100'>
           <BookOpenIcon className='w-4 h-4' />
-          Gospel / Bible Access
+          Bible Translation Status
         </div>
         <div className='space-y-3'>
           {/* Scripture Status Cards */}
@@ -459,48 +346,8 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Detailed Status */}
-          <div className='text-xs space-y-1 pt-2 border-t border-neutral-200 dark:border-neutral-800'>
-            {languageStats.BibleStatus && (
-              <div className='flex justify-between'>
-                <span className='text-neutral-500'>Bible Status:</span>
-                <span className='font-medium'>
-                  {typeof languageStats.BibleStatus === 'number'
-                    ? `Level ${languageStats.BibleStatus}`
-                    : languageStats.BibleStatus}
-                </span>
-              </div>
-            )}
-          </div>
         </div>
       </div>
-
-      {/* Joshua Project Scale */}
-      {languageStats.JPScalePC && (
-        <div>
-          <div className='font-semibold text-sm mb-2 text-neutral-900 dark:text-neutral-100'>
-            Gospel Progress Scale
-          </div>
-          <div className='flex items-center gap-3'>
-            <div
-              className={`${
-                languageStats.JPScalePC === 1
-                  ? 'bg-red-600'
-                  : languageStats.JPScalePC === 2
-                    ? 'bg-orange-500'
-                    : languageStats.JPScalePC === 3
-                      ? 'bg-yellow-500'
-                      : languageStats.JPScalePC === 4
-                        ? 'bg-lime-500'
-                        : 'bg-green-600'
-              } text-white font-bold rounded-full w-10 h-10 flex items-center justify-center text-lg`}
-            >
-              {languageStats.JPScalePC}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Data Source Attribution */}
       <div className='text-xs text-neutral-400 pt-2 border-t border-neutral-200 dark:border-neutral-800'>

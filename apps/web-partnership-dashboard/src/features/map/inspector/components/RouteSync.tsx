@@ -6,6 +6,8 @@ import {
   useSetLastUpdateFromRoute,
   useSetSelection,
   useClearSelection,
+  useSelectionMode,
+  useSetSelectionMode,
 } from '../state/inspectorStore';
 
 // This component keeps the URL and inspector selection in sync both ways.
@@ -14,6 +16,8 @@ export const RouteSync: React.FC = () => {
   const setSelection = useSetSelection();
   const clearSelection = useClearSelection();
   const setLastUpdateFromRoute = useSetLastUpdateFromRoute();
+  const selectionMode = useSelectionMode();
+  const setSelectionMode = useSetSelectionMode();
   const lastPathnameRef = React.useRef<string>('');
   const hasInitializedRef = React.useRef<boolean>(false);
 
@@ -35,6 +39,21 @@ export const RouteSync: React.FC = () => {
           | 'project'
           | 'people-group';
         const id = decodeURIComponent(match[2]);
+
+        // Auto-switch mode based on entity type (projects don't change mode)
+        if (kind !== 'project') {
+          const expectedMode =
+            kind === 'language'
+              ? 'language'
+              : kind === 'region'
+                ? 'region'
+                : 'people_group';
+
+          // Switch mode if different from current mode
+          if (selectionMode !== expectedMode) {
+            setSelectionMode(expectedMode);
+          }
+        }
 
         // Determine expected selection from URL
         const expectedSelection =
@@ -58,7 +77,14 @@ export const RouteSync: React.FC = () => {
         setTimeout(() => setLastUpdateFromRoute(false), 100);
       }
     }
-  }, [pathname, setSelection, clearSelection, setLastUpdateFromRoute]);
+  }, [
+    pathname,
+    setSelection,
+    clearSelection,
+    setLastUpdateFromRoute,
+    selectionMode,
+    setSelectionMode,
+  ]);
 
   return null;
 };

@@ -7,14 +7,18 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/shared/services/supabase';
 import { Dialog } from '@/shared/components/ui/Dialog';
 import { type PanelConfig } from '../config/layoutTypes';
-import { type MapSelection } from '../inspector/state/inspectorStore';
+import {
+  type MapSelection,
+  useSelectionMode,
+} from '../inspector/state/inspectorStore';
 import { type LayerState } from '../sections/MapControlsSection';
 import type { ColorGradient } from '../analytics/types';
-import { SectionRenderer } from './SectionRenderer';
+import { InspectorTabs } from './InspectorTabs';
 import { FadeSwitch } from './shared/FadeTransition';
-import { HeaderSkeleton, BodySkeleton } from './shared/Skeletons';
+import { HeaderSkeleton } from './shared/Skeletons';
 import { DonateButton } from './DonateButton';
 import { DonateModal } from '@/features/funding/components/DonateFlow/DonateModal';
+import { useDonateEnabled } from '@/shared/hooks/useFeatureFlags';
 import type {
   DonationIntent,
   SelectedEntity,
@@ -59,6 +63,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = props => {
     onLanguagesSettingsChange,
   } = props;
   const router = useRouter();
+  const selectionMode = useSelectionMode();
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const selectionKey = selection ? `${selection.kind}:${selection.id}` : 'none';
   const [donateOpen, setDonateOpen] = React.useState(false);
@@ -67,6 +72,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = props => {
     selectedEntity: SelectedEntity;
     step: number;
   } | null>(null);
+  const donateEnabled = useDonateEnabled();
 
   // Fetch header data
   const regionHeader = useQuery({
@@ -176,121 +182,139 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = props => {
   const widthClass = 'w-[50vw] max-w-[480px]';
 
   return (
-    <div
-      className={`absolute ${positionClasses[config.position]} ${widthClass} flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-xl overflow-hidden`}
-    >
-      {/* Header */}
-      <div className='flex-none px-3 py-2 border-b border-neutral-200 dark:border-neutral-800'>
-        <FadeSwitch switchKey={selectionKey}>
-          {isLoading ? (
-            <HeaderSkeleton
-              onBack={() => router.back()}
-              showBackButton={!!selection}
-            />
-          ) : selection ? (
-            <div className='flex items-center justify-between gap-3'>
-              <div className='flex items-center gap-3 flex-1 min-w-0'>
-                <button
-                  onClick={() => router.back()}
-                  aria-label='Back'
-                  className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-shrink-0'
-                >
-                  ←
-                </button>
-                <div className='min-w-0'>
-                  <div className='text-xs uppercase tracking-wide text-neutral-500'>
-                    {headerSubtitle}
-                  </div>
-                  <div className='text-lg font-semibold leading-tight truncate'>
-                    {headerTitle}
+    <>
+      <div
+        className={`absolute ${positionClasses[config.position]} ${widthClass} flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-xl overflow-hidden z-10`}
+      >
+        {/* Header */}
+        <div className='flex-none px-3 py-2 border-b border-neutral-200 dark:border-neutral-800'>
+          <FadeSwitch switchKey={selectionKey}>
+            {isLoading ? (
+              <HeaderSkeleton
+                onBack={() => router.back()}
+                showBackButton={!!selection}
+              />
+            ) : selection ? (
+              <div className='flex items-center justify-between gap-3'>
+                <div className='flex items-center gap-3 flex-1 min-w-0'>
+                  <button
+                    onClick={() => router.back()}
+                    aria-label='Back'
+                    className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-shrink-0'
+                  >
+                    ←
+                  </button>
+                  <div className='min-w-0'>
+                    <div className='text-xs uppercase tracking-wide text-neutral-500'>
+                      {headerSubtitle}
+                    </div>
+                    <div className='text-lg font-semibold leading-tight truncate'>
+                      {headerTitle}
+                    </div>
                   </div>
                 </div>
+                <button
+                  onClick={() => router.push('/map')}
+                  aria-label='Close'
+                  className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-shrink-0 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+                >
+                  <XMarkIcon className='h-5 w-5' />
+                </button>
               </div>
-              <button
-                onClick={() => router.push('/map')}
-                aria-label='Close'
-                className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-shrink-0 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
-              >
-                <XMarkIcon className='h-5 w-5' />
-              </button>
+            ) : (
+              <div>
+                <div className='text-xs uppercase tracking-wide text-neutral-500'>
+                  MAP
+                </div>
+                <div className='text-lg font-semibold leading-tight'>
+                  Inspector
+                </div>
+              </div>
+            )}
+          </FadeSwitch>
+        </div>
+
+        {/* Body with tabs */}
+        <div
+          ref={scrollRef}
+          className='flex-1 flex flex-col min-h-0 overflow-hidden'
+        >
+          {isLoading ? (
+            <div className='flex-1 p-4'>
+              <div className='space-y-4'>
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className='h-20 bg-neutral-200 rounded animate-pulse'
+                  />
+                ))}
+              </div>
             </div>
           ) : (
-            <div>
-              <div className='text-xs uppercase tracking-wide text-neutral-500'>
-                MAP
-              </div>
-              <div className='text-lg font-semibold leading-tight'>
-                Inspector
-              </div>
-            </div>
-          )}
-        </FadeSwitch>
-      </div>
-
-      {/* Body with sections */}
-      <div ref={scrollRef} className='flex-auto overflow-y-auto p-4 space-y-4'>
-        {isLoading ? (
-          <BodySkeleton />
-        ) : (
-          <FadeSwitch switchKey={selectionKey}>
-            <div className='space-y-4'>
-              {config.sections.map(sectionType => (
-                <div key={sectionType}>
-                  <SectionRenderer
-                    type={sectionType}
-                    selection={selection}
-                    scrollRef={scrollRef}
-                    layers={layers}
-                    onLayersChange={onLayersChange}
-                    globalListeningSettings={globalListeningSettings}
-                    onGlobalListeningSettingsChange={
-                      onGlobalListeningSettingsChange
-                    }
-                    languagesSettings={languagesSettings}
-                    onLanguagesSettingsChange={onLanguagesSettingsChange}
-                    peopleGroupsSettings={props.peopleGroupsSettings}
-                    onPeopleGroupsSettingsChange={
-                      props.onPeopleGroupsSettingsChange
-                    }
-                  />
-                </div>
-              ))}
-              {/* Donate button at bottom */}
-              <DonateButton
+            <FadeSwitch
+              switchKey={selectionKey}
+              className='flex-1 flex flex-col min-h-0'
+            >
+              <InspectorTabs
                 selection={selection}
-                onClick={({ intent, selectedEntity }) => {
-                  setInitialDonateState({
-                    intent,
-                    selectedEntity,
-                    step: 2, // Skip to amount entry step
-                  });
-                  setDonateOpen(true);
-                }}
+                layers={layers}
+                onLayersChange={onLayersChange}
+                selectionMode={selectionMode}
+                globalListeningSettings={globalListeningSettings}
+                onGlobalListeningSettingsChange={
+                  onGlobalListeningSettingsChange
+                }
+                languagesSettings={languagesSettings}
+                onLanguagesSettingsChange={onLanguagesSettingsChange}
+                peopleGroupsSettings={props.peopleGroupsSettings}
+                onPeopleGroupsSettingsChange={
+                  props.onPeopleGroupsSettingsChange
+                }
+                scrollRef={scrollRef}
               />
-            </div>
-          </FadeSwitch>
+            </FadeSwitch>
+          )}
+        </div>
+
+        {/* Donate button - positioned outside tabs */}
+        {!isLoading && donateEnabled && (
+          <div className='flex-none p-4 border-t border-neutral-200 dark:border-neutral-800'>
+            <DonateButton
+              selection={selection}
+              onClick={({ intent, selectedEntity }) => {
+                setInitialDonateState({
+                  intent,
+                  selectedEntity,
+                  step: 2, // Skip to amount entry step
+                });
+                setDonateOpen(true);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Donate Modal */}
+        {donateEnabled && (
+          <Dialog
+            open={donateOpen}
+            onOpenChange={open => {
+              setDonateOpen(open);
+              if (!open) {
+                // Reset initial state when modal closes
+                setInitialDonateState(null);
+              }
+            }}
+          >
+            {initialDonateState && (
+              <DonateModal
+                initialIntent={initialDonateState.intent}
+                initialSelectedEntity={initialDonateState.selectedEntity}
+                initialStep={initialDonateState.step}
+              />
+            )}
+          </Dialog>
         )}
       </div>
-
-      {/* Donate Modal */}
-      <Dialog
-        open={donateOpen}
-        onOpenChange={open => {
-          setDonateOpen(open);
-          if (!open) {
-            // Reset initial state when modal closes
-            setInitialDonateState(null);
-          }
-        }}
-      >
-        {initialDonateState && (
-          <DonateModal
-            initialIntent={initialDonateState.intent}
-            initialSelectedEntity={initialDonateState.selectedEntity}
-            initialStep={initialDonateState.step}
-          />
-        )}
-      </Dialog>
-    </div>
+    </>
   );
 };

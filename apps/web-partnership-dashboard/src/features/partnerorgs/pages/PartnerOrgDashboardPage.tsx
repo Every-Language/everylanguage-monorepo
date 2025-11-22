@@ -136,7 +136,7 @@ export const PartnerOrgDashboardPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className='text-3xl font-bold tracking-tight'>
-              <CountUp value={distributionData?.totalDownloads || 0} />
+              <CountUp value={(distributionData as any)?.totalDownloads || 0} />
             </div>
           </CardContent>
         </Card>
@@ -148,7 +148,9 @@ export const PartnerOrgDashboardPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className='text-3xl font-bold tracking-tight'>
-              <CountUp value={distributionData?.totalListeningHours || 0} />
+              <CountUp
+                value={(distributionData as any)?.totalListeningHours || 0}
+              />
             </div>
           </CardContent>
         </Card>

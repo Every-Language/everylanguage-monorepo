@@ -34,20 +34,26 @@ export const PeopleGroupStatsSection: React.FC<
         .from('mv_people_group_stats')
         .select('*')
         .eq('people_group_id', entityId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to avoid 404 errors
 
       if (error) {
         // If no data found, return null (not an error)
-        if (error.code === 'PGRST116') {
+        // PGRST116 = no rows returned, PGRST301 = resource not found
+        if (error.code === 'PGRST116' || error.code === 'PGRST301') {
           return null;
         }
         throw error;
+      }
+
+      if (!data) {
+        return null;
       }
 
       return data as PeopleGroupStats;
     },
     enabled: !!entityId,
     staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: false, // Don't retry on 404s
   });
 
   if (isLoading) {
@@ -134,54 +140,6 @@ export const PeopleGroupStatsSection: React.FC<
         </div>
       )}
 
-      {/* Status Indicators */}
-      <div className='grid grid-cols-2 gap-3'>
-        {stats.jpscale !== null && (
-          <div className='bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-3 border border-neutral-200 dark:border-neutral-800'>
-            <div className='text-xs text-neutral-600 dark:text-neutral-400 mb-1'>
-              JPScale
-            </div>
-            <div className='flex items-center gap-2'>
-              <span
-                className={`${
-                  stats.jpscale === 1
-                    ? 'bg-error-600'
-                    : stats.jpscale === 2
-                      ? 'bg-[#eb6a38]'
-                      : stats.jpscale === 3
-                        ? 'bg-warning-500'
-                        : stats.jpscale === 4 || stats.jpscale === 5
-                          ? 'bg-success-600'
-                          : 'bg-neutral-500'
-                } text-white text-sm font-bold px-2 py-1 rounded`}
-              >
-                {stats.jpscale}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {(stats.least_reached || stats.frontier) && (
-          <div className='bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-3 border border-neutral-200 dark:border-neutral-800'>
-            <div className='text-xs text-neutral-600 dark:text-neutral-400 mb-1'>
-              Status
-            </div>
-            <div className='flex flex-wrap gap-1'>
-              {stats.least_reached && (
-                <span className='bg-error-600 text-white text-xs font-semibold px-2 py-0.5 rounded'>
-                  Least Reached
-                </span>
-              )}
-              {stats.frontier && (
-                <span className='bg-[#eb6a38] text-white text-xs font-semibold px-2 py-0.5 rounded'>
-                  Frontier
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Religious Composition */}
       {(stats.primary_religion ||
         stats.percent_evangelical !== null ||
@@ -220,27 +178,6 @@ export const PeopleGroupStatsSection: React.FC<
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Bible Translation Status */}
-      {stats.bible_status !== null && (
-        <div className='bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-3 border border-neutral-200 dark:border-neutral-800'>
-          <div className='text-xs text-neutral-600 dark:text-neutral-400 mb-2'>
-            Bible Translation Status
-          </div>
-          <div className='mb-2'>
-            <BibleStatusBadge bibleStatus={stats.bible_status} size='sm' />
-          </div>
-          {(stats.bible_year || stats.nt_year || stats.portions_year) && (
-            <div className='space-y-1 text-xs text-neutral-600 dark:text-neutral-400'>
-              {stats.bible_year && <div>Full Bible: {stats.bible_year}</div>}
-              {stats.nt_year && <div>New Testament: {stats.nt_year}</div>}
-              {stats.portions_year && (
-                <div>Portions: {stats.portions_year}</div>
-              )}
-            </div>
-          )}
         </div>
       )}
 

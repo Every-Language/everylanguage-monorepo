@@ -179,13 +179,13 @@ export function useJPPeopleGroupsByCountryCache(
   regionId: string | null,
   page: number = 1,
   limit: number = 20,
-  sortField: string = 'Population',
+  sortField?: string,
   sortDirection: 'asc' | 'desc' = 'desc'
 ): UseQueryResult<JPPeopleGroup[]> {
   const { data: externalIds, isLoading: idsLoading } =
     useRegionExternalIds(regionId);
   const fips = externalIds ? extractFIPSFromRegionSources(externalIds) : null;
-  const sortColumn = mapSortFieldToColumn(sortField);
+  const sortColumn = sortField ? mapSortFieldToColumn(sortField) : null;
   const offset = (page - 1) * limit;
 
   return useQuery({
@@ -203,13 +203,19 @@ export function useJPPeopleGroupsByCountryCache(
       }
 
       try {
-        // Query vw_people_groups_in_region with pagination and sorting
-        const query = supabase
+        // Query vw_people_groups_in_region with pagination and optional sorting
+        let query = supabase
           .from('vw_people_groups_in_region')
           .select('*')
-          .eq('region_id', regionId)
-          .order(sortColumn, { ascending: sortDirection === 'asc' })
-          .range(offset, offset + limit - 1);
+          .eq('region_id', regionId);
+
+        if (sortColumn) {
+          query = query.order(sortColumn, {
+            ascending: sortDirection === 'asc',
+          });
+        }
+
+        query = query.range(offset, offset + limit - 1);
 
         const { data, error } = await query;
 
@@ -227,7 +233,7 @@ export function useJPPeopleGroupsByCountryCache(
             fips,
             page,
             limit,
-            sortField,
+            sortField || 'Population',
             sortDirection
           );
         }
@@ -245,7 +251,7 @@ export function useJPPeopleGroupsByCountryCache(
               fips,
               page,
               limit,
-              sortField,
+              sortField || 'Population',
               sortDirection
             );
           } catch (apiError) {
@@ -269,13 +275,13 @@ export function useJPPeopleGroupsByLanguageCache(
   languageEntityId: string | null,
   page: number = 1,
   limit: number = 20,
-  sortField: string = 'Population',
+  sortField?: string,
   sortDirection: 'asc' | 'desc' = 'desc'
 ): UseQueryResult<JPPeopleGroup[]> {
   const { data: externalIds, isLoading: idsLoading } =
     useLanguageExternalIds(languageEntityId);
   const rol3 = externalIds ? extractROL3FromLanguageSources(externalIds) : null;
-  const sortColumn = mapSortFieldToColumn(sortField);
+  const sortColumn = sortField ? mapSortFieldToColumn(sortField) : null;
   const offset = (page - 1) * limit;
 
   return useQuery({
@@ -293,13 +299,19 @@ export function useJPPeopleGroupsByLanguageCache(
       }
 
       try {
-        // Query vw_people_groups_by_language with pagination and sorting
-        const query = supabase
+        // Query vw_people_groups_by_language with pagination and optional sorting
+        let query = supabase
           .from('vw_people_groups_by_language')
           .select('*')
-          .eq('language_entity_id', languageEntityId)
-          .order(sortColumn, { ascending: sortDirection === 'asc' })
-          .range(offset, offset + limit - 1);
+          .eq('language_entity_id', languageEntityId);
+
+        if (sortColumn) {
+          query = query.order(sortColumn, {
+            ascending: sortDirection === 'asc',
+          });
+        }
+
+        query = query.range(offset, offset + limit - 1);
 
         const { data, error } = await query;
 
@@ -317,7 +329,7 @@ export function useJPPeopleGroupsByLanguageCache(
             rol3,
             page,
             limit,
-            sortField,
+            sortField || 'Population',
             sortDirection
           );
         }
@@ -335,7 +347,7 @@ export function useJPPeopleGroupsByLanguageCache(
               rol3,
               page,
               limit,
-              sortField,
+              sortField || 'Population',
               sortDirection
             );
           } catch (apiError) {

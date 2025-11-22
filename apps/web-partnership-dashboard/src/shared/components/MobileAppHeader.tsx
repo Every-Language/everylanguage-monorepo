@@ -6,6 +6,7 @@ import { Search } from 'lucide-react';
 import { useSearch } from '@/features/search/hooks/useSearch';
 import type { SearchResult } from '@/features/search/types';
 import { Button } from './ui/Button';
+import { useDonateEnabled } from '@/shared/hooks/useFeatureFlags';
 
 type ViewMode = 'default' | 'search' | 'menu';
 
@@ -22,6 +23,7 @@ export const MobileAppHeader: React.FC = () => {
   const router = useRouter();
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const { results, isLoading } = useSearch(searchQuery);
+  const donateEnabled = useDonateEnabled();
 
   const isMapRoute = pathname.startsWith('/map');
   const isDashboardRoute =
@@ -194,16 +196,18 @@ export const MobileAppHeader: React.FC = () => {
             Dashboard
           </button>
 
-          <div className='pt-4'>
-            <Button
-              variant='primary'
-              size='lg'
-              onClick={() => handleMenuNavigate('/donate')}
-              className='w-full'
-            >
-              Donate
-            </Button>
-          </div>
+          {donateEnabled && (
+            <div className='pt-4'>
+              <Button
+                variant='primary'
+                size='lg'
+                onClick={() => handleMenuNavigate('/donate')}
+                className='w-full'
+              >
+                Donate
+              </Button>
+            </div>
+          )}
         </nav>
       </div>
     </>

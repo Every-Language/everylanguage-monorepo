@@ -10,6 +10,7 @@ import { MapProvider } from '../context/MapContext';
 import { supabase } from '@/shared/services/supabase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/shared/theme/hooks/useToast';
+import { useSelectionMode } from '../inspector/state/inspectorStore';
 
 // MapLibre CSS should be imported by the app's CSS pipeline or here
 // import 'maplibre-gl/dist/maplibre-gl.css';
@@ -29,6 +30,7 @@ export const MapShell: React.FC<MapShellProps> = ({
   countriesEnabled = true,
   padding,
 }) => {
+  const selectionMode = useSelectionMode();
   const mapRef = React.useRef<MapRef | null>(null);
   const { resolvedTheme } = useTheme();
   const router = useRouter();
@@ -245,6 +247,8 @@ export const MapShell: React.FC<MapShellProps> = ({
             ? (data[0] as { id?: string | null })
             : null;
         if (row?.id) {
+          // Only allow region selection if in region mode
+          if (selectionMode !== 'region') return;
           router.push(`/map/region/${encodeURIComponent(row.id)}`);
         }
         // If no match (e.g., ocean), do nothing
@@ -252,7 +256,7 @@ export const MapShell: React.FC<MapShellProps> = ({
         console.error('Map click handler failed', err);
       }
     },
-    [countriesEnabled, router, toast]
+    [countriesEnabled, router, toast, selectionMode]
   );
 
   return (

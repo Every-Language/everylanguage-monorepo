@@ -117,7 +117,7 @@ export const RegionCard: React.FC<RegionCardProps> = ({
             {/* Stats Grid */}
             <div className='flex flex-wrap items-center gap-3 text-xs'>
               {/* Population */}
-              {showPopulation && population != null && (
+              {showPopulation && population != null && population > 0 && (
                 <div className='text-neutral-600 dark:text-neutral-400'>
                   <span className='font-medium'>
                     {formatPopulationCompact(population)}

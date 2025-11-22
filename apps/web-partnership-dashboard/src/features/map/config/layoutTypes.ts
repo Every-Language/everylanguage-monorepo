@@ -7,9 +7,6 @@
 export type SectionType =
   | 'hierarchy'
   | 'linked-entities'
-  | 'info'
-  | 'bible-progress'
-  | 'bible-listening'
   | 'map-controls'
   | 'jp-people-groups'
   | 'jp-country-stats'

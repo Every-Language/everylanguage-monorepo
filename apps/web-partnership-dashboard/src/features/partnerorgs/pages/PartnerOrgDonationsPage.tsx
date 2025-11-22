@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Card, CardContent } from '@/shared/components/ui/Card';
 import { useAuth } from '@/features/auth';
 import { usePartnerOrgDonations } from '../hooks/usePartnerOrgDonations';
+import { TableRowSkeleton } from '@/shared/components/ui/Skeletons';
 
 const formatCurrency = (cents: number, currencyCode: string = 'USD') =>
   new Intl.NumberFormat('en-US', {
@@ -33,7 +34,7 @@ export const PartnerOrgDonationsPage: React.FC = () => {
   );
 
   if (isLoading) {
-    return <div className='text-neutral-500'>Loading donations...</div>;
+    return <TableRowSkeleton count={7} columns={4} />;
   }
 
   if (!donations || donations.length === 0) {
