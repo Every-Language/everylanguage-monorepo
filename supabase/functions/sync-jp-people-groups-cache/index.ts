@@ -423,7 +423,9 @@ async function fetchAllPeopleGroupsFromApi(
   const now = new Date().toISOString();
   let page = startPage || 1;
   let totalFetched = 0;
-  const MAX_PAGES = maxPages || 1000; // Limit pages to prevent timeout
+  // Default to 50 pages if not specified (safer default to prevent timeouts)
+  // When called from cron or without params, process in manageable batches
+  const MAX_PAGES = maxPages !== undefined ? maxPages : 50;
 
   while (true) {
     if (page > (startPage || 1) + MAX_PAGES - 1) {
