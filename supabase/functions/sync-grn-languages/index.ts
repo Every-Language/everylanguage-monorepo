@@ -238,21 +238,21 @@ Deno.serve(async req => {
       }
     }
 
-    // Refresh the unified stats materialized view
+    // Refresh the language stats materialized view
     // Handle errors gracefully - don't fail the entire sync if refresh times out
     let refreshErrorMessage: string | null = null;
     try {
       const { error: refreshError } = await supabase.rpc(
-        'refresh_unified_bible_stats'
+        'refresh_mv_language_stats'
       );
 
       if (refreshError) {
-        console.error('Unified stats refresh failed', refreshError);
+        console.error('Language stats refresh failed', refreshError);
         refreshErrorMessage =
           refreshError.message ?? 'Unknown refresh error occurred';
       }
     } catch (err) {
-      console.error('Exception refreshing unified stats:', err);
+      console.error('Exception refreshing language stats:', err);
       refreshErrorMessage =
         err instanceof Error ? err.message : 'Unknown refresh error occurred';
     }

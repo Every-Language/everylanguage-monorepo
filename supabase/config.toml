@@ -342,7 +342,7 @@ entrypoint = "./functions/sync-grn-languages/index.ts"
 [functions.sync-grn-coordinates]
 enabled = true
 verify_jwt = false
-entrypoint = "./functions/sync-grn-languages/index.ts"
+entrypoint = "./functions/sync-grn-coordinates/index.ts"
 
 [functions.sync-jp-people-groups]
 enabled = true
