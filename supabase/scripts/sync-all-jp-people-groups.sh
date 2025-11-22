@@ -20,7 +20,7 @@ while [ $batch_num -le $MAX_ATTEMPTS ]; do
   echo ""
   echo "=== Batch $batch_num: Pages $page_start-$((page_start + PAGES_PER_BATCH - 1)) ==="
   
-  response=$(curl -s -L -X POST "${SUPABASE_URL}/functions/v1/sync-jp-people-groups-cache" \
+  response=$(curl -s -L -X POST "${SUPABASE_URL}/functions/v1/sync-jp-people-groups" \
     -H "Authorization: Bearer ${API_KEY}" \
     -H "apikey: ${API_KEY}" \
     -H "Content-Type: application/json" \

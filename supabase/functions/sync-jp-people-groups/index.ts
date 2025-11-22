@@ -523,47 +523,54 @@ Deno.serve(async req => {
       console.log(`Upserted batch: ${upserted}/${allPeopleGroups.length}`);
     }
 
-    // Deletion detection: find cache entries not in API response
-    console.log('Detecting deleted entries...');
-    const apiPeopleIds = new Set(allPeopleGroups.map(pg => pg.people_id3_rog3));
-
-    // Get all cache entries that were synced before this sync
-    const { data: staleEntries, error: staleError } = await supabase
-      .from('jp_people_groups_cache')
-      .select('people_id3_rog3')
-      .lt('last_synced_at', syncTimestamp);
-
-    if (staleError) {
-      console.error('Error fetching stale entries:', staleError);
-      throw new Error(`Failed to fetch stale entries: ${staleError.message}`);
-    }
-
-    // Find entries to delete (in cache but not in API response)
-    const toDelete = (staleEntries || []).filter(
-      entry => !apiPeopleIds.has(entry.people_id3_rog3)
-    );
-
-    console.log(`Found ${toDelete.length} entries to delete`);
-
-    // Delete in batches
+    // Deletion detection: only run when doing a full sync (no startPage or maxPages limit)
+    // For incremental syncs, we don't delete entries from other page ranges
     let deleted = 0;
-    if (toDelete.length > 0) {
-      for (const batch of chunkArray(toDelete, DELETE_BATCH_SIZE)) {
-        const idsToDelete = batch.map(e => e.people_id3_rog3);
-        const { error: deleteError } = await supabase
-          .from('jp_people_groups_cache')
-          .delete()
-          .in('people_id3_rog3', idsToDelete);
+    if (!startPage && !maxPages) {
+      console.log('Detecting deleted entries (full sync mode)...');
+      const apiPeopleIds = new Set(
+        allPeopleGroups.map(pg => pg.people_id3_rog3)
+      );
 
-        if (deleteError) {
-          console.error('Error deleting stale entries:', deleteError);
-          throw new Error(
-            `Failed to delete stale entries: ${deleteError.message}`
-          );
-        }
-        deleted += batch.length;
-        console.log(`Deleted batch: ${deleted}/${toDelete.length}`);
+      // Get all cache entries that were synced before this sync
+      const { data: staleEntries, error: staleError } = await supabase
+        .from('jp_people_groups_cache')
+        .select('people_id3_rog3')
+        .lt('last_synced_at', syncTimestamp);
+
+      if (staleError) {
+        console.error('Error fetching stale entries:', staleError);
+        throw new Error(`Failed to fetch stale entries: ${staleError.message}`);
       }
+
+      // Find entries to delete (in cache but not in API response)
+      const toDelete = (staleEntries || []).filter(
+        entry => !apiPeopleIds.has(entry.people_id3_rog3)
+      );
+
+      console.log(`Found ${toDelete.length} entries to delete`);
+
+      // Delete in batches
+      if (toDelete.length > 0) {
+        for (const batch of chunkArray(toDelete, DELETE_BATCH_SIZE)) {
+          const idsToDelete = batch.map(e => e.people_id3_rog3);
+          const { error: deleteError } = await supabase
+            .from('jp_people_groups_cache')
+            .delete()
+            .in('people_id3_rog3', idsToDelete);
+
+          if (deleteError) {
+            console.error('Error deleting stale entries:', deleteError);
+            throw new Error(
+              `Failed to delete stale entries: ${deleteError.message}`
+            );
+          }
+          deleted += batch.length;
+          console.log(`Deleted batch: ${deleted}/${toDelete.length}`);
+        }
+      }
+    } else {
+      console.log('Skipping deletion detection (incremental sync mode)');
     }
 
     const response = {
