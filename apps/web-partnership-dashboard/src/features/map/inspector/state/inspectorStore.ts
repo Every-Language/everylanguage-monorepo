@@ -4,7 +4,8 @@ import { devtools } from 'zustand/middleware';
 export type MapSelection =
   | { kind: 'language_entity'; id: string }
   | { kind: 'region'; id: string }
-  | { kind: 'project'; id: string };
+  | { kind: 'project'; id: string }
+  | { kind: 'people_group'; id: string };
 
 type InspectorState = {
   selection: MapSelection | null;

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   useJPCountryStats,
   useJPPeopleGroupsByCountryPaginated,
@@ -7,23 +8,56 @@ import {
 import { JPCountryStatsSection } from './JPCountryStatsSection';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import type { JPPeopleGroup } from '../services/joshuaProjectApi';
+import { PeopleGroupCard } from '@/shared/components/PeopleGroupCard';
+import { usePeopleGroupIdFromPeopleId3 } from '../hooks/usePeopleGroupIdFromPeopleId3';
+import {
+  useSelection,
+  useSetSelection,
+} from '../inspector/state/inspectorStore';
 
 type JPRegionViewProps = {
   entityId: string;
 };
 
-// Helper functions
-const getBibleStatusLabel = (
-  status: number | string | null | undefined
-): string => {
-  if (status === null || status === undefined) return 'Unknown';
-  if (typeof status === 'number') {
-    if (status === 5) return 'Whole Bible';
-    if (status === 4) return 'New Testament';
-    if (status >= 3) return 'Portions';
-    return 'No Scripture';
+// Wrapper component to handle PeopleID3 to people_group_id mapping
+const PeopleGroupCardWrapper: React.FC<{
+  group: JPPeopleGroup;
+  entityId: string;
+}> = ({ group, entityId }) => {
+  const router = useRouter();
+  const selection = useSelection();
+  const setSelection = useSetSelection();
+
+  // Map PeopleID3 to people_group_id
+  const { data: peopleGroupId } = usePeopleGroupIdFromPeopleId3(
+    group.PeopleID3 ? parseInt(group.PeopleID3, 10) || null : null
+  );
+
+  if (!peopleGroupId) {
+    // Fallback: return null if mapping fails
+    return null;
   }
-  return String(status);
+
+  // For region context, pass contextualRegionId to show region-specific stats
+  return (
+    <PeopleGroupCard
+      peopleGroupId={peopleGroupId}
+      contextualRegionId={entityId}
+      showName={true}
+      showPopulation={true}
+      showPrimaryLanguageBibleStatus={true}
+      showLanguageCount={false}
+      showCountryCount={false}
+      showImage={false}
+      isSelected={
+        selection?.kind === 'people_group' && selection.id === peopleGroupId
+      }
+      onClick={id => {
+        router.push(`/map/people-group/${encodeURIComponent(id)}`);
+        setSelection({ kind: 'people_group', id });
+      }}
+    />
+  );
 };
 
 /**
@@ -57,19 +91,6 @@ export const JPRegionView: React.FC<JPRegionViewProps> = ({ entityId }) => {
 
   const isLoading = countryLoading || peopleGroupsLoading;
   const totalPages = Math.ceil((countryStats?.CntPeoples ?? 0) / pageSize);
-
-  const getBibleStatusColor = (
-    status: number | string | null | undefined
-  ): string => {
-    if (status === null || status === undefined) return 'bg-neutral-500';
-    if (typeof status === 'number') {
-      if (status === 5) return 'bg-success-600';
-      if (status === 4) return 'bg-accent-500';
-      if (status >= 3) return 'bg-warning-500';
-      return 'bg-error-600';
-    }
-    return 'bg-neutral-500';
-  };
 
   if (isLoading) {
     return (
@@ -133,55 +154,11 @@ export const JPRegionView: React.FC<JPRegionViewProps> = ({ entityId }) => {
         ) : (
           <div className='space-y-3'>
             {peopleGroups.map((group: JPPeopleGroup) => (
-              <div
+              <PeopleGroupCardWrapper
                 key={`${group.PeopleID3}-${group.ROG3}`}
-                className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-4 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors'
-              >
-                <div className='flex items-start justify-between gap-4'>
-                  <div className='flex-1'>
-                    <h3 className='font-semibold text-base mb-3'>
-                      {group.PeopNameInCountry}
-                    </h3>
-                    {group.PrimaryLanguageName && (
-                      <div className='text-sm text-neutral-600 dark:text-neutral-400 mb-3'>
-                        Language: {group.PrimaryLanguageName}
-                        {group.ROL3 && (
-                          <span className='text-xs text-neutral-500 ml-1'>
-                            ({group.ROL3})
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    <div className='space-y-2'>
-                      <div>
-                        <span className='text-sm text-neutral-500'>
-                          Scripture Access:{' '}
-                        </span>
-                        <span
-                          className={`font-medium px-2 py-1 rounded text-sm ${getBibleStatusColor(
-                            group.BibleStatus
-                          )} text-white`}
-                        >
-                          {getBibleStatusLabel(group.BibleStatus)}
-                        </span>
-                      </div>
-                      <div className='flex items-center gap-3 text-sm'>
-                        {(group.HasJesusFilm === 'Y' || group.JF === 'Y') && (
-                          <span className='text-neutral-600 dark:text-neutral-400'>
-                            ✓ Jesus Film Available
-                          </span>
-                        )}
-                        {(group.HasAudioRecordings === 'Y' ||
-                          group.AudioRecordings === 'Y') && (
-                          <span className='text-neutral-600 dark:text-neutral-400'>
-                            ✓ Audio Recordings Available
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                group={group}
+                entityId={entityId}
+              />
             ))}
           </div>
         )}

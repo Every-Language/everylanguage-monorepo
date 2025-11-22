@@ -25,9 +25,15 @@ export const RouteSync: React.FC = () => {
       hasInitializedRef.current = true;
       lastPathnameRef.current = pathname;
 
-      const match = pathname.match(/\/map\/(language|region|project)\/([^/]+)/);
+      const match = pathname.match(
+        /\/map\/(language|region|project|people-group)\/([^/]+)/
+      );
       if (match) {
-        const kind = match[1] as 'language' | 'region' | 'project';
+        const kind = match[1] as
+          | 'language'
+          | 'region'
+          | 'project'
+          | 'people-group';
         const id = decodeURIComponent(match[2]);
 
         // Determine expected selection from URL
@@ -36,7 +42,9 @@ export const RouteSync: React.FC = () => {
             ? { kind: 'language_entity' as const, id }
             : kind === 'region'
               ? { kind: 'region' as const, id }
-              : { kind: 'project' as const, id };
+              : kind === 'people-group'
+                ? { kind: 'people_group' as const, id }
+                : { kind: 'project' as const, id };
 
         // Set flag to prevent selection from triggering route change
         setLastUpdateFromRoute(true);

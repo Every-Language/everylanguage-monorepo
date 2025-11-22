@@ -38,6 +38,10 @@ interface MobileBottomSheetProps {
     clustered: boolean;
   };
   onLanguagesSettingsChange?: (settings: { clustered: boolean }) => void;
+  peopleGroupsSettings?: {
+    clustered: boolean;
+  };
+  onPeopleGroupsSettingsChange?: (settings: { clustered: boolean }) => void;
 }
 
 type SheetState = 'collapsed' | 'half' | 'full';
@@ -73,6 +77,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   onGlobalListeningSettingsChange,
   languagesSettings,
   onLanguagesSettingsChange,
+  peopleGroupsSettings,
+  onPeopleGroupsSettingsChange,
 }) => {
   const router = useRouter();
   const sheetRef = React.useRef<HTMLDivElement | null>(null);
@@ -499,6 +505,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                       }
                       languagesSettings={languagesSettings}
                       onLanguagesSettingsChange={onLanguagesSettingsChange}
+                      peopleGroupsSettings={peopleGroupsSettings}
+                      onPeopleGroupsSettingsChange={
+                        onPeopleGroupsSettingsChange
+                      }
                     />
                   </div>
                 ))}

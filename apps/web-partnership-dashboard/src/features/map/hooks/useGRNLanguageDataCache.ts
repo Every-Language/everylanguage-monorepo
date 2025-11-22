@@ -14,6 +14,7 @@ import {
   fetchLanguageFeed,
   fetchISOFeed,
 } from '../services/grnApi';
+import type { GrnLanguageCache } from '../types/databaseViews';
 
 /**
  * Fetches external ID sources for a language entity from our database
@@ -69,12 +70,13 @@ export function useGRNLanguageDataCache(
       if (iso6393) {
         try {
           // Fetch from grn_language_cache
-          const { data: cacheData, error: cacheError } = await supabase
+          const { data: cacheDataRaw, error: cacheError } = await supabase
             .from('grn_language_cache')
             .select('*')
             .eq('iso639_3', iso6393.toLowerCase())
             .single();
 
+          const cacheData = cacheDataRaw as GrnLanguageCache | null;
           if (!cacheError && cacheData && cacheData.programs) {
             // Transform cache data to GRNLanguageFeed format
             const languageFeed: GRNLanguageFeed = {
@@ -84,8 +86,14 @@ export function useGRNLanguageDataCache(
               audioSample: cacheData.audio_sample || false,
               ietf: cacheData.ietf || '',
               iso: iso6393,
-              mediaIds: cacheData.media_ids || [],
-              alternateNames: cacheData.alternate_names || [],
+              mediaIds:
+                (cacheData.media_ids as
+                  | { org_key: number; code: string }[]
+                  | null) || [],
+              alternateNames:
+                (cacheData.alternate_names as
+                  | { name: string; ietf: string; best?: string }[]
+                  | null) || [],
               programs: cacheData.programs as { program: any[] },
               version: 1,
               fetchTime: cacheData.last_synced_at || new Date().toISOString(),

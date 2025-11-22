@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   useJPLanguageStats,
   useJPPeopleGroupsByLanguagePaginated,
@@ -7,9 +8,55 @@ import {
 import { JPLanguageStatsSection } from './JPLanguageStatsSection';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import type { JPPeopleGroup } from '../services/joshuaProjectApi';
+import { PeopleGroupCard } from '@/shared/components/PeopleGroupCard';
+import { usePeopleGroupIdFromPeopleId3 } from '../hooks/usePeopleGroupIdFromPeopleId3';
+import {
+  useSelection,
+  useSetSelection,
+} from '../inspector/state/inspectorStore';
 
 type JPLanguageViewProps = {
   entityId: string;
+};
+
+// Wrapper component to handle PeopleID3 to people_group_id mapping
+const PeopleGroupCardWrapper: React.FC<{
+  group: JPPeopleGroup;
+  entityId: string;
+}> = ({ group, entityId: _entityId }) => {
+  const router = useRouter();
+  const selection = useSelection();
+  const setSelection = useSetSelection();
+
+  // Map PeopleID3 to people_group_id
+  const { data: peopleGroupId } = usePeopleGroupIdFromPeopleId3(
+    group.PeopleID3 ? parseInt(group.PeopleID3, 10) || null : null
+  );
+
+  if (!peopleGroupId) {
+    // Fallback: return null or a simple div if mapping fails
+    return null;
+  }
+
+  // For language context, we don't have a specific region, so use total stats
+  return (
+    <PeopleGroupCard
+      peopleGroupId={peopleGroupId}
+      showName={true}
+      showPopulation={true}
+      showPrimaryLanguageBibleStatus={true}
+      showLanguageCount={false}
+      showCountryCount={false}
+      showImage={false}
+      isSelected={
+        selection?.kind === 'people_group' && selection.id === peopleGroupId
+      }
+      onClick={id => {
+        router.push(`/map/people-group/${encodeURIComponent(id)}`);
+        setSelection({ kind: 'people_group', id });
+      }}
+    />
+  );
 };
 
 /**
@@ -45,76 +92,6 @@ export const JPLanguageView: React.FC<JPLanguageViewProps> = ({ entityId }) => {
   const totalPeopleGroups =
     languageStats?.NbrPGICs ?? languageStats?.Peoples ?? 0;
   const totalPages = Math.ceil(totalPeopleGroups / pageSize);
-
-  // Helper functions
-  const formatPopulation = (value: unknown): string => {
-    if (typeof value === 'number' && !isNaN(value)) {
-      return value.toLocaleString();
-    }
-    if (typeof value === 'string') {
-      const parsed = parseFloat(value);
-      if (!isNaN(parsed)) {
-        return parsed.toLocaleString();
-      }
-    }
-    return 'N/A';
-  };
-
-  const formatPercent = (value: unknown): string => {
-    const num =
-      typeof value === 'number'
-        ? value
-        : typeof value === 'string'
-          ? parseFloat(value)
-          : null;
-    return num != null ? `${num.toFixed(1)}%` : 'N/A';
-  };
-
-  const getBibleStatusLabel = (
-    status: number | string | null | undefined
-  ): string => {
-    if (status === null || status === undefined) return 'Unknown';
-    if (typeof status === 'number') {
-      if (status === 5) return 'Whole Bible';
-      if (status === 4) return 'New Testament';
-      if (status >= 3) return 'Portions';
-      return 'No Scripture';
-    }
-    return String(status);
-  };
-
-  const getBibleStatusColor = (
-    status: number | string | null | undefined
-  ): string => {
-    if (status === null || status === undefined) return 'bg-neutral-500';
-    if (typeof status === 'number') {
-      if (status === 5) return 'bg-success-600';
-      if (status === 4) return 'bg-accent-500';
-      if (status >= 3) return 'bg-warning-500';
-      return 'bg-error-600';
-    }
-    return 'bg-neutral-500';
-  };
-
-  const getScaleBadge = (scale: number | null | undefined) => {
-    if (!scale) return null;
-
-    const scaleColors: Record<number, string> = {
-      1: 'bg-error-600',
-      2: 'bg-warning-500',
-      3: 'bg-accent-500',
-      4: 'bg-secondary-500',
-      5: 'bg-secondary-600',
-    };
-
-    return (
-      <span
-        className={`${scaleColors[scale] || 'bg-neutral-500'} text-white text-xs font-bold px-2 py-0.5 rounded`}
-      >
-        {scale}
-      </span>
-    );
-  };
 
   if (isLoading) {
     return (
@@ -178,86 +155,11 @@ export const JPLanguageView: React.FC<JPLanguageViewProps> = ({ entityId }) => {
         ) : (
           <div className='space-y-3'>
             {peopleGroups.map((group: JPPeopleGroup) => (
-              <div
+              <PeopleGroupCardWrapper
                 key={`${group.PeopleID3}-${group.ROG3}`}
-                className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-4 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors'
-              >
-                <div className='flex items-start justify-between gap-4'>
-                  <div className='flex-1'>
-                    <div className='flex items-center gap-2 mb-2'>
-                      <h3 className='font-semibold text-base'>
-                        {group.PeopNameInCountry}
-                      </h3>
-                      {getScaleBadge(group.JPScale)}
-                    </div>
-                    <div className='text-sm text-neutral-600 dark:text-neutral-400 mb-2'>
-                      Country: {group.Ctry}
-                      {group.ISO3 && (
-                        <span className='text-xs text-neutral-500 ml-1'>
-                          ({group.ISO3})
-                        </span>
-                      )}
-                    </div>
-                    <div className='grid grid-cols-2 gap-4 text-sm'>
-                      <div>
-                        <span className='text-neutral-500'>Population: </span>
-                        <span className='font-medium'>
-                          {formatPopulation(group.Population)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className='text-neutral-500'>Religion: </span>
-                        <span className='font-medium'>
-                          {group.PrimaryReligion}
-                        </span>
-                      </div>
-                      <div>
-                        <span className='text-neutral-500'>
-                          % Evangelical:{' '}
-                        </span>
-                        <span className='font-medium text-accent-600 dark:text-accent-500'>
-                          {formatPercent(group.PercentEvangelical)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className='text-neutral-500'>
-                          Scripture Access:{' '}
-                        </span>
-                        <span
-                          className={`font-medium px-2 py-0.5 rounded text-xs ${getBibleStatusColor(
-                            group.BibleStatus
-                          )} text-white`}
-                        >
-                          {getBibleStatusLabel(group.BibleStatus)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className='mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center gap-2 flex-wrap'>
-                  {group.LeastReached === 'Y' && (
-                    <span className='bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-400 px-2 py-1 rounded text-xs font-medium'>
-                      Least Reached
-                    </span>
-                  )}
-                  {group.FrontierPeopleGroup === 'Y' && (
-                    <span className='bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-400 px-2 py-1 rounded text-xs font-medium'>
-                      Frontier
-                    </span>
-                  )}
-                  {group.HasJesusFilm === 'Y' || group.JF === 'Y' ? (
-                    <span className='bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 px-2 py-1 rounded text-xs font-medium'>
-                      Jesus Film Available
-                    </span>
-                  ) : null}
-                  {group.HasAudioRecordings === 'Y' ||
-                  group.AudioRecordings === 'Y' ? (
-                    <span className='bg-secondary-100 dark:bg-secondary-900/30 text-secondary-700 dark:text-secondary-400 px-2 py-1 rounded text-xs font-medium'>
-                      Audio Available
-                    </span>
-                  ) : null}
-                </div>
-              </div>
+                group={group}
+                entityId={entityId}
+              />
             ))}
           </div>
         )}

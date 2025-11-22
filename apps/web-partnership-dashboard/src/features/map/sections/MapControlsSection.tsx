@@ -2,6 +2,7 @@ import React from 'react';
 import { type LayerKey } from '../components/LayerToggles';
 import { GlobalListeningSettingsSection } from './GlobalListeningSettingsSection';
 import { LanguagesSettingsSection } from './LanguagesSettingsSection';
+import { PeopleGroupsSettingsSection } from './PeopleGroupsSettingsSection';
 import type { ColorGradient } from '../analytics/types';
 
 export type LayerState = Record<LayerKey, boolean>;
@@ -22,6 +23,10 @@ interface MapControlsSectionProps {
     clustered: boolean;
   };
   onLanguagesSettingsChange?: (settings: { clustered: boolean }) => void;
+  peopleGroupsSettings?: {
+    clustered: boolean;
+  };
+  onPeopleGroupsSettingsChange?: (settings: { clustered: boolean }) => void;
 }
 
 /**
@@ -36,6 +41,8 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
   onGlobalListeningSettingsChange,
   languagesSettings,
   onLanguagesSettingsChange,
+  peopleGroupsSettings,
+  onPeopleGroupsSettingsChange,
 }) => {
   const toggle = (k: LayerKey) => onChange({ ...value, [k]: !value[k] });
 
@@ -43,14 +50,24 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
     <div>
       <div className='text-sm font-medium mb-2'>Layers</div>
       {(
-        ['countries', 'projects', 'globalListening', 'languages'] as LayerKey[]
+        [
+          'countries',
+          'projects',
+          'globalListening',
+          'languages',
+          'peopleGroups',
+        ] as LayerKey[]
       ).map(k => (
         <label
           key={k}
           className='flex items-center justify-between text-sm py-1 select-none'
         >
           <span className='capitalize'>
-            {k === 'globalListening' ? 'Global Listening' : k}
+            {k === 'globalListening'
+              ? 'Global Listening'
+              : k === 'peopleGroups'
+                ? 'People Groups'
+                : k}
           </span>
           <span className='relative inline-flex items-center'>
             <input
@@ -100,6 +117,21 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
           />
         </div>
       )}
+      {value.peopleGroups &&
+        peopleGroupsSettings &&
+        onPeopleGroupsSettingsChange && (
+          <div className='mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700'>
+            <PeopleGroupsSettingsSection
+              clustered={peopleGroupsSettings.clustered}
+              onClusteredChange={clustered =>
+                onPeopleGroupsSettingsChange({
+                  ...peopleGroupsSettings,
+                  clustered,
+                })
+              }
+            />
+          </div>
+        )}
     </div>
   );
 

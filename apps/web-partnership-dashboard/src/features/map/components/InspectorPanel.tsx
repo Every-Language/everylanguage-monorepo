@@ -37,22 +37,27 @@ interface InspectorPanelProps {
     clustered: boolean;
   };
   onLanguagesSettingsChange?: (settings: { clustered: boolean }) => void;
+  peopleGroupsSettings?: {
+    clustered: boolean;
+  };
+  onPeopleGroupsSettingsChange?: (settings: { clustered: boolean }) => void;
 }
 
 /**
  * Generic Inspector Panel that renders sections based on configuration.
  * Used for desktop layouts (left, right, or bottom positioned panels).
  */
-export const InspectorPanel: React.FC<InspectorPanelProps> = ({
-  config,
-  selection,
-  layers,
-  onLayersChange,
-  globalListeningSettings,
-  onGlobalListeningSettingsChange,
-  languagesSettings,
-  onLanguagesSettingsChange,
-}) => {
+export const InspectorPanel: React.FC<InspectorPanelProps> = props => {
+  const {
+    config,
+    selection,
+    layers,
+    onLayersChange,
+    globalListeningSettings,
+    onGlobalListeningSettingsChange,
+    languagesSettings,
+    onLanguagesSettingsChange,
+  } = props;
   const router = useRouter();
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const selectionKey = selection ? `${selection.kind}:${selection.id}` : 'none';
@@ -112,6 +117,22 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     retry: false,
   });
 
+  const peopleGroupHeader = useQuery({
+    enabled: !!selection && selection.kind === 'people_group',
+    queryKey: ['inspector-header-people-group', selection?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('people_groups')
+        .select('id,name')
+        .eq('id', (selection as { id: string }).id)
+        .limit(1);
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
+      return data[0] as { id: string; name: string };
+    },
+    retry: false,
+  });
+
   const isLoading =
     (!!selection &&
       selection.kind === 'region' &&
@@ -124,17 +145,24 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     (!!selection &&
       selection.kind === 'project' &&
       (projectHeader.isLoading ||
-        (!projectHeader.data && projectHeader.isFetching)));
+        (!projectHeader.data && projectHeader.isFetching))) ||
+    (!!selection &&
+      selection.kind === 'people_group' &&
+      (peopleGroupHeader.isLoading ||
+        (!peopleGroupHeader.data && peopleGroupHeader.isFetching)));
 
   const headerTitle =
     regionHeader.data?.name ||
     languageHeader.data?.name ||
     projectHeader.data?.name ||
+    peopleGroupHeader.data?.name ||
     '';
   const headerSubtitle = selection
     ? selection.kind === 'language_entity'
       ? 'LANGUAGE'
-      : selection.kind.toUpperCase()
+      : selection.kind === 'people_group'
+        ? 'PEOPLE GROUP'
+        : selection.kind.toUpperCase()
     : '';
 
   // Position classes
@@ -220,6 +248,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     }
                     languagesSettings={languagesSettings}
                     onLanguagesSettingsChange={onLanguagesSettingsChange}
+                    peopleGroupsSettings={props.peopleGroupsSettings}
+                    onPeopleGroupsSettingsChange={
+                      props.onPeopleGroupsSettingsChange
+                    }
                   />
                 </div>
               ))}

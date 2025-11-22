@@ -4,7 +4,8 @@ export type LayerKey =
   | 'countries'
   | 'projects'
   | 'globalListening'
-  | 'languages';
+  | 'languages'
+  | 'peopleGroups';
 
 interface LayerTogglesProps {
   value: Record<LayerKey, boolean>;
@@ -27,7 +28,13 @@ export const LayerToggles: React.FC<LayerTogglesProps> = ({
     <div className={className ?? ''}>
       <div className='text-sm font-medium mb-2'>Layers</div>
       {(
-        ['countries', 'projects', 'globalListening', 'languages'] as LayerKey[]
+        [
+          'countries',
+          'projects',
+          'globalListening',
+          'languages',
+          'peopleGroups',
+        ] as LayerKey[]
       ).map(k => (
         <label
           key={k}

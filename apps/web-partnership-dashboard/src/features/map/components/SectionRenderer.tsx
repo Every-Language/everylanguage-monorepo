@@ -13,6 +13,7 @@ import {
 import { JPPeopleGroupsSection } from '../sections/JPPeopleGroupsSection';
 import { JPCountryStatsSection } from '../sections/JPCountryStatsSection';
 import { JPLanguageStatsSection } from '../sections/JPLanguageStatsSection';
+import { PeopleGroupStatsSection } from '../sections/PeopleGroupStatsSection';
 import { GRNLanguageSampleSection } from '../sections/GRNLanguageSampleSection';
 import { GRNGospelResourcesSection } from '../sections/GRNGospelResourcesSection';
 import { useLanguageEntity } from '../hooks/useLanguageEntity';
@@ -39,6 +40,7 @@ const SECTION_TITLES: Record<SectionType, string> = {
   'jp-language-stats': 'Language Statistics',
   'grn-language-sample': 'Language Sample',
   'grn-gospel-resources': 'Gospel Resources',
+  'people-group-stats': 'People Group Statistics',
 };
 
 interface SectionRendererProps {
@@ -59,6 +61,10 @@ interface SectionRendererProps {
     clustered: boolean;
   };
   onLanguagesSettingsChange?: (settings: { clustered: boolean }) => void;
+  peopleGroupsSettings?: {
+    clustered: boolean;
+  };
+  onPeopleGroupsSettingsChange?: (settings: { clustered: boolean }) => void;
 }
 
 /**
@@ -75,6 +81,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
   onGlobalListeningSettingsChange,
   languagesSettings,
   onLanguagesSettingsChange,
+  peopleGroupsSettings,
+  onPeopleGroupsSettingsChange,
 }) => {
   // Get descendant IDs for language entities (used by progress and listening sections)
   const languageData = useLanguageEntity(
@@ -132,6 +140,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             onGlobalListeningSettingsChange={onGlobalListeningSettingsChange}
             languagesSettings={languagesSettings}
             onLanguagesSettingsChange={onLanguagesSettingsChange}
+            peopleGroupsSettings={peopleGroupsSettings}
+            onPeopleGroupsSettingsChange={onPeopleGroupsSettingsChange}
           />
         </CollapsibleSection>
       );
@@ -202,6 +212,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
           <LinkedEntitiesSection
             type='regions'
             parentId={selection.id}
+            parentType='language_entity'
             scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
           />
         );
@@ -211,8 +222,34 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
           <LinkedEntitiesSection
             type='languages'
             parentId={selection.id}
+            parentType='region'
             scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
           />
+        );
+      }
+      if (selection.kind === 'people_group') {
+        // Show both languages and regions for people groups
+        return renderSection(
+          <div className='space-y-4'>
+            <div>
+              <div className='text-sm font-medium mb-2'>Languages</div>
+              <LinkedEntitiesSection
+                type='languages'
+                parentId={selection.id}
+                parentType='people_group'
+                scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
+              />
+            </div>
+            <div>
+              <div className='text-sm font-medium mb-2'>Regions</div>
+              <LinkedEntitiesSection
+                type='regions'
+                parentId={selection.id}
+                parentType='people_group'
+                scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
+              />
+            </div>
+          </div>
         );
       }
       return null;
@@ -272,6 +309,8 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             onGlobalListeningSettingsChange={onGlobalListeningSettingsChange}
             languagesSettings={languagesSettings}
             onLanguagesSettingsChange={onLanguagesSettingsChange}
+            peopleGroupsSettings={peopleGroupsSettings}
+            onPeopleGroupsSettingsChange={onPeopleGroupsSettingsChange}
           />
         );
       }
@@ -320,6 +359,15 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
       if (selection.kind === 'language_entity') {
         return renderSection(
           <GRNGospelResourcesSection entityId={selection.id} />
+        );
+      }
+      return null;
+
+    case 'people-group-stats':
+      // Only show for people groups
+      if (selection.kind === 'people_group') {
+        return renderSection(
+          <PeopleGroupStatsSection entityId={selection.id} />
         );
       }
       return null;

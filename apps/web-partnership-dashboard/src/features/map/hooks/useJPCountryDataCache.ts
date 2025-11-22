@@ -16,6 +16,7 @@ import {
   extractISO3FromRegionSources,
 } from '../services/joshuaProjectApi';
 import { useJPPeopleGroupsByCountryPaginated } from './useJoshuaProject';
+import type { JPCountryCache } from '../types/databaseViews';
 
 /**
  * Fetches external ID sources for a region from our database
@@ -68,12 +69,13 @@ export function useJPCountryStatsCache(
       if (regionId) {
         try {
           // Fetch from mv_region_stats
-          const { data: cacheData, error: cacheError } = await supabase
+          const { data: cacheDataRaw, error: cacheError } = await supabase
             .from('mv_region_stats')
             .select('*')
             .eq('region_id', regionId)
             .single();
 
+          const cacheData = cacheDataRaw as JPCountryCache | null;
           if (!cacheError && cacheData) {
             // Transform cache data to JPCountry format
             const countryData: JPCountry = {
@@ -92,8 +94,8 @@ export function useJPCountryStatsCache(
               WBIncome: '', // Not available in cache
               WBPopulation: cacheData.population,
               Population: cacheData.population,
-              RLR3: null, // Not available in cache
-              PrimaryLanguageName: null, // Not available in cache
+              RLR3: '', // Not available in cache
+              PrimaryLanguageName: '', // Not available in cache
               PrimaryReligion: cacheData.religion_primary || '',
               ReligionSubdivision: null, // Not available in cache
               RLG3: cacheData.rlg3_primary?.toString() || '',
@@ -142,11 +144,13 @@ export function useJPCountryStatsCache(
                   100
               ),
               PCUnknown: 0,
-              SecurityLevel: cacheData.security_level || 0,
+              SecurityLevel:
+                (cacheData.security_level as number | undefined) || 0,
               LRofTheLRinPC: 0, // Not available in cache
               LRinPC: 0, // Not available in cache
               LeastReachedBasis: '', // Not available in cache
-              JPScale: cacheData.jpscale_ctry,
+              JPScale:
+                (cacheData.jpscale_ctry as number | null | undefined) ?? null,
               JPScaleText: cacheData.jpscale_text || null,
               JPScalePCtxt: null, // Not available in cache
               JPScalePCimg: cacheData.jpscale_image_url || null,
@@ -163,34 +167,55 @@ export function useJPCountryStatsCache(
               FIPS: cacheData.rog3 || '',
               Longitude: 0, // Not available in cache
               Latitude: 0, // Not available in cache
-              JF: null, // Not available in cache (country-level)
-              JFPrimaryText: null, // Not available in cache
-              JFPrimaryHist: null, // Not available in cache
-              GRN: null, // Not available in cache
-              AudioScripture: null, // Not available in cache
-              障Gospel: null, // Not available in cache
+              JF: '', // Not available in cache (country-level)
+              JFPrimaryText: '', // Not available in cache
+              JFPrimaryHist: '', // Not available in cache
+              GRN: '', // Not available in cache
+              AudioScripture: '', // Not available in cache
+              障Gospel: '', // Not available in cache
               IndigenousLanguage: null, // Not available in cache
               SomeMediumLanguage: null, // Not available in cache
               PrimaryMediumLanguage: null, // Not available in cache
               MediumTypeGospelPresentation: null, // Not available in cache
               Unengaged: null, // Not available in cache
               RaceCode: null, // Not available in cache
-              PeopleGroups: cacheData.people_group_count,
-              CntPeoples: cacheData.people_group_count,
+              PeopleGroups:
+                (cacheData.people_group_count as number | null | undefined) ??
+                null,
+              CntPeoples:
+                (cacheData.people_group_count as number | null | undefined) ??
+                null,
               CntPeoplesLR: null, // Not available in cache
-              CntPrimaryLanguages: cacheData.language_count,
+              CntPrimaryLanguages:
+                (cacheData.language_count as number | null | undefined) ?? null,
               PercentPeopleGroups: 0, // Not available in cache
               PoplPeoplesLR: null, // Not available in cache
               PoplPeoplesFPG: null, // Not available in cache
               ROL3OfficialLanguage: null, // Not available in cache
               TranslationUnspecifiedCount:
-                cacheData.languages_no_scripture || null,
-              TranslationNeeded: cacheData.languages_no_scripture || null,
+                (cacheData.languages_no_scripture as
+                  | number
+                  | null
+                  | undefined) ?? null,
+              TranslationNeeded:
+                (cacheData.languages_no_scripture as
+                  | number
+                  | null
+                  | undefined) ?? null,
               TranslationStarted: null, // Not available in cache
-              BiblePortions: cacheData.languages_portions || null,
-              BibleNewTestament: cacheData.languages_new_testament || null,
-              BibleComplete: cacheData.languages_full_bible || null,
-              JPScaleCtry: cacheData.jpscale_ctry,
+              BiblePortions:
+                (cacheData.languages_portions as number | null | undefined) ??
+                null,
+              BibleNewTestament:
+                (cacheData.languages_new_testament as
+                  | number
+                  | null
+                  | undefined) ?? null,
+              BibleComplete:
+                (cacheData.languages_full_bible as number | null | undefined) ??
+                null,
+              JPScaleCtry:
+                (cacheData.jpscale_ctry as number | null | undefined) ?? null,
             };
 
             return countryData;

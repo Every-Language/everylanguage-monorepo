@@ -204,7 +204,7 @@ export function useJPPeopleGroupsByCountryCache(
 
       try {
         // Query vw_people_groups_in_region with pagination and sorting
-        let query = supabase
+        const query = supabase
           .from('vw_people_groups_in_region')
           .select('*')
           .eq('region_id', regionId)
@@ -294,7 +294,7 @@ export function useJPPeopleGroupsByLanguageCache(
 
       try {
         // Query vw_people_groups_by_language with pagination and sorting
-        let query = supabase
+        const query = supabase
           .from('vw_people_groups_by_language')
           .select('*')
           .eq('language_entity_id', languageEntityId)

@@ -6,6 +6,7 @@ import { RouteSync } from '../inspector/components/RouteSync';
 import { MapProjectsLayer } from '../projects/MapProjectsLayer';
 import { GlobalListeningHeatmapLayer } from '../analytics/GlobalListeningHeatmapLayer';
 import { MapLanguagesLayer } from '../languages/MapLanguagesLayer';
+import { MapPeopleGroupsLayer } from '../people-groups/MapPeopleGroupsLayer';
 import {
   DEFAULT_COLOR_GRADIENT,
   DEFAULT_TIME_PERIOD_HOURS,
@@ -27,6 +28,7 @@ export const MapPage: React.FC = () => {
     countries: false,
     globalListening: false,
     languages: false,
+    peopleGroups: false,
   });
   const [globalListeningSettings, setGlobalListeningSettings] = React.useState<{
     timePeriodHours: number;
@@ -36,6 +38,11 @@ export const MapPage: React.FC = () => {
     colorGradient: DEFAULT_COLOR_GRADIENT,
   });
   const [languagesSettings, setLanguagesSettings] = React.useState<{
+    clustered: boolean;
+  }>({
+    clustered: false, // Default: show individual points
+  });
+  const [peopleGroupsSettings, setPeopleGroupsSettings] = React.useState<{
     clustered: boolean;
   }>({
     clustered: false, // Default: show individual points
@@ -124,6 +131,10 @@ export const MapPage: React.FC = () => {
             show={layers.languages}
             clustered={languagesSettings.clustered}
           />
+          <MapPeopleGroupsLayer
+            show={layers.peopleGroups}
+            clustered={peopleGroupsSettings.clustered}
+          />
 
           {/* Desktop panels */}
           <div className='hidden md:block'>
@@ -138,6 +149,8 @@ export const MapPage: React.FC = () => {
                 onGlobalListeningSettingsChange={setGlobalListeningSettings}
                 languagesSettings={languagesSettings}
                 onLanguagesSettingsChange={setLanguagesSettings}
+                peopleGroupsSettings={peopleGroupsSettings}
+                onPeopleGroupsSettingsChange={setPeopleGroupsSettings}
               />
             ))}
           </div>
@@ -155,6 +168,8 @@ export const MapPage: React.FC = () => {
               onGlobalListeningSettingsChange={setGlobalListeningSettings}
               languagesSettings={languagesSettings}
               onLanguagesSettingsChange={setLanguagesSettings}
+              peopleGroupsSettings={peopleGroupsSettings}
+              onPeopleGroupsSettingsChange={setPeopleGroupsSettings}
             />
           </div>
         </MapShell>

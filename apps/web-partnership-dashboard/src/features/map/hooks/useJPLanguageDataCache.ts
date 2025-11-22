@@ -13,6 +13,7 @@ import {
   fetchLanguageStats,
   extractROL3FromLanguageSources,
 } from '../services/joshuaProjectApi';
+import type { JPLanguageCache } from '../types/databaseViews';
 
 /**
  * Fetches external ID sources for a language entity from our database
@@ -64,38 +65,44 @@ function useJPLanguageStatsCache(
       if (languageEntityId) {
         try {
           // Fetch from mv_language_stats
-          const { data: cacheData, error: cacheError } = await supabase
+          const { data: cacheDataRaw, error: cacheError } = await supabase
             .from('mv_language_stats')
             .select('*')
             .eq('language_entity_id', languageEntityId)
             .single();
 
+          const cacheData = cacheDataRaw as JPLanguageCache | null;
           if (!cacheError && cacheData) {
             // Transform cache data to JPLanguage format
             const languageData: JPLanguage = {
-              ROL3: cacheData.rolv_code || cacheData.iso639_3 || '',
-              Language: cacheData.language_name || cacheData.iso639_3 || '',
-              HubCountry: cacheData.hub_country || null,
-              HubCountryISO: null, // Not available in cache
+              ROL3: (cacheData.rolv_code || cacheData.iso639_3 || '') as string,
+              Language: (cacheData.language_name ||
+                cacheData.iso639_3 ||
+                '') as string,
+              HubCountry: (cacheData.hub_country as string | null) || '',
+              HubCountryISO: '', // Not available in cache
               PoplPeoplesLR:
-                cacheData.least_reached_population &&
-                cacheData.least_reached_population > 0
-                  ? cacheData.least_reached_population
+                (cacheData.least_reached_population as number | null) &&
+                (cacheData.least_reached_population as number) > 0
+                  ? (cacheData.least_reached_population as number)
                   : null,
               PoplPeoplesFPG:
-                cacheData.frontier_population &&
-                cacheData.frontier_population > 0
-                  ? cacheData.frontier_population
+                (cacheData.frontier_population as number | null) &&
+                (cacheData.frontier_population as number) > 0
+                  ? (cacheData.frontier_population as number)
                   : null,
               PoplPeoples:
-                cacheData.population && cacheData.population > 0
-                  ? cacheData.population
+                (cacheData.population as number | null) &&
+                (cacheData.population as number) > 0
+                  ? (cacheData.population as number)
                   : null,
-              JPScalePC: cacheData.jp_scale,
-              PercentChristianPC: cacheData.percent_christian
+              JPScalePC: (cacheData.jp_scale as number | null) ?? null,
+              PercentChristianPC: (cacheData.percent_christian as number | null)
                 ? parseFloat(String(cacheData.percent_christian))
                 : 0,
-              PercentEvangelicalPC: cacheData.percent_evangelical
+              PercentEvangelicalPC: (cacheData.percent_evangelical as
+                | number
+                | null)
                 ? parseFloat(String(cacheData.percent_evangelical))
                 : 0,
               BibleYear: cacheData.bible_year
@@ -107,40 +114,71 @@ function useJPLanguageStatsCache(
               PortionsYear: cacheData.portions_year
                 ? parseInt(String(cacheData.portions_year), 10)
                 : null,
-              PrimaryReligion: cacheData.primary_religion || null,
+              PrimaryReligion:
+                (cacheData.primary_religion as string | null) || '',
               JPScaleText: null, // Not available in cache
               TranslationNeedQuestionable:
-                cacheData.translation_need_questionable ? 1 : 0,
-              AudioRecordings: cacheData.has_audio_recordings ? 'Y' : null,
-              BibleTranslationNeed: null, // Not available in cache
+                (cacheData.translation_need_questionable as boolean | null)
+                  ? 1
+                  : 0,
+              AudioRecordings: (cacheData.has_audio_recordings as
+                | boolean
+                | null)
+                ? 'Y'
+                : null,
+              BibleTranslationNeed: '', // Not available in cache
               GospelAccess: null, // Not available in cache
-              PercentEvangelical: cacheData.percent_evangelical
+              PercentEvangelical: (cacheData.percent_evangelical as
+                | number
+                | null)
                 ? parseFloat(String(cacheData.percent_evangelical))
                 : 0,
               NTPrimaryText: null, // Not available in cache
               BiblePrimaryText: null, // Not available in cache
               NTPrimaryAudio: null, // Not available in cache
               BiblePrimaryAudio: null, // Not available in cache
-              TranslationNeed: null, // Not available in cache
-              Countries: cacheData.country_count ?? 0,
-              Peoples: cacheData.people_group_count ?? 0,
-              HasJesusFilm: cacheData.has_jesus_film ? 'Y' : null,
-              JF: cacheData.has_jesus_film ? 'Y' : null,
-              HasAudioRecordings: cacheData.has_audio_recordings ? 'Y' : null,
+              TranslationNeed: '', // Not available in cache
+              Countries:
+                (cacheData.country_count as number | null | undefined) ??
+                (cacheData.nbr_countries as number | null) ??
+                0,
+              Peoples:
+                (cacheData.people_group_count as number | null | undefined) ??
+                (cacheData.nbr_pgics as number | null) ??
+                0,
+              HasJesusFilm: (cacheData.has_jesus_film as boolean | null)
+                ? 'Y'
+                : null,
+              JF: (cacheData.has_jesus_film as boolean | null) ? 'Y' : null,
+              HasAudioRecordings: (cacheData.has_audio_recordings as
+                | boolean
+                | null)
+                ? 'Y'
+                : null,
               BibleStatus:
-                cacheData.bible_status !== null ? cacheData.bible_status : null,
+                (cacheData.bible_status as number | null) !== null
+                  ? (cacheData.bible_status as number)
+                  : null,
               WebLangText: null,
-              Status: cacheData.status || null,
-              GRN_URL: cacheData.grn_url || null,
-              JF_URL: cacheData.jf_url || null,
-              FCBH_URL: cacheData.fcbh_url || null,
-              NbrPGICs: cacheData.people_group_count,
-              NbrCountries: cacheData.country_count,
-              PercentAdherents: cacheData.percent_christian
+              Status: (cacheData.status as string | null) ?? null,
+              GRN_URL: (cacheData.grn_url as string | null) ?? null,
+              JF_URL: (cacheData.jf_url as string | null) ?? null,
+              FCBH_URL: (cacheData.fcbh_url as string | null) ?? null,
+              NbrPGICs:
+                (cacheData.people_group_count as number | null | undefined) ??
+                (cacheData.nbr_pgics as number | null) ??
+                null,
+              NbrCountries:
+                (cacheData.country_count as number | null | undefined) ??
+                (cacheData.nbr_countries as number | null) ??
+                null,
+              PercentAdherents: (cacheData.percent_christian as number | null)
                 ? parseFloat(String(cacheData.percent_christian))
                 : null,
-              LeastReached: cacheData.least_reached ? 'Y' : null,
-              RLG3: cacheData.religion_code
+              LeastReached: (cacheData.least_reached as boolean | null)
+                ? 'Y'
+                : null,
+              RLG3: (cacheData.religion_code as string | number | null)
                 ? parseInt(String(cacheData.religion_code), 10)
                 : null,
             };

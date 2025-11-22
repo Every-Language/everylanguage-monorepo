@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   useJPCountryStats,
   useJPLanguageStats,
@@ -15,6 +16,12 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/solid';
+import { PeopleGroupCard } from '@/shared/components/PeopleGroupCard';
+import { usePeopleGroupIdFromPeopleId3 } from '../hooks/usePeopleGroupIdFromPeopleId3';
+import {
+  useSelection,
+  useSetSelection,
+} from '../inspector/state/inspectorStore';
 
 // Helper function to safely convert to number
 function safeToNumber(value: unknown): number | null {
@@ -49,6 +56,92 @@ type JPPeopleGroupsSectionProps = {
 
 type SortField = 'name' | 'population' | 'scale' | 'evangelical';
 type SortDirection = 'asc' | 'desc';
+
+// Wrapper component to handle PeopleID3 to people_group_id mapping
+const PeopleGroupCardWrapper: React.FC<{
+  group: any; // JPPeopleGroup type
+  type: 'language' | 'region';
+  entityId: string;
+}> = ({ group, type, entityId }) => {
+  const router = useRouter();
+  const selection = useSelection();
+  const setSelection = useSetSelection();
+
+  // Map PeopleID3 to people_group_id
+  const { data: peopleGroupId } = usePeopleGroupIdFromPeopleId3(
+    group.PeopleID3
+  );
+
+  if (!peopleGroupId) {
+    // Fallback to old display if mapping fails
+    return (
+      <div className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-3 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors'>
+        <div className='grid grid-cols-12 gap-2 items-start'>
+          <div className='col-span-5'>
+            <div className='font-medium text-sm leading-tight'>
+              {group.PeopNameInCountry}
+            </div>
+            {group.PrimaryLanguageName && (
+              <div className='text-xs text-neutral-500 mt-0.5'>
+                {group.PrimaryLanguageName}
+              </div>
+            )}
+          </div>
+          <div className='col-span-3 text-right text-sm'>
+            {formatPopulation(group.Population)}
+          </div>
+          <div className='col-span-2 flex justify-center'>
+            {getScaleBadge(group.JPScale)}
+          </div>
+          <div className='col-span-2 text-right text-sm font-medium text-accent-600 dark:text-accent-500'>
+            {formatPercent(group.PercentEvangelical)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <PeopleGroupCard
+      peopleGroupId={peopleGroupId}
+      contextualRegionId={type === 'region' ? entityId : undefined}
+      showName={true}
+      showPopulation={true}
+      showPrimaryLanguageBibleStatus={true}
+      showLanguageCount={false}
+      showCountryCount={false}
+      showImage={false}
+      isSelected={
+        selection?.kind === 'people_group' && selection.id === peopleGroupId
+      }
+      onClick={id => {
+        router.push(`/map/people-group/${encodeURIComponent(id)}`);
+        setSelection({ kind: 'people_group', id });
+      }}
+    />
+  );
+};
+
+// Helper functions (moved outside component)
+const getScaleBadge = (scale: number | null) => {
+  if (!scale) return null;
+
+  const scaleColors: Record<number, string> = {
+    1: 'bg-error-600',
+    2: 'bg-warning-500',
+    3: 'bg-accent-500',
+    4: 'bg-secondary-500',
+    5: 'bg-secondary-600',
+  };
+
+  return (
+    <span
+      className={`${scaleColors[scale] || 'bg-neutral-500'} text-white text-xs font-bold px-2 py-0.5 rounded`}
+    >
+      {scale}
+    </span>
+  );
+};
 
 /**
  * People Groups Section displays people groups from Joshua Project
@@ -169,27 +262,6 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
     );
   };
 
-  // Helper to format JP Scale
-  const getScaleBadge = (scale: number | null) => {
-    if (!scale) return null;
-
-    const scaleColors: Record<number, string> = {
-      1: 'bg-error-600',
-      2: 'bg-warning-500',
-      3: 'bg-accent-500',
-      4: 'bg-secondary-500',
-      5: 'bg-secondary-600',
-    };
-
-    return (
-      <span
-        className={`${scaleColors[scale] || 'bg-neutral-500'} text-white text-xs font-bold px-2 py-0.5 rounded`}
-      >
-        {scale}
-      </span>
-    );
-  };
-
   return (
     <div className='space-y-3'>
       {/* Summary and Pagination Controls */}
@@ -259,48 +331,12 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
       {/* People Groups List */}
       <div className='space-y-2'>
         {displayedGroups.map(group => (
-          <div
+          <PeopleGroupCardWrapper
             key={`${group.PeopleID3}-${group.ROG3}`}
-            className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-3 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors'
-          >
-            {/* Header row */}
-            <div className='grid grid-cols-12 gap-2 items-start'>
-              <div className='col-span-5'>
-                <div className='font-medium text-sm leading-tight'>
-                  {group.PeopNameInCountry}
-                </div>
-                {group.PrimaryLanguageName && (
-                  <div className='text-xs text-neutral-500 mt-0.5'>
-                    {group.PrimaryLanguageName}
-                  </div>
-                )}
-              </div>
-              <div className='col-span-3 text-right text-sm'>
-                {formatPopulation(group.Population)}
-              </div>
-              <div className='col-span-2 flex justify-center'>
-                {getScaleBadge(group.JPScale)}
-              </div>
-              <div className='col-span-2 text-right text-sm font-medium text-accent-600 dark:text-accent-500'>
-                {formatPercent(group.PercentEvangelical)}
-              </div>
-            </div>
-
-            {/* Details row */}
-            <div className='mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400'>
-              <span>{group.PrimaryReligion}</span>
-              {group.LeastReached === 'Y' && (
-                <span className='bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-400 px-2 py-0.5 rounded text-xs font-medium'>
-                  Least Reached
-                </span>
-              )}
-              {group.FrontierPeopleGroup === 'Y' && (
-                <span className='bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-400 px-2 py-0.5 rounded text-xs font-medium'>
-                  Frontier
-                </span>
-              )}
-            </div>
-          </div>
+            group={group}
+            type={type}
+            entityId={entityId}
+          />
         ))}
       </div>
 
