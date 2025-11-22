@@ -412,17 +412,27 @@ async function fetchPeopleGroupsPage(
 }
 
 async function fetchAllPeopleGroupsFromApi(
-  apiKey: string
+  apiKey: string,
+  maxPages?: number,
+  startPage?: number
 ): Promise<JpPeopleGroupCacheRow[]> {
   console.log(
     'Fetching all people groups from Joshua Project API (paginated)...'
   );
   const normalized: JpPeopleGroupCacheRow[] = [];
   const now = new Date().toISOString();
-  let page = 1;
+  let page = startPage || 1;
   let totalFetched = 0;
+  const MAX_PAGES = maxPages || 1000; // Limit pages to prevent timeout
 
   while (true) {
+    if (page > (startPage || 1) + MAX_PAGES - 1) {
+      console.log(
+        `Reached max pages limit (${MAX_PAGES} pages starting from ${startPage || 1}), stopping fetch`
+      );
+      break;
+    }
+
     console.log(`Fetching page ${page}...`);
     const { peopleGroups, hasMore } = await fetchPeopleGroupsPage(apiKey, page);
 
@@ -472,11 +482,26 @@ Deno.serve(async req => {
   }
 
   try {
+    // Parse optional maxPages and startPage from request body to allow incremental processing
+    let maxPages: number | undefined;
+    let startPage: number | undefined;
+    try {
+      const body = await req.json().catch(() => ({}));
+      maxPages = body?.maxPages;
+      startPage = body?.startPage;
+    } catch {
+      // Ignore JSON parse errors, use default
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
     const syncTimestamp = new Date().toISOString();
 
-    // Fetch all people groups from JP API
-    const allPeopleGroups = await fetchAllPeopleGroupsFromApi(jpApiKey);
+    // Fetch all people groups from JP API (with optional page limit and start page)
+    const allPeopleGroups = await fetchAllPeopleGroupsFromApi(
+      jpApiKey,
+      maxPages,
+      startPage
+    );
 
     console.log(
       `Upserting ${allPeopleGroups.length} people groups into cache...`
@@ -544,6 +569,12 @@ Deno.serve(async req => {
       total_fetched: allPeopleGroups.length,
       upserted,
       deleted,
+      max_pages_limit: maxPages || 1000,
+      start_page: startPage || 1,
+      end_page: (startPage || 1) + (maxPages || 1000) - 1,
+      note: maxPages
+        ? `Limited to ${maxPages} pages starting from page ${startPage || 1}`
+        : 'Processed all available pages',
     };
 
     console.log('JP people groups sync summary:', JSON.stringify(response));

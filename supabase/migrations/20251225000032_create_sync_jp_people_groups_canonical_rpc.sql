@@ -141,15 +141,15 @@ BEGIN
             v_errors := v_errors || jsonb_build_object('type', 'unmatched_region', 'message', v_error_message);
           END IF;
 
-          -- Check if people_groups_regions exists
-          SELECT id INTO v_people_group_region_id
-          FROM people_groups_regions
-          WHERE people_id3_rog3 = v_cache_row.people_id3_rog3
-            AND deleted_at IS NULL
-          LIMIT 1;
+          -- Skip region processing if region_id is NULL (unmatched region)
+          IF v_region_id IS NOT NULL THEN
+            -- Check if people_groups_regions exists
+            SELECT id INTO v_people_group_region_id
+            FROM people_groups_regions
+            WHERE people_id3_rog3 = v_cache_row.people_id3_rog3
+              AND deleted_at IS NULL
+            LIMIT 1;
 
-          -- Only create/update if we have a region_id or if entry doesn't exist yet
-          IF v_region_id IS NOT NULL OR v_people_group_region_id IS NULL THEN
             IF v_people_group_region_id IS NULL THEN
               -- Create new people_groups_regions entry
               INSERT INTO people_groups_regions (
@@ -331,6 +331,15 @@ BEGIN
             v_errors := v_errors || jsonb_build_object('type', 'processing_error', 'message', v_error_message);
       END;
   END LOOP;
+
+  -- Refresh materialized view for language people groups statistics
+  BEGIN
+    REFRESH MATERIALIZED VIEW CONCURRENTLY jp_language_people_groups_stats;
+  EXCEPTION
+    WHEN OTHERS THEN
+      -- If view doesn't exist yet, that's okay - migration will create it
+      NULL;
+  END;
 
   -- Return summary
   RETURN QUERY SELECT
