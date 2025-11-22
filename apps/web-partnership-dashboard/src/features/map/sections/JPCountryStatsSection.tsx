@@ -8,6 +8,7 @@ import {
   GlobeAltIcon,
   LanguageIcon,
 } from '@heroicons/react/24/outline';
+import { formatPopulationCompact } from '../utils/formatPopulation';
 
 type JPCountryStatsSectionProps = {
   entityId: string;
@@ -140,13 +141,9 @@ export const JPCountryStatsSection: React.FC<JPCountryStatsSectionProps> = ({
             Population
           </div>
           <div className='text-lg font-bold text-secondary-700 dark:text-secondary-300'>
-            {(() => {
-              const population =
-                countryStats.Population ?? countryStats.WBPopulation;
-              return population != null
-                ? `${(population / 1000000).toFixed(1)}M`
-                : 'N/A';
-            })()}
+            {formatPopulationCompact(
+              countryStats.Population ?? countryStats.WBPopulation
+            )}
           </div>
         </div>
 

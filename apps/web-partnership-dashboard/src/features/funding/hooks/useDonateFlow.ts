@@ -55,7 +55,16 @@ export function useDonateFlow() {
     setState(s => ({ ...s, selectedEntity: entity }));
 
   const next = () => setState(s => ({ ...s, step: s.step + 1 }));
-  const back = () => setState(s => ({ ...s, step: Math.max(0, s.step - 1) }));
+  const back = () =>
+    setState(s => {
+      // If on step 2 and intent is unrestricted, skip step 1 and go to step 0
+      // (since step 1 is skipped for unrestricted intents)
+      if (s.step === 2 && s.intent?.type === 'unrestricted') {
+        return { ...s, step: 0 };
+      }
+      // Otherwise, go back one step normally
+      return { ...s, step: Math.max(0, s.step - 1) };
+    });
   const reset = () => setState({ step: 0 });
 
   const initializeWithState = (

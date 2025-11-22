@@ -139,10 +139,23 @@ export const MapShell: React.FC<MapShellProps> = ({
     if (!map) return;
     setProjection(map, true);
     applyAtmosphere(map, resolvedTheme);
+
+    // Disable rotation interactions while keeping pan and zoom enabled
+    // Disable drag rotation (right-click + drag)
+    map.dragRotate?.disable();
+    // Disable touch rotation gesture (two-finger rotate on touch devices)
+    map.touchZoomRotate?.disableRotation();
+    // Disable keyboard rotation (note: this also disables keyboard panning)
+    map.keyboard?.disable();
+
     // Re-apply atmosphere after each style change
     map.on('style.load', () => {
       setProjection(map, true);
       applyAtmosphere(map, resolvedTheme);
+      // Re-disable rotation after style reload
+      map.dragRotate?.disable();
+      map.touchZoomRotate?.disableRotation();
+      map.keyboard?.disable();
     });
   }, [applyAtmosphere, resolvedTheme]);
 
@@ -257,8 +270,9 @@ export const MapShell: React.FC<MapShellProps> = ({
             padding={padding}
             minZoom={MIN_ZOOM}
             maxZoom={MAX_ZOOM}
+            dragRotate={false}
           >
-            <NavigationControl position='bottom-right' />
+            <NavigationControl position='bottom-right' showCompass={false} />
             {children}
           </Map>
         )}

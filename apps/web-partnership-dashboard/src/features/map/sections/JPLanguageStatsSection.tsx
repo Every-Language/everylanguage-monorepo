@@ -11,6 +11,7 @@ import {
   FilmIcon,
   SpeakerWaveIcon,
 } from '@heroicons/react/24/outline';
+import { formatPopulationCompact } from '../utils/formatPopulation';
 
 type JPLanguageStatsSectionProps = {
   entityId: string;
@@ -85,9 +86,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
             Population
           </div>
           <div className='text-lg font-bold text-secondary-700 dark:text-secondary-300'>
-            {calculatedPopulation != null
-              ? `${(calculatedPopulation / 1000000).toFixed(1)}M`
-              : 'N/A'}
+            {formatPopulationCompact(calculatedPopulation)}
           </div>
           {calculatedPopulation != null &&
             languageStats?.PoplPeoples == null &&
@@ -163,7 +162,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                   </span>
                   <div className='text-right'>
                     <div className='font-medium text-sm text-neutral-900 dark:text-neutral-100'>
-                      {(languageStats.PoplPeoplesLR / 1000000).toFixed(2)}M
+                      {formatPopulationCompact(languageStats.PoplPeoplesLR)}
                     </div>
                     {calculatedPopulation != null &&
                       calculatedPopulation > 0 && (
@@ -187,7 +186,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                   </span>
                   <div className='text-right'>
                     <div className='font-medium text-sm text-neutral-900 dark:text-neutral-100'>
-                      {(languageStats.PoplPeoplesFPG / 1000000).toFixed(2)}M
+                      {formatPopulationCompact(languageStats.PoplPeoplesFPG)}
                     </div>
                     {calculatedPopulation != null &&
                       calculatedPopulation > 0 && (
@@ -256,133 +255,127 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
           {/* Scripture Status Cards */}
           <div className='grid grid-cols-3 gap-2'>
             {/* Whole Bible */}
-            <div
-              className={`rounded-lg p-2 border ${
+            {(() => {
+              const hasWholeBible =
                 (typeof languageStats.BibleStatus === 'number' &&
                   languageStats.BibleStatus === 5) ||
-                languageStats.BibleYear
-                  ? 'bg-success-50 dark:bg-success-950/30 border-success-200 dark:border-success-800'
-                  : 'bg-neutral-50 dark:bg-neutral-800/30 border-neutral-200 dark:border-neutral-800'
-              }`}
-            >
-              <div
-                className={`text-xs font-medium mb-1 ${
-                  (typeof languageStats.BibleStatus === 'number' &&
-                    languageStats.BibleStatus === 5) ||
-                  languageStats.BibleYear
-                    ? 'text-success-600 dark:text-success-400'
-                    : 'text-neutral-500'
-                }`}
-              >
-                Whole Bible
-              </div>
-              <div
-                className={`text-sm font-bold ${
-                  (typeof languageStats.BibleStatus === 'number' &&
-                    languageStats.BibleStatus === 5) ||
-                  languageStats.BibleYear
-                    ? 'text-success-700 dark:text-success-300'
-                    : 'text-neutral-400'
-                }`}
-              >
-                {(typeof languageStats.BibleStatus === 'number' &&
-                  languageStats.BibleStatus === 5) ||
-                languageStats.BibleYear
-                  ? 'Yes'
-                  : 'No'}
-              </div>
-              {languageStats.BibleYear && (
-                <div className='text-xs text-success-600 dark:text-success-400 mt-0.5'>
-                  {languageStats.BibleYear}
+                languageStats.BibleYear;
+              return (
+                <div
+                  className={`rounded-lg p-2 border ${
+                    hasWholeBible
+                      ? 'bg-success-50 dark:bg-success-900 border-success-200 dark:border-success-800'
+                      : 'bg-error-50 dark:bg-error-900 border-error-200 dark:border-error-800'
+                  }`}
+                >
+                  <div
+                    className={`text-xs font-medium mb-1 ${
+                      hasWholeBible
+                        ? 'text-success-600 dark:text-success-300'
+                        : 'text-error-600 dark:text-error-300'
+                    }`}
+                  >
+                    Whole Bible
+                  </div>
+                  <div
+                    className={`text-sm font-bold ${
+                      hasWholeBible
+                        ? 'text-success-700 dark:text-success-200'
+                        : 'text-error-700 dark:text-error-200'
+                    }`}
+                  >
+                    {hasWholeBible ? 'Yes' : 'No'}
+                  </div>
+                  {languageStats.BibleYear && (
+                    <div className='text-xs text-success-600 dark:text-success-300 mt-0.5'>
+                      {languageStats.BibleYear}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
 
             {/* New Testament */}
-            <div
-              className={`rounded-lg p-2 border ${
+            {(() => {
+              const hasNewTestament =
                 languageStats.NTYear ||
                 (typeof languageStats.BibleStatus === 'number' &&
-                  languageStats.BibleStatus >= 4)
-                  ? 'bg-accent-50 dark:bg-accent-950/30 border-accent-200 dark:border-accent-800'
-                  : 'bg-neutral-50 dark:bg-neutral-800/30 border-neutral-200 dark:border-neutral-800'
-              }`}
-            >
-              <div
-                className={`text-xs font-medium mb-1 ${
-                  languageStats.NTYear ||
-                  (typeof languageStats.BibleStatus === 'number' &&
-                    languageStats.BibleStatus >= 4)
-                    ? 'text-accent-600 dark:text-accent-400'
-                    : 'text-neutral-500'
-                }`}
-              >
-                New Testament
-              </div>
-              <div
-                className={`text-sm font-bold ${
-                  languageStats.NTYear ||
-                  (typeof languageStats.BibleStatus === 'number' &&
-                    languageStats.BibleStatus >= 4)
-                    ? 'text-accent-700 dark:text-accent-300'
-                    : 'text-neutral-400'
-                }`}
-              >
-                {languageStats.NTYear ||
-                (typeof languageStats.BibleStatus === 'number' &&
-                  languageStats.BibleStatus >= 4)
-                  ? 'Yes'
-                  : 'No'}
-              </div>
-              {languageStats.NTYear && (
-                <div className='text-xs text-accent-600 dark:text-accent-400 mt-0.5'>
-                  {languageStats.NTYear}
+                  languageStats.BibleStatus >= 4);
+              return (
+                <div
+                  className={`rounded-lg p-2 border ${
+                    hasNewTestament
+                      ? 'bg-success-50 dark:bg-success-900 border-success-200 dark:border-success-800'
+                      : 'bg-error-50 dark:bg-error-900 border-error-200 dark:border-error-800'
+                  }`}
+                >
+                  <div
+                    className={`text-xs font-medium mb-1 ${
+                      hasNewTestament
+                        ? 'text-success-600 dark:text-success-300'
+                        : 'text-error-600 dark:text-error-300'
+                    }`}
+                  >
+                    New Testament
+                  </div>
+                  <div
+                    className={`text-sm font-bold ${
+                      hasNewTestament
+                        ? 'text-success-700 dark:text-success-200'
+                        : 'text-error-700 dark:text-error-200'
+                    }`}
+                  >
+                    {hasNewTestament ? 'Yes' : 'No'}
+                  </div>
+                  {languageStats.NTYear && (
+                    <div className='text-xs text-success-600 dark:text-success-300 mt-0.5'>
+                      {languageStats.NTYear}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
 
             {/* Portions */}
-            <div
-              className={`rounded-lg p-2 border ${
+            {(() => {
+              const hasPortions =
                 languageStats.PortionsYear ||
                 (typeof languageStats.BibleStatus === 'number' &&
-                  languageStats.BibleStatus >= 3)
-                  ? 'bg-warning-50 dark:bg-warning-900/40 border-warning-200 dark:border-warning-800'
-                  : 'bg-neutral-50 dark:bg-neutral-800/30 border-neutral-200 dark:border-neutral-800'
-              }`}
-            >
-              <div
-                className={`text-xs font-medium mb-1 ${
-                  languageStats.PortionsYear ||
-                  (typeof languageStats.BibleStatus === 'number' &&
-                    languageStats.BibleStatus >= 3)
-                    ? 'text-warning-600 dark:text-warning-400'
-                    : 'text-neutral-500 dark:text-neutral-400'
-                }`}
-              >
-                Portions
-              </div>
-              <div
-                className={`text-sm font-bold ${
-                  languageStats.PortionsYear ||
-                  (typeof languageStats.BibleStatus === 'number' &&
-                    languageStats.BibleStatus >= 3)
-                    ? 'text-warning-700 dark:text-warning-300'
-                    : 'text-neutral-400 dark:text-neutral-500'
-                }`}
-              >
-                {languageStats.PortionsYear ||
-                (typeof languageStats.BibleStatus === 'number' &&
-                  languageStats.BibleStatus >= 3)
-                  ? 'Yes'
-                  : 'No'}
-              </div>
-              {languageStats.PortionsYear && (
-                <div className='text-xs text-warning-600 dark:text-warning-400 mt-0.5'>
-                  {languageStats.PortionsYear}
+                  languageStats.BibleStatus >= 3);
+              return (
+                <div
+                  className={`rounded-lg p-2 border ${
+                    hasPortions
+                      ? 'bg-success-50 dark:bg-success-900 border-success-200 dark:border-success-800'
+                      : 'bg-error-50 dark:bg-error-900 border-error-200 dark:border-error-800'
+                  }`}
+                >
+                  <div
+                    className={`text-xs font-medium mb-1 ${
+                      hasPortions
+                        ? 'text-success-600 dark:text-success-300'
+                        : 'text-error-600 dark:text-error-300'
+                    }`}
+                  >
+                    Portions
+                  </div>
+                  <div
+                    className={`text-sm font-bold ${
+                      hasPortions
+                        ? 'text-success-700 dark:text-success-200'
+                        : 'text-error-700 dark:text-error-200'
+                    }`}
+                  >
+                    {hasPortions ? 'Yes' : 'No'}
+                  </div>
+                  {languageStats.PortionsYear && (
+                    <div className='text-xs text-success-600 dark:text-success-300 mt-0.5'>
+                      {languageStats.PortionsYear}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
           </div>
 
           {/* Media Resources */}

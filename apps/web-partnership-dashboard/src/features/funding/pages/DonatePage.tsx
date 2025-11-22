@@ -48,7 +48,8 @@ export const DonatePage: React.FC = () => {
 
   const confirmLeave = () => {
     setShowConfirmDialog(false);
-    router.back();
+    // Navigate directly to /donate instead of using router.back() to avoid blank screens
+    router.push('/donate');
   };
 
   const pageContent = (
