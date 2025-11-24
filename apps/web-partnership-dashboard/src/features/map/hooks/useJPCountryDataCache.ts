@@ -68,6 +68,9 @@ export function useJPCountryStatsCache(
       // Try cache first
       if (regionId) {
         try {
+          console.log(
+            `[useJPCountryStatsCache] Attempting cache lookup for region: ${regionId}`
+          );
           // Fetch from mv_region_stats
           const { data: cacheDataRaw, error: cacheError } = await supabase
             .from('mv_region_stats')
@@ -77,6 +80,9 @@ export function useJPCountryStatsCache(
 
           const cacheData = cacheDataRaw as JPCountryCache | null;
           if (!cacheError && cacheData) {
+            console.log(
+              `[useJPCountryStatsCache] ✅ CACHE HIT for region: ${regionId}`
+            );
             // Transform cache data to JPCountry format
             const countryData: JPCountry = {
               ROG3: cacheData.rog3 || '',
@@ -219,11 +225,20 @@ export function useJPCountryStatsCache(
             };
 
             return countryData;
+          } else {
+            // Cache query succeeded but no data found
+            console.log(
+              `[useJPCountryStatsCache] ⚠️ CACHE MISS for region: ${regionId} - No data found`,
+              {
+                cacheError: cacheError?.code,
+                cacheErrorMsg: cacheError?.message,
+              }
+            );
           }
         } catch (error) {
           // Cache fetch failed, fall through to API fallback
           console.warn(
-            `Cache fetch failed for region ${regionId}, falling back to API:`,
+            `[useJPCountryStatsCache] ⚠️ CACHE ERROR for region ${regionId}, falling back to API:`,
             error
           );
         }
@@ -231,12 +246,30 @@ export function useJPCountryStatsCache(
 
       // Fallback to API if cache miss or error
       if (fips) {
-        return await fetchCountryStatsByFIPS(fips);
+        console.log(
+          `[useJPCountryStatsCache] 🔄 API FALLBACK (FIPS) for region: ${regionId} (FIPS: ${fips})`
+        );
+        const apiData = await fetchCountryStatsByFIPS(fips);
+        console.log(
+          `[useJPCountryStatsCache] ${apiData ? '✅ API SUCCESS (FIPS)' : '❌ API RETURNED NULL (FIPS)'} for region: ${regionId}`
+        );
+        return apiData;
       }
       if (iso3) {
-        return await fetchCountryStats(iso3);
+        console.log(
+          `[useJPCountryStatsCache] 🔄 API FALLBACK (ISO3) for region: ${regionId} (ISO3: ${iso3})`
+        );
+        const apiData = await fetchCountryStats(iso3);
+        console.log(
+          `[useJPCountryStatsCache] ${apiData ? '✅ API SUCCESS (ISO3)' : '❌ API RETURNED NULL (ISO3)'} for region: ${regionId}`
+        );
+        return apiData;
       }
 
+      console.log(
+        `[useJPCountryStatsCache] ❌ NO API FALLBACK - Missing FIPS and ISO3 for region: ${regionId}`,
+        { externalIds, fips, iso3 }
+      );
       return null;
     },
     enabled: !!(regionId && (fips || iso3)) && !idsLoading,

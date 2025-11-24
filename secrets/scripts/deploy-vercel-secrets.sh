@@ -36,6 +36,7 @@ fi
 # Vercel configuration
 VERCEL_PROJECT_DASHBOARD="everylanguage-project-dashboard"
 VERCEL_PARTNERSHIP_DASHBOARD="everylanguage-partnership-dashboard"
+VERCEL_ADMIN_DASHBOARD="everylanguage-admin-dashboard"
 VERCEL_TEAM_ID="matthew-projects"
 
 echo -e "${BLUE}================================================${NC}"
@@ -98,17 +99,27 @@ get_vercel_project_id() {
     local team_id=$2
     local token=$3
     
-    # Build URL with optional team parameter
-    local url="https://api.vercel.com/v9/projects/$project_name"
+    # Build URL to list projects with optional team parameter
+    local url="https://api.vercel.com/v9/projects"
     if [ -n "$team_id" ]; then
         url="$url?teamId=$team_id"
     fi
     
-    # Use Vercel API to get project info
+    # Use Vercel API to list all projects
     local response=$(curl -s -H "Authorization: Bearer $token" "$url")
     
-    # Extract project ID from response using jq
-    local project_id=$(echo "$response" | jq -r '.id // empty')
+    # Extract project ID by filtering by name using jq
+    local project_id=$(echo "$response" | jq -r --arg name "$project_name" '.projects[]? | select(.name == $name) | .id // empty' | head -1)
+    
+    # If not found, try the direct endpoint as fallback
+    if [ -z "$project_id" ]; then
+        local direct_url="https://api.vercel.com/v9/projects/$project_name"
+        if [ -n "$team_id" ]; then
+            direct_url="$direct_url?teamId=$team_id"
+        fi
+        local direct_response=$(curl -s -H "Authorization: Bearer $token" "$direct_url")
+        project_id=$(echo "$direct_response" | jq -r '.id // empty')
+    fi
     
     echo "$project_id"
 }
@@ -139,6 +150,9 @@ deploy_vercel_secret() {
     local project_id=$(get_vercel_project_id "$project" "$VERCEL_TEAM_ID" "$token")
     if [ -z "$project_id" ]; then
         echo -e "${RED}  ✗ Vercel ($project - $environment): $secret_name (project not found)${NC}"
+        if [ -n "$DEBUG_VERCEL" ]; then
+            echo "    Attempted to find project: $project in team: $VERCEL_TEAM_ID" >&2
+        fi
         FAILURE_COUNT=$((FAILURE_COUNT + 1))
         return
     fi
@@ -179,14 +193,16 @@ echo -e "${YELLOW}Vercel Shared Environment Variables:${NC}"
 # Deploy VITE_* and Next.js variables from .env.shared to both environments
 if [ -f "$SECRETS_DIR/.env.shared" ]; then
     while IFS='=' read -r key value; do
-        # Deploy VITE_* variables to both projects
+        # Deploy VITE_* variables to all Vite-based projects
         if [[ "$key" =~ ^VITE_ ]]; then
             # Deploy to preview environment
             deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "preview"
             deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+            deploy_vercel_secret "$key" "$value" "$VERCEL_ADMIN_DASHBOARD" "preview"
             # Deploy to production environment
             deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "production"
             deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+            deploy_vercel_secret "$key" "$value" "$VERCEL_ADMIN_DASHBOARD" "production"
             
             # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
             if [[ "$key" == "VITE_SUPABASE_URL" ]]; then
@@ -232,17 +248,36 @@ if [ -n "$DEV_PROJECT_ID" ]; then
     VITE_SUPABASE_URL=$(derive_supabase_url "$DEV_PROJECT_ID")
     deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PROJECT_DASHBOARD" "preview"
     deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_ADMIN_DASHBOARD" "preview"
     # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
     deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+else
+    # Try to get VITE_SUPABASE_URL directly from env file as fallback
+    VITE_SUPABASE_URL=$(get_env_value "VITE_SUPABASE_URL" "$SECRETS_DIR/.env.development" || true)
+    if [ -n "$VITE_SUPABASE_URL" ]; then
+        deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PROJECT_DASHBOARD" "preview"
+        deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+        deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_ADMIN_DASHBOARD" "preview"
+        deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    else
+        echo -e "${YELLOW}  ⊘ Skipping VITE_SUPABASE_URL (SUPABASE_PROJECT_ID not found in .env.development)${NC}"
+    fi
 fi
 
 # Deploy VITE_SUPABASE_PUBLISHABLE_KEY from SUPABASE_PUBLISHABLE_KEY
 VITE_SUPABASE_PUBLISHABLE_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development" || true)
+if [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+    # Try to get VITE_SUPABASE_PUBLISHABLE_KEY directly from env file as fallback
+    VITE_SUPABASE_PUBLISHABLE_KEY=$(get_env_value "VITE_SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development" || true)
+fi
 if [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
     deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "preview"
     deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_ADMIN_DASHBOARD" "preview"
     # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
     deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+else
+    echo -e "${YELLOW}  ⊘ Skipping VITE_SUPABASE_PUBLISHABLE_KEY (not found in .env.development)${NC}"
 fi
 
 # Deploy VITE_SUPABASE_ANON_KEY if it exists (alternative name)
@@ -250,17 +285,25 @@ VITE_SUPABASE_ANON_KEY=$(get_env_value "VITE_SUPABASE_ANON_KEY" "$SECRETS_DIR/.e
 if [ -n "$VITE_SUPABASE_ANON_KEY" ]; then
     deploy_vercel_secret "VITE_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PROJECT_DASHBOARD" "preview"
     deploy_vercel_secret "VITE_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    deploy_vercel_secret "VITE_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_ADMIN_DASHBOARD" "preview"
     # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
     deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
 fi
 
 # Deploy VITE_STRIPE_PUBLISHABLE_KEY from STRIPE_PUBLISHABLE_KEY
 VITE_STRIPE_PUBLISHABLE_KEY=$(get_env_value "STRIPE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development" || true)
+if [ -z "$VITE_STRIPE_PUBLISHABLE_KEY" ]; then
+    # Try to get VITE_STRIPE_PUBLISHABLE_KEY directly from env file as fallback
+    VITE_STRIPE_PUBLISHABLE_KEY=$(get_env_value "VITE_STRIPE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development" || true)
+fi
 if [ -n "$VITE_STRIPE_PUBLISHABLE_KEY" ]; then
     deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "preview"
     deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+    deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_ADMIN_DASHBOARD" "preview"
     # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
     deploy_vercel_secret "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+else
+    echo -e "${YELLOW}  ⊘ Skipping VITE_STRIPE_PUBLISHABLE_KEY (not found in .env.development)${NC}"
 fi
 
 # Deploy any other VITE_* variables that might exist (for backward compatibility)
@@ -269,6 +312,7 @@ while IFS='=' read -r key value; do
     if [[ "$key" =~ ^VITE_ ]] && [[ ! "$key" =~ ^(VITE_SUPABASE_URL|VITE_SUPABASE_PUBLISHABLE_KEY|VITE_STRIPE_PUBLISHABLE_KEY)$ ]]; then
         deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "preview"
         deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "preview"
+        deploy_vercel_secret "$key" "$value" "$VERCEL_ADMIN_DASHBOARD" "preview"
     fi
     # Deploy NEXT_PUBLIC_* variables for Next.js apps (partnership dashboard)
     if [[ "$key" =~ ^NEXT_PUBLIC_ ]]; then
@@ -297,17 +341,36 @@ if [ -n "$PROD_PROJECT_ID" ]; then
     VITE_SUPABASE_URL=$(derive_supabase_url "$PROD_PROJECT_ID")
     deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PROJECT_DASHBOARD" "production"
     deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_ADMIN_DASHBOARD" "production"
     # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
     deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+else
+    # Try to get VITE_SUPABASE_URL directly from env file as fallback
+    VITE_SUPABASE_URL=$(get_env_value "VITE_SUPABASE_URL" "$SECRETS_DIR/.env.production" || true)
+    if [ -n "$VITE_SUPABASE_URL" ]; then
+        deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PROJECT_DASHBOARD" "production"
+        deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+        deploy_vercel_secret "VITE_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_ADMIN_DASHBOARD" "production"
+        deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_URL" "$VITE_SUPABASE_URL" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    else
+        echo -e "${YELLOW}  ⊘ Skipping VITE_SUPABASE_URL (SUPABASE_PROJECT_ID not found in .env.production)${NC}"
+    fi
 fi
 
 # Deploy VITE_SUPABASE_PUBLISHABLE_KEY from SUPABASE_PUBLISHABLE_KEY
 VITE_SUPABASE_PUBLISHABLE_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production" || true)
+if [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+    # Try to get VITE_SUPABASE_PUBLISHABLE_KEY directly from env file as fallback
+    VITE_SUPABASE_PUBLISHABLE_KEY=$(get_env_value "VITE_SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production" || true)
+fi
 if [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
     deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "production"
     deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    deploy_vercel_secret "VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_ADMIN_DASHBOARD" "production"
     # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
     deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$VITE_SUPABASE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+else
+    echo -e "${YELLOW}  ⊘ Skipping VITE_SUPABASE_PUBLISHABLE_KEY (not found in .env.production)${NC}"
 fi
 
 # Deploy VITE_SUPABASE_ANON_KEY if it exists (alternative name)
@@ -315,17 +378,25 @@ VITE_SUPABASE_ANON_KEY=$(get_env_value "VITE_SUPABASE_ANON_KEY" "$SECRETS_DIR/.e
 if [ -n "$VITE_SUPABASE_ANON_KEY" ]; then
     deploy_vercel_secret "VITE_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PROJECT_DASHBOARD" "production"
     deploy_vercel_secret "VITE_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    deploy_vercel_secret "VITE_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_ADMIN_DASHBOARD" "production"
     # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
     deploy_vercel_secret "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$VITE_SUPABASE_ANON_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
 fi
 
 # Deploy VITE_STRIPE_PUBLISHABLE_KEY from STRIPE_PUBLISHABLE_KEY
 VITE_STRIPE_PUBLISHABLE_KEY=$(get_env_value "STRIPE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production" || true)
+if [ -z "$VITE_STRIPE_PUBLISHABLE_KEY" ]; then
+    # Try to get VITE_STRIPE_PUBLISHABLE_KEY directly from env file as fallback
+    VITE_STRIPE_PUBLISHABLE_KEY=$(get_env_value "VITE_STRIPE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production" || true)
+fi
 if [ -n "$VITE_STRIPE_PUBLISHABLE_KEY" ]; then
     deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PROJECT_DASHBOARD" "production"
     deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+    deploy_vercel_secret "VITE_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_ADMIN_DASHBOARD" "production"
     # Also deploy as NEXT_PUBLIC_* for Next.js app (partnership dashboard)
     deploy_vercel_secret "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$VITE_STRIPE_PUBLISHABLE_KEY" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+else
+    echo -e "${YELLOW}  ⊘ Skipping VITE_STRIPE_PUBLISHABLE_KEY (not found in .env.production)${NC}"
 fi
 
 # Deploy any other VITE_* variables that might exist (for backward compatibility)
@@ -334,6 +405,7 @@ while IFS='=' read -r key value; do
     if [[ "$key" =~ ^VITE_ ]] && [[ ! "$key" =~ ^(VITE_SUPABASE_URL|VITE_SUPABASE_PUBLISHABLE_KEY|VITE_STRIPE_PUBLISHABLE_KEY)$ ]]; then
         deploy_vercel_secret "$key" "$value" "$VERCEL_PROJECT_DASHBOARD" "production"
         deploy_vercel_secret "$key" "$value" "$VERCEL_PARTNERSHIP_DASHBOARD" "production"
+        deploy_vercel_secret "$key" "$value" "$VERCEL_ADMIN_DASHBOARD" "production"
     fi
     # Deploy NEXT_PUBLIC_* variables for Next.js apps (partnership dashboard)
     if [[ "$key" =~ ^NEXT_PUBLIC_ ]]; then

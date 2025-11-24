@@ -202,25 +202,6 @@ export const MapShell: React.FC<MapShellProps> = ({
     async (e: maplibregl.MapLayerMouseEvent) => {
       try {
         if (!countriesEnabled) {
-          const map = mapRef.current?.getMap() as unknown as MLMap | undefined;
-          if (!map) return;
-          const features = map.queryRenderedFeatures(e.point);
-          const hasInteractable = features.some(f => {
-            const layerId =
-              (f as unknown as { layer?: { id?: string } }).layer?.id || '';
-            // Treat existing analytics layers as interactable, suppress toast
-            return (
-              layerId.includes('listens-heatmap') ||
-              layerId.includes('region-listens')
-            );
-          });
-          if (!hasInteractable) {
-            toast({
-              description: 'Turn on the countries layer to see country borders',
-              duration: 3000,
-              variant: 'info',
-            });
-          }
           return;
         }
 

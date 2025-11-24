@@ -6,7 +6,6 @@ import { PeopleGroupsSettingsSection } from './PeopleGroupsSettingsSection';
 import { useProjectsEnabled } from '@/shared/hooks/useFeatureFlags';
 import type { ColorGradient } from '../analytics/types';
 import type { SelectionMode } from '../inspector/state/inspectorStore';
-import { SelectionModeTabs } from '../components/SelectionModeTabs';
 
 export type LayerState = Record<LayerKey, boolean>;
 
@@ -68,9 +67,6 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
 
   const content = (
     <div>
-      <div className='mb-4'>
-        <SelectionModeTabs />
-      </div>
       <div className='text-sm font-medium mb-2'>Layers</div>
       {(
         [

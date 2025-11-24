@@ -64,7 +64,7 @@ This directory contains template files for managing secrets across GitHub and Ve
 The deployment script automatically deploys secrets to:
 
 1. **GitHub Actions** (repository-level and environment secrets)
-2. **Vercel** (preview and production environments for both frontend projects)
+2. **Vercel** (preview and production environments for all three frontend projects)
 3. **Supabase Edge Functions** (development and production projects)
 
 ### Vercel Secrets
@@ -73,32 +73,32 @@ The following secrets are deployed to Vercel projects (both preview and producti
 
 **From `.env.shared`:**
 
-- Any `VITE_*` variables (shared across both environments, deployed to both projects)
-- Any `NEXT_PUBLIC_*` variables (Next.js client-side, deployed to partnership dashboard)
-- `JOSHUA_PROJECT_API_KEY` (Next.js server-side, deployed to partnership dashboard)
+- Any `VITE_*` variables (shared across both environments, deployed to all three projects: project dashboard, partnership dashboard, and admin dashboard)
+- Any `NEXT_PUBLIC_*` variables (Next.js client-side, deployed to partnership dashboard only)
+- `JOSHUA_PROJECT_API_KEY` (Next.js server-side, deployed to partnership dashboard only)
 
 **From `.env.development` (Preview Environment):**
 
 - `VITE_SUPABASE_URL` (derived from `SUPABASE_PROJECT_ID`)
 - `VITE_SUPABASE_PUBLISHABLE_KEY` (from `SUPABASE_PUBLISHABLE_KEY`)
 - `VITE_STRIPE_PUBLISHABLE_KEY` (from `STRIPE_PUBLISHABLE_KEY`)
-- Any other `VITE_*` variables (deployed to both projects)
-- Any `NEXT_PUBLIC_*` variables (deployed to partnership dashboard)
-- `JOSHUA_PROJECT_API_KEY` (deployed to partnership dashboard)
+- Any other `VITE_*` variables (deployed to all three projects: project dashboard, partnership dashboard, and admin dashboard)
+- Any `NEXT_PUBLIC_*` variables (deployed to partnership dashboard only)
+- `JOSHUA_PROJECT_API_KEY` (deployed to partnership dashboard only)
 
 **From `.env.production` (Production Environment):**
 
 - `VITE_SUPABASE_URL` (derived from `SUPABASE_PROJECT_ID`)
 - `VITE_SUPABASE_PUBLISHABLE_KEY` (from `SUPABASE_PUBLISHABLE_KEY`)
 - `VITE_STRIPE_PUBLISHABLE_KEY` (from `STRIPE_PUBLISHABLE_KEY`)
-- Any other `VITE_*` variables (deployed to both projects)
-- Any `NEXT_PUBLIC_*` variables (deployed to partnership dashboard)
-- `JOSHUA_PROJECT_API_KEY` (deployed to partnership dashboard)
+- Any other `VITE_*` variables (deployed to all three projects: project dashboard, partnership dashboard, and admin dashboard)
+- Any `NEXT_PUBLIC_*` variables (deployed to partnership dashboard only)
+- `JOSHUA_PROJECT_API_KEY` (deployed to partnership dashboard only)
 
 **Note:**
 
 - Secrets from `.env.shared` are deployed to both preview and production environments, making them ideal for shared configuration values.
-- `VITE_*` variables are for Vite-based apps (project dashboard)
+- `VITE_*` variables are for Vite-based apps (project dashboard and admin dashboard)
 - `NEXT_PUBLIC_*` variables are for Next.js client-side (partnership dashboard)
 - Server-side Next.js variables (like `JOSHUA_PROJECT_API_KEY`) don't need a prefix and are deployed to the partnership dashboard only
 

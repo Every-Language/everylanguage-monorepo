@@ -71,11 +71,18 @@ const LinkedPeopleGroupsSection: React.FC<{
   const peopleGroupsQuery = isLanguage
     ? languagePeopleGroupsQuery
     : countryPeopleGroupsQuery;
-  const { data: peopleGroups = [], isLoading } = peopleGroupsQuery;
+  const { data: peopleGroupsData, isLoading } = peopleGroupsQuery;
+
+  // Ensure peopleGroups is always an array
+  const peopleGroups = Array.isArray(peopleGroupsData) ? peopleGroupsData : [];
 
   // Filter people groups by search query
   const filtered = React.useMemo(() => {
     if (!query.trim()) return peopleGroups;
+    // Additional safety check before creating Fuse instance
+    if (!Array.isArray(peopleGroups) || peopleGroups.length === 0) {
+      return [];
+    }
     const fuse = new Fuse(peopleGroups, {
       keys: ['PeopNameInCountry', 'PrimaryLanguageName'],
       threshold: 0.35,
@@ -250,15 +257,47 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
     return 'global-translation-data';
   });
 
+  // Track previous selection and mode to detect changes
+  const prevSelectionRef = React.useRef<MapSelection | null>(null);
+  const prevModeRef = React.useRef<typeof selectionMode>(selectionMode);
+
   // Auto-switch tab when selection changes
   React.useEffect(() => {
-    setActiveTab(getInitialTab());
-  }, [getInitialTab]);
+    const selectionChanged =
+      prevSelectionRef.current?.kind !== selection?.kind ||
+      prevSelectionRef.current?.id !== selection?.id;
+
+    const modeChanged = prevModeRef.current !== selectionMode;
+
+    if (selectionChanged) {
+      // Selection changed - switch to appropriate tab
+      setActiveTab(getInitialTab());
+    } else if (modeChanged && !selection) {
+      // Mode changed but no selection - preserve tab unless on language/region/people group tab
+      const isEntityTab =
+        activeTab === 'language-data' ||
+        activeTab === 'region-data' ||
+        activeTab === 'people-groups-data';
+
+      if (isEntityTab) {
+        // We're on an entity tab but no selection - switch to global translation
+        setActiveTab('global-translation-data');
+      }
+      // Otherwise, keep the current tab
+    }
+
+    prevSelectionRef.current = selection;
+    prevModeRef.current = selectionMode;
+  }, [selection, getInitialTab, activeTab, selectionMode]);
 
   // Global stats hooks
   const bibleStatsQuery = useGlobalStatistics();
-  const projectStatusQuery = useActiveProjectsWithProgress();
-  const activityFeedQuery = useRecentActivityFeed(12);
+  const projectStatusQuery = useActiveProjectsWithProgress({
+    enabled: projectsEnabled,
+  });
+  const activityFeedQuery = useRecentActivityFeed(12, {
+    enabled: projectsEnabled,
+  });
 
   // Check for linked entities to determine tab visibility
   const linkedLanguagesQuery = useQuery({
@@ -309,14 +348,6 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
           );
           throw error;
         }
-        console.log(
-          '[InspectorTabs] Linked languages for region query result:',
-          {
-            regionId: selection.id,
-            dataLength: data?.length,
-            sample: data?.[0],
-          }
-        );
         // Just check if any exist - return first one for count check
         return (data ?? []).slice(0, 1);
       }
@@ -369,13 +400,6 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
         const validData = (data ?? [])
           .filter((r: any) => r.regions !== null && r.regions.id !== null)
           .slice(0, 1);
-        console.log('[InspectorTabs] Linked regions query result:', {
-          selectionId: selection.id,
-          dataLength: data?.length,
-          validDataLength: validData.length,
-          sample: data?.[0],
-          validSample: validData[0],
-        });
         return validData;
       }
     },

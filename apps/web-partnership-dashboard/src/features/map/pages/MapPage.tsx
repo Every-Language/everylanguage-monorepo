@@ -10,6 +10,7 @@ import { MapProjectsLayer } from '../projects/MapProjectsLayer';
 import { GlobalListeningHeatmapLayer } from '../analytics/GlobalListeningHeatmapLayer';
 import { MapLanguagesLayer } from '../languages/MapLanguagesLayer';
 import { MapPeopleGroupsLayer } from '../people-groups/MapPeopleGroupsLayer';
+import { MapCountriesLayer } from '../countries/MapCountriesLayer';
 import {
   DEFAULT_COLOR_GRADIENT,
   DEFAULT_TIME_PERIOD_HOURS,
@@ -20,6 +21,7 @@ import { MobileSheetProvider } from '../context/MobileSheetProvider';
 import { DEFAULT_LAYOUT } from '../config/layouts';
 import { MapFocusHandler } from '../components/MapFocusHandler';
 import { useProjectsEnabled } from '@/shared/hooks/useFeatureFlags';
+import { SelectionModeTabs } from '../components/SelectionModeTabs';
 
 /**
  * MapPage - Main map view with configurable inspector panels
@@ -161,8 +163,47 @@ export const MapPage: React.FC = () => {
   const peopleGroupsOpacity = getLayerOpacity('peopleGroups');
   const countriesOpacity = getLayerOpacity('countries');
 
+  // Track if component has mounted to avoid hydration mismatch
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Calculate horizontal offset to center selector over visible map area
+  const selectorLeftOffset = React.useMemo(() => {
+    // During SSR and initial render, use 50% to match server render
+    if (
+      !isMounted ||
+      typeof window === 'undefined' ||
+      windowWidth === undefined
+    ) {
+      return '50%';
+    }
+    const isDesktop = windowWidth >= 768;
+    if (!isDesktop) {
+      return '50%'; // Center on mobile
+    }
+    // Center of visible map = window center + (right padding - left padding) / 2
+    const offset = (mapPadding.right - mapPadding.left) / 2;
+    return `calc(50% - ${offset}px)`;
+  }, [mapPadding, windowWidth, isMounted]);
+
   return (
     <div className='h-full w-full'>
+      {/* Floating mode selector - positioned below header, centered over visible map */}
+      <div
+        className='absolute top-8 z-20 md:top-8'
+        style={{
+          left: selectorLeftOffset,
+          transform: 'translateX(-50%)',
+        }}
+      >
+        <div className='w-[400px] md:w-[400px]'>
+          <SelectionModeTabs />
+        </div>
+      </div>
+
       <MobileSheetProvider
         height={mobileSheetHeight ?? 80}
         snapPoints={mobileSnapPoints ?? [80, 360, 744]}
@@ -171,6 +212,13 @@ export const MapPage: React.FC = () => {
         <MapShell countriesEnabled={layers.countries} padding={mapPadding}>
           <RouteSync />
           <MapFocusHandler />
+          {/* Countries layer - base layer for region mode */}
+          {selectionMode === 'region' && (
+            <MapCountriesLayer
+              show={layers.countries}
+              opacity={countriesOpacity}
+            />
+          )}
           <MapOverlayLayers
             countriesEnabled={layers.countries}
             opacity={countriesOpacity}

@@ -40,31 +40,6 @@ export const GRNLanguageSampleSection: React.FC<
     firstTrack?.id ?? null
   );
 
-  // Debug logging
-  React.useEffect(() => {
-    if (entityId) {
-      console.log('[GRN Language Sample] Entity ID:', entityId);
-      console.log('[GRN Language Sample] Has GRN Data:', hasGRNData);
-      console.log('[GRN Language Sample] Language Feed:', languageFeed);
-      console.log('[GRN Language Sample] Error:', error);
-      console.log('[GRN Language Sample] First Program:', firstProgram);
-      console.log('[GRN Language Sample] Set Feed:', setFeed);
-      console.log('[GRN Language Sample] Set Error:', setError);
-      console.log('[GRN Language Sample] First Track:', firstTrack);
-      console.log('[GRN Language Sample] Track URL:', trackUrl);
-    }
-  }, [
-    entityId,
-    hasGRNData,
-    languageFeed,
-    error,
-    firstProgram,
-    setFeed,
-    setError,
-    firstTrack,
-    trackUrl,
-  ]);
-
   // Don't show section if no GRN data exists
   if (!hasGRNData) {
     return null;

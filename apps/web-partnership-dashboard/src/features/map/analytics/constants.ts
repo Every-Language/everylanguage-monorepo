@@ -14,13 +14,11 @@ export const GRID_SIZES_BY_ZOOM: Record<number, number> = {
   7: 0.25, // High zoom: finer grid
 };
 
-// Point limits by zoom level
-export const POINT_LIMITS_BY_ZOOM: Record<number, number> = {
-  0: 10000, // Low zoom: fewer points
-  4: 20000, // Mid zoom: moderate points
-  7: 40000, // High zoom: more points
-  10: 80000, // Very high zoom: even more points
-};
+// Hard limit for point rendering across all zoom levels
+// Set to 20k for consistent browser rendering performance
+// Database can handle much higher limits, but browser rendering is the bottleneck
+// This limit assumes clustering is enabled for optimal performance
+export const POINT_LIMIT = 20000;
 
 // Time period options for slider (in hours)
 // Range from 1 day to 1 year (max)
@@ -68,9 +66,8 @@ export function getGridSizeForZoom(zoom: number): number {
   return GRID_SIZES_BY_ZOOM[7];
 }
 
-// Helper function to get point limit for a zoom level
+// Helper function to get point limit (now returns constant limit for all zoom levels)
+// Kept for backward compatibility with existing code
 export function getPointLimitForZoom(zoom: number): number {
-  if (zoom < 4) return POINT_LIMITS_BY_ZOOM[0];
-  if (zoom < 7) return POINT_LIMITS_BY_ZOOM[4];
-  return POINT_LIMITS_BY_ZOOM[7];
+  return POINT_LIMIT;
 }

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 
 type GlobalStatisticsResponse = {
   data: {
@@ -81,16 +81,22 @@ export function useGlobalStatistics() {
   });
 }
 
-export function useActiveProjectsWithProgress() {
+export function useActiveProjectsWithProgress(
+  options?: Omit<UseQueryOptions<ProjectStatusResponse>, 'queryKey' | 'queryFn'>
+) {
   return useQuery({
     queryKey: ['global-project-status'],
     queryFn: () =>
       fetchJson<ProjectStatusResponse>('/api/global-stats/project-status'),
     staleTime: 30 * 60 * 1000, // 30 minutes
+    ...options,
   });
 }
 
-export function useRecentActivityFeed(limit: number = 10) {
+export function useRecentActivityFeed(
+  limit: number = 10,
+  options?: Omit<UseQueryOptions<ActivityFeedResponse>, 'queryKey' | 'queryFn'>
+) {
   return useQuery({
     queryKey: ['global-activity-feed', limit],
     queryFn: () =>
@@ -98,5 +104,6 @@ export function useRecentActivityFeed(limit: number = 10) {
         `/api/global-stats/activity-feed?limit=${limit}`
       ),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
   });
 }

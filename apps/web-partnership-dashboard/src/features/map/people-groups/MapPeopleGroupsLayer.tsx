@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMapContext } from '../context/MapContext';
 import {
+  useSelection,
   useSetSelection,
   useSelectionMode,
 } from '../inspector/state/inspectorStore';
@@ -104,9 +105,68 @@ function getPeopleGroupStatusPillColor(
   return 'bg-neutral-500'; // Gray
 }
 
+// Helper function to get Bible translation status text
+function getBibleTranslationStatusText(
+  peopleGroup: PeopleGroupWithLocation
+): string {
+  const bibleStatus = peopleGroup.primary_language_bible_status;
+
+  // Full Bible (bible_status = 5)
+  if (bibleStatus === 5) return 'Full Bible';
+
+  // Full New Testament (bible_status = 4)
+  if (bibleStatus === 4) return 'New Testament';
+
+  // Portions (bible_status = 1-3)
+  if (bibleStatus !== null && bibleStatus > 0 && bibleStatus < 4) {
+    return 'Portions';
+  }
+
+  // Has audio recordings or Jesus Film but no scripture
+  if (
+    peopleGroup.has_audio_recordings === true ||
+    peopleGroup.has_jesus_film === true
+  ) {
+    return 'Audio/Film Available';
+  }
+
+  // No scripture (bible_status = 0 or null)
+  return 'No Scripture';
+}
+
+// Helper function to get Bible translation status pill color (matches dot color)
+function getBibleTranslationStatusPillColor(
+  peopleGroup: PeopleGroupWithLocation
+): string {
+  const bibleStatus = peopleGroup.primary_language_bible_status;
+
+  // Green: Full Bible (bible_status = 5)
+  if (bibleStatus === 5) {
+    return 'bg-success-600'; // Green
+  }
+
+  // Yellow: Full New Testament (bible_status = 4)
+  if (bibleStatus === 4) {
+    return 'bg-warning-500'; // Yellow
+  }
+
+  // Orange: Portions OR audio recordings OR jesus film
+  if (
+    (bibleStatus !== null && bibleStatus > 0 && bibleStatus < 4) ||
+    peopleGroup.has_audio_recordings === true ||
+    peopleGroup.has_jesus_film === true
+  ) {
+    return 'bg-[#eb6a38]'; // Orange
+  }
+
+  // Red: No scripture
+  return 'bg-error-600'; // Red
+}
+
 // Convert people groups to GeoJSON FeatureCollection
 function toFeatureCollection(
-  peopleGroups: PeopleGroupWithLocation[]
+  peopleGroups: PeopleGroupWithLocation[],
+  selectedPeopleGroupId: string | null
 ): GeoJSON.FeatureCollection<
   GeoJSON.Point,
   {
@@ -117,8 +177,11 @@ function toFeatureCollection(
     jpscale: number | null;
     least_reached: boolean | null;
     frontier: boolean | null;
+    is_selected: boolean;
+    has_selection: boolean;
   }
 > {
+  const hasSelection = selectedPeopleGroupId !== null;
   const features: GeoJSON.Feature<
     GeoJSON.Point,
     {
@@ -130,6 +193,8 @@ function toFeatureCollection(
       jpscale: number | null;
       least_reached: boolean | null;
       frontier: boolean | null;
+      is_selected: boolean;
+      has_selection: boolean;
     }
   >[] = peopleGroups.map(pg => ({
     type: 'Feature',
@@ -146,6 +211,8 @@ function toFeatureCollection(
       jpscale: pg.jpscale,
       least_reached: pg.least_reached,
       frontier: pg.frontier,
+      is_selected: selectedPeopleGroupId === pg.people_group_id,
+      has_selection: hasSelection,
     },
   }));
 
@@ -162,6 +229,10 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
   const router = useRouter();
   const setSelection = useSetSelection();
   const selectionMode = useSelectionMode();
+  const selection = useSelection();
+
+  const selectedPeopleGroupId =
+    selection?.kind === 'people_group' ? selection.id : null;
 
   // Debug logging for clustering state
   React.useEffect(() => {
@@ -179,6 +250,13 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
   const [zoom, setZoom] = React.useState<number>(1.5);
   const [hoveredPeopleGroup, setHoveredPeopleGroup] =
     React.useState<HoveredPeopleGroup | null>(null);
+  const [hoveredPeopleGroupId, setHoveredPeopleGroupId] = React.useState<
+    string | null
+  >(null);
+  const [hoveredClusterId, setHoveredClusterId] = React.useState<number | null>(
+    null
+  );
+  const [pulseAnimationValue, setPulseAnimationValue] = React.useState(0);
   const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
@@ -279,8 +357,46 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
         features: [],
       };
     }
-    return toFeatureCollection(peopleGroupsQuery.data);
-  }, [peopleGroupsQuery.data]);
+    return toFeatureCollection(peopleGroupsQuery.data, selectedPeopleGroupId);
+  }, [peopleGroupsQuery.data, selectedPeopleGroupId]);
+
+  // Create pulse layer feature collection for selected people group
+  const pulseFeatureCollection = React.useMemo(() => {
+    if (!selectedPeopleGroupId || !peopleGroupsQuery.data) {
+      return {
+        type: 'FeatureCollection' as const,
+        features: [],
+      };
+    }
+    const selectedPeopleGroup = peopleGroupsQuery.data.find(
+      pg => pg.people_group_id === selectedPeopleGroupId
+    );
+    if (!selectedPeopleGroup) {
+      return {
+        type: 'FeatureCollection' as const,
+        features: [],
+      };
+    }
+    return {
+      type: 'FeatureCollection' as const,
+      features: [
+        {
+          type: 'Feature' as const,
+          geometry: {
+            type: 'Point' as const,
+            coordinates: [
+              selectedPeopleGroup.longitude,
+              selectedPeopleGroup.latitude,
+            ],
+          },
+          properties: {
+            id: selectedPeopleGroup.people_group_id,
+            color: getPeopleGroupColor(selectedPeopleGroup),
+          },
+        },
+      ],
+    };
+  }, [selectedPeopleGroupId, peopleGroupsQuery.data]);
 
   // Theme colors for stroke
   const markerStrokeColor = React.useMemo(() => {
@@ -335,11 +451,17 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
             number,
           ];
 
-          // Skip clusters for hover (only show tooltip for individual points)
-          if (props.cluster) {
+          // Handle cluster hover
+          if (props.cluster && props.cluster_id !== undefined) {
             setHoveredPeopleGroup(null);
+            setHoveredPeopleGroupId(null);
+            setHoveredClusterId(props.cluster_id);
+            map.getCanvas().style.cursor = 'pointer';
             return;
           }
+
+          // Not a cluster, clear cluster hover
+          setHoveredClusterId(null);
 
           if (
             props.people_group_id &&
@@ -357,10 +479,13 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
                 peopleGroup: peopleGroupData,
                 coordinates: coords,
               });
+              setHoveredPeopleGroupId(props.people_group_id);
             }
           }
         } else {
           setHoveredPeopleGroup(null);
+          setHoveredPeopleGroupId(null);
+          setHoveredClusterId(null);
         }
       } catch (error) {
         console.debug('Error querying people group features:', error);
@@ -395,36 +520,20 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
             people_group_id?: string;
           };
 
-          // Handle cluster click - zoom in
+          // Handle cluster click - zoom in by fixed amount
           if (props.cluster && clustered) {
-            const clusterId = props.cluster_id;
-            const pointCount = props.point_count;
-            if (clusterId !== undefined && pointCount !== undefined) {
-              const source = map.getSource(
-                'people-groups-source'
-              ) as maplibregl.GeoJSONSource;
-              if (
-                source &&
-                typeof source.getClusterExpansionZoom === 'function'
-              ) {
-                // TypeScript types don't include callback, but runtime API supports it
-                (source.getClusterExpansionZoom as any)(
-                  clusterId,
-                  (err: Error | null, zoom?: number) => {
-                    if (err || zoom === undefined) return;
-                    const mapInstance = mapRef.current?.getMap();
-                    if (mapInstance) {
-                      const coords = (feature.geometry as GeoJSON.Point)
-                        .coordinates as [number, number];
-                      mapInstance.easeTo({
-                        center: coords,
-                        zoom: zoom,
-                        duration: 500,
-                      });
-                    }
-                  }
-                );
-              }
+            e.originalEvent?.stopPropagation?.();
+            const mapInstance = mapRef.current?.getMap();
+            if (mapInstance) {
+              const coords = (feature.geometry as GeoJSON.Point)
+                .coordinates as [number, number];
+              const currentZoom = mapInstance.getZoom();
+              const newZoom = Math.min(currentZoom + 2, 18); // Zoom in by 2 levels, max zoom 18
+              mapInstance.easeTo({
+                center: coords,
+                zoom: newZoom,
+                duration: 500,
+              });
             }
             return;
           }
@@ -452,6 +561,8 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
 
     const handleMouseLeave = () => {
       setHoveredPeopleGroup(null);
+      setHoveredPeopleGroupId(null);
+      setHoveredClusterId(null);
       map.getCanvas().style.cursor = '';
     };
 
@@ -464,7 +575,53 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
       map.off('click', handleClick);
       map.off('mouseleave', handleMouseLeave);
     };
-  }, [mapRef, show, clustered, peopleGroupsQuery.data, router, setSelection]);
+  }, [
+    mapRef,
+    show,
+    clustered,
+    peopleGroupsQuery.data,
+    router,
+    setSelection,
+    selectionMode,
+    selectedPeopleGroupId,
+    hoveredPeopleGroupId,
+    hoveredClusterId,
+  ]);
+
+  // Animate pulse effect for selected people group (opacity pulse, not size)
+  React.useEffect(() => {
+    if (!show || !selectedPeopleGroupId) {
+      setPulseAnimationValue(0);
+      return;
+    }
+
+    let animationFrameId: number;
+    let startTime: number | null = null;
+    const duration = 2000; // 2 seconds per pulse cycle
+
+    const animate = (timestamp: number) => {
+      if (startTime === null) {
+        startTime = timestamp;
+      }
+
+      const elapsed = timestamp - startTime;
+      const progress = (elapsed % duration) / duration;
+
+      // Use sine wave for smooth pulsing effect (0 to 1)
+      const pulseValue = Math.sin(progress * Math.PI * 2) * 0.5 + 0.5;
+      setPulseAnimationValue(pulseValue);
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [show, selectedPeopleGroupId]);
 
   // Debug logging for feature collection
   React.useEffect(() => {
@@ -567,15 +724,44 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
                 'circle-radius': [
                   'step',
                   ['get', 'point_count'],
-                  20, // Base radius for small clusters
+                  [
+                    'case',
+                    ['==', ['get', 'cluster_id'], hoveredClusterId || -1],
+                    28, // 20 * 1.4 for hovered small clusters
+                    20, // Base radius for small clusters
+                  ],
                   100,
-                  30, // Medium clusters
+                  [
+                    'case',
+                    ['==', ['get', 'cluster_id'], hoveredClusterId || -1],
+                    42, // 30 * 1.4 for hovered medium clusters
+                    30, // Medium clusters
+                  ],
                   750,
-                  40, // Large clusters
+                  [
+                    'case',
+                    ['==', ['get', 'cluster_id'], hoveredClusterId || -1],
+                    56, // 40 * 1.4 for hovered large clusters
+                    40, // Large clusters
+                  ],
                 ],
                 'circle-stroke-color': markerStrokeColor,
                 'circle-stroke-width': 2,
-                'circle-opacity': opacity * 0.8,
+                'circle-opacity': [
+                  '*',
+                  opacity * 0.8,
+                  [
+                    'case',
+                    ['get', 'is_selected'],
+                    1.0,
+                    [
+                      'case',
+                      ['get', 'has_selection'],
+                      0.625, // 0.5 / 0.8 = 0.625 to maintain relative opacity
+                      1.0,
+                    ],
+                  ],
+                ],
               }}
             />,
             /* Cluster count labels */
@@ -605,16 +791,72 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
                   ['linear'],
                   ['zoom'],
                   0,
-                  3,
+                  [
+                    'case',
+                    ['get', 'is_selected'],
+                    4.2, // 3 * 1.4 for selected
+                    [
+                      'case',
+                      [
+                        '==',
+                        ['get', 'people_group_id'],
+                        hoveredPeopleGroupId || '',
+                      ],
+                      4.2, // 3 * 1.4 for hovered
+                      3,
+                    ],
+                  ],
                   6,
-                  5,
+                  [
+                    'case',
+                    ['get', 'is_selected'],
+                    7, // 5 * 1.4 for selected
+                    [
+                      'case',
+                      [
+                        '==',
+                        ['get', 'people_group_id'],
+                        hoveredPeopleGroupId || '',
+                      ],
+                      7, // 5 * 1.4 for hovered
+                      5,
+                    ],
+                  ],
                   12,
-                  8,
+                  [
+                    'case',
+                    ['get', 'is_selected'],
+                    11.2, // 8 * 1.4 for selected
+                    [
+                      'case',
+                      [
+                        '==',
+                        ['get', 'people_group_id'],
+                        hoveredPeopleGroupId || '',
+                      ],
+                      11.2, // 8 * 1.4 for hovered
+                      8,
+                    ],
+                  ],
                 ],
                 'circle-color': ['get', 'color'],
                 'circle-stroke-color': markerStrokeColor,
                 'circle-stroke-width': 1.5,
-                'circle-opacity': opacity * 0.9,
+                'circle-opacity': [
+                  '*',
+                  opacity * 0.9,
+                  [
+                    'case',
+                    ['get', 'is_selected'],
+                    1.0,
+                    [
+                      'case',
+                      ['get', 'has_selection'],
+                      0.556, // 0.5 / 0.9 = 0.556 to maintain relative opacity
+                      1.0,
+                    ],
+                  ],
+                ],
               }}
             />,
           ]
@@ -629,20 +871,116 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
                 ['linear'],
                 ['zoom'],
                 0,
-                3,
+                [
+                  'case',
+                  ['get', 'is_selected'],
+                  4.2, // 3 * 1.4 for selected
+                  [
+                    'case',
+                    [
+                      '==',
+                      ['get', 'people_group_id'],
+                      hoveredPeopleGroupId || '',
+                    ],
+                    4.2, // 3 * 1.4 for hovered
+                    3,
+                  ],
+                ],
                 6,
-                5,
+                [
+                  'case',
+                  ['get', 'is_selected'],
+                  7, // 5 * 1.4 for selected
+                  [
+                    'case',
+                    [
+                      '==',
+                      ['get', 'people_group_id'],
+                      hoveredPeopleGroupId || '',
+                    ],
+                    7, // 5 * 1.4 for hovered
+                    5,
+                  ],
+                ],
                 12,
-                8,
+                [
+                  'case',
+                  ['get', 'is_selected'],
+                  11.2, // 8 * 1.4 for selected
+                  [
+                    'case',
+                    [
+                      '==',
+                      ['get', 'people_group_id'],
+                      hoveredPeopleGroupId || '',
+                    ],
+                    11.2, // 8 * 1.4 for hovered
+                    8,
+                  ],
+                ],
               ],
               'circle-color': ['get', 'color'],
               'circle-stroke-color': markerStrokeColor,
               'circle-stroke-width': 1.5,
-              'circle-opacity': opacity * 0.9,
+              'circle-opacity': [
+                '*',
+                opacity * 0.9,
+                [
+                  'case',
+                  ['get', 'is_selected'],
+                  1.0,
+                  [
+                    'case',
+                    ['get', 'has_selection'],
+                    0.556, // 0.5 / 0.9 = 0.556 to maintain relative opacity
+                    1.0,
+                  ],
+                ],
+              ],
             }}
           />
         )}
       </Source>
+
+      {/* Pulse animation layer for selected people group */}
+      {pulseFeatureCollection.features.length > 0 && (
+        <Source
+          id='people-groups-pulse-source'
+          type='geojson'
+          data={pulseFeatureCollection}
+        >
+          <Layer
+            id='people-groups-pulse-layer'
+            type='circle'
+            paint={{
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0,
+                6 + pulseAnimationValue * 4,
+                6,
+                10 + pulseAnimationValue * 6,
+                12,
+                16 + pulseAnimationValue * 8,
+              ],
+              'circle-color': ['get', 'color'],
+              'circle-opacity': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0,
+                Math.max(0, 0.3 - pulseAnimationValue * 0.3),
+                6,
+                Math.max(0, 0.25 - pulseAnimationValue * 0.25),
+                12,
+                Math.max(0, 0.2 - pulseAnimationValue * 0.2),
+              ],
+              'circle-stroke-width': 0,
+            }}
+          />
+        </Source>
+      )}
 
       {/* Hover tooltip popup */}
       {hoveredPeopleGroup && (
@@ -666,16 +1004,22 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
             <div className='text-xs text-neutral-600 dark:text-neutral-400 mt-0.5 mb-2'>
               {hoveredPeopleGroup.peopleGroup.region_name}
             </div>
-            {/* Status breakdown */}
+            {/* Primary Language and Bible Translation Status */}
             <div className='mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700'>
               <div className='text-xs font-medium mb-1.5 text-neutral-900 dark:text-neutral-100'>
-                Status
+                Primary Language
+              </div>
+              <div className='text-xs text-neutral-700 dark:text-neutral-300 mb-1.5'>
+                {hoveredPeopleGroup.peopleGroup.primary_language_name ||
+                  'Unknown'}
               </div>
               <div className='flex items-center gap-2'>
                 <span
-                  className={`${getPeopleGroupStatusPillColor(hoveredPeopleGroup.peopleGroup)} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}
+                  className={`${getBibleTranslationStatusPillColor(hoveredPeopleGroup.peopleGroup)} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}
                 >
-                  {getPeopleGroupStatusText(hoveredPeopleGroup.peopleGroup)}
+                  {getBibleTranslationStatusText(
+                    hoveredPeopleGroup.peopleGroup
+                  )}
                 </span>
               </div>
             </div>

@@ -49,6 +49,9 @@ const ProgramGroup: React.FC<{
   );
   const [expandedType, setExpandedType] = useState(true);
 
+  // Ensure programs is always an array
+  const safePrograms = Array.isArray(programs) ? programs : [];
+
   const toggleProgram = (programId: number) => {
     const newExpanded = new Set(expandedPrograms);
     if (newExpanded.has(programId)) {
@@ -59,6 +62,11 @@ const ProgramGroup: React.FC<{
     setExpandedPrograms(newExpanded);
   };
 
+  // Don't render if no programs
+  if (safePrograms.length === 0) {
+    return null;
+  }
+
   return (
     <div className='border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden'>
       <button
@@ -66,7 +74,7 @@ const ProgramGroup: React.FC<{
         className='w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors'
       >
         <span className='font-medium text-sm'>
-          {getProgramTypeName(programType)} ({programs.length})
+          {getProgramTypeName(programType)} ({safePrograms.length})
         </span>
         {expandedType ? (
           <ChevronUpIcon className='w-4 h-4 text-neutral-500' />
@@ -76,7 +84,7 @@ const ProgramGroup: React.FC<{
       </button>
       {expandedType && (
         <div className='px-3 pb-3 space-y-3'>
-          {programs.map(program => (
+          {safePrograms.map(program => (
             <ProgramItem
               key={program.id}
               program={program}
@@ -215,20 +223,6 @@ export const GRNGospelResourcesSection: React.FC<
     error,
   } = useGRNLanguageDataCache(entityId);
 
-  // Debug logging
-  React.useEffect(() => {
-    if (entityId) {
-      console.log('[GRN Gospel Resources] Entity ID:', entityId);
-      console.log('[GRN Gospel Resources] Has GRN Data:', hasGRNData);
-      console.log('[GRN Gospel Resources] Language Feed:', languageFeed);
-      console.log('[GRN Gospel Resources] Error:', error);
-      console.log(
-        '[GRN Gospel Resources] Programs:',
-        languageFeed?.programs?.program
-      );
-    }
-  }, [entityId, hasGRNData, languageFeed, error]);
-
   // Don't show section if no GRN data exists
   if (!hasGRNData) {
     return null;
@@ -276,7 +270,11 @@ export const GRNGospelResourcesSection: React.FC<
   // Group programs by type
   const programsByType = languageFeed.programs.program.reduce(
     (acc, program) => {
+      // Skip programs with invalid programType
       const type = program.programType;
+      if (type == null || typeof type !== 'number') {
+        return acc;
+      }
       if (!acc[type]) {
         acc[type] = [];
       }
@@ -286,21 +284,34 @@ export const GRNGospelResourcesSection: React.FC<
     {} as Record<number, GRNProgram[]>
   );
 
-  // Sort program types
+  // Sort program types and filter out any undefined entries
   const sortedTypes = Object.keys(programsByType)
     .map(Number)
+    .filter(
+      type =>
+        programsByType[type] &&
+        Array.isArray(programsByType[type]) &&
+        programsByType[type].length > 0
+    )
     .sort((a, b) => a - b);
 
   return (
     <div className='space-y-3'>
       {/* Program Groups */}
-      {sortedTypes.map(programType => (
-        <ProgramGroup
-          key={programType}
-          programType={programType}
-          programs={programsByType[programType]}
-        />
-      ))}
+      {sortedTypes.map(programType => {
+        const programs = programsByType[programType];
+        // Double-check that programs exists and is an array before rendering
+        if (!programs || !Array.isArray(programs) || programs.length === 0) {
+          return null;
+        }
+        return (
+          <ProgramGroup
+            key={programType}
+            programType={programType}
+            programs={programs}
+          />
+        );
+      })}
 
       {/* Attribution */}
       <div className='text-xs text-neutral-400 pt-2 border-t border-neutral-200 dark:border-neutral-800'>

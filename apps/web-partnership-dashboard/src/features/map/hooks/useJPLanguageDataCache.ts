@@ -64,6 +64,9 @@ function useJPLanguageStatsCache(
       // Try cache first
       if (languageEntityId) {
         try {
+          console.log(
+            `[useJPLanguageStatsCache] Attempting cache lookup for language: ${languageEntityId}`
+          );
           // Fetch from mv_language_stats
           const { data: cacheDataRaw, error: cacheError } = await supabase
             .from('mv_language_stats')
@@ -73,6 +76,9 @@ function useJPLanguageStatsCache(
 
           const cacheData = cacheDataRaw as JPLanguageCache | null;
           if (!cacheError && cacheData) {
+            console.log(
+              `[useJPLanguageStatsCache] ✅ CACHE HIT for language: ${languageEntityId}`
+            );
             // Transform cache data to JPLanguage format
             const languageData: JPLanguage = {
               ROL3: (cacheData.rolv_code || cacheData.iso639_3 || '') as string,
@@ -184,11 +190,20 @@ function useJPLanguageStatsCache(
             };
 
             return languageData;
+          } else {
+            // Cache query succeeded but no data found
+            console.log(
+              `[useJPLanguageStatsCache] ⚠️ CACHE MISS for language: ${languageEntityId} - No data found`,
+              {
+                cacheError: cacheError?.code,
+                cacheErrorMsg: cacheError?.message,
+              }
+            );
           }
         } catch (error) {
           // Cache fetch failed, fall through to API fallback
           console.warn(
-            `Cache fetch failed for language ${languageEntityId}, falling back to API:`,
+            `[useJPLanguageStatsCache] ⚠️ CACHE ERROR for language ${languageEntityId}, falling back to API:`,
             error
           );
         }
@@ -196,9 +211,20 @@ function useJPLanguageStatsCache(
 
       // Fallback to API if cache miss or error
       if (rol3) {
-        return await fetchLanguageStats(rol3);
+        console.log(
+          `[useJPLanguageStatsCache] 🔄 API FALLBACK for language: ${languageEntityId} (ROL3: ${rol3})`
+        );
+        const apiData = await fetchLanguageStats(rol3);
+        console.log(
+          `[useJPLanguageStatsCache] ${apiData ? '✅ API SUCCESS' : '❌ API RETURNED NULL'} for language: ${languageEntityId}`
+        );
+        return apiData;
       }
 
+      console.log(
+        `[useJPLanguageStatsCache] ❌ NO API FALLBACK - Missing ROL3 for language: ${languageEntityId}`,
+        { externalIds, rol3 }
+      );
       return null;
     },
     enabled: !!languageEntityId && !idsLoading,

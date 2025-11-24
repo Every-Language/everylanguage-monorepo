@@ -210,7 +210,6 @@ export async function fetchISOFeed(
 ): Promise<GRNISOFeed | null> {
   try {
     const data = await fetchFromProxy<GRNISOFeed>(`feeds/iso/${isoCode}`);
-    console.log(`[GRN API] Fetched ISO feed for ${isoCode}:`, data);
     return data;
   } catch (error) {
     console.error(`Failed to fetch ISO feed for ${isoCode}:`, error);
@@ -228,7 +227,6 @@ export async function fetchLanguageFeed(
     const data = await fetchFromProxy<GRNLanguageFeed>(
       `feeds/language/${rolvCode}`
     );
-    console.log(`[GRN API] Fetched language feed for ROLV ${rolvCode}:`, data);
     return data;
   } catch (error) {
     console.error(`Failed to fetch language feed for ROLV ${rolvCode}:`, error);

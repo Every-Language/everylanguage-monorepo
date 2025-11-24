@@ -199,10 +199,16 @@ export function useJPPeopleGroupsByCountryCache(
     ],
     queryFn: async () => {
       if (!regionId) {
+        console.log(
+          `[useJPPeopleGroupsByCountryCache] ⚠️ No regionId provided, returning empty array`
+        );
         return [];
       }
 
       try {
+        console.log(
+          `[useJPPeopleGroupsByCountryCache] Attempting cache lookup for region: ${regionId} (page: ${page}, limit: ${limit})`
+        );
         // Query vw_people_groups_in_region with pagination and optional sorting
         let query = supabase
           .from('vw_people_groups_in_region')
@@ -224,41 +230,68 @@ export function useJPPeopleGroupsByCountryCache(
         }
 
         if (data && data.length > 0) {
+          console.log(
+            `[useJPPeopleGroupsByCountryCache] ✅ CACHE HIT for region: ${regionId} - Found ${data.length} people groups`
+          );
           return data.map(transformPeopleGroupFromCache);
         }
 
         // Fallback to API if cache miss
         if (fips) {
-          return await fetchPeopleGroupsByFIPS(
+          console.log(
+            `[useJPPeopleGroupsByCountryCache] ⚠️ CACHE MISS for region: ${regionId} - No data found, falling back to API (FIPS: ${fips})`
+          );
+          const apiData = await fetchPeopleGroupsByFIPS(
             fips,
             page,
             limit,
             sortField || 'Population',
             sortDirection
           );
+          console.log(
+            `[useJPPeopleGroupsByCountryCache] ${apiData && apiData.length > 0 ? '✅ API SUCCESS' : '❌ API RETURNED EMPTY'} for region: ${regionId} - Got ${apiData?.length || 0} people groups`
+          );
+          return apiData;
         }
 
+        console.log(
+          `[useJPPeopleGroupsByCountryCache] ❌ NO API FALLBACK - Missing FIPS for region: ${regionId}`,
+          { externalIds, fips }
+        );
         return [];
       } catch (error) {
         console.warn(
-          `Cache fetch failed for people groups in region ${regionId}, falling back to API:`,
+          `[useJPPeopleGroupsByCountryCache] ⚠️ CACHE ERROR for region ${regionId}, falling back to API:`,
           error
         );
         // Fallback to API
         if (fips) {
           try {
-            return await fetchPeopleGroupsByFIPS(
+            console.log(
+              `[useJPPeopleGroupsByCountryCache] 🔄 API FALLBACK (error recovery) for region: ${regionId} (FIPS: ${fips})`
+            );
+            const apiData = await fetchPeopleGroupsByFIPS(
               fips,
               page,
               limit,
               sortField || 'Population',
               sortDirection
             );
+            console.log(
+              `[useJPPeopleGroupsByCountryCache] ${apiData && apiData.length > 0 ? '✅ API SUCCESS (error recovery)' : '❌ API RETURNED EMPTY (error recovery)'} for region: ${regionId} - Got ${apiData?.length || 0} people groups`
+            );
+            return apiData;
           } catch (apiError) {
-            console.error('API fallback also failed:', apiError);
+            console.error(
+              `[useJPPeopleGroupsByCountryCache] ❌ API fallback also failed:`,
+              apiError
+            );
             return [];
           }
         }
+        console.log(
+          `[useJPPeopleGroupsByCountryCache] ❌ NO API FALLBACK (error recovery) - Missing FIPS for region: ${regionId}`
+        );
         return [];
       }
     },
@@ -295,10 +328,16 @@ export function useJPPeopleGroupsByLanguageCache(
     ],
     queryFn: async () => {
       if (!languageEntityId) {
+        console.log(
+          `[useJPPeopleGroupsByLanguageCache] ⚠️ No languageEntityId provided, returning empty array`
+        );
         return [];
       }
 
       try {
+        console.log(
+          `[useJPPeopleGroupsByLanguageCache] Attempting cache lookup for language: ${languageEntityId} (page: ${page}, limit: ${limit})`
+        );
         // Query vw_people_groups_by_language with pagination and optional sorting
         let query = supabase
           .from('vw_people_groups_by_language')
@@ -320,41 +359,68 @@ export function useJPPeopleGroupsByLanguageCache(
         }
 
         if (data && data.length > 0) {
+          console.log(
+            `[useJPPeopleGroupsByLanguageCache] ✅ CACHE HIT for language: ${languageEntityId} - Found ${data.length} people groups`
+          );
           return data.map(transformPeopleGroupFromCache);
         }
 
         // Fallback to API if cache miss
         if (rol3) {
-          return await fetchPeopleGroupsByLanguage(
+          console.log(
+            `[useJPPeopleGroupsByLanguageCache] ⚠️ CACHE MISS for language: ${languageEntityId} - No data found, falling back to API (ROL3: ${rol3})`
+          );
+          const apiData = await fetchPeopleGroupsByLanguage(
             rol3,
             page,
             limit,
             sortField || 'Population',
             sortDirection
           );
+          console.log(
+            `[useJPPeopleGroupsByLanguageCache] ${apiData && apiData.length > 0 ? '✅ API SUCCESS' : '❌ API RETURNED EMPTY'} for language: ${languageEntityId} - Got ${apiData?.length || 0} people groups`
+          );
+          return apiData;
         }
 
+        console.log(
+          `[useJPPeopleGroupsByLanguageCache] ❌ NO API FALLBACK - Missing ROL3 for language: ${languageEntityId}`,
+          { externalIds, rol3 }
+        );
         return [];
       } catch (error) {
         console.warn(
-          `Cache fetch failed for people groups by language ${languageEntityId}, falling back to API:`,
+          `[useJPPeopleGroupsByLanguageCache] ⚠️ CACHE ERROR for language ${languageEntityId}, falling back to API:`,
           error
         );
         // Fallback to API
         if (rol3) {
           try {
-            return await fetchPeopleGroupsByLanguage(
+            console.log(
+              `[useJPPeopleGroupsByLanguageCache] 🔄 API FALLBACK (error recovery) for language: ${languageEntityId} (ROL3: ${rol3})`
+            );
+            const apiData = await fetchPeopleGroupsByLanguage(
               rol3,
               page,
               limit,
               sortField || 'Population',
               sortDirection
             );
+            console.log(
+              `[useJPPeopleGroupsByLanguageCache] ${apiData && apiData.length > 0 ? '✅ API SUCCESS (error recovery)' : '❌ API RETURNED EMPTY (error recovery)'} for language: ${languageEntityId} - Got ${apiData?.length || 0} people groups`
+            );
+            return apiData;
           } catch (apiError) {
-            console.error('API fallback also failed:', apiError);
+            console.error(
+              `[useJPPeopleGroupsByLanguageCache] ❌ API fallback also failed:`,
+              apiError
+            );
             return [];
           }
         }
+        console.log(
+          `[useJPPeopleGroupsByLanguageCache] ❌ NO API FALLBACK (error recovery) - Missing ROL3 for language: ${languageEntityId}`
+        );
         return [];
       }
     },

@@ -19,6 +19,9 @@ export const MapFocusHandler: React.FC = () => {
   const { flyTo } = useMapContext();
   const mobileSheet = useMobileSheet();
 
+  // Track previous selection to detect when it's cleared
+  const prevSelectionRef = React.useRef<typeof selection>(selection);
+
   // For language entities, use new location-based logic
   const languageLocation = useLanguageEntityLocation(
     selection?.kind === 'language_entity' ? selection.id : ''
@@ -117,6 +120,20 @@ export const MapFocusHandler: React.FC = () => {
       regionBoundary ??
       null);
   useMapFocus(bboxToUse, boundaryToUse, selection?.id);
+
+  // Reset zoom when selection is cleared (deselected)
+  React.useEffect(() => {
+    const hadSelection = prevSelectionRef.current !== null;
+    const hasSelection = selection !== null;
+
+    // If we had a selection and now we don't, reset zoom
+    if (hadSelection && !hasSelection && !mobileSheet.isDragging) {
+      // Reset to default view state: longitude: 0, latitude: 20, zoom: 1.5
+      flyTo({ longitude: 0, latitude: 20, zoom: 1.5 });
+    }
+
+    prevSelectionRef.current = selection;
+  }, [selection, mobileSheet.isDragging, flyTo]);
 
   // Handle reset to default for language entities or people groups with no regions
   React.useEffect(() => {
