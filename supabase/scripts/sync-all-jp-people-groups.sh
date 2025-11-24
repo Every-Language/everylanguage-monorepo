@@ -4,8 +4,8 @@
 
 set -e
 
-SUPABASE_URL="https://mmcvtfxzntimcjfncdea.supabase.co"
-API_KEY="sb_publishable_byCBJOm9NOkqccxnvACEIg_CGXxYQwX"
+SUPABASE_URL="https://sjczwtpnjbmscxoszlyi.supabase.co"
+API_KEY="sb_publishable_uDI2GK2IFbT5owUM_HPtug_M3UNksJr"
 PAGES_PER_BATCH=10
 MAX_ATTEMPTS=1000  # Safety limit
 
