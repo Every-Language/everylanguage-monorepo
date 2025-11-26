@@ -170,7 +170,8 @@ export function TextVersionsPage() {
     }
   };
 
-  const handleNavigateToRegion = async (regionId: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleNavigateToRegion = async (_regionId: string) => {
     // Not needed for this page, but required by ViewProjectModal
   };
 
@@ -561,7 +562,8 @@ export function TextVersionsPage() {
                     { type: 'textVersion', id: textVersionId },
                   ]);
                 }}
-                onOpenAudioVersion={(audioVersionId: string) => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                onOpenAudioVersion={(_audioVersionId: string) => {
                   // Not applicable for text versions page
                 }}
               />

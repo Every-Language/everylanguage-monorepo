@@ -170,7 +170,8 @@ export function AudioVersionsPage() {
     }
   };
 
-  const handleNavigateToRegion = async (regionId: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleNavigateToRegion = async (_regionId: string) => {
     // Not needed for this page, but required by ViewProjectModal
   };
 
@@ -555,7 +556,8 @@ export function AudioVersionsPage() {
                 onClose={isTopModal ? handleCloseModal : handleCloseAllModals}
                 onNavigateToLanguage={handleNavigateToLanguage}
                 onNavigateToRegion={handleNavigateToRegion}
-                onOpenTextVersion={(textVersionId: string) => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                onOpenTextVersion={(_textVersionId: string) => {
                   // Not applicable for audio versions page
                 }}
                 onOpenAudioVersion={(audioVersionId: string) => {

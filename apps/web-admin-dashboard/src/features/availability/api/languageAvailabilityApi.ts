@@ -276,7 +276,7 @@ export const languageAvailabilityApi = {
         }
 
         // Fetch languages with no funding record, filtered by search results
-        let query = supabase
+        const query = supabase
           .from('language_entities')
           .select('*', { count: 'exact' })
           .in('id', unfundedEntityIds)

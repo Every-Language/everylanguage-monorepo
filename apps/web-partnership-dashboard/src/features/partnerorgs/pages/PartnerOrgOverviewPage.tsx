@@ -13,7 +13,6 @@ import { Progress } from '@/shared/components/ui/Progress';
 import { CountUp } from '../components/CountUp';
 import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
 import { useProjectProgress } from '../hooks/useProjectProgress';
-import { useProjectDistribution } from '../hooks/useProjectDistribution';
 import { ProjectCardSkeleton } from '@/shared/components/ui/Skeletons';
 
 export const PartnerOrgOverviewPage: React.FC = () => {

@@ -14,7 +14,6 @@ import { CountUp } from '../components/CountUp';
 import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
 import { usePendingLanguages } from '../hooks/usePendingLanguages';
 import { useProjectProgress } from '../hooks/useProjectProgress';
-import { useProjectDistribution } from '../hooks/useProjectDistribution';
 import { useProjectFunding } from '../hooks/useProjectFunding';
 import { useProjectUpdates } from '../hooks/useProjectUpdates';
 

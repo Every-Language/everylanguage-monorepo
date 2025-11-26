@@ -611,7 +611,7 @@ export const versionsApi = {
 
     // Fetch progress for all versions
     const versionIds = versions.map(v => v.id);
-    let progressMap = new Map<
+    const progressMap = new Map<
       string,
       { chapters_with_audio: number; total_chapters: number }
     >();
@@ -795,7 +795,7 @@ export const versionsApi = {
 
     // Fetch progress for all versions
     const versionIds = versions.map(v => v.id);
-    let progressMap = new Map<
+    const progressMap = new Map<
       string,
       { complete_chapters: number; total_chapters: number }
     >();
