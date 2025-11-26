@@ -201,7 +201,7 @@ export const projectsApi = {
 
       if (audioVersionIds.length > 0) {
         const { data: progressData, error: progressError } = await supabase
-          .from('mv_audio_version_progress_summary')
+          .from('audio_version_progress')
           .select('audio_version_id, chapters_with_audio, total_chapters')
           .in('audio_version_id', audioVersionIds);
 
@@ -286,13 +286,13 @@ export const projectsApi = {
       const [textProgressData, audioProgressData] = await Promise.all([
         allTextVersionIds.length > 0
           ? supabase
-              .from('text_version_progress_summary')
+              .from('text_version_progress')
               .select('text_version_id, complete_chapters, total_chapters')
               .in('text_version_id', allTextVersionIds)
           : { data: null, error: null },
         allAudioVersionIds.length > 0
           ? supabase
-              .from('mv_audio_version_progress_summary')
+              .from('audio_version_progress')
               .select('audio_version_id, chapters_with_audio, total_chapters')
               .in('audio_version_id', allAudioVersionIds)
           : { data: null, error: null },
@@ -502,13 +502,13 @@ export const projectsApi = {
     const [textProgressResult, audioProgressResult] = await Promise.all([
       textVersionIds.length > 0
         ? supabase
-            .from('text_version_progress_summary')
+            .from('text_version_progress')
             .select('text_version_id, complete_chapters, total_chapters')
             .in('text_version_id', textVersionIds)
         : { data: null, error: null },
       audioVersionIds.length > 0
         ? supabase
-            .from('mv_audio_version_progress_summary')
+            .from('audio_version_progress')
             .select('audio_version_id, chapters_with_audio, total_chapters')
             .in('audio_version_id', audioVersionIds)
         : { data: null, error: null },

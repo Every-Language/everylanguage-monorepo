@@ -115,7 +115,7 @@ export function useProjectProgress(
         if (audioVersionIds.length > 0) {
           summaryPromises.push(
             (supabase as any)
-              .from('audio_version_progress_summary')
+              .from('audio_version_progress')
               .select(
                 'audio_version_id, chapters_with_audio, total_chapters, books_complete, total_books, covered_verses, total_verses'
               )
@@ -128,7 +128,7 @@ export function useProjectProgress(
         if (textVersionIds.length > 0) {
           summaryPromises.push(
             (supabase as any)
-              .from('text_version_progress_summary')
+              .from('text_version_progress')
               .select(
                 'text_version_id, complete_chapters, total_chapters, books_complete, total_books, covered_verses, total_verses'
               )
@@ -270,7 +270,7 @@ export function useProjectProgress(
         if (audioVersionIds.length > 0) {
           summaryPromises.push(
             (supabase as any)
-              .from('audio_version_progress_summary')
+              .from('audio_version_progress')
               .select(
                 'audio_version_id, chapters_with_audio, total_chapters, books_complete, total_books, covered_verses, total_verses'
               )
@@ -283,7 +283,7 @@ export function useProjectProgress(
         if (textVersionIds.length > 0) {
           summaryPromises.push(
             (supabase as any)
-              .from('text_version_progress_summary')
+              .from('text_version_progress')
               .select(
                 'text_version_id, complete_chapters, total_chapters, books_complete, total_books, covered_verses, total_verses'
               )

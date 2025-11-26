@@ -106,7 +106,7 @@ export const versionsApi = {
     // Fetch progress for all versions
     const versionIds = textVersions.map(v => v.id);
     const { data: progressData, error: progressError } = await supabase
-      .from('text_version_progress_summary')
+      .from('text_version_progress')
       .select('text_version_id, complete_chapters, total_chapters')
       .in('text_version_id', versionIds);
 
@@ -172,7 +172,7 @@ export const versionsApi = {
     // Fetch progress for all versions
     const versionIds = audioVersions.map(v => v.id);
     const { data: progressData, error: progressError } = await supabase
-      .from('mv_audio_version_progress_summary')
+      .from('audio_version_progress')
       .select('audio_version_id, chapters_with_audio, total_chapters')
       .in('audio_version_id', versionIds);
 
@@ -223,7 +223,7 @@ export const versionsApi = {
     progress_percentage: number;
   } | null> {
     const { data, error } = await supabase
-      .from('text_version_progress_summary')
+      .from('text_version_progress')
       .select('complete_chapters, total_chapters')
       .eq('text_version_id', textVersionId)
       .single();
@@ -256,7 +256,7 @@ export const versionsApi = {
     progress_percentage: number;
   } | null> {
     const { data, error } = await supabase
-      .from('mv_audio_version_progress_summary')
+      .from('audio_version_progress')
       .select('chapters_with_audio, total_chapters')
       .eq('audio_version_id', audioVersionId)
       .single();
@@ -618,7 +618,7 @@ export const versionsApi = {
 
     if (versionIds.length > 0) {
       const { data: progressData, error: progressError } = await supabase
-        .from('mv_audio_version_progress_summary')
+        .from('audio_version_progress')
         .select('audio_version_id, chapters_with_audio, total_chapters')
         .in('audio_version_id', versionIds);
 
@@ -802,7 +802,7 @@ export const versionsApi = {
 
     if (versionIds.length > 0) {
       const { data: progressData, error: progressError } = await supabase
-        .from('text_version_progress_summary')
+        .from('text_version_progress')
         .select('text_version_id, complete_chapters, total_chapters')
         .in('text_version_id', versionIds);
 
