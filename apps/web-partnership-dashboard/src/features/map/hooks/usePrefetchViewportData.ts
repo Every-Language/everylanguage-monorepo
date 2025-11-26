@@ -80,24 +80,6 @@ interface PrefetchOptions {
 export function usePrefetchViewportData() {
   const queryClient = useQueryClient();
 
-  const prefetchForCoordinates = React.useCallback(
-    async (
-      coordinates: [number, number],
-      zoom: number,
-      options: PrefetchOptions = {}
-    ) => {
-      const expansionFactor = getExpansionFactorForZoom(zoom);
-      const targetBbox = calculateBboxFromCenterAndZoom(
-        coordinates,
-        zoom,
-        expansionFactor
-      );
-
-      return prefetchForBbox(targetBbox, zoom, options);
-    },
-    [queryClient]
-  );
-
   const prefetchForBbox = React.useCallback(
     async (bbox: BBox, zoom: number, options: PrefetchOptions = {}) => {
       const expansionFactor = getExpansionFactorForZoom(zoom);
@@ -137,6 +119,24 @@ export function usePrefetchViewportData() {
       await Promise.allSettled(prefetchPromises);
     },
     [queryClient]
+  );
+
+  const prefetchForCoordinates = React.useCallback(
+    async (
+      coordinates: [number, number],
+      zoom: number,
+      options: PrefetchOptions = {}
+    ) => {
+      const expansionFactor = getExpansionFactorForZoom(zoom);
+      const targetBbox = calculateBboxFromCenterAndZoom(
+        coordinates,
+        zoom,
+        expansionFactor
+      );
+
+      return prefetchForBbox(targetBbox, zoom, options);
+    },
+    [prefetchForBbox]
   );
 
   return {

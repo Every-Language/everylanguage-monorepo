@@ -9,7 +9,6 @@ import { useTheme } from '@/shared/theme';
 import { MapProvider } from '../context/MapContext';
 import { supabase } from '@/shared/services/supabase';
 import { useRouter } from 'next/navigation';
-import { useSelectionMode } from '../inspector/state/inspectorStore';
 
 // MapLibre CSS should be imported by the app's CSS pipeline or here
 // import 'maplibre-gl/dist/maplibre-gl.css';

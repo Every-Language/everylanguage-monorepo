@@ -68,6 +68,6 @@ export function getGridSizeForZoom(zoom: number): number {
 
 // Helper function to get point limit (now returns constant limit for all zoom levels)
 // Kept for backward compatibility with existing code
-export function getPointLimitForZoom(zoom: number): number {
+export function getPointLimitForZoom(_zoom: number): number {
   return POINT_LIMIT;
 }

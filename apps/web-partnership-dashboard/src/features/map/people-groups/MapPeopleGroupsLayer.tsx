@@ -76,35 +76,6 @@ function getPeopleGroupColor(peopleGroup: PeopleGroupWithLocation): string {
   return '#ef4444'; // Red - error-600
 }
 
-// Helper function to get status text label
-function getPeopleGroupStatusText(
-  peopleGroup: PeopleGroupWithLocation
-): string {
-  if (peopleGroup.least_reached === true) return 'Least Reached';
-  if (peopleGroup.frontier === true) return 'Frontier';
-  if (peopleGroup.jpscale !== null) return `Scale ${peopleGroup.jpscale}`;
-  return 'Unknown';
-}
-
-// Helper function to get status pill color
-function getPeopleGroupStatusPillColor(
-  peopleGroup: PeopleGroupWithLocation
-): string {
-  if (peopleGroup.least_reached === true || peopleGroup.jpscale === 1) {
-    return 'bg-error-600'; // Red
-  }
-  if (peopleGroup.frontier === true || peopleGroup.jpscale === 2) {
-    return 'bg-[#eb6a38]'; // Orange
-  }
-  if (peopleGroup.jpscale === 3) {
-    return 'bg-warning-500'; // Yellow
-  }
-  if (peopleGroup.jpscale === 4 || peopleGroup.jpscale === 5) {
-    return 'bg-success-600'; // Green
-  }
-  return 'bg-neutral-500'; // Gray
-}
-
 // Helper function to get Bible translation status text
 function getBibleTranslationStatusText(
   peopleGroup: PeopleGroupWithLocation
