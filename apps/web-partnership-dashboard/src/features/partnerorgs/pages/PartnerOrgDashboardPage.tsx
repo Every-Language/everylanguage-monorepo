@@ -48,8 +48,6 @@ export const PartnerOrgDashboardPage: React.FC = () => {
   const { data: pendingLanguages, isLoading: pendingLoading } =
     usePendingLanguages(orgId!);
   const { isLoading: progressLoading } = useProjectProgress('all', orgId);
-  const { data: distributionData, isLoading: distributionLoading } =
-    useProjectDistribution('all', orgId);
   const { data: fundingData, isLoading: fundingLoading } = useProjectFunding(
     'all',
     orgId
@@ -63,7 +61,6 @@ export const PartnerOrgDashboardPage: React.FC = () => {
     projectsLoading ||
     pendingLoading ||
     progressLoading ||
-    distributionLoading ||
     fundingLoading ||
     updatesLoading;
 
@@ -93,7 +90,7 @@ export const PartnerOrgDashboardPage: React.FC = () => {
   return (
     <div className='space-y-6'>
       {/* Top stats row */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
         <Card className='border border-neutral-200 dark:border-neutral-800'>
           <CardHeader>
             <CardTitle className='text-sm text-neutral-500'>
@@ -125,32 +122,6 @@ export const PartnerOrgDashboardPage: React.FC = () => {
                   View →
                 </Link>
               )}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className='border border-neutral-200 dark:border-neutral-800'>
-          <CardHeader>
-            <CardTitle className='text-sm text-neutral-500'>
-              App Downloads
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-3xl font-bold tracking-tight'>
-              <CountUp value={(distributionData as any)?.totalDownloads || 0} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className='border border-neutral-200 dark:border-neutral-800'>
-          <CardHeader>
-            <CardTitle className='text-sm text-neutral-500'>
-              Listening Hours
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-3xl font-bold tracking-tight'>
-              <CountUp
-                value={(distributionData as any)?.totalListeningHours || 0}
-              />
             </div>
           </CardContent>
         </Card>

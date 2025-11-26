@@ -8,15 +8,11 @@ import {
   CardTitle,
   CardContent,
 } from '@/shared/components/ui/Card';
-import { CountUp } from '../components/CountUp';
 import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
 import { useProjectDistribution } from '../hooks/useProjectDistribution';
 import { MapShell } from '@/features/map/components/MapShell';
 import { ProjectDistributionHeatmapLayers } from '../components/ProjectDistributionHeatmapLayers';
-import {
-  StatsCardSkeleton,
-  MapSkeleton,
-} from '@/shared/components/ui/Skeletons';
+import { MapSkeleton } from '@/shared/components/ui/Skeletons';
 
 export const PartnerOrgDistributionPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
@@ -74,7 +70,6 @@ export const PartnerOrgDistributionPage: React.FC = () => {
   if (projectsLoading) {
     return (
       <div className='space-y-6'>
-        <StatsCardSkeleton count={2} />
         <Card className='border border-neutral-200 dark:border-neutral-800'>
           <CardHeader>
             <CardTitle>Distribution Map</CardTitle>
@@ -145,55 +140,6 @@ export const PartnerOrgDistributionPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Statistics */}
-      {distributionLoading ? (
-        <StatsCardSkeleton count={2} />
-      ) : (
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-          <Card className='border border-neutral-200 dark:border-neutral-800'>
-            <CardHeader>
-              <CardTitle className='text-sm text-neutral-500'>
-                App Downloads
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-3xl font-bold tracking-tight'>
-                <CountUp
-                  value={(distributionData as any)?.totalDownloads || 0}
-                />
-              </div>
-              <div className='text-xs text-neutral-500 mt-1'>
-                {enabledProjects.size > 0
-                  ? `${enabledProjects.size} project${enabledProjects.size > 1 ? 's' : ''} selected`
-                  : 'No projects selected'}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className='border border-neutral-200 dark:border-neutral-800'>
-            <CardHeader>
-              <CardTitle className='text-sm text-neutral-500'>
-                Total Minutes Listened
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-3xl font-bold tracking-tight'>
-                <CountUp
-                  value={
-                    ((distributionData as any)?.totalListeningHours || 0) * 60
-                  }
-                />
-              </div>
-              <div className='text-xs text-neutral-500 mt-1'>
-                {Math.round(
-                  (distributionData as any)?.totalListeningHours || 0
-                )}{' '}
-                hours
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Distribution Map */}
       <Card className='border border-neutral-200 dark:border-neutral-800'>
         <CardHeader>
@@ -204,9 +150,9 @@ export const PartnerOrgDistributionPage: React.FC = () => {
             <MapSkeleton height='600px' />
           ) : (
             <div className='h-[600px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800'>
-              {(distributionData as any)?.heatmap &&
-              Array.isArray((distributionData as any).heatmap) &&
-              (distributionData as any).heatmap.length > 0 ? (
+              {distributionData?.heatmap &&
+              Array.isArray(distributionData.heatmap) &&
+              distributionData.heatmap.length > 0 ? (
                 <MapShell
                   countriesEnabled={false}
                   padding={{ top: 0, bottom: 0, left: 0, right: 0 }}
@@ -215,7 +161,7 @@ export const PartnerOrgDistributionPage: React.FC = () => {
                     enabledProjectIds={enabledProjects}
                     projects={uniqueProjects}
                     projectColors={projectColors}
-                    heatmapData={(distributionData as any).heatmap}
+                    heatmapData={distributionData.heatmap}
                   />
                 </MapShell>
               ) : (

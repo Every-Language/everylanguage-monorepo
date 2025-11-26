@@ -57,7 +57,7 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
             queryKey: ['partner-org-projects', orgId],
             queryFn: async () => {
               const { data, error } = await (supabase as any)
-                .from('vw_partner_org_projects_via_donations')
+                .from('partner_org_projects_via_donations')
                 .select('*')
                 .eq('partner_org_id', orgId)
                 .order('language_name');
@@ -86,7 +86,7 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
             queryKey: ['partner-org-projects', orgId],
             queryFn: async () => {
               const { data, error } = await (supabase as any)
-                .from('vw_partner_org_projects_via_donations')
+                .from('partner_org_projects_via_donations')
                 .select('*')
                 .eq('partner_org_id', orgId)
                 .order('language_name');
@@ -104,7 +104,7 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
             queryKey: ['partner-org-projects', orgId],
             queryFn: async () => {
               const { data, error } = await (supabase as any)
-                .from('vw_partner_org_projects_via_donations')
+                .from('partner_org_projects_via_donations')
                 .select('*')
                 .eq('partner_org_id', orgId)
                 .order('language_name');

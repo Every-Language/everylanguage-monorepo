@@ -26,8 +26,6 @@ export const PartnerOrgOverviewPage: React.FC = () => {
     'all',
     orgId
   );
-  const { data: distributionData, isLoading: distributionLoading } =
-    useProjectDistribution('all', orgId);
 
   // Get unique projects (may have multiple allocations) - ALWAYS call useMemo
   const uniqueProjects = React.useMemo(() => {
@@ -96,49 +94,6 @@ export const PartnerOrgOverviewPage: React.FC = () => {
     return progressMap;
   }, [progressData, uniqueProjects]);
 
-  // Calculate distribution stats per project - ALWAYS call useMemo
-  const projectDistribution = React.useMemo(() => {
-    if (!distributionData || !uniqueProjects || uniqueProjects.length === 0)
-      return new Map();
-    const distMap = new Map<
-      string,
-      { downloads: number; listeningHours: number }
-    >();
-
-    // Use per-language stats if available (from 'all' mode)
-    if (
-      (distributionData as any).perLanguageStats &&
-      typeof (distributionData as any).perLanguageStats === 'object'
-    ) {
-      for (const project of uniqueProjects) {
-        const langStats = ((distributionData as any).perLanguageStats as any)[
-          project.language_entity_id
-        ];
-        if (langStats) {
-          distMap.set(project.project_id, {
-            downloads: langStats.downloads || 0,
-            listeningHours: langStats.listeningHours || 0,
-          });
-        } else {
-          distMap.set(project.project_id, {
-            downloads: 0,
-            listeningHours: 0,
-          });
-        }
-      }
-    } else {
-      // Fallback: show zeros if no per-language breakdown
-      for (const project of uniqueProjects) {
-        distMap.set(project.project_id, {
-          downloads: 0,
-          listeningHours: 0,
-        });
-      }
-    }
-
-    return distMap;
-  }, [distributionData, uniqueProjects]);
-
   // Show skeleton while loading projects
   if (projectsLoading) {
     return <ProjectCardSkeleton count={3} />;
@@ -160,7 +115,6 @@ export const PartnerOrgOverviewPage: React.FC = () => {
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
         {uniqueProjects.map(project => {
           const progress = projectProgress.get(project.project_id);
-          const distribution = projectDistribution.get(project.project_id);
 
           return (
             <Card
@@ -212,39 +166,6 @@ export const PartnerOrgOverviewPage: React.FC = () => {
                       value={(progress.completed / progress.total) * 100}
                       className='h-2'
                     />
-                  </div>
-                ) : null}
-
-                {/* Distribution Stats */}
-                {distributionLoading ? (
-                  <div className='grid grid-cols-2 gap-4 pt-2 border-t border-neutral-200 dark:border-neutral-800'>
-                    <div>
-                      <div className='h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-16 animate-pulse mb-2' />
-                      <div className='h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-20 animate-pulse' />
-                    </div>
-                    <div>
-                      <div className='h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-20 animate-pulse mb-2' />
-                      <div className='h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-16 animate-pulse' />
-                    </div>
-                  </div>
-                ) : distribution ? (
-                  <div className='grid grid-cols-2 gap-4 pt-2 border-t border-neutral-200 dark:border-neutral-800'>
-                    <div>
-                      <div className='text-xs text-neutral-500 dark:text-neutral-400'>
-                        Downloads
-                      </div>
-                      <div className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
-                        <CountUp value={distribution.downloads} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className='text-xs text-neutral-500 dark:text-neutral-400'>
-                        Listening Hours
-                      </div>
-                      <div className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
-                        <CountUp value={distribution.listeningHours} />
-                      </div>
-                    </div>
                   </div>
                 ) : null}
               </CardContent>

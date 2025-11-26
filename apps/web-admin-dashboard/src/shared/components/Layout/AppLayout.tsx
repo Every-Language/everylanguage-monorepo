@@ -10,7 +10,6 @@ import {
   Globe,
   FolderKanban,
   Settings,
-  BarChart3,
   BookOpen,
   FolderOpen,
   ChevronDown,
@@ -19,6 +18,8 @@ import {
   Building2,
   UserCheck,
   MapPin,
+  Headphones,
+  FileText,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -57,27 +58,18 @@ const navigationItems: NavItem[] = [
     icon: <Map className='h-5 w-5' />,
   },
   {
-    id: 'statistics',
-    label: 'Statistics',
-    path: '/statistics',
+    id: 'bible-translation-overrides',
+    label: 'Bible Translation Overrides',
+    path: '/statistics/bible-translations',
     section: 'Data',
-    icon: <BarChart3 className='h-5 w-5' />,
-    children: [
-      {
-        id: 'bible-translation-overrides',
-        label: 'Bible Translation Overrides',
-        path: '/statistics/bible-translations',
-        icon: <BookOpen className='h-4 w-4' />,
-        parentId: 'statistics',
-      },
-      {
-        id: 'external-projects-overrides',
-        label: 'External Projects Overrides',
-        path: '/statistics/external-projects',
-        icon: <FolderOpen className='h-4 w-4' />,
-        parentId: 'statistics',
-      },
-    ],
+    icon: <BookOpen className='h-5 w-5' />,
+  },
+  {
+    id: 'external-projects-overrides',
+    label: 'External Projects Overrides',
+    path: '/statistics/external-projects',
+    section: 'Data',
+    icon: <FolderOpen className='h-5 w-5' />,
   },
   {
     id: 'language-availability',
@@ -94,18 +86,32 @@ const navigationItems: NavItem[] = [
     icon: <Settings className='h-5 w-5' />,
   },
   {
-    id: 'projects',
-    label: 'Projects',
-    path: '/budgets/projects',
-    section: 'Budgets',
-    icon: <FolderKanban className='h-5 w-5' />,
-  },
-  {
     id: 'donations',
     label: 'Donations',
     path: '/donations',
-    section: 'Funding',
+    section: 'Budgets',
     icon: <HandCoins className='h-5 w-5' />,
+  },
+  {
+    id: 'projects',
+    label: 'Projects',
+    path: '/projects',
+    section: 'Projects',
+    icon: <FolderKanban className='h-5 w-5' />,
+  },
+  {
+    id: 'audio-versions',
+    label: 'Audio Versions',
+    path: '/projects/audio-versions',
+    section: 'Projects',
+    icon: <Headphones className='h-5 w-5' />,
+  },
+  {
+    id: 'text-versions',
+    label: 'Text Versions',
+    path: '/projects/text-versions',
+    section: 'Projects',
+    icon: <FileText className='h-5 w-5' />,
   },
   {
     id: 'users',

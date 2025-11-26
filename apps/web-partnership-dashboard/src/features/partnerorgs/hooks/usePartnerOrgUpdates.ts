@@ -46,7 +46,7 @@ export function usePartnerOrgUpdates(partnerOrgId: string) {
     queryFn: async () => {
       // Get projects for this partner org
       const { data: projects } = await (supabase as any)
-        .from('vw_partner_org_projects_via_donations')
+        .from('partner_org_projects_via_donations')
         .select('project_id, language_entity_id')
         .eq('partner_org_id', partnerOrgId);
 

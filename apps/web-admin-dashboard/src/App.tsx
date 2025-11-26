@@ -42,6 +42,16 @@ const ProjectsPage = lazy(() =>
     default: m.ProjectsPage,
   }))
 );
+const AudioVersionsPage = lazy(() =>
+  import('./features/availability/pages/AudioVersionsPage').then(m => ({
+    default: m.AudioVersionsPage,
+  }))
+);
+const TextVersionsPage = lazy(() =>
+  import('./features/availability/pages/TextVersionsPage').then(m => ({
+    default: m.TextVersionsPage,
+  }))
+);
 const OperationsPage = lazy(() =>
   import('./features/operations/pages/OperationsPage').then(m => ({
     default: m.OperationsPage,
@@ -130,7 +140,15 @@ function App() {
               path='/budgets/languages'
               element={<LanguageAvailabilityPage />}
             />
-            <Route path='/budgets/projects' element={<ProjectsPage />} />
+            <Route path='/projects' element={<ProjectsPage />} />
+            <Route
+              path='/projects/audio-versions'
+              element={<AudioVersionsPage />}
+            />
+            <Route
+              path='/projects/text-versions'
+              element={<TextVersionsPage />}
+            />
             <Route path='/budgets/operations' element={<OperationsPage />} />
             <Route
               path='/statistics/bible-translations'

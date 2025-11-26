@@ -26,7 +26,7 @@ export function usePartnerOrgProjects(partnerOrgId: string) {
     queryKey: ['partner-org-projects', partnerOrgId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from('vw_partner_org_projects_via_donations')
+        .from('partner_org_projects_via_donations')
         .select('*')
         .eq('partner_org_id', partnerOrgId)
         .order('language_name');

@@ -12,7 +12,7 @@ export function useProjectProgress(
         // Aggregate all projects for this partner org
         // Get project IDs first, then query audio_versions by project_id (more reliable)
         const { data: projects, error: projectsError } = await (supabase as any)
-          .from('vw_partner_org_projects_via_donations')
+          .from('partner_org_projects_via_donations')
           .select('project_id')
           .eq('partner_org_id', partnerOrgId!);
 

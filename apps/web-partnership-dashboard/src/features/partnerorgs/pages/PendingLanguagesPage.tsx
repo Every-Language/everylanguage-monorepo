@@ -9,7 +9,6 @@ import {
   CardContent,
 } from '@/shared/components/ui/Card';
 import { usePendingLanguages } from '../hooks/usePendingLanguages';
-import { CountUp } from '../components/CountUp';
 
 const formatCurrency = (cents: number, currencyCode: string = 'USD') => {
   return new Intl.NumberFormat('en-US', {
@@ -47,10 +46,6 @@ export const PendingLanguagesPage: React.FC = () => {
 
       <div className='grid grid-cols-1 gap-4'>
         {pendingLanguages.map((lang: any) => {
-          const totalListeningHours = Math.round(
-            (lang.language_stats?.total_listened_seconds || 0) / 3600
-          );
-
           return (
             <Card
               key={lang.sponsorship_id}
@@ -75,7 +70,7 @@ export const PendingLanguagesPage: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className='grid grid-cols-1 sm:grid-cols-3 gap-6'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
                   {/* Funding */}
                   <div>
                     <div className='text-xs text-neutral-500 mb-2'>Funding</div>
@@ -123,33 +118,6 @@ export const PendingLanguagesPage: React.FC = () => {
                             lang.currency_code || 'USD'
                           )}
                         </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Language Stats */}
-                  <div>
-                    <div className='text-xs text-neutral-500 mb-2'>
-                      Language Usage
-                    </div>
-                    <div className='space-y-2'>
-                      <div>
-                        <div className='text-2xl font-bold tracking-tight'>
-                          <CountUp
-                            value={lang.language_stats?.downloads || 0}
-                          />
-                        </div>
-                        <div className='text-xs text-neutral-500'>
-                          App Downloads
-                        </div>
-                      </div>
-                      <div>
-                        <div className='text-2xl font-bold tracking-tight'>
-                          <CountUp value={totalListeningHours} />
-                        </div>
-                        <div className='text-xs text-neutral-500'>
-                          Total Listening Hours
-                        </div>
                       </div>
                     </div>
                   </div>

@@ -29,6 +29,28 @@ export interface AudioVersionWithProgress {
   } | null;
 }
 
+export interface AudioVersionPaginated extends AudioVersionWithProgress {
+  project?: {
+    id: string;
+    name: string;
+  } | null;
+  language?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+export interface TextVersionPaginated extends TextVersionWithProgress {
+  project?: {
+    id: string;
+    name: string;
+  } | null;
+  language?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
 export interface VerseText {
   id: string;
   verse_id: string;
@@ -472,6 +494,373 @@ export const versionsApi = {
 
     return {
       data: (data || []) as MediaFile[],
+      count: count || 0,
+      page,
+      pageSize,
+      totalPages: Math.ceil((count || 0) / pageSize),
+    };
+  },
+
+  /**
+   * Fetch audio versions with pagination, filtering, and sorting
+   */
+  async fetchAudioVersionsPaginated(params?: {
+    page?: number;
+    pageSize?: number;
+    searchQuery?: string;
+    projectIds?: string[];
+    languageIds?: string[];
+    sortField?: 'name' | 'project' | 'language' | 'progress';
+    sortDirection?: 'asc' | 'desc';
+  }): Promise<{
+    data: AudioVersionPaginated[];
+    count: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
+    const page = params?.page || 1;
+    const pageSize = params?.pageSize || 50;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const sortField = params?.sortField ?? 'name';
+    const sortDirection = params?.sortDirection ?? 'asc';
+    const sortAscending = sortDirection === 'asc';
+
+    let query = supabase
+      .from('audio_versions')
+      .select(
+        `
+        id,
+        name,
+        project_id,
+        language_entity_id,
+        created_at,
+        updated_at,
+        project:projects!project_id (
+          id,
+          name
+        ),
+        language:language_entities!language_entity_id (
+          id,
+          name
+        )
+      `,
+        { count: 'exact' }
+      )
+      .is('deleted_at', null);
+
+    // Apply search filter
+    if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
+      const searchTerm = params.searchQuery.trim();
+      query = query.ilike('name', `%${searchTerm}%`);
+    }
+
+    // Apply project filter
+    if (params?.projectIds && params.projectIds.length > 0) {
+      query = query.in('project_id', params.projectIds);
+    }
+
+    // Apply language filter
+    if (params?.languageIds && params.languageIds.length > 0) {
+      query = query.in('language_entity_id', params.languageIds);
+    }
+
+    // Apply sorting
+    switch (sortField) {
+      case 'name':
+        query = query.order('name', { ascending: sortAscending });
+        break;
+      case 'project':
+        query = query.order('name', {
+          ascending: sortAscending,
+          nullsFirst: sortAscending,
+          foreignTable: 'project',
+        });
+        break;
+      case 'language':
+        query = query.order('name', {
+          ascending: sortAscending,
+          nullsFirst: sortAscending,
+          foreignTable: 'language',
+        });
+        break;
+      case 'progress':
+        // For progress sorting, we'll need to fetch progress data separately
+        // For now, sort by name as fallback
+        query = query.order('name', { ascending: sortAscending });
+        break;
+    }
+
+    // Apply pagination
+    const { data, error, count } = await query.range(from, to);
+
+    if (error) throw error;
+
+    const versions = (data || []) as Array<{
+      id: string;
+      name: string;
+      project_id: string | null;
+      language_entity_id: string;
+      created_at: string | null;
+      updated_at: string | null;
+      project: { id: string; name: string } | null;
+      language: { id: string; name: string } | null;
+    }>;
+
+    // Fetch progress for all versions
+    const versionIds = versions.map(v => v.id);
+    let progressMap = new Map<
+      string,
+      { chapters_with_audio: number; total_chapters: number }
+    >();
+
+    if (versionIds.length > 0) {
+      const { data: progressData, error: progressError } = await supabase
+        .from('mv_audio_version_progress_summary')
+        .select('audio_version_id, chapters_with_audio, total_chapters')
+        .in('audio_version_id', versionIds);
+
+      if (progressError) throw progressError;
+
+      if (progressData) {
+        for (const progress of progressData) {
+          if (progress.audio_version_id) {
+            progressMap.set(progress.audio_version_id, {
+              chapters_with_audio: progress.chapters_with_audio || 0,
+              total_chapters: progress.total_chapters || 0,
+            });
+          }
+        }
+      }
+    }
+
+    // Combine versions with progress
+    const versionsWithProgress: AudioVersionPaginated[] = versions.map(
+      version => {
+        const progress = progressMap.get(version.id);
+        return {
+          id: version.id,
+          name: version.name,
+          project_id: version.project_id,
+          language_entity_id: version.language_entity_id,
+          created_at: version.created_at,
+          updated_at: version.updated_at,
+          project: version.project,
+          language: version.language,
+          progress: progress
+            ? {
+                chapters_with_audio: progress.chapters_with_audio,
+                total_chapters: progress.total_chapters,
+                progress_percentage:
+                  progress.total_chapters > 0
+                    ? Math.round(
+                        (progress.chapters_with_audio /
+                          progress.total_chapters) *
+                          100
+                      )
+                    : 0,
+              }
+            : null,
+        };
+      }
+    );
+
+    // Apply progress sorting if needed (after fetching progress)
+    if (sortField === 'progress') {
+      versionsWithProgress.sort((a, b) => {
+        const aProgress = a.progress?.progress_percentage || 0;
+        const bProgress = b.progress?.progress_percentage || 0;
+        return sortAscending ? aProgress - bProgress : bProgress - aProgress;
+      });
+    }
+
+    return {
+      data: versionsWithProgress,
+      count: count || 0,
+      page,
+      pageSize,
+      totalPages: Math.ceil((count || 0) / pageSize),
+    };
+  },
+
+  /**
+   * Fetch text versions with pagination, filtering, and sorting
+   */
+  async fetchTextVersionsPaginated(params?: {
+    page?: number;
+    pageSize?: number;
+    searchQuery?: string;
+    projectIds?: string[];
+    languageIds?: string[];
+    sortField?: 'name' | 'project' | 'language' | 'progress';
+    sortDirection?: 'asc' | 'desc';
+  }): Promise<{
+    data: TextVersionPaginated[];
+    count: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
+    const page = params?.page || 1;
+    const pageSize = params?.pageSize || 50;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const sortField = params?.sortField ?? 'name';
+    const sortDirection = params?.sortDirection ?? 'asc';
+    const sortAscending = sortDirection === 'asc';
+
+    let query = supabase
+      .from('text_versions')
+      .select(
+        `
+        id,
+        name,
+        project_id,
+        language_entity_id,
+        created_at,
+        updated_at,
+        project:projects!project_id (
+          id,
+          name
+        ),
+        language:language_entities!language_entity_id (
+          id,
+          name
+        )
+      `,
+        { count: 'exact' }
+      )
+      .is('deleted_at', null);
+
+    // Apply search filter
+    if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
+      const searchTerm = params.searchQuery.trim();
+      query = query.ilike('name', `%${searchTerm}%`);
+    }
+
+    // Apply project filter
+    if (params?.projectIds && params.projectIds.length > 0) {
+      query = query.in('project_id', params.projectIds);
+    }
+
+    // Apply language filter
+    if (params?.languageIds && params.languageIds.length > 0) {
+      query = query.in('language_entity_id', params.languageIds);
+    }
+
+    // Apply sorting
+    switch (sortField) {
+      case 'name':
+        query = query.order('name', { ascending: sortAscending });
+        break;
+      case 'project':
+        query = query.order('name', {
+          ascending: sortAscending,
+          nullsFirst: sortAscending,
+          foreignTable: 'project',
+        });
+        break;
+      case 'language':
+        query = query.order('name', {
+          ascending: sortAscending,
+          nullsFirst: sortAscending,
+          foreignTable: 'language',
+        });
+        break;
+      case 'progress':
+        // For progress sorting, we'll need to fetch progress data separately
+        // For now, sort by name as fallback
+        query = query.order('name', { ascending: sortAscending });
+        break;
+    }
+
+    // Apply pagination
+    const { data, error, count } = await query.range(from, to);
+
+    if (error) throw error;
+
+    const versions = (data || []) as Array<{
+      id: string;
+      name: string;
+      project_id: string | null;
+      language_entity_id: string;
+      created_at: string | null;
+      updated_at: string | null;
+      project: { id: string; name: string } | null;
+      language: { id: string; name: string } | null;
+    }>;
+
+    // Fetch progress for all versions
+    const versionIds = versions.map(v => v.id);
+    let progressMap = new Map<
+      string,
+      { complete_chapters: number; total_chapters: number }
+    >();
+
+    if (versionIds.length > 0) {
+      const { data: progressData, error: progressError } = await supabase
+        .from('text_version_progress_summary')
+        .select('text_version_id, complete_chapters, total_chapters')
+        .in('text_version_id', versionIds);
+
+      if (progressError) throw progressError;
+
+      if (progressData) {
+        for (const progress of progressData) {
+          if (progress.text_version_id) {
+            progressMap.set(progress.text_version_id, {
+              complete_chapters: progress.complete_chapters || 0,
+              total_chapters: progress.total_chapters || 0,
+            });
+          }
+        }
+      }
+    }
+
+    // Combine versions with progress
+    const versionsWithProgress: TextVersionPaginated[] = versions.map(
+      version => {
+        const progress = progressMap.get(version.id);
+        return {
+          id: version.id,
+          name: version.name,
+          project_id: version.project_id,
+          language_entity_id: version.language_entity_id,
+          created_at: version.created_at,
+          updated_at: version.updated_at,
+          project: version.project,
+          language: version.language,
+          progress: progress
+            ? {
+                complete_chapters: progress.complete_chapters,
+                total_chapters: progress.total_chapters,
+                progress_percentage:
+                  progress.total_chapters > 0
+                    ? Math.round(
+                        (progress.complete_chapters / progress.total_chapters) *
+                          100
+                      )
+                    : 0,
+              }
+            : null,
+        };
+      }
+    );
+
+    // Apply progress sorting if needed (after fetching progress)
+    if (sortField === 'progress') {
+      versionsWithProgress.sort((a, b) => {
+        const aProgress = a.progress?.progress_percentage || 0;
+        const bProgress = b.progress?.progress_percentage || 0;
+        return sortAscending ? aProgress - bProgress : bProgress - aProgress;
+      });
+    }
+
+    return {
+      data: versionsWithProgress,
       count: count || 0,
       page,
       pageSize,

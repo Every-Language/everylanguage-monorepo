@@ -8,7 +8,6 @@ import {
   CardTitle,
   CardContent,
 } from '@/shared/components/ui/Card';
-import { CountUp } from '../components/CountUp';
 import { useProjectDistribution } from '../hooks/useProjectDistribution';
 
 export const ProjectDistributionPage: React.FC = () => {
@@ -24,34 +23,6 @@ export const ProjectDistributionPage: React.FC = () => {
 
   return (
     <div className='space-y-6'>
-      {/* Stats row */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-        <Card className='border border-neutral-200 dark:border-neutral-800'>
-          <CardHeader>
-            <CardTitle className='text-sm text-neutral-500'>
-              App Downloads
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-3xl font-bold tracking-tight'>
-              <CountUp value={(data as any)?.totalDownloads || 0} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className='border border-neutral-200 dark:border-neutral-800'>
-          <CardHeader>
-            <CardTitle className='text-sm text-neutral-500'>
-              Total Listening Hours
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-3xl font-bold tracking-tight'>
-              <CountUp value={(data as any)?.totalListeningHours || 0} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Heatmap placeholder */}
       <Card className='border border-neutral-200 dark:border-neutral-800'>
         <CardHeader>
