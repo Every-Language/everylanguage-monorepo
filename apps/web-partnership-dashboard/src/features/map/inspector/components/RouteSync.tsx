@@ -8,11 +8,13 @@ import {
   useClearSelection,
   useSelectionMode,
   useSetSelectionMode,
+  useSelection,
 } from '../state/inspectorStore';
 
 // This component keeps the URL and inspector selection in sync both ways.
 export const RouteSync: React.FC = () => {
   const pathname = usePathname();
+  const selection = useSelection();
   const setSelection = useSetSelection();
   const clearSelection = useClearSelection();
   const setLastUpdateFromRoute = useSetLastUpdateFromRoute();
@@ -56,13 +58,37 @@ export const RouteSync: React.FC = () => {
         }
 
         // Determine expected selection from URL
+        // Preserve coordinates if the current selection has the same ID and kind
+        const currentSelection = selection;
+        const preserveCoordinates =
+          (kind === 'language' &&
+            currentSelection?.kind === 'language_entity' &&
+            currentSelection.id === id &&
+            currentSelection.coordinates) ||
+          (kind === 'people-group' &&
+            currentSelection?.kind === 'people_group' &&
+            currentSelection.id === id &&
+            currentSelection.coordinates);
+
         const expectedSelection =
           kind === 'language'
-            ? { kind: 'language_entity' as const, id }
+            ? {
+                kind: 'language_entity' as const,
+                id,
+                ...(preserveCoordinates
+                  ? { coordinates: currentSelection.coordinates }
+                  : {}),
+              }
             : kind === 'region'
               ? { kind: 'region' as const, id }
               : kind === 'people-group'
-                ? { kind: 'people_group' as const, id }
+                ? {
+                    kind: 'people_group' as const,
+                    id,
+                    ...(preserveCoordinates
+                      ? { coordinates: currentSelection.coordinates }
+                      : {}),
+                  }
                 : { kind: 'project' as const, id };
 
         // Set flag to prevent selection from triggering route change
@@ -79,6 +105,7 @@ export const RouteSync: React.FC = () => {
     }
   }, [
     pathname,
+    selection,
     setSelection,
     clearSelection,
     setLastUpdateFromRoute,

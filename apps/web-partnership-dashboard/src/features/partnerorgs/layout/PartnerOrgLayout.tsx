@@ -121,14 +121,71 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
           queryClient.prefetchQuery({
             queryKey: ['partner-org-donations', orgId, user?.id ?? null],
             queryFn: async () => {
-              const { data, error } = await (supabase as any).rpc(
-                'get_partner_org_donations',
-                {
-                  p_partner_org_id: orgId,
-                }
-              );
+              const { data: donations, error } = await (supabase as any)
+                .from('donations')
+                .select(
+                  `
+                  *,
+                  donation_allocations (
+                    id,
+                    amount_cents,
+                    currency_code,
+                    project_id,
+                    operation_id,
+                    effective_from,
+                    effective_to,
+                    notes,
+                    project:projects!donation_allocations_project_id_fkey (
+                      id,
+                      name,
+                      target_language_entity_id,
+                      language_entity:language_entities!projects_target_language_entity_id_fkey (
+                        id,
+                        name
+                      )
+                    ),
+                    operation:operations!donation_allocations_operation_id_fkey (
+                      id,
+                      name,
+                      category
+                    )
+                  ),
+                  intent_language:language_entities!donations_intent_language_entity_id_fkey (
+                    id,
+                    name
+                  ),
+                  intent_region:regions!donations_intent_region_id_fkey (
+                    id,
+                    name
+                  ),
+                  intent_operation:operations!donations_intent_operation_id_fkey (
+                    id,
+                    name
+                  )
+                `
+                )
+                .eq('partner_org_id', orgId)
+                .is('deleted_at', null)
+                .order('created_at', { ascending: false });
+
               if (error) throw error;
-              return data ?? [];
+
+              return (donations ?? []).map((d: any) => ({
+                ...d,
+                donation_allocations: Array.isArray(d.donation_allocations)
+                  ? d.donation_allocations
+                  : [],
+                intent_language: Array.isArray(d.intent_language)
+                  ? d.intent_language[0]
+                  : d.intent_language,
+                intent_region: Array.isArray(d.intent_region)
+                  ? d.intent_region[0]
+                  : d.intent_region,
+                intent_operation: Array.isArray(d.intent_operation)
+                  ? d.intent_operation[0]
+                  : d.intent_operation,
+                isFromCurrentUser: user?.id !== null && d.user_id === user?.id,
+              }));
             },
           });
           break;

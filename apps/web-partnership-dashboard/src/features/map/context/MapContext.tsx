@@ -4,7 +4,12 @@ import { normalizeBboxForMap, centerOfBbox } from '../inspector/utils/geo';
 
 interface MapContextValue {
   mapRef: React.MutableRefObject<MapRef | null>;
-  flyTo: (opts: { longitude: number; latitude: number; zoom?: number }) => void;
+  flyTo: (opts: {
+    longitude: number;
+    latitude: number;
+    zoom?: number;
+    onComplete?: () => void;
+  }) => void;
   fitBounds: (
     bbox: [number, number, number, number],
     opts?: {
@@ -43,9 +48,26 @@ export const MapProvider: React.FC<{
     };
   }, [mapRef]);
   const flyTo = React.useCallback(
-    (opts: { longitude: number; latitude: number; zoom?: number }) => {
+    (opts: {
+      longitude: number;
+      latitude: number;
+      zoom?: number;
+      onComplete?: () => void;
+    }) => {
       const map = mapRef.current;
       if (!map) return;
+      const underlyingMap = map.getMap();
+      if (!underlyingMap) return;
+
+      // Set up completion callback if provided
+      if (opts.onComplete) {
+        const handleIdle = () => {
+          underlyingMap.off('idle', handleIdle);
+          opts.onComplete?.();
+        };
+        underlyingMap.once('idle', handleIdle);
+      }
+
       map.flyTo({
         center: [opts.longitude, opts.latitude],
         zoom: opts.zoom ?? 4,

@@ -260,6 +260,10 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
   const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const throttleTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const lastThrottleCallRef = React.useRef<number>(0);
 
   // Track viewport bounds and zoom
   React.useEffect(() => {
@@ -270,6 +274,15 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
 
     const updateViewport = () => {
       try {
+        // Skip if map is currently animating (prefetching handles this case)
+        // Check if methods exist before calling (MapLibre may not have these)
+        const isAnimating =
+          (typeof map.isMoving === 'function' && map.isMoving()) ||
+          (typeof map.isZooming === 'function' && map.isZooming());
+        if (isAnimating) {
+          return;
+        }
+
         const bounds = map.getBounds();
         if (!bounds) return;
 
@@ -289,7 +302,7 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
           ne.lat + latSpan * 0.05, // maxLat
         ];
 
-        // Debounce viewport updates (300ms)
+        // Debounce viewport updates (200ms)
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
         }
@@ -306,26 +319,56 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
           if (boundsChanged) {
             setViewportBounds(expandedBounds);
           }
-        }, 300);
+        }, 200);
       } catch (error) {
         console.debug('Error updating viewport:', error);
+      }
+    };
+
+    // Throttled version for move events during animation (250ms)
+    const throttledUpdateViewport = () => {
+      const now = Date.now();
+      const timeSinceLastCall = now - lastThrottleCallRef.current;
+
+      if (timeSinceLastCall >= 250) {
+        // Execute immediately if enough time has passed
+        lastThrottleCallRef.current = now;
+        updateViewport();
+      } else {
+        // Schedule for later if throttled
+        if (throttleTimerRef.current) {
+          clearTimeout(throttleTimerRef.current);
+        }
+        throttleTimerRef.current = setTimeout(() => {
+          lastThrottleCallRef.current = Date.now();
+          updateViewport();
+        }, 250 - timeSinceLastCall);
       }
     };
 
     // Initial update
     updateViewport();
 
-    // Update on map move/zoom
+    // Update on map move/zoom (end events for precise updates)
     map.on('moveend', updateViewport);
     map.on('zoomend', updateViewport);
     map.on('resize', updateViewport);
+
+    // Also listen to move events during animation (throttled for performance)
+    map.on('move', throttledUpdateViewport);
+    map.on('zoom', throttledUpdateViewport);
 
     return () => {
       map.off('moveend', updateViewport);
       map.off('zoomend', updateViewport);
       map.off('resize', updateViewport);
+      map.off('move', throttledUpdateViewport);
+      map.off('zoom', throttledUpdateViewport);
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
+      }
+      if (throttleTimerRef.current) {
+        clearTimeout(throttleTimerRef.current);
       }
     };
     // viewportBounds intentionally excluded from deps
@@ -342,8 +385,9 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
         zoom,
       });
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 15 * 60 * 1000, // 15 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes garbage collection time
+    refetchOnWindowFocus: false, // Don't refetch on tab focus
     // Keep previous data while fetching to prevent blinking
     placeholderData: previousData =>
       previousData as PeopleGroupWithLocation[] | undefined,
@@ -543,10 +587,17 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
             // Only allow selection if in people_group mode
             if (selectionMode !== 'people_group') return;
 
-            // Set selection
+            // Extract coordinates from the clicked feature
+            const coords = (feature.geometry as GeoJSON.Point).coordinates as [
+              number,
+              number,
+            ];
+
+            // Set selection with clicked coordinates
             setSelection({
               kind: 'people_group',
               id: props.people_group_id,
+              coordinates: coords,
             });
             // Navigate to people group page
             router.push(

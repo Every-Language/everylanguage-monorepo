@@ -64,9 +64,6 @@ function useJPLanguageStatsCache(
       // Try cache first
       if (languageEntityId) {
         try {
-          console.log(
-            `[useJPLanguageStatsCache] Attempting cache lookup for language: ${languageEntityId}`
-          );
           // Fetch from mv_language_stats
           const { data: cacheDataRaw, error: cacheError } = await supabase
             .from('mv_language_stats')
@@ -76,9 +73,6 @@ function useJPLanguageStatsCache(
 
           const cacheData = cacheDataRaw as JPLanguageCache | null;
           if (!cacheError && cacheData) {
-            console.log(
-              `[useJPLanguageStatsCache] ✅ CACHE HIT for language: ${languageEntityId}`
-            );
             // Transform cache data to JPLanguage format
             const languageData: JPLanguage = {
               ROL3: (cacheData.rolv_code || cacheData.iso639_3 || '') as string,

@@ -2,10 +2,10 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 export type MapSelection =
-  | { kind: 'language_entity'; id: string }
+  | { kind: 'language_entity'; id: string; coordinates?: [number, number] }
   | { kind: 'region'; id: string }
   | { kind: 'project'; id: string }
-  | { kind: 'people_group'; id: string };
+  | { kind: 'people_group'; id: string; coordinates?: [number, number] };
 
 export type SelectionMode = 'language' | 'region' | 'people_group';
 

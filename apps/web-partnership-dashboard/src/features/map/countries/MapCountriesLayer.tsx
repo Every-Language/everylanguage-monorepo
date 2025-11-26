@@ -138,6 +138,7 @@ export const MapCountriesLayer: React.FC<MapCountriesLayerProps> = ({
     queryFn: () => fetchCountriesWithBibleStatus(),
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes garbage collection time
+    refetchOnWindowFocus: false, // Don't refetch on tab focus
   });
 
   // Convert to GeoJSON FeatureCollection
@@ -399,7 +400,7 @@ export const MapCountriesLayer: React.FC<MapCountriesLayerProps> = ({
                 'case',
                 ['get', 'has_selection'],
                 opacity * 0.5, // Others: 50% opacity when selected
-                opacity, // All: 100% opacity when no selection
+                opacity * 0.3, // All: 30% opacity when no selection
               ],
             ],
           }}

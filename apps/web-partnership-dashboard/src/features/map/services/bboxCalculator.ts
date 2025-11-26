@@ -81,3 +81,39 @@ export function calculateBboxFromGeometry(
 
   return [minLng, minLat, maxLng, maxLat];
 }
+
+/**
+ * Calculate bounding box from an array of [longitude, latitude] coordinates.
+ * Returns null if the array is empty or contains invalid coordinates.
+ */
+export function calculateBboxFromCoordinates(
+  coordinates: [number, number][]
+): BBox | null {
+  if (!coordinates || coordinates.length === 0) return null;
+
+  let minLng = Infinity;
+  let minLat = Infinity;
+  let maxLng = -Infinity;
+  let maxLat = -Infinity;
+
+  for (const [lng, lat] of coordinates) {
+    if (typeof lng !== 'number' || typeof lat !== 'number') continue;
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+
+  if (
+    !Number.isFinite(minLng) ||
+    !Number.isFinite(minLat) ||
+    !Number.isFinite(maxLng) ||
+    !Number.isFinite(maxLat)
+  ) {
+    return null;
+  }
+
+  return [minLng, minLat, maxLng, maxLat];
+}

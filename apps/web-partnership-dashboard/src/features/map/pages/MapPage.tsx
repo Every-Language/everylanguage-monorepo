@@ -172,7 +172,7 @@ export const MapPage: React.FC = () => {
 
   // Calculate horizontal offset to center selector over visible map area
   const selectorLeftOffset = React.useMemo(() => {
-    // During SSR and initial render, use 50% to match server render
+    // Always use 50% during SSR and initial render to match server render
     if (
       !isMounted ||
       typeof window === 'undefined' ||
