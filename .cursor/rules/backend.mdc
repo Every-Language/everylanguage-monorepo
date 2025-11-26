@@ -65,6 +65,8 @@ CREATE INDEX idx_example_created_at ON example(created_at);
 - **Read-only**: Use Supabase MCP to query development project data only
 - **Never modify**: Do not create/update/delete data through MCP
 - **No deployments**: Never apply migrations or deploy Edge Functions through MCP - only through CI/CD
+- **Default project**: Always use dev remote project (`sjczwtpnjbmscxoszlyi`) unless explicitly asked to use prod
+- **Never execute SQL on prod**: Never execute SQL on production project unless explicitly instructed
 
 ## Database Migrations
 
@@ -180,3 +182,20 @@ serve(async (req: Request) => {
 - Use constraints for validation
 - Use soft deletes: `deleted_at TIMESTAMPTZ`
 - Generate types after schema changes: `pnpm db:generate-types`
+
+## CASCADE Operations (CRITICAL)
+
+**When using CASCADE drops, always verify dependent objects:**
+
+- Before dropping with CASCADE, identify all dependent objects (constraints, indexes, views, functions, triggers)
+- Ensure dependent objects are either:
+  - Not needed and safe to drop, OR
+  - Recreated in the same migration if required
+- Check dependencies using:
+  ```sql
+  -- Check foreign key dependencies
+  SELECT * FROM pg_constraint WHERE confrelid = 'table_name'::regclass;
+  
+  -- Check dependent views/functions
+  SELECT * FROM pg_depend WHERE refobjid = 'table_name'::regclass;
+  ```

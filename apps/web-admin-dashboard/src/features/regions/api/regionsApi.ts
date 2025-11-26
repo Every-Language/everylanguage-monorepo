@@ -15,6 +15,7 @@ interface FetchRegionsParams {
   searchQuery?: string;
   levelFilter?: string;
   languageFilters?: string[]; // Changed to array for multi-select
+  externalIdSearch?: string; // Search by external_id in region_sources
 }
 
 export const regionsApi = {
@@ -84,6 +85,30 @@ export const regionsApi = {
             }) as RegionWithLanguages
         );
 
+        // Apply external_id search filter if provided
+        if (
+          params?.externalIdSearch &&
+          params.externalIdSearch.trim().length > 0
+        ) {
+          const { data: sourcesData, error: sourcesError } = await supabase
+            .from('region_sources')
+            .select('region_id')
+            .ilike('external_id', `%${params.externalIdSearch.trim()}%`)
+            .is('deleted_at', null);
+
+          if (sourcesError) {
+            console.error('Error searching by external_id:', sourcesError);
+            throw sourcesError;
+          }
+
+          const regionIdsFromExternalId = new Set(
+            sourcesData?.map(s => s.region_id) || []
+          );
+          results = results.filter(region =>
+            regionIdsFromExternalId.has(region.id)
+          );
+        }
+
         // Apply level filter to search results (AND logic)
         if (params?.levelFilter) {
           results = results.filter(
@@ -131,6 +156,33 @@ export const regionsApi = {
       }
     }
 
+    // Apply external_id search filter if provided
+    let regionIdsFromExternalId: string[] | undefined;
+    if (params?.externalIdSearch && params.externalIdSearch.trim().length > 0) {
+      const { data: sourcesData, error: sourcesError } = await supabase
+        .from('region_sources')
+        .select('region_id')
+        .ilike('external_id', `%${params.externalIdSearch.trim()}%`)
+        .is('deleted_at', null);
+
+      if (sourcesError) {
+        console.error('Error searching by external_id:', sourcesError);
+        throw sourcesError;
+      }
+
+      regionIdsFromExternalId = [
+        ...new Set(sourcesData?.map(s => s.region_id) || []),
+      ];
+
+      // If no matches, return empty result
+      if (regionIdsFromExternalId.length === 0) {
+        return {
+          data: [],
+          total: 0,
+        };
+      }
+    }
+
     // Normal pagination query with filters
     let query = supabase
       .from('regions')
@@ -145,6 +197,11 @@ export const regionsApi = {
         }
       )
       .is('deleted_at', null);
+
+    // Apply external_id filter
+    if (regionIdsFromExternalId && regionIdsFromExternalId.length > 0) {
+      query = query.in('id', regionIdsFromExternalId);
+    }
 
     // Apply level filter
     if (params?.levelFilter) {
@@ -575,35 +632,84 @@ export const regionsApi = {
   },
 
   /**
-   * Count all descendants of a region (recursive, to Nth level)
+   * Fetch region sources
    */
-  async countRegionDescendants(regionId: string): Promise<number> {
-    const { data, error } = await supabase.rpc('get_region_hierarchy', {
-      region_id: regionId,
-      generations_up: 0,
-      generations_down: 100, // Large number to get all descendants
-    });
+  async fetchRegionSources(regionId: string): Promise<
+    Array<{
+      id: string;
+      region_id: string;
+      source: string;
+      version: string | null;
+      is_external: boolean;
+      external_id: string | null;
+      external_id_type: string | null;
+      created_at: string | null;
+      created_by: string | null;
+      deleted_at: string | null;
+    }>
+  > {
+    const { data, error } = await supabase
+      .from('region_sources')
+      .select('*')
+      .eq('region_id', regionId)
+      .is('deleted_at', null)
+      .order('source');
 
-    if (error) {
-      console.error('Error counting descendants:', error);
-      return 0;
-    }
-
-    // Count only descendants (relationship_type = 'descendant')
-    const hierarchyNodes = (data || []) as RegionHierarchyNode[];
-    return (
-      hierarchyNodes.filter(node => node.relationship_type === 'descendant')
-        .length || 0
-    );
+    if (error) throw error;
+    return data || [];
   },
 
   /**
-   * Fetch parent region
+   * Create region source
    */
-  async fetchParentRegion(
-    regionId: string
-  ): Promise<RegionWithLanguages | null> {
-    if (!regionId) return null;
-    return this.fetchRegionById(regionId);
+  async createRegionSource(
+    regionId: string,
+    sourceData: {
+      source: string;
+      version?: string | null;
+      is_external: boolean;
+      external_id?: string | null;
+      external_id_type?: string | null;
+    }
+  ): Promise<void> {
+    const { error } = await supabase.from('region_sources').insert({
+      region_id: regionId,
+      ...sourceData,
+    });
+
+    if (error) throw error;
+  },
+
+  /**
+   * Update region source
+   */
+  async updateRegionSource(
+    sourceId: string,
+    updates: {
+      source?: string;
+      version?: string | null;
+      is_external?: boolean;
+      external_id?: string | null;
+      external_id_type?: string | null;
+    }
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('region_sources')
+      .update(updates)
+      .eq('id', sourceId);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Delete region source
+   */
+  async deleteRegionSource(sourceId: string): Promise<void> {
+    const { error } = await supabase
+      .from('region_sources')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', sourceId);
+
+    if (error) throw error;
   },
 };

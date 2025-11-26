@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/query/query-client';
 import { regionsApi } from '../api/regionsApi';
@@ -13,40 +13,25 @@ type ModalStackItem =
   | { type: 'region'; region: RegionWithLanguages; id: string }
   | { type: 'language'; entity: LanguageEntityWithRegions; id: string };
 
-// Component for region row with descendant count and parent link
+// Component for region row with external IDs
 function RegionRow({
   region,
   onRegionClick,
-  onParentClick,
 }: {
   region: RegionWithLanguages;
   onRegionClick: (region: RegionWithLanguages) => void;
-  onParentClick: (parentId: string) => void;
 }) {
-  // Fetch descendant count
-  const { data: descendantCount } = useQuery({
-    queryKey: ['region-descendants', region.id],
-    queryFn: () => regionsApi.countRegionDescendants(region.id),
+  // Fetch region sources for external IDs
+  const { data: sources } = useQuery({
+    queryKey: ['region-sources', region.id],
+    queryFn: () => regionsApi.fetchRegionSources(region.id),
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  // Fetch parent region if parent_id exists
-  const { data: parentRegion } = useQuery({
-    queryKey: ['parent-region', region.parent_id],
-    queryFn: () => {
-      if (!region.parent_id) return null;
-      return regionsApi.fetchParentRegion(region.parent_id);
-    },
-    enabled: !!region.parent_id,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const handleParentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (region.parent_id) {
-      onParentClick(region.parent_id);
-    }
-  };
+  const externalIds =
+    sources
+      ?.filter(s => s.external_id && s.external_id_type)
+      .map(s => `${s.external_id_type}:${s.external_id}`) || [];
 
   return (
     <tr
@@ -64,19 +49,15 @@ function RegionRow({
       <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
         {region.language_count || 0} languages
       </td>
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-        {descendantCount ?? '...'}
-      </td>
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-        {parentRegion ? (
-          <button
-            onClick={handleParentClick}
-            className='text-secondary-600 dark:text-secondary-400 hover:text-secondary-900 dark:hover:text-secondary-300 hover:underline transition-colors'
-          >
-            {parentRegion.name}
-          </button>
-        ) : region.parent_id ? (
-          'Loading...'
+      <td className='px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400'>
+        {externalIds.length > 0 ? (
+          <div className='flex flex-col gap-1'>
+            {externalIds.map((id, idx) => (
+              <span key={idx} className='font-mono text-xs'>
+                {id}
+              </span>
+            ))}
+          </div>
         ) : (
           <span className='text-neutral-400 dark:text-neutral-600'>—</span>
         )}
@@ -95,6 +76,9 @@ export function RegionsPage() {
     Array<{ id: string; name: string }>
   >([]);
   const [languageSearchQuery, setLanguageSearchQuery] = useState('');
+  const [externalIdSearch, setExternalIdSearch] = useState('');
+  const [debouncedExternalIdSearch, setDebouncedExternalIdSearch] =
+    useState('');
 
   // Modal stack for layered modals
   const [modalStack, setModalStack] = useState<ModalStackItem[]>([]);
@@ -109,6 +93,16 @@ export function RegionsPage() {
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  // Debounce external ID search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedExternalIdSearch(externalIdSearch);
+      setPage(1); // Reset to page 1 on search
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [externalIdSearch]);
 
   // Fetch languages for filter
   const { data: searchedLanguages } = useQuery({
@@ -133,7 +127,8 @@ export function RegionsPage() {
       pageSize,
       debouncedSearch,
       levelFilter,
-      languageFilterIds.join(',')
+      languageFilterIds.join(','),
+      debouncedExternalIdSearch
     ),
     queryFn: () =>
       regionsApi.fetchRegions({
@@ -143,6 +138,10 @@ export function RegionsPage() {
         levelFilter: levelFilter !== 'all' ? levelFilter : undefined,
         languageFilters:
           languageFilterIds.length > 0 ? languageFilterIds : undefined,
+        externalIdSearch:
+          debouncedExternalIdSearch.trim().length > 0
+            ? debouncedExternalIdSearch.trim()
+            : undefined,
       }),
   });
 
@@ -223,7 +222,7 @@ export function RegionsPage() {
       </div>
 
       {/* Filters */}
-      <div className='mb-6 grid grid-cols-1 md:grid-cols-2 gap-4'>
+      <div className='mb-6 grid grid-cols-1 md:grid-cols-3 gap-4'>
         {/* Level Filter */}
         <Select
           label='Filter by Level'
@@ -243,6 +242,23 @@ export function RegionsPage() {
           <SelectItem value='town'>Town</SelectItem>
           <SelectItem value='village'>Village</SelectItem>
         </Select>
+
+        {/* External ID Search */}
+        <div>
+          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+            Search by External ID
+          </label>
+          <div className='relative'>
+            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500' />
+            <input
+              type='text'
+              placeholder='Search external IDs...'
+              value={externalIdSearch}
+              onChange={e => setExternalIdSearch(e.target.value)}
+              className='w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-secondary-500 dark:focus:ring-secondary-600 focus:border-secondary-500 dark:focus:border-secondary-600'
+            />
+          </div>
+        </div>
 
         {/* Language Filter */}
         <div>
@@ -352,10 +368,7 @@ export function RegionsPage() {
                       Languages
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                      Subregions
-                    </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                      Parent Region
+                      External IDs
                     </th>
                   </tr>
                 </thead>
@@ -366,13 +379,12 @@ export function RegionsPage() {
                         key={region.id}
                         region={region}
                         onRegionClick={handleRegionClick}
-                        onParentClick={handleNavigateToRegion}
                       />
                     ))
                   ) : (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={4}
                         className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
                       >
                         {searchTerm

@@ -6,6 +6,8 @@ import { regionsApi } from '../../regions/api/regionsApi';
 import { ViewProjectModal } from '../components/ViewProjectModal';
 import { LanguageEntityModal } from '../../languages/components/LanguageEntityModal';
 import { RegionModal } from '../../regions/components/RegionModal';
+import { ViewTextVersionModal } from '../components/ViewTextVersionModal';
+import { ViewAudioVersionModal } from '../components/ViewAudioVersionModal';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
 import type { LanguageEntityWithRegions, RegionWithLanguages } from '@/types';
@@ -14,7 +16,9 @@ import type { Database } from '@everylanguage/shared-types';
 type ModalStackItem =
   | { type: 'project'; id: string }
   | { type: 'language'; id: string; entity: LanguageEntityWithRegions }
-  | { type: 'region'; id: string; region: RegionWithLanguages };
+  | { type: 'region'; id: string; region: RegionWithLanguages }
+  | { type: 'textVersion'; id: string }
+  | { type: 'audioVersion'; id: string };
 
 export function ProjectsPage() {
   const queryClient = useQueryClient();
@@ -22,21 +26,18 @@ export function ProjectsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(50);
-  const [sourceLanguageFilters, setSourceLanguageFilters] = useState<
-    Array<{ id: string; name: string; level?: string | null }>
-  >([]);
   const [targetLanguageFilters, setTargetLanguageFilters] = useState<
     Array<{ id: string; name: string; level?: string | null }>
   >([]);
   const [regionFilters, setRegionFilters] = useState<
     Array<{ id: string; name: string; level?: string | null }>
   >([]);
-  const [sourceLanguageSearch, setSourceLanguageSearch] = useState('');
   const [targetLanguageSearch, setTargetLanguageSearch] = useState('');
   const [regionSearchTerm, setRegionSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [fundingStatusFilter, setFundingStatusFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<
-    'created_at' | 'name' | 'source_language' | 'target_language'
+    'created_at' | 'name' | 'target_language'
   >('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [modalStack, setModalStack] = useState<ModalStackItem[]>([]);
@@ -49,20 +50,6 @@ export function ProjectsPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
-
-  const { data: sourceLanguageResults = [] } = useQuery({
-    queryKey: ['projects-source-language-search', sourceLanguageSearch],
-    queryFn: async () => {
-      if (!sourceLanguageSearch || sourceLanguageSearch.length < 2) return [];
-      const results = await languagesApi.fetchLanguageEntities({
-        searchQuery: sourceLanguageSearch,
-        page: 1,
-        pageSize: 20,
-      });
-      return results.data;
-    },
-    enabled: sourceLanguageSearch.length >= 2,
-  });
 
   const { data: targetLanguageResults = [] } = useQuery({
     queryKey: ['projects-target-language-search', targetLanguageSearch],
@@ -92,12 +79,9 @@ export function ProjectsPage() {
     enabled: regionSearchTerm.length >= 2,
   });
 
-  const sourceLanguageIds = sourceLanguageFilters.map(language => language.id);
   const targetLanguageIds = targetLanguageFilters.map(language => language.id);
   const regionIds = regionFilters.map(region => region.id);
-  const handleSort = (
-    field: 'created_at' | 'name' | 'source_language' | 'target_language'
-  ) => {
+  const handleSort = (field: 'created_at' | 'name' | 'target_language') => {
     if (sortField === field) {
       setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -108,7 +92,7 @@ export function ProjectsPage() {
   };
 
   const getSortIndicator = (
-    field: 'created_at' | 'name' | 'source_language' | 'target_language'
+    field: 'created_at' | 'name' | 'target_language'
   ) => {
     if (sortField !== field) return null;
     return sortDirection === 'asc' ? '↑' : '↓';
@@ -121,10 +105,10 @@ export function ProjectsPage() {
       page,
       pageSize,
       debouncedSearch,
-      sourceLanguageIds.join(','),
       targetLanguageIds.join(','),
       regionIds.join(','),
       statusFilter,
+      fundingStatusFilter,
       sortField,
       sortDirection,
     ],
@@ -133,14 +117,16 @@ export function ProjectsPage() {
         page,
         pageSize,
         searchQuery: debouncedSearch,
-        sourceLanguageIds:
-          sourceLanguageIds.length > 0 ? sourceLanguageIds : undefined,
         targetLanguageIds:
           targetLanguageIds.length > 0 ? targetLanguageIds : undefined,
         regionIds: regionIds.length > 0 ? regionIds : undefined,
         statusFilter:
           statusFilter !== 'all'
             ? (statusFilter as Database['public']['Enums']['project_status'])
+            : undefined,
+        fundingStatusFilter:
+          fundingStatusFilter !== 'all'
+            ? (fundingStatusFilter as Database['public']['Enums']['funding_status'])
             : undefined,
         sortField,
         sortDirection,
@@ -280,86 +266,6 @@ export function ProjectsPage() {
       {/* Filters */}
       <div className='mb-6 space-y-6'>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
-          {/* Source language filter */}
-          <div>
-            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-              Source Languages
-            </label>
-            <div className='relative'>
-              <input
-                type='text'
-                placeholder='Search source languages...'
-                value={sourceLanguageSearch}
-                onChange={e => setSourceLanguageSearch(e.target.value)}
-                className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
-              />
-              {sourceLanguageSearch.length >= 2 && (
-                <div className='absolute z-20 w-full mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
-                  {sourceLanguageResults.length === 0 ? (
-                    <div className='px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
-                      No matches
-                    </div>
-                  ) : (
-                    sourceLanguageResults.map(language => (
-                      <button
-                        key={language.id}
-                        type='button'
-                        onClick={() => {
-                          if (
-                            !sourceLanguageFilters.find(
-                              item => item.id === language.id
-                            )
-                          ) {
-                            setSourceLanguageFilters(prev => [
-                              ...prev,
-                              {
-                                id: language.id,
-                                name: language.name,
-                                level: language.level,
-                              },
-                            ]);
-                            setPage(1);
-                          }
-                          setSourceLanguageSearch('');
-                        }}
-                        className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                      >
-                        {language.name}{' '}
-                        <span className='text-xs text-neutral-500 dark:text-neutral-400'>
-                          ({language.level})
-                        </span>
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-            {sourceLanguageFilters.length > 0 && (
-              <div className='mt-2 flex flex-wrap gap-2'>
-                {sourceLanguageFilters.map(language => (
-                  <span
-                    key={language.id}
-                    className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-200'
-                  >
-                    {language.name}
-                    <button
-                      type='button'
-                      onClick={() => {
-                        setSourceLanguageFilters(prev =>
-                          prev.filter(item => item.id !== language.id)
-                        );
-                        setPage(1);
-                      }}
-                      className='text-xs hover:underline'
-                    >
-                      Remove
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Target language filter */}
           <div>
             <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
@@ -439,84 +345,84 @@ export function ProjectsPage() {
               </div>
             )}
           </div>
-        </div>
 
-        {/* Region filter */}
-        <div>
-          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-            Regions
-          </label>
-          <div className='relative'>
-            <input
-              type='text'
-              placeholder='Search regions...'
-              value={regionSearchTerm}
-              onChange={e => setRegionSearchTerm(e.target.value)}
-              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
-            />
-            {regionSearchTerm.length >= 2 && (
-              <div className='absolute z-20 w-full mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
-                {regionSearchResults.length === 0 ? (
-                  <div className='px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
-                    No matches
-                  </div>
-                ) : (
-                  regionSearchResults.map(region => (
+          {/* Region filter */}
+          <div>
+            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+              Regions
+            </label>
+            <div className='relative'>
+              <input
+                type='text'
+                placeholder='Search regions...'
+                value={regionSearchTerm}
+                onChange={e => setRegionSearchTerm(e.target.value)}
+                className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
+              />
+              {regionSearchTerm.length >= 2 && (
+                <div className='absolute z-20 w-full mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+                  {regionSearchResults.length === 0 ? (
+                    <div className='px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                      No matches
+                    </div>
+                  ) : (
+                    regionSearchResults.map(region => (
+                      <button
+                        key={region.id}
+                        type='button'
+                        onClick={() => {
+                          if (
+                            !regionFilters.find(item => item.id === region.id)
+                          ) {
+                            setRegionFilters(prev => [
+                              ...prev,
+                              {
+                                id: region.id,
+                                name: region.name,
+                                level: region.level,
+                              },
+                            ]);
+                            setPage(1);
+                          }
+                          setRegionSearchTerm('');
+                        }}
+                        className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+                      >
+                        {region.name}{' '}
+                        <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                          ({region.level})
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            {regionFilters.length > 0 && (
+              <div className='mt-2 flex flex-wrap gap-2'>
+                {regionFilters.map(region => (
+                  <span
+                    key={region.id}
+                    className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
+                  >
+                    {region.name}
                     <button
-                      key={region.id}
                       type='button'
                       onClick={() => {
-                        if (
-                          !regionFilters.find(item => item.id === region.id)
-                        ) {
-                          setRegionFilters(prev => [
-                            ...prev,
-                            {
-                              id: region.id,
-                              name: region.name,
-                              level: region.level,
-                            },
-                          ]);
-                          setPage(1);
-                        }
-                        setRegionSearchTerm('');
+                        setRegionFilters(prev =>
+                          prev.filter(item => item.id !== region.id)
+                        );
+                        setPage(1);
                       }}
-                      className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+                      className='text-xs hover:underline'
                     >
-                      {region.name}{' '}
-                      <span className='text-xs text-neutral-500 dark:text-neutral-400'>
-                        ({region.level})
-                      </span>
+                      Remove
                     </button>
-                  ))
-                )}
+                  </span>
+                ))}
               </div>
             )}
           </div>
-          {regionFilters.length > 0 && (
-            <div className='mt-2 flex flex-wrap gap-2'>
-              {regionFilters.map(region => (
-                <span
-                  key={region.id}
-                  className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
-                >
-                  {region.name}
-                  <button
-                    type='button'
-                    onClick={() => {
-                      setRegionFilters(prev =>
-                        prev.filter(item => item.id !== region.id)
-                      );
-                      setPage(1);
-                    }}
-                    className='text-xs hover:underline'
-                  >
-                    Remove
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
@@ -534,6 +440,19 @@ export function ProjectsPage() {
             <SelectItem value='cancelled'>Cancelled</SelectItem>
             <SelectItem value='precreated'>Precreated</SelectItem>
           </Select>
+          <Select
+            label='Funding Status'
+            value={fundingStatusFilter}
+            onValueChange={value => {
+              setFundingStatusFilter(value);
+              setPage(1);
+            }}
+          >
+            <SelectItem value='all'>All statuses</SelectItem>
+            <SelectItem value='unfunded'>Unfunded</SelectItem>
+            <SelectItem value='partially_funded'>Partially Funded</SelectItem>
+            <SelectItem value='fully_funded'>Fully Funded</SelectItem>
+          </Select>
         </div>
       </div>
 
@@ -549,10 +468,16 @@ export function ProjectsPage() {
         ) : (
           <>
             <div className='overflow-x-auto'>
-              <table className='w-full divide-y divide-neutral-200 dark:divide-neutral-800 table-fixed'>
+              <table
+                className='w-full divide-y divide-neutral-200 dark:divide-neutral-800'
+                style={{ tableLayout: 'fixed' }}
+              >
                 <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
                   <tr>
-                    <th className='px-3 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider w-[15%]'>
+                    <th
+                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
+                      style={{ width: '20%' }}
+                    >
                       <button
                         type='button'
                         onClick={() => handleSort('name')}
@@ -562,17 +487,10 @@ export function ProjectsPage() {
                         <span>{getSortIndicator('name')}</span>
                       </button>
                     </th>
-                    <th className='px-3 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider w-[12%]'>
-                      <button
-                        type='button'
-                        onClick={() => handleSort('source_language')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
-                        Source Language
-                        <span>{getSortIndicator('source_language')}</span>
-                      </button>
-                    </th>
-                    <th className='px-3 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider w-[12%]'>
+                    <th
+                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
+                      style={{ width: '18%' }}
+                    >
                       <button
                         type='button'
                         onClick={() => handleSort('target_language')}
@@ -582,19 +500,34 @@ export function ProjectsPage() {
                         <span>{getSortIndicator('target_language')}</span>
                       </button>
                     </th>
-                    <th className='px-3 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider w-[10%]'>
+                    <th
+                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
+                      style={{ width: '15%' }}
+                    >
                       Region
                     </th>
-                    <th className='px-3 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider w-[18%]'>
+                    <th
+                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
+                      style={{ width: '18%' }}
+                    >
                       Progress
                     </th>
-                    <th className='px-3 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider w-[10%]'>
+                    <th
+                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
+                      style={{ width: '12%' }}
+                    >
                       Funding
                     </th>
-                    <th className='px-3 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider w-[10%]'>
+                    <th
+                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
+                      style={{ width: '12%' }}
+                    >
                       Status
                     </th>
-                    <th className='px-3 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider w-[13%]'>
+                    <th
+                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
+                      style={{ width: '12%' }}
+                    >
                       <button
                         type='button'
                         onClick={() => handleSort('created_at')}
@@ -614,33 +547,10 @@ export function ProjectsPage() {
                         onClick={() => handleProjectClick(project.id)}
                         className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
                       >
-                        <td className='px-3 py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate'>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100 overflow-hidden text-ellipsis'>
                           {project.name}
                         </td>
-                        <td className='px-3 py-3 text-sm text-neutral-500 dark:text-neutral-400'>
-                          {project.source_language ? (
-                            <button
-                              onClick={e =>
-                                handleLanguageClick(
-                                  e,
-                                  project.source_language!.id
-                                )
-                              }
-                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100 truncate block w-full text-left'
-                              title={project.source_language.name}
-                            >
-                              {project.source_language.name}
-                              <span className='ml-1 text-xs text-neutral-500 dark:text-neutral-400'>
-                                ({project.source_language.level})
-                              </span>
-                            </button>
-                          ) : (
-                            <span className='text-neutral-400 dark:text-neutral-600'>
-                              —
-                            </span>
-                          )}
-                        </td>
-                        <td className='px-3 py-3 text-sm text-neutral-500 dark:text-neutral-400'>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400 overflow-hidden text-ellipsis'>
                           {project.target_language ? (
                             <button
                               onClick={e =>
@@ -649,13 +559,9 @@ export function ProjectsPage() {
                                   project.target_language!.id
                                 )
                               }
-                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100 truncate block w-full text-left'
-                              title={project.target_language.name}
+                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100'
                             >
                               {project.target_language.name}
-                              <span className='ml-1 text-xs text-neutral-500 dark:text-neutral-400'>
-                                ({project.target_language.level})
-                              </span>
                             </button>
                           ) : (
                             <span className='text-neutral-400 dark:text-neutral-600'>
@@ -663,19 +569,15 @@ export function ProjectsPage() {
                             </span>
                           )}
                         </td>
-                        <td className='px-3 py-3 text-sm text-neutral-500 dark:text-neutral-400'>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400 overflow-hidden text-ellipsis'>
                           {project.region ? (
                             <button
                               onClick={e =>
                                 handleRegionClick(e, project.region!.id)
                               }
-                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100 truncate block w-full text-left'
-                              title={project.region.name}
+                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100'
                             >
                               {project.region.name}
-                              <span className='ml-1 text-xs text-neutral-500 dark:text-neutral-400'>
-                                ({project.region.level})
-                              </span>
                             </button>
                           ) : (
                             <span className='text-neutral-400 dark:text-neutral-600'>
@@ -683,30 +585,106 @@ export function ProjectsPage() {
                             </span>
                           )}
                         </td>
-                        <td className='px-3 py-3 text-sm text-neutral-500 dark:text-neutral-400'>
-                          {project.progress ? (
-                            <div className='flex flex-col gap-1'>
-                              <div className='flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden'>
-                                <div
-                                  className='h-full bg-primary-600 dark:bg-primary-500 transition-all'
-                                  style={{
-                                    width: `${Math.min(project.progress.progress_percentage, 100)}%`,
-                                  }}
-                                />
-                              </div>
-                              <span className='text-xs text-neutral-600 dark:text-neutral-400'>
-                                {project.progress.completed_chapters}/
-                                {project.progress.total_chapters} (
-                                {project.progress.progress_percentage}%)
-                              </span>
-                            </div>
-                          ) : (
-                            <span className='text-neutral-400 dark:text-neutral-600'>
-                              —
-                            </span>
-                          )}
+                        <td className='px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400'>
+                          <div className='flex flex-col gap-2'>
+                            {/* Text Versions */}
+                            {project.textVersions &&
+                            project.textVersions.length > 0
+                              ? project.textVersions.map(version => (
+                                  <div
+                                    key={`text-${version.id}`}
+                                    className='cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 p-1 rounded transition-colors'
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setModalStack(prev => [
+                                        ...prev,
+                                        { type: 'textVersion', id: version.id },
+                                      ]);
+                                    }}
+                                  >
+                                    <div className='flex items-center gap-2 mb-1'>
+                                      <span className='text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline cursor-pointer'>
+                                        {version.name}
+                                      </span>
+                                      {version.progress && (
+                                        <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                                          ({version.progress.complete_chapters}/
+                                          {version.progress.total_chapters} -{' '}
+                                          {version.progress.progress_percentage}
+                                          %)
+                                        </span>
+                                      )}
+                                    </div>
+                                    {version.progress && (
+                                      <div className='w-full h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden'>
+                                        <div
+                                          className='h-full bg-primary-600 dark:bg-primary-500 transition-all'
+                                          style={{
+                                            width: `${Math.min(version.progress.progress_percentage, 100)}%`,
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                ))
+                              : null}
+                            {/* Audio Versions */}
+                            {project.audioVersions &&
+                            project.audioVersions.length > 0
+                              ? project.audioVersions.map(version => (
+                                  <div
+                                    key={`audio-${version.id}`}
+                                    className='cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 p-1 rounded transition-colors'
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setModalStack(prev => [
+                                        ...prev,
+                                        {
+                                          type: 'audioVersion',
+                                          id: version.id,
+                                        },
+                                      ]);
+                                    }}
+                                  >
+                                    <div className='flex items-center gap-2 mb-1'>
+                                      <span className='text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline cursor-pointer'>
+                                        {version.name}
+                                      </span>
+                                      {version.progress && (
+                                        <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                                          (
+                                          {version.progress.chapters_with_audio}
+                                          /{version.progress.total_chapters} -{' '}
+                                          {version.progress.progress_percentage}
+                                          %)
+                                        </span>
+                                      )}
+                                    </div>
+                                    {version.progress && (
+                                      <div className='w-full h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden'>
+                                        <div
+                                          className='h-full bg-primary-600 dark:bg-primary-500 transition-all'
+                                          style={{
+                                            width: `${Math.min(version.progress.progress_percentage, 100)}%`,
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                ))
+                              : null}
+                            {/* Show message if no versions */}
+                            {(!project.textVersions ||
+                              project.textVersions.length === 0) &&
+                              (!project.audioVersions ||
+                                project.audioVersions.length === 0) && (
+                                <span className='text-neutral-400 dark:text-neutral-600'>
+                                  —
+                                </span>
+                              )}
+                          </div>
                         </td>
-                        <td className='px-3 py-3 text-sm'>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm'>
                           <span
                             className={`inline-block px-2 py-1 rounded text-xs font-medium ${getFundingBadgeColor(
                               project.funding_status
@@ -715,7 +693,7 @@ export function ProjectsPage() {
                             {project.funding_status.replace('_', ' ')}
                           </span>
                         </td>
-                        <td className='px-3 py-3 text-sm'>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm'>
                           <span
                             className={`inline-block px-2 py-1 rounded text-xs font-medium ${getStatusBadgeColor(
                               project.project_status
@@ -724,7 +702,7 @@ export function ProjectsPage() {
                             {project.project_status}
                           </span>
                         </td>
-                        <td className='px-3 py-3 text-sm text-neutral-500 dark:text-neutral-400'>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
                           {project.created_at
                             ? new Date(project.created_at).toLocaleDateString(
                                 'en-US',
@@ -741,7 +719,7 @@ export function ProjectsPage() {
                   ) : (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={7}
                         className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
                       >
                         {debouncedSearch
@@ -800,6 +778,36 @@ export function ProjectsPage() {
                 onClose={isTopModal ? handleCloseModal : handleCloseAllModals}
                 onNavigateToLanguage={handleNavigateToLanguage}
                 onNavigateToRegion={handleNavigateToRegion}
+                onOpenTextVersion={(textVersionId: string) => {
+                  setModalStack(prev => [
+                    ...prev,
+                    { type: 'textVersion', id: textVersionId },
+                  ]);
+                }}
+                onOpenAudioVersion={(audioVersionId: string) => {
+                  setModalStack(prev => [
+                    ...prev,
+                    { type: 'audioVersion', id: audioVersionId },
+                  ]);
+                }}
+              />
+            </div>
+          );
+        } else if (item.type === 'textVersion') {
+          return (
+            <div key={`textVersion-${item.id}-${index}`} style={{ zIndex }}>
+              <ViewTextVersionModal
+                textVersionId={item.id}
+                onClose={isTopModal ? handleCloseModal : handleCloseAllModals}
+              />
+            </div>
+          );
+        } else if (item.type === 'audioVersion') {
+          return (
+            <div key={`audioVersion-${item.id}-${index}`} style={{ zIndex }}>
+              <ViewAudioVersionModal
+                audioVersionId={item.id}
+                onClose={isTopModal ? handleCloseModal : handleCloseAllModals}
               />
             </div>
           );

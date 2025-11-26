@@ -13,6 +13,8 @@ interface ViewProjectModalProps {
   onClose: () => void;
   onNavigateToLanguage?: (languageId: string) => void;
   onNavigateToRegion?: (regionId: string) => void;
+  onOpenTextVersion?: (textVersionId: string) => void;
+  onOpenAudioVersion?: (audioVersionId: string) => void;
 }
 
 type ProjectStatus = Database['public']['Enums']['project_status'];
@@ -23,6 +25,8 @@ export function ViewProjectModal({
   onClose,
   onNavigateToLanguage,
   onNavigateToRegion,
+  onOpenTextVersion,
+  onOpenAudioVersion,
 }: ViewProjectModalProps) {
   const queryClient = useQueryClient();
   const [isEntering, setIsEntering] = useState(true);
@@ -627,36 +631,103 @@ export function ViewProjectModal({
             </div>
           </section>
 
-          {/* Progress */}
-          {project.progress && (
-            <section>
-              <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
-                Progress
-              </h3>
-              <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg space-y-2'>
-                <div className='flex justify-between text-sm'>
-                  <span className='text-neutral-600 dark:text-neutral-400'>
-                    Chapters Completed:
-                  </span>
-                  <span className='text-neutral-900 dark:text-neutral-100 font-medium'>
-                    {project.progress.completed_chapters} /{' '}
-                    {project.progress.total_chapters}
-                  </span>
-                </div>
-                <div className='w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden'>
+          {/* Text Versions */}
+          <section>
+            <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
+              Text Versions
+            </h3>
+            <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg space-y-4'>
+              {project.textVersions && project.textVersions.length > 0 ? (
+                project.textVersions.map(version => (
                   <div
-                    className='h-full bg-primary-600 dark:bg-primary-500 transition-all'
-                    style={{
-                      width: `${Math.min(project.progress.progress_percentage, 100)}%`,
+                    key={version.id}
+                    className='cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-700/50 p-3 rounded-lg transition-colors'
+                    onClick={() => {
+                      if (onOpenTextVersion) {
+                        onOpenTextVersion(version.id);
+                      }
                     }}
-                  />
-                </div>
-                <div className='text-sm text-neutral-600 dark:text-neutral-400'>
-                  {project.progress.progress_percentage}% complete
-                </div>
-              </div>
-            </section>
-          )}
+                  >
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                        {version.name}
+                      </span>
+                      {version.progress && (
+                        <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                          {version.progress.complete_chapters}/
+                          {version.progress.total_chapters} (
+                          {version.progress.progress_percentage}%)
+                        </span>
+                      )}
+                    </div>
+                    {version.progress && (
+                      <div className='w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden'>
+                        <div
+                          className='h-full bg-primary-600 dark:bg-primary-500 transition-all'
+                          style={{
+                            width: `${Math.min(version.progress.progress_percentage, 100)}%`,
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className='text-sm text-neutral-500 dark:text-neutral-400'>
+                  No text versions found
+                </p>
+              )}
+            </div>
+          </section>
+
+          {/* Audio Versions */}
+          <section>
+            <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
+              Audio Versions
+            </h3>
+            <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg space-y-4'>
+              {project.audioVersions && project.audioVersions.length > 0 ? (
+                project.audioVersions.map(version => (
+                  <div
+                    key={version.id}
+                    className='cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-700/50 p-3 rounded-lg transition-colors'
+                    onClick={() => {
+                      if (onOpenAudioVersion) {
+                        onOpenAudioVersion(version.id);
+                      }
+                    }}
+                  >
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                        {version.name}
+                      </span>
+                      {version.progress && (
+                        <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                          {version.progress.chapters_with_audio}/
+                          {version.progress.total_chapters} (
+                          {version.progress.progress_percentage}%)
+                        </span>
+                      )}
+                    </div>
+                    {version.progress && (
+                      <div className='w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden'>
+                        <div
+                          className='h-full bg-primary-600 dark:bg-primary-500 transition-all'
+                          style={{
+                            width: `${Math.min(version.progress.progress_percentage, 100)}%`,
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className='text-sm text-neutral-500 dark:text-neutral-400'>
+                  No audio versions found
+                </p>
+              )}
+            </div>
+          </section>
 
           {/* Metadata */}
           <section>

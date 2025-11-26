@@ -161,10 +161,14 @@ export function AppLayout({ children }: LayoutProps) {
     }
   }, [location.pathname]);
 
-  // Group navigation items by section
-  const groupedItems = navigationItems.reduce(
+  // Separate items without sections (like Dashboard) from items with sections
+  const itemsWithoutSection = navigationItems.filter(item => !item.section);
+  const itemsWithSection = navigationItems.filter(item => item.section);
+
+  // Group items with sections by section name
+  const groupedItems = itemsWithSection.reduce(
     (acc, item) => {
-      const section = item.section || 'Main';
+      const section = item.section!;
       if (!acc[section]) {
         acc[section] = [];
       }
@@ -221,9 +225,105 @@ export function AppLayout({ children }: LayoutProps) {
 
         {/* Navigation */}
         <nav className='flex-1 overflow-y-auto py-4'>
+          {/* Render items without sections first (like Dashboard) */}
+          {itemsWithoutSection.length > 0 && (
+            <div className='mb-6'>
+              {itemsWithoutSection.map(item => {
+                const isActive = location.pathname === item.path;
+                const hasChildren = item.children && item.children.length > 0;
+                const isExpanded = expandedItems.has(item.id);
+                const hasActiveChild =
+                  hasChildren &&
+                  item.children?.some(
+                    child => location.pathname === child.path
+                  );
+
+                return (
+                  <div key={item.id}>
+                    <button
+                      onClick={() => {
+                        if (hasChildren) {
+                          toggleExpand(item.id);
+                        } else {
+                          navigate(item.path);
+                        }
+                      }}
+                      className={`w-full flex items-center ${
+                        sidebarOpen ? 'px-4' : 'px-6'
+                      } py-3 text-left transition-colors ${
+                        isActive || hasActiveChild
+                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border-r-2 border-primary-700 dark:border-primary-500'
+                          : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                      }`}
+                      title={!sidebarOpen ? item.label : undefined}
+                    >
+                      {hasChildren && sidebarOpen && (
+                        <span className='mr-1'>
+                          {isExpanded ? (
+                            <ChevronDown className='h-4 w-4' />
+                          ) : (
+                            <ChevronRight className='h-4 w-4' />
+                          )}
+                        </span>
+                      )}
+                      <span
+                        className={
+                          isActive || hasActiveChild
+                            ? 'text-primary-700 dark:text-primary-400'
+                            : 'text-neutral-500 dark:text-neutral-400'
+                        }
+                      >
+                        {item.icon}
+                      </span>
+                      <span
+                        className={`ml-3 text-sm font-medium whitespace-nowrap overflow-hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}
+                      >
+                        {item.label}
+                      </span>
+                    </button>
+                    {/* Render children if expanded */}
+                    {hasChildren && isExpanded && sidebarOpen && (
+                      <div className='ml-4 border-l border-neutral-200 dark:border-neutral-800 pl-2'>
+                        {item.children?.map(child => {
+                          const isChildActive =
+                            location.pathname === child.path;
+                          return (
+                            <button
+                              key={child.id}
+                              onClick={() => navigate(child.path)}
+                              className={`w-full flex items-center px-4 py-2 text-left transition-colors ${
+                                isChildActive
+                                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
+                                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                              }`}
+                            >
+                              <span
+                                className={
+                                  isChildActive
+                                    ? 'text-primary-700 dark:text-primary-400'
+                                    : 'text-neutral-500 dark:text-neutral-400'
+                                }
+                              >
+                                {child.icon}
+                              </span>
+                              <span className='ml-3 text-sm font-medium whitespace-nowrap'>
+                                {child.label}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Render items with sections */}
           {Object.entries(groupedItems).map(([section, items]) => (
             <div key={section} className='mb-6'>
-              {sidebarOpen && section !== 'Main' && (
+              {sidebarOpen && (
                 <div className='px-4 mb-2'>
                   <p className='text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                     {section}

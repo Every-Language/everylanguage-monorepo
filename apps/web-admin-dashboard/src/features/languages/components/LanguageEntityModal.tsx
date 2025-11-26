@@ -37,6 +37,7 @@ export function LanguageEntityModal({
   const [editingProperties, setEditingProperties] = useState(false);
   const [editingAliases, setEditingAliases] = useState(false);
   const [editingRegions, setEditingRegions] = useState(false);
+  const [editingExternalIds, setEditingExternalIds] = useState(false);
 
   // Form states for Language Info
   const [name, setName] = useState(entity.name);
@@ -74,6 +75,12 @@ export function LanguageEntityModal({
     queryFn: () => languagesApi.fetchLanguageAliases(entity.id),
   });
 
+  // Fetch external IDs (sources)
+  const { data: sources } = useQuery({
+    queryKey: ['language-entity-sources', entity.id],
+    queryFn: () => languagesApi.fetchLanguageEntitySources(entity.id),
+  });
+
   // Local states for editing
   const [localProperties, setLocalProperties] = useState<
     Array<{ key: string; value: string }>
@@ -83,6 +90,16 @@ export function LanguageEntityModal({
   >([]);
   const [selectedRegionIds, setSelectedRegionIds] = useState<string[]>([]);
   const [regionSearchQuery, setRegionSearchQuery] = useState('');
+  const [localSources, setLocalSources] = useState<
+    Array<{
+      id?: string;
+      source: string;
+      version: string;
+      is_external: boolean;
+      external_id: string;
+      external_id_type: string;
+    }>
+  >([]);
 
   // Sync local states with fetched data
   useEffect(() => {
@@ -104,6 +121,22 @@ export function LanguageEntityModal({
       setSelectedRegionIds(fullEntity.regions.map(r => r.id));
     }
   }, [fullEntity]);
+
+  // Sync local sources with fetched data
+  useEffect(() => {
+    if (sources) {
+      setLocalSources(
+        sources.map(s => ({
+          id: s.id,
+          source: s.source || '',
+          version: s.version || '',
+          is_external: s.is_external,
+          external_id: s.external_id || '',
+          external_id_type: s.external_id_type || '',
+        }))
+      );
+    }
+  }, [sources]);
 
   // Build tree structure from hierarchy
   const { nodesById, rootId } = useMemo(() => {
@@ -229,6 +262,53 @@ export function LanguageEntityModal({
     },
   });
 
+  const updateExternalIdsMutation = useMutation({
+    mutationFn: async () => {
+      // Get existing source IDs
+      const existingIds = sources?.map(s => s.id) || [];
+      const localIds = localSources.filter(s => s.id).map(s => s.id!);
+
+      // Delete sources that were removed
+      const toDelete = existingIds.filter(id => !localIds.includes(id));
+      for (const id of toDelete) {
+        await languagesApi.deleteLanguageEntitySource(id);
+      }
+
+      // Update or create sources
+      for (const source of localSources.filter(s => s.source.trim())) {
+        if (source.id) {
+          // Update existing
+          await languagesApi.updateLanguageEntitySource(source.id, {
+            source: source.source,
+            version: source.version || null,
+            is_external: source.is_external,
+            external_id: source.is_external ? source.external_id || null : null,
+            external_id_type: source.is_external
+              ? source.external_id_type || null
+              : null,
+          });
+        } else {
+          // Create new
+          await languagesApi.createLanguageEntitySource(entity.id, {
+            source: source.source,
+            version: source.version || null,
+            is_external: source.is_external,
+            external_id: source.is_external ? source.external_id || null : null,
+            external_id_type: source.is_external
+              ? source.external_id_type || null
+              : null,
+          });
+        }
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.refetchQueries({
+        queryKey: ['language-entity-sources', entity.id],
+      });
+      setEditingExternalIds(false);
+    },
+  });
+
   const handleClose = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -258,6 +338,23 @@ export function LanguageEntityModal({
     } else {
       setSelectedRegionIds([...selectedRegionIds, regionId]);
     }
+  };
+
+  const handleAddSource = () => {
+    setLocalSources([
+      ...localSources,
+      {
+        source: '',
+        version: '',
+        is_external: false,
+        external_id: '',
+        external_id_type: '',
+      },
+    ]);
+  };
+
+  const handleRemoveSource = (index: number) => {
+    setLocalSources(localSources.filter((_, i) => i !== index));
   };
 
   const toggleNode = (nodeId: string) => {
@@ -570,7 +667,170 @@ export function LanguageEntityModal({
             </div>
           </section>
 
-          {/* 4. Alternate Names (Aliases) */}
+          {/* 4. External IDs */}
+          <section>
+            <div className='flex items-center justify-between mb-4'>
+              <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
+                External IDs
+              </h3>
+              {!editingExternalIds && (
+                <button
+                  onClick={() => setEditingExternalIds(true)}
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
+                >
+                  <Edit className='h-4 w-4' />
+                  Edit
+                </button>
+              )}
+            </div>
+            <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg space-y-3'>
+              {editingExternalIds ? (
+                <>
+                  {localSources.map((source, index) => (
+                    <div
+                      key={index}
+                      className='border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 space-y-2'
+                    >
+                      <div className='flex gap-2'>
+                        <input
+                          type='text'
+                          placeholder='Source'
+                          value={source.source}
+                          onChange={e => {
+                            const updated = [...localSources];
+                            updated[index].source = e.target.value;
+                            setLocalSources(updated);
+                          }}
+                          className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                        />
+                        <input
+                          type='text'
+                          placeholder='Version'
+                          value={source.version}
+                          onChange={e => {
+                            const updated = [...localSources];
+                            updated[index].version = e.target.value;
+                            setLocalSources(updated);
+                          }}
+                          className='w-32 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                        />
+                        <button
+                          onClick={() => handleRemoveSource(index)}
+                          className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'
+                        >
+                          <Trash2 className='h-4 w-4' />
+                        </button>
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        <label className='flex items-center gap-2 text-sm'>
+                          <input
+                            type='checkbox'
+                            checked={source.is_external}
+                            onChange={e => {
+                              const updated = [...localSources];
+                              updated[index].is_external = e.target.checked;
+                              setLocalSources(updated);
+                            }}
+                            className='rounded'
+                          />
+                          External ID
+                        </label>
+                      </div>
+                      {source.is_external && (
+                        <div className='flex gap-2'>
+                          <input
+                            type='text'
+                            placeholder='External ID Type'
+                            value={source.external_id_type}
+                            onChange={e => {
+                              const updated = [...localSources];
+                              updated[index].external_id_type = e.target.value;
+                              setLocalSources(updated);
+                            }}
+                            className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                          />
+                          <input
+                            type='text'
+                            placeholder='External ID'
+                            value={source.external_id}
+                            onChange={e => {
+                              const updated = [...localSources];
+                              updated[index].external_id = e.target.value;
+                              setLocalSources(updated);
+                            }}
+                            className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={handleAddSource}
+                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'
+                  >
+                    <Plus className='h-4 w-4' />
+                    Add Source
+                  </button>
+                  <div className='flex gap-2 pt-2'>
+                    <button
+                      onClick={() => {
+                        setEditingExternalIds(false);
+                        if (sources) {
+                          setLocalSources(
+                            sources.map(s => ({
+                              id: s.id,
+                              source: s.source || '',
+                              version: s.version || '',
+                              is_external: s.is_external,
+                              external_id: s.external_id || '',
+                              external_id_type: s.external_id_type || '',
+                            }))
+                          );
+                        }
+                      }}
+                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => updateExternalIdsMutation.mutate()}
+                      disabled={updateExternalIdsMutation.isPending}
+                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
+                    >
+                      <Save className='h-4 w-4' />
+                      {updateExternalIdsMutation.isPending
+                        ? 'Saving...'
+                        : 'Save'}
+                    </button>
+                  </div>
+                </>
+              ) : sources && sources.length > 0 ? (
+                <div className='flex flex-col gap-2'>
+                  {sources
+                    .filter(s => s.external_id && s.external_id_type)
+                    .map(source => (
+                      <div
+                        key={source.id}
+                        className='flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0'
+                      >
+                        <span className='font-mono text-sm text-neutral-700 dark:text-neutral-300'>
+                          {source.external_id_type}:{source.external_id}
+                        </span>
+                        <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                          {source.source}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className='text-neutral-500 dark:text-neutral-400'>
+                  No external IDs
+                </p>
+              )}
+            </div>
+          </section>
+
+          {/* 5. Alternate Names (Aliases) */}
           <section>
             <div className='flex items-center justify-between mb-4'>
               <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
@@ -662,7 +922,7 @@ export function LanguageEntityModal({
             </div>
           </section>
 
-          {/* 5. Regions */}
+          {/* 6. Regions */}
           <section>
             <div className='flex items-center justify-between mb-4'>
               <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>

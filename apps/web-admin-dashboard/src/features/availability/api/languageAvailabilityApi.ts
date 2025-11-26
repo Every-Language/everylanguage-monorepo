@@ -12,6 +12,7 @@ export const languageAvailabilityApi = {
     statusFilter?: LanguageFundingStatus;
     sortField?: 'name' | 'budget';
     sortDirection?: 'asc' | 'desc';
+    externalIdSearch?: string; // Search by external_id in language_entity_sources
   }): Promise<{
     data: LanguageEntityWithRegions[];
     count: number;
@@ -27,6 +28,36 @@ export const languageAvailabilityApi = {
     const sortDirection = params?.sortDirection ?? 'asc';
     const sortAscending = sortDirection === 'asc';
 
+    // Apply external_id search filter if provided
+    let entityIdsFromExternalId: string[] | undefined;
+    if (params?.externalIdSearch && params.externalIdSearch.trim().length > 0) {
+      const { data: sourcesData, error: sourcesError } = await supabase
+        .from('language_entity_sources')
+        .select('language_entity_id')
+        .ilike('external_id', `%${params.externalIdSearch.trim()}%`)
+        .is('deleted_at', null);
+
+      if (sourcesError) {
+        console.error('Error searching by external_id:', sourcesError);
+        throw sourcesError;
+      }
+
+      entityIdsFromExternalId = [
+        ...new Set(sourcesData?.map(s => s.language_entity_id) || []),
+      ];
+
+      // If no matches, return empty result
+      if (entityIdsFromExternalId.length === 0) {
+        return {
+          data: [],
+          count: 0,
+          page,
+          pageSize,
+          totalPages: 0,
+        };
+      }
+    }
+
     // Fetch all language_funding records (no status filter)
     let query = supabase
       .from('language_funding')
@@ -39,6 +70,11 @@ export const languageAvailabilityApi = {
       )
       .is('deleted_at', null)
       .is('language_entities.deleted_at', null);
+
+    // Apply external_id filter
+    if (entityIdsFromExternalId && entityIdsFromExternalId.length > 0) {
+      query = query.in('language_entity_id', entityIdsFromExternalId);
+    }
 
     // Apply search if provided
     if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
@@ -111,12 +147,14 @@ export const languageAvailabilityApi = {
   },
 
   /**
-   * Fetch languages with funding_status 'draft' or no funding record
+   * Fetch all languages that have no funding record (language_funding IS NULL)
+   * Used for the "Add Language" modal to show languages available to add to funding
    */
-  async fetchDraftLanguages(params?: {
+  async fetchAllLanguages(params?: {
     searchQuery?: string;
     page?: number;
     pageSize?: number;
+    externalIdSearch?: string; // Search by external_id in language_entity_sources
   }): Promise<{
     data: LanguageEntityWithRegions[];
     count: number;
@@ -129,30 +167,44 @@ export const languageAvailabilityApi = {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    // Get languages that either have no funding record or have draft status
-    // PostgREST doesn't support OR filters on LEFT JOINed tables easily,
-    // so we'll fetch languages and filter in JavaScript, but apply pagination correctly
-    let query = supabase
-      .from('language_entities')
-      .select(
-        `
-        *,
-        language_funding!left(*)
-      `,
-        { count: 'exact' }
-      )
-      .is('deleted_at', null)
-      .order('name');
+    // Apply external_id search filter if provided
+    let entityIdsFromExternalId: string[] | undefined;
+    if (params?.externalIdSearch && params.externalIdSearch.trim().length > 0) {
+      const { data: sourcesData, error: sourcesError } = await supabase
+        .from('language_entity_sources')
+        .select('language_entity_id')
+        .ilike('external_id', `%${params.externalIdSearch.trim()}%`)
+        .is('deleted_at', null);
 
-    // Apply search if provided
+      if (sourcesError) {
+        console.error('Error searching by external_id:', sourcesError);
+        throw sourcesError;
+      }
+
+      entityIdsFromExternalId = [
+        ...new Set(sourcesData?.map(s => s.language_entity_id) || []),
+      ];
+
+      // If no matches, return empty result
+      if (entityIdsFromExternalId.length === 0) {
+        return {
+          data: [],
+          count: 0,
+          page,
+          pageSize,
+          totalPages: 0,
+        };
+      }
+    }
+
+    // If there's a search query, use the search function (same as languagesApi.fetchLanguageEntities)
     if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
-      // Use search function for better results
       try {
         const { data: searchResults, error: searchError } = await supabase.rpc(
           'search_language_aliases',
           {
             search_query: params.searchQuery,
-            max_results: 1000,
+            max_results: 100,
             min_similarity: 0.1,
             include_regions: false,
           }
@@ -160,56 +212,167 @@ export const languageAvailabilityApi = {
 
         if (searchError) {
           console.error('Search RPC error:', searchError);
-          // Fallback to simple ilike search
-          query = query.ilike('name', `%${params.searchQuery.trim()}%`);
-        } else {
-          // Filter search results
-          const entityIds = new Set(
-            (searchResults || [])
-              .map((r: { entity_id: string }) => r.entity_id)
-              .filter(Boolean)
-          );
-
-          if (entityIds.size > 0) {
-            query = query.in('id', Array.from(entityIds));
-          } else {
-            // No matches, return empty
-            return {
-              data: [],
-              count: 0,
-              page,
-              pageSize,
-              totalPages: 0,
-            };
-          }
+          throw searchError;
         }
-      } catch {
-        // Fallback to simple ilike search
-        query = query.ilike('name', `%${params.searchQuery.trim()}%`);
+
+        // Get entity IDs from search results
+        const searchEntityIds = new Set(
+          (searchResults || [])
+            .map((r: { entity_id: string }) => r.entity_id)
+            .filter(Boolean)
+        );
+
+        if (searchEntityIds.size === 0) {
+          return {
+            data: [],
+            count: 0,
+            page,
+            pageSize,
+            totalPages: 0,
+          };
+        }
+
+        // Combine with external_id filter if provided
+        let finalEntityIds = Array.from(searchEntityIds);
+        if (entityIdsFromExternalId && entityIdsFromExternalId.length > 0) {
+          finalEntityIds = finalEntityIds.filter(id =>
+            entityIdsFromExternalId!.includes(id)
+          );
+        }
+
+        if (finalEntityIds.length === 0) {
+          return {
+            data: [],
+            count: 0,
+            page,
+            pageSize,
+            totalPages: 0,
+          };
+        }
+
+        // Get all language_entity_ids that have funding records (to exclude them)
+        const { data: fundedEntityIds } = await supabase
+          .from('language_funding')
+          .select('language_entity_id')
+          .is('deleted_at', null);
+
+        const fundedIdsSet = new Set(
+          fundedEntityIds?.map(f => f.language_entity_id) || []
+        );
+
+        // Filter out languages that have funding records
+        const unfundedEntityIds = finalEntityIds.filter(
+          id => !fundedIdsSet.has(id)
+        );
+
+        if (unfundedEntityIds.length === 0) {
+          return {
+            data: [],
+            count: 0,
+            page,
+            pageSize,
+            totalPages: 0,
+          };
+        }
+
+        // Fetch languages with no funding record, filtered by search results
+        let query = supabase
+          .from('language_entities')
+          .select('*', { count: 'exact' })
+          .in('id', unfundedEntityIds)
+          .is('deleted_at', null)
+          .order('name')
+          .range(from, to);
+
+        const { data, error, count: totalCount } = await query;
+
+        if (error) throw error;
+
+        // Transform data
+        const transformedData: LanguageEntityWithRegions[] = (data || []).map(
+          (item: {
+            id: string;
+            name: string;
+            level: string;
+            parent_id: string | null;
+            created_at: string | null;
+            updated_at: string | null;
+            deleted_at: string | null;
+            language_funding?: {
+              id: string;
+              language_entity_id: string;
+              funding_status: string;
+              budget_cents: number | null;
+              created_at: string;
+              updated_at: string;
+              created_by: string | null;
+              deleted_at: string | null;
+            } | null;
+          }) => ({
+            id: item.id,
+            name: item.name,
+            level: item.level as LanguageEntityWithRegions['level'],
+            parent_id: item.parent_id,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            deleted_at: item.deleted_at,
+            language_funding: null, // Always null since we filtered for no funding
+          })
+        );
+
+        const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
+
+        return {
+          data: transformedData,
+          count: totalCount || 0,
+          page,
+          pageSize,
+          totalPages,
+        };
+      } catch (error) {
+        console.error('Search error:', error);
+        throw error;
       }
     }
 
-    // Fetch all matching languages (we need to filter for draft/no funding after fetching)
-    // Fetch a larger set to account for filtering
-    const fetchLimit = 1000; // Reasonable limit to prevent excessive data transfer
-    const { data, error } = await query.range(0, fetchLimit - 1);
+    // Otherwise, fetch with pagination and filters (no search query)
+    // First, get all language_entity_ids that have funding records (to exclude them)
+    const { data: fundedEntityIds } = await supabase
+      .from('language_funding')
+      .select('language_entity_id')
+      .is('deleted_at', null);
 
-    if (error) throw error;
+    const fundedIdsSet = new Set(
+      fundedEntityIds?.map(f => f.language_entity_id) || []
+    );
 
-    // Filter for languages with no funding record OR draft status
-    const filteredData = (data || []).filter(
-      (item: { language_funding?: { funding_status: string } | null }) => {
-        const funding = item.language_funding;
-        return !funding || funding.funding_status === 'draft';
-      }
+    // Build base query
+    let query = supabase
+      .from('language_entities')
+      .select('*', { count: 'exact' })
+      .is('deleted_at', null)
+      .order('name');
+
+    // Apply external_id filter
+    if (entityIdsFromExternalId && entityIdsFromExternalId.length > 0) {
+      query = query.in('id', entityIdsFromExternalId);
+    }
+
+    const { data: allData, error: allError } = await query;
+
+    if (allError) throw allError;
+
+    // Filter out languages that have funding records
+    const unfundedData = (allData || []).filter(
+      entity => !fundedIdsSet.has(entity.id)
     );
 
     // Apply pagination after filtering
-    const totalCount = filteredData.length;
+    const totalCount = unfundedData.length;
     const totalPages = Math.ceil(totalCount / pageSize);
-    const paginatedData = filteredData.slice(from, to + 1);
+    const paginatedData = unfundedData.slice(from, to + 1);
 
-    // Transform data - properly type the raw Supabase response
+    // Transform data
     const transformedData: LanguageEntityWithRegions[] = paginatedData.map(
       (item: {
         id: string;
@@ -237,19 +400,7 @@ export const languageAvailabilityApi = {
         created_at: item.created_at,
         updated_at: item.updated_at,
         deleted_at: item.deleted_at,
-        language_funding: item.language_funding
-          ? {
-              id: item.language_funding.id,
-              language_entity_id: item.language_funding.language_entity_id,
-              funding_status: item.language_funding
-                .funding_status as LanguageFundingStatus,
-              budget_cents: item.language_funding.budget_cents,
-              created_at: item.language_funding.created_at,
-              updated_at: item.language_funding.updated_at,
-              created_by: item.language_funding.created_by,
-              deleted_at: item.language_funding.deleted_at,
-            }
-          : null,
+        language_funding: null, // Always null since we filtered for no funding
       })
     );
 
