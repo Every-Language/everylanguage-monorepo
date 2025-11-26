@@ -20,6 +20,7 @@ jobs:
       shared-types: ${{ steps.filter.outputs.shared-types }}
       frontend-project: ${{ steps.filter.outputs.frontend-project }}
       frontend-partnership: ${{ steps.filter.outputs.frontend-partnership }}
+      frontend-app-bible: ${{ steps.filter.outputs.frontend-app-bible }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,6 +38,8 @@ jobs:
               - 'apps/web-project-dashboard/**'
             frontend-partnership:
               - 'apps/web-partnership-dashboard/**'
+            frontend-app-bible:
+              - 'apps/app-bible/**'
 
   backend:
     runs-on: ubuntu-latest
@@ -193,6 +196,58 @@ jobs:
           # Use dummy values for build test
           VITE_SUPABASE_URL: https://dummy.supabase.co
           VITE_SUPABASE_ANON_KEY: dummy_key
+
+  frontend-app-bible:
+    runs-on: ubuntu-latest
+    name: App Bible - Tests & Linting
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.backend == 'true' || 
+      needs.detect-changes.outputs.shared-types == 'true' || 
+      needs.detect-changes.outputs.frontend-app-bible == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Run linting
+        run: pnpm --filter=app-bible run lint
+
+      - name: Run type checking
+        run: pnpm --filter=app-bible run type-check
+
+      - name: Run tests
+        run: pnpm --filter=app-bible run test:ci
+
+      - name: Expo doctor validation
+        run: pnpm --filter=app-bible run doctor
+
+      - name: Validate managed workflow
+        working-directory: apps/app-bible
+        run: |
+          if [ -d "android" ] || [ -d "ios" ]; then
+            echo "❌ Native folders detected - should not exist in managed workflow"
+            exit 1
+          fi
+          echo "✅ Managed workflow validated"
 
   security:
     runs-on: ubuntu-latest

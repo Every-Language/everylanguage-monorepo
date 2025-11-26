@@ -6,16 +6,15 @@
   "globalEnv": [
     "VITE_SUPABASE_URL",
     "VITE_SUPABASE_PUBLISHABLE_KEY",
-    "VITE_API_BASE_URL",
     "VITE_STRIPE_PUBLISHABLE_KEY",
-    "VITE_STRIPE_PK",
-    "VITE_MAP_STYLE_URL",
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
-    "NEXT_PUBLIC_STRIPE_PK",
-    "NEXT_PUBLIC_API_BASE_URL",
-    "JOSHUA_PROJECT_API_KEY"
+    "JOSHUA_PROJECT_API_KEY",
+    "EXPO_PUBLIC_ENVIRONMENT",
+    "EXPO_PUBLIC_SUPABASE_URL",
+    "EXPO_PUBLIC_SUPABASE_ANON_KEY",
+    "EXPO_PUBLIC_POWERSYNC_URL"
   ],
   "tasks": {
     "build": {
@@ -27,6 +26,15 @@
       "cache": false
     },
     "lint": {
+      "outputs": []
+    },
+    "lint:fix": {
+      "outputs": []
+    },
+    "format": {
+      "outputs": []
+    },
+    "format:check": {
       "outputs": []
     },
     "test": {
@@ -42,6 +50,22 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
+    "ios": {
+      "cache": false,
+      "persistent": false
+    },
+    "android": {
+      "cache": false,
+      "persistent": false
+    },
+    "prebuild": {
+      "cache": false,
+      "persistent": false
     },
     "functions:serve": {
       "cache": false,

@@ -2,6 +2,7 @@
 node_modules/
 .pnp
 .pnp.js
+.pnpm-store/
 
 # Testing
 coverage/
@@ -77,3 +78,10 @@ assets/
 
 # Schema dump
 schema.sql
+
+# Expo (app-bible)
+.expo/
+expo-env.d.ts
+
+# Metro
+.metro-health-check*

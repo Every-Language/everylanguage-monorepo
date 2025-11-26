@@ -241,10 +241,11 @@ jobs:
           else
             # Use pnpm publish instead of npm publish to handle workspace protocol
             # pnpm publish uses npm registry and supports OIDC authentication
+            # --no-git-checks: Skip git checks in CI/CD since we have generated files and version bumps
             if [ "$TAG" = "latest" ]; then
-              pnpm publish --access public
+              pnpm publish --access public --no-git-checks
             else
-              pnpm publish --access public --tag $TAG
+              pnpm publish --access public --tag $TAG --no-git-checks
             fi
             echo "✅ Package published successfully as '$TAG' ($ENV_NAME)"
           fi

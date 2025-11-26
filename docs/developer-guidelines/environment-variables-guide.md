@@ -52,10 +52,6 @@ VITE_SUPABASE_ANON_KEY=eyJhbGc...
 # Stripe (optional)
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 
-# Map providers (optional)
-VITE_MAPTILER_KEY=...
-VITE_MAP_STYLE_URL=...
-
 # App-specific feature flags
 VITE_ENABLE_BETA_FEATURE=true
 ```
@@ -161,10 +157,7 @@ The root `turbo.json` defines `globalEnv` variables:
   "globalEnv": [
     "VITE_SUPABASE_URL",
     "VITE_SUPABASE_PUBLISHABLE_KEY",
-    "VITE_API_BASE_URL",
-    "VITE_STRIPE_PUBLISHABLE_KEY",
-    "VITE_STRIPE_PK",
-    "VITE_MAP_STYLE_URL"
+    "VITE_STRIPE_PUBLISHABLE_KEY"
   ]
 }
 ```

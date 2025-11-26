@@ -60,10 +60,6 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Optional: Stripe
 # VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
-
-# Optional: Maps
-# VITE_MAPTILER_KEY=your_key
-# VITE_MAP_STYLE_URL=your_style_url
 EOF
 ```
 
