@@ -123,158 +123,120 @@ DROP POLICY if EXISTS "Users can delete own sequences_segments" ON public.sequen
 
 
 -- Policies on dropped tables (should not exist, but cleaning up just in case)
-DROP POLICY if EXISTS "bases_teams_delete_with_manage" ON public.bases_teams;
+-- Use DO blocks to check table existence first since DROP POLICY requires the table to exist
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'bases_teams') THEN
+    DROP POLICY IF EXISTS "bases_teams_delete_with_manage" ON public.bases_teams;
+    DROP POLICY IF EXISTS "bases_teams_insert_with_manage" ON public.bases_teams;
+    DROP POLICY IF EXISTS "bases_teams_select_public" ON public.bases_teams;
+    DROP POLICY IF EXISTS "bases_teams_update_with_manage" ON public.bases_teams;
+  END IF;
+END $$;
 
 
-DROP POLICY if EXISTS "bases_teams_insert_with_manage" ON public.bases_teams;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'projects_teams') THEN
+    DROP POLICY IF EXISTS "projects_teams_delete_with_manage" ON public.projects_teams;
+    DROP POLICY IF EXISTS "projects_teams_insert_with_manage" ON public.projects_teams;
+    DROP POLICY IF EXISTS "projects_teams_select_public" ON public.projects_teams;
+    DROP POLICY IF EXISTS "projects_teams_update_with_manage" ON public.projects_teams;
+  END IF;
+END $$;
 
 
-DROP POLICY if EXISTS "bases_teams_select_public" ON public.bases_teams;
-
-
-DROP POLICY if EXISTS "bases_teams_update_with_manage" ON public.bases_teams;
-
-
-DROP POLICY if EXISTS "projects_teams_delete_with_manage" ON public.projects_teams;
-
-
-DROP POLICY if EXISTS "projects_teams_insert_with_manage" ON public.projects_teams;
-
-
-DROP POLICY if EXISTS "projects_teams_select_public" ON public.projects_teams;
-
-
-DROP POLICY if EXISTS "projects_teams_update_with_manage" ON public.projects_teams;
-
-
-DROP POLICY if EXISTS "teams_delete_with_permission" ON public.teams;
-
-
-DROP POLICY if EXISTS "teams_insert_with_permission" ON public.teams;
-
-
-DROP POLICY if EXISTS "teams_select_public" ON public.teams;
-
-
-DROP POLICY if EXISTS "teams_update_with_permission" ON public.teams;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'teams') THEN
+    DROP POLICY IF EXISTS "teams_delete_with_permission" ON public.teams;
+    DROP POLICY IF EXISTS "teams_insert_with_permission" ON public.teams;
+    DROP POLICY IF EXISTS "teams_select_public" ON public.teams;
+    DROP POLICY IF EXISTS "teams_update_with_permission" ON public.teams;
+  END IF;
+END $$;
 
 
 -- Tags and related tables (dropped)
-DROP POLICY if EXISTS "Users can insert tags" ON public.tags;
-
-
-DROP POLICY if EXISTS "Users can insert their own tags" ON public.tags;
-
-
-DROP POLICY if EXISTS "Users can update own tags" ON public.tags;
-
-
-DROP POLICY if EXISTS "Users can view tags" ON public.tags;
-
-
-DROP POLICY if EXISTS "Users can delete own tags" ON public.tags;
-
-
-DROP POLICY if EXISTS "All users can view tags" ON public.tags;
-
-
-DROP POLICY if EXISTS "tags_delete_own" ON public.tags;
-
-
-DROP POLICY if EXISTS "tags_insert_own" ON public.tags;
-
-
-DROP POLICY if EXISTS "tags_select_linked_to_project_media" ON public.tags;
-
-
-DROP POLICY if EXISTS "tags_update_own" ON public.tags;
-
-
-DROP POLICY if EXISTS "Users can delete own media_files_tags" ON public.media_files_tags;
-
-
-DROP POLICY if EXISTS "Users can insert their own media_files_tags" ON public.media_files_tags;
-
-
-DROP POLICY if EXISTS "Users can update own media_files_tags" ON public.media_files_tags;
-
-
-DROP POLICY if EXISTS "Users can view media_files_tags" ON public.media_files_tags;
-
-
-DROP POLICY if EXISTS "All users can view media_files_tags" ON public.media_files_tags;
-
-
-DROP POLICY if EXISTS "media_files_tags_del_with_project_delete" ON public.media_files_tags;
-
-
-DROP POLICY if EXISTS "media_files_tags_ins_with_project_write" ON public.media_files_tags;
-
-
-DROP POLICY if EXISTS "media_files_tags_select_inherit_project" ON public.media_files_tags;
-
-
-DROP POLICY if EXISTS "media_files_tags_upd_with_project_write" ON public.media_files_tags;
-
-
-DROP POLICY if EXISTS "Users can delete own media_files_targets" ON public.media_files_targets;
-
-
-DROP POLICY if EXISTS "Users can insert their own media_files_targets" ON public.media_files_targets;
-
-
-DROP POLICY if EXISTS "Users can update own media_files_targets" ON public.media_files_targets;
-
-
-DROP POLICY if EXISTS "Users can view media_files_targets" ON public.media_files_targets;
-
-
-DROP POLICY if EXISTS "All users can view media_files_targets" ON public.media_files_targets;
-
-
-DROP POLICY if EXISTS "media_files_targets_del_with_project_delete" ON public.media_files_targets;
-
-
-DROP POLICY if EXISTS "media_files_targets_ins_with_project_write" ON public.media_files_targets;
-
-
-DROP POLICY if EXISTS "media_files_targets_select_inherit_project" ON public.media_files_targets;
-
-
-DROP POLICY if EXISTS "media_files_targets_upd_with_project_write" ON public.media_files_targets;
-
-
-DROP POLICY if EXISTS "Users can delete own segments_targets" ON public.segments_targets;
-
-
-DROP POLICY if EXISTS "Users can insert their own segments_targets" ON public.segments_targets;
-
-
-DROP POLICY if EXISTS "Users can update own segments_targets" ON public.segments_targets;
-
-
-DROP POLICY if EXISTS "Users can view segments_targets" ON public.segments_targets;
-
-
-DROP POLICY if EXISTS "Users can delete own sequences_tags" ON public.sequences_tags;
-
-
-DROP POLICY if EXISTS "Users can insert their own sequences_tags" ON public.sequences_tags;
-
-
-DROP POLICY if EXISTS "Users can update own sequences_tags" ON public.sequences_tags;
-
-
-DROP POLICY if EXISTS "Users can view sequences_tags" ON public.sequences_tags;
-
-
-DROP POLICY if EXISTS "Users can insert their own sequences_targets" ON public.sequences_targets;
-
-
-DROP POLICY if EXISTS "Users can update own sequences_targets" ON public.sequences_targets;
-
-
-DROP POLICY if EXISTS "Users can view sequences_targets" ON public.sequences_targets;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'tags') THEN
+    DROP POLICY IF EXISTS "Users can insert tags" ON public.tags;
+    DROP POLICY IF EXISTS "Users can insert their own tags" ON public.tags;
+    DROP POLICY IF EXISTS "Users can update own tags" ON public.tags;
+    DROP POLICY IF EXISTS "Users can view tags" ON public.tags;
+    DROP POLICY IF EXISTS "Users can delete own tags" ON public.tags;
+    DROP POLICY IF EXISTS "All users can view tags" ON public.tags;
+    DROP POLICY IF EXISTS "tags_delete_own" ON public.tags;
+    DROP POLICY IF EXISTS "tags_insert_own" ON public.tags;
+    DROP POLICY IF EXISTS "tags_select_linked_to_project_media" ON public.tags;
+    DROP POLICY IF EXISTS "tags_update_own" ON public.tags;
+  END IF;
+END $$;
+
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'media_files_tags') THEN
+    DROP POLICY IF EXISTS "Users can delete own media_files_tags" ON public.media_files_tags;
+    DROP POLICY IF EXISTS "Users can insert their own media_files_tags" ON public.media_files_tags;
+    DROP POLICY IF EXISTS "Users can update own media_files_tags" ON public.media_files_tags;
+    DROP POLICY IF EXISTS "Users can view media_files_tags" ON public.media_files_tags;
+    DROP POLICY IF EXISTS "All users can view media_files_tags" ON public.media_files_tags;
+    DROP POLICY IF EXISTS "media_files_tags_del_with_project_delete" ON public.media_files_tags;
+    DROP POLICY IF EXISTS "media_files_tags_ins_with_project_write" ON public.media_files_tags;
+    DROP POLICY IF EXISTS "media_files_tags_select_inherit_project" ON public.media_files_tags;
+    DROP POLICY IF EXISTS "media_files_tags_upd_with_project_write" ON public.media_files_tags;
+  END IF;
+END $$;
+
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'media_files_targets') THEN
+    DROP POLICY IF EXISTS "Users can delete own media_files_targets" ON public.media_files_targets;
+    DROP POLICY IF EXISTS "Users can insert their own media_files_targets" ON public.media_files_targets;
+    DROP POLICY IF EXISTS "Users can update own media_files_targets" ON public.media_files_targets;
+    DROP POLICY IF EXISTS "Users can view media_files_targets" ON public.media_files_targets;
+    DROP POLICY IF EXISTS "All users can view media_files_targets" ON public.media_files_targets;
+    DROP POLICY IF EXISTS "media_files_targets_del_with_project_delete" ON public.media_files_targets;
+    DROP POLICY IF EXISTS "media_files_targets_ins_with_project_write" ON public.media_files_targets;
+    DROP POLICY IF EXISTS "media_files_targets_select_inherit_project" ON public.media_files_targets;
+    DROP POLICY IF EXISTS "media_files_targets_upd_with_project_write" ON public.media_files_targets;
+  END IF;
+END $$;
+
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'segments_targets') THEN
+    DROP POLICY IF EXISTS "Users can delete own segments_targets" ON public.segments_targets;
+    DROP POLICY IF EXISTS "Users can insert their own segments_targets" ON public.segments_targets;
+    DROP POLICY IF EXISTS "Users can update own segments_targets" ON public.segments_targets;
+    DROP POLICY IF EXISTS "Users can view segments_targets" ON public.segments_targets;
+  END IF;
+END $$;
+
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'sequences_tags') THEN
+    DROP POLICY IF EXISTS "Users can delete own sequences_tags" ON public.sequences_tags;
+    DROP POLICY IF EXISTS "Users can insert their own sequences_tags" ON public.sequences_tags;
+    DROP POLICY IF EXISTS "Users can update own sequences_tags" ON public.sequences_tags;
+    DROP POLICY IF EXISTS "Users can view sequences_tags" ON public.sequences_tags;
+  END IF;
+END $$;
+
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'sequences_targets') THEN
+    DROP POLICY IF EXISTS "Users can insert their own sequences_targets" ON public.sequences_targets;
+    DROP POLICY IF EXISTS "Users can update own sequences_targets" ON public.sequences_targets;
+    DROP POLICY IF EXISTS "Users can view sequences_targets" ON public.sequences_targets;
+  END IF;
+END $$;
 
 
 -- Old project_updates policy that referenced visibility column (now uses publish_status)
