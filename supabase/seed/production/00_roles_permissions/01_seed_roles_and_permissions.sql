@@ -19,16 +19,10 @@ WITH
         'Project Admin'
       ),
       (
-        'team'::resource_type,
-        'team_member',
-        'Team Member'
+        'project'::resource_type,
+        'project_checker',
+        'Project Checker'
       ),
-      (
-        'team'::resource_type,
-        'team_leader',
-        'Team Leader'
-      ),
-      ('team'::resource_type, 'team_admin', 'Team Admin'),
       (
         'base'::resource_type,
         'base_member',
@@ -119,9 +113,7 @@ WITH
         ('project'::resource_type, 'project_viewer'),
         ('project'::resource_type, 'project_editor'),
         ('project'::resource_type, 'project_admin'),
-        ('team'::resource_type, 'team_member'),
-        ('team'::resource_type, 'team_leader'),
-        ('team'::resource_type, 'team_admin'),
+        ('project'::resource_type, 'project_checker'),
         ('base'::resource_type, 'base_member'),
         ('base'::resource_type, 'base_leader'),
         ('base'::resource_type, 'base_staff'),
@@ -205,41 +197,25 @@ WITH
         'project_admin',
         'project.manage_roles'::permission_key
       ),
-      -- team
       (
-        'team'::resource_type,
-        'team_member',
-        'team.read'::permission_key
+        'project'::resource_type,
+        'project_checker',
+        'project.read'::permission_key
       ),
       (
-        'team'::resource_type,
-        'team_leader',
-        'team.read'::permission_key
+        'project'::resource_type,
+        'project_checker',
+        'verse_feedback.read'::permission_key
       ),
       (
-        'team'::resource_type,
-        'team_leader',
-        'team.write'::permission_key
+        'project'::resource_type,
+        'project_checker',
+        'verse_feedback.write'::permission_key
       ),
       (
-        'team'::resource_type,
-        'team_admin',
-        'team.read'::permission_key
-      ),
-      (
-        'team'::resource_type,
-        'team_admin',
-        'team.write'::permission_key
-      ),
-      (
-        'team'::resource_type,
-        'team_admin',
-        'team.delete'::permission_key
-      ),
-      (
-        'team'::resource_type,
-        'team_admin',
-        'team.manage_roles'::permission_key
+        'project'::resource_type,
+        'project_checker',
+        'verse_feedback.delete'::permission_key
       ),
       -- base
       (

@@ -9,7 +9,6 @@
 -- We query the database to get the actual role IDs rather than trying to insert them.
 -- 
 -- Expected roles (created by migrations):
--- - Team: Team Member, Team Leader, Team Admin
 -- - Base: Base Member, Base Staff, Base Admin  
 -- - Partner: Partner Member, Partner Leader, Partner Admin
 -- - Project: Project Viewer, Project Editor, Project Admin, Project Checker
@@ -246,92 +245,6 @@ ON CONFLICT (id) DO NOTHING;
 
 
 -- =========================================================================
--- TEAMS
--- =========================================================================
-INSERT INTO
-  teams (id, name, type)
-VALUES
-  (
-    '770e8400-e29b-41d4-a716-446655440001',
-    'FF Kona April Quarter 2025',
-    'translation'
-  ),
-  (
-    '770e8400-e29b-41d4-a716-446655440002',
-    'FF Pohkara January Quarter 2025',
-    'translation'
-  ),
-  (
-    '770e8400-e29b-41d4-a716-446655440003',
-    'OMT Pokhara 1',
-    'technical'
-  ),
-  (
-    '770e8400-e29b-41d4-a716-446655440004',
-    'OMT Pokhara 2',
-    'technical'
-  )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================================
--- BASES-TEAMS RELATIONSHIPS
--- ============================================================================
-INSERT INTO
-  bases_teams (team_id, base_id, role_id)
-SELECT
-  team_id,
-  base_id,
-  (
-    SELECT
-      id
-    FROM
-      roles
-    WHERE
-      role_key = role_key_to_use
-  )
-FROM
-  (
-    VALUES
-      -- FF Kona April Quarter 2025 -> Kona and Pokhara bases with staff role
-      (
-        '770e8400-e29b-41d4-a716-446655440001'::UUID,
-        '660e8400-e29b-41d4-a716-446655440001'::UUID,
-        'base_staff'
-      ),
-      (
-        '770e8400-e29b-41d4-a716-446655440001'::UUID,
-        '660e8400-e29b-41d4-a716-446655440003'::UUID,
-        'base_staff'
-      ),
-      -- FF Pohkara January Quarter 2025 -> Pokhara base with member role
-      (
-        '770e8400-e29b-41d4-a716-446655440002'::UUID,
-        '660e8400-e29b-41d4-a716-446655440003'::UUID,
-        'base_member'
-      ),
-      -- OMT Pokhara 1 -> Port Harcourt and Pokhara with admin role
-      (
-        '770e8400-e29b-41d4-a716-446655440003'::UUID,
-        '660e8400-e29b-41d4-a716-446655440002'::UUID,
-        'base_admin'
-      ),
-      (
-        '770e8400-e29b-41d4-a716-446655440003'::UUID,
-        '660e8400-e29b-41d4-a716-446655440003'::UUID,
-        'base_admin'
-      ),
-      -- OMT Pokhara 2 -> Pokhara only with staff role
-      (
-        '770e8400-e29b-41d4-a716-446655440004'::UUID,
-        '660e8400-e29b-41d4-a716-446655440003'::UUID,
-        'base_staff'
-      )
-  ) AS t (team_id, base_id, role_key_to_use)
-ON CONFLICT (team_id, base_id, role_id) DO NOTHING;
-
-
--- =========================================================================
 -- LANGUAGE ENTITIES (minimal for project foreign keys)
 -- =========================================================================
 INSERT INTO
@@ -374,26 +287,24 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 
--- =========================================================================
--- PROJECTS_TEAMS (assign team to project with a project role)
--- =========================================================================
+-- ============================================================================
+-- BASES-PROJECTS RELATIONSHIPS (replaces bases-teams)
+-- ============================================================================
 INSERT INTO
-  public.projects_teams (project_id, team_id, project_role_id, is_primary)
-SELECT
-  'aa0e8400-e29b-41d4-a716-446655440001'::UUID,
-  '770e8400-e29b-41d4-a716-446655440001'::UUID,
+  bases_projects (base_id, project_id)
+VALUES
+  -- Kona base -> Test Project Kona
   (
-    SELECT
-      id
-    FROM
-      roles
-    WHERE
-      role_key = 'project_editor'
+    '660e8400-e29b-41d4-a716-446655440001'::UUID,
+    'aa0e8400-e29b-41d4-a716-446655440001'::UUID
   ),
-  TRUE
-ON CONFLICT (project_id, team_id)
-WHERE
-  (unassigned_at IS NULL) DO NOTHING;
+  -- Pokhara base -> Test Project Kona
+  (
+    '660e8400-e29b-41d4-a716-446655440003'::UUID,
+    'aa0e8400-e29b-41d4-a716-446655440001'::UUID
+  )
+ON CONFLICT (base_id, project_id)
+WHERE unassigned_at IS NULL DO NOTHING;
 
 
 -- =========================================================================
@@ -423,7 +334,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ON CONFLICT (project_id, partner_org_id)
 -- WHERE (unassigned_at IS NULL) DO NOTHING;
 -- ============================================================================
--- USER ROLES - TEAM ASSIGNMENTS
+-- USER ROLES - PROJECT ASSIGNMENTS (direct project roles)
 -- ============================================================================
 INSERT INTO
   user_roles (user_id, role_id, context_type, context_id)
@@ -437,49 +348,29 @@ SELECT
     WHERE
       role_key = role_key_to_use
   ),
-  'team',
+  'project',
   context_id
 FROM
   (
     VALUES
-      -- Sarah Johnson - Admin in FF Kona April Quarter 2025
+      -- Sarah Johnson - Admin on Test Project Kona
       (
         '880e8400-e29b-41d4-a716-446655440001'::UUID,
-        'team_admin',
-        '770e8400-e29b-41d4-a716-446655440001'::UUID
+        'project_admin',
+        'aa0e8400-e29b-41d4-a716-446655440001'::UUID
       ),
-      -- Michael Chen - Leader in FF Kona April Quarter 2025  
+      -- Michael Chen - Editor on Test Project Kona
       (
         '880e8400-e29b-41d4-a716-446655440002'::UUID,
-        'team_leader',
-        '770e8400-e29b-41d4-a716-446655440001'::UUID
+        'project_editor',
+        'aa0e8400-e29b-41d4-a716-446655440001'::UUID
       ),
-      -- Priya Sharma - Member in FF Pohkara January Quarter 2025
+      -- Priya Sharma - Viewer on Test Project Kona
       (
         '880e8400-e29b-41d4-a716-446655440003'::UUID,
-        'team_member',
-        '770e8400-e29b-41d4-a716-446655440002'::UUID
-      ),
-      -- David Wilson - Leader in OMT Pokhara 1
-      (
-        '880e8400-e29b-41d4-a716-446655440004'::UUID,
-        'team_leader',
-        '770e8400-e29b-41d4-a716-446655440003'::UUID
-      ),
-      -- Anne Okafor - Admin in OMT Pokhara 1
-      (
-        '880e8400-e29b-41d4-a716-446655440005'::UUID,
-        'team_admin',
-        '770e8400-e29b-41d4-a716-446655440003'::UUID
-      ),
-      -- Raj Patel - Member in OMT Pokhara 2
-      (
-        '880e8400-e29b-41d4-a716-446655440006'::UUID,
-        'team_member',
-        '770e8400-e29b-41d4-a716-446655440004'::UUID
+        'project_viewer',
+        'aa0e8400-e29b-41d4-a716-446655440001'::UUID
       )
-      -- Lisa Martinez - No team assignment (only base role)
-      -- John Doe - No team assignment (only base role)
   ) AS t (user_id, role_key_to_use, context_id)
 ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 
@@ -606,7 +497,7 @@ ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
 --   ) AS t(role_key_to_use, resource_type, permission_key)
 -- ON CONFLICT (role_id, resource_type, permission_key) DO NOTHING;
 -- =========================================================================
--- SET created_by for bases and teams (ownership for testing)
+-- SET created_by for bases (ownership for testing)
 -- =========================================================================
 -- Bases
 UPDATE public.bases
@@ -633,39 +524,6 @@ WHERE
 
 
 -- Pokhara
--- Teams
-UPDATE public.teams
-SET
-  created_by = '880e8400-e29b-41d4-a716-446655440001' -- Sarah Johnson
-WHERE
-  id = '770e8400-e29b-41d4-a716-446655440001';
-
-
--- FF Kona April Quarter 2025
-UPDATE public.teams
-SET
-  created_by = '880e8400-e29b-41d4-a716-446655440003' -- Priya Sharma
-WHERE
-  id = '770e8400-e29b-41d4-a716-446655440002';
-
-
--- FF Pohkara January Quarter 2025
-UPDATE public.teams
-SET
-  created_by = '880e8400-e29b-41d4-a716-446655440005' -- Anne Okafor
-WHERE
-  id = '770e8400-e29b-41d4-a716-446655440003';
-
-
--- OMT Pokhara 1
-UPDATE public.teams
-SET
-  created_by = '880e8400-e29b-41d4-a716-446655440006' -- Raj Patel
-WHERE
-  id = '770e8400-e29b-41d4-a716-446655440004';
-
-
--- OMT Pokhara 2
 -- ============================================================================
 -- VERIFICATION QUERIES (run these to verify the seed worked)
 -- ============================================================================
@@ -675,17 +533,17 @@ SELECT u.first_name, u.last_name, u.email, au.email as auth_email
 FROM public.users u
 JOIN auth.users au ON u.auth_uid = au.id;
 
--- Check user team assignments
+-- Check user project assignments
 SELECT 
 u.first_name || ' ' || u.last_name as user_name,
 r.name as role,
-t.name as team,
-'team' as context_type
+p.name as project,
+'project' as context_type
 FROM public.users u
 JOIN user_roles ur ON u.id = ur.user_id
 JOIN roles r ON ur.role_id = r.id
-JOIN teams t ON ur.context_id = t.id
-WHERE ur.context_type = 'team'
+JOIN projects p ON ur.context_id = p.id
+WHERE ur.context_type = 'project'
 ORDER BY u.first_name;
 
 -- Check user base assignments  
@@ -701,14 +559,13 @@ JOIN bases b ON ur.context_id = b.id
 WHERE ur.context_type = 'base'
 ORDER BY u.first_name;
 
--- Check team-base relationships
+-- Check base-project relationships
 SELECT 
-t.name as team,
 b.name as base,
-r.name as role
-FROM teams t
-JOIN bases_teams bt ON t.id = bt.team_id
-JOIN bases b ON bt.base_id = b.id
-JOIN roles r ON bt.role_id = r.id
-ORDER BY t.name, b.name;
+p.name as project
+FROM bases b
+JOIN bases_projects bp ON b.id = bp.base_id
+JOIN projects p ON bp.project_id = p.id
+WHERE bp.unassigned_at IS NULL
+ORDER BY b.name, p.name;
 */
