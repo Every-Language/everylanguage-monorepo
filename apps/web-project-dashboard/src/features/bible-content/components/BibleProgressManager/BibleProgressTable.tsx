@@ -30,7 +30,6 @@ interface BibleProgressTableProps {
   bookData: BookProgress[];
   isLoading: boolean;
   selectedVersionType: 'audio' | 'text';
-  onBookExpand?: (bookId: string) => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -91,74 +90,17 @@ const ChapterRow: React.FC<{
 
         {/* Progress */}
         <div className='w-40'>
-          {selectedVersionType === 'audio' ? (
-            <>
-              {/* Media files count */}
-              <div className='flex justify-between text-xs mb-1'>
-                <span className='text-neutral-600 dark:text-neutral-400'>
-                  Files: {chapter.mediaFiles.length}
-                </span>
-              </div>
-              <div className='h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full mb-2'>
-                <div
-                  className={`h-full rounded-full ${chapter.mediaFiles.length > 0 ? 'bg-secondary-500' : 'bg-transparent'}`}
-                  style={{
-                    width: chapter.mediaFiles.length > 0 ? '100%' : '0%',
-                  }}
-                />
-              </div>
-
-              {/* Verse-level progress */}
-              <div className='flex justify-between text-xs mb-1'>
-                <span className='text-neutral-600 dark:text-neutral-400'>
-                  Verses:{' '}
-                  {chapter.verseCoverage
-                    ? `${chapter.verseCoverage.coveredVerses}/${chapter.verseCoverage.totalVerses}`
-                    : '0/0'}
-                </span>
-              </div>
-              <Progress
-                value={chapter.progress}
-                color='success'
-                className='h-2'
-              />
-            </>
-          ) : (
-            <>
-              {/* For text versions, just show verse progress */}
-              <div className='flex justify-between text-xs mb-1'>
-                <span className='text-neutral-600 dark:text-neutral-400'>
-                  Verses:{' '}
-                  {chapter.verseCoverage
-                    ? `${chapter.verseCoverage.coveredVerses}/${chapter.verseCoverage.totalVerses}`
-                    : '0/0'}
-                </span>
-              </div>
-              <Progress
-                value={chapter.progress}
-                color={
-                  chapter.status === 'complete'
-                    ? 'secondary'
-                    : chapter.status === 'in_progress'
-                      ? 'primary'
-                      : 'primary'
-                }
-                className='h-2'
-              />
-            </>
-          )}
-          {chapter.verseCoverage &&
-            chapter.verseCoverage.verseRanges.length > 0 && (
-              <div className='text-xs text-neutral-500 dark:text-neutral-400 mt-1'>
-                {chapter.verseCoverage.verseRanges.map((range, idx) => (
-                  <span key={idx} className='mr-1'>
-                    {range.start === range.end
-                      ? `v${range.start}`
-                      : `v${range.start}-${range.end}`}
-                  </span>
-                ))}
-              </div>
-            )}
+          <Progress
+            value={chapter.progress}
+            color={
+              chapter.status === 'complete'
+                ? 'secondary'
+                : chapter.status === 'in_progress'
+                  ? 'primary'
+                  : 'primary'
+            }
+            className='h-2'
+          />
         </div>
 
         {/* Media files count / Status indicator */}
@@ -183,8 +125,7 @@ const ChapterRow: React.FC<{
         {/* Status badge */}
         <div className='w-24'>
           <span
-            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(chapter.status)}`}
-          >
+            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(chapter.status)}`}>
             {formatStatus(chapter.status)}
           </span>
         </div>
@@ -196,8 +137,7 @@ const ChapterRow: React.FC<{
           variant='outline'
           size='sm'
           onClick={() => onUpload(chapter.chapterId)}
-          className='flex items-center space-x-1'
-        >
+          className='flex items-center space-x-1'>
           <ArrowUpTrayIcon className='h-4 w-4' />
           <span>Upload</span>
         </Button>
@@ -210,7 +150,6 @@ export const BibleProgressTable: React.FC<BibleProgressTableProps> = ({
   bookData,
   isLoading,
   selectedVersionType,
-  onBookExpand,
 }) => {
   const [expandedBooks, setExpandedBooks] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -222,16 +161,6 @@ export const BibleProgressTable: React.FC<BibleProgressTableProps> = ({
     const query = searchQuery.toLowerCase().trim();
     return bookData.filter(book => book.bookName.toLowerCase().includes(query));
   }, [bookData, searchQuery]);
-
-  const handleBookExpand = (bookIds: string[]) => {
-    setExpandedBooks(bookIds);
-
-    // Notify parent component about newly expanded books
-    if (onBookExpand) {
-      const newlyExpanded = bookIds.filter(id => !expandedBooks.includes(id));
-      newlyExpanded.forEach(bookId => onBookExpand(bookId));
-    }
-  };
 
   const handleUpload = (chapterId: string) => {
     // TODO: Open upload modal with pre-filled chapter info
@@ -307,9 +236,8 @@ export const BibleProgressTable: React.FC<BibleProgressTableProps> = ({
           <Accordion
             type='multiple'
             value={expandedBooks}
-            onValueChange={handleBookExpand}
-            variant='flat'
-          >
+            onValueChange={setExpandedBooks}
+            variant='flat'>
             {filteredBooks.map(book => (
               <AccordionItem key={book.id} value={book.id} variant='flat'>
                 <AccordionTrigger variant='flat' className='hover:no-underline'>
@@ -324,149 +252,40 @@ export const BibleProgressTable: React.FC<BibleProgressTableProps> = ({
                       <div className='flex-1 text-left'>
                         <div className='font-medium text-neutral-900 dark:text-neutral-100'>
                           {book.bookName}
-                          {!book.detailedProgressLoaded &&
-                            expandedBooks.includes(book.id) && (
-                              <span className='ml-2 text-xs text-neutral-500 dark:text-neutral-400'>
-                                (Loading verse details...)
-                              </span>
-                            )}
                         </div>
                         <div className='text-sm text-neutral-600 dark:text-neutral-400'>
                           {book.totalChapters} chapters
-                          {book.detailedProgressLoaded && (
-                            <span className='ml-1 text-neutral-500'>
-                              • Verse-level progress
-                            </span>
-                          )}
                         </div>
                       </div>
 
                       {/* Progress */}
                       <div className='w-40'>
-                        {selectedVersionType === 'audio' ? (
-                          <>
-                            {/* Media files progress (chapters with at least one media file) */}
-                            <div className='flex justify-between text-xs mb-1'>
-                              <span className='text-neutral-600 dark:text-neutral-400'>
-                                Files:{' '}
-                                {book.mediaFilesProgress
-                                  ? Math.round(
-                                      (book.mediaFilesProgress *
-                                        book.totalChapters) /
-                                        100
-                                    )
-                                  : 0}
-                                /{book.totalChapters} chapters
-                              </span>
-                            </div>
-                            <Progress
-                              value={book.mediaFilesProgress || 0}
-                              color='secondary'
-                              className='h-2'
-                            />
-
-                            {/* Chapters progress (chapters with all verses having media_files_verses) */}
-                            <div className='flex justify-between text-xs mb-1 mt-2'>
-                              <span className='text-neutral-600 dark:text-neutral-400'>
-                                Chapters:{' '}
-                                {Math.round(
-                                  (book.progress * book.totalChapters) / 100
-                                )}
-                                /{book.totalChapters} complete
-                              </span>
-                            </div>
-                            <Progress
-                              value={book.progress}
-                              color='success'
-                              className='h-2'
-                            />
-                          </>
-                        ) : (
-                          <>
-                            {/* For text versions: just show chapter progress */}
-                            <div className='flex justify-between text-xs mb-1'>
-                              <span className='text-neutral-600 dark:text-neutral-400'>
-                                Chapters:{' '}
-                                {Math.round(
-                                  (book.progress * book.totalChapters) / 100
-                                )}
-                                /{book.totalChapters} complete
-                              </span>
-                            </div>
-                            <Progress
-                              value={book.progress}
-                              color={
-                                book.status === 'complete'
-                                  ? 'secondary'
-                                  : book.status === 'in_progress'
-                                    ? 'primary'
-                                    : 'primary'
-                              }
-                              className='h-2'
-                            />
-
-                            {book.detailedProgressLoaded && (
-                              <>
-                                <div className='flex justify-between text-xs mb-1 mt-2'>
-                                  <span className='text-neutral-600 dark:text-neutral-400'>
-                                    Verses:{' '}
-                                    {book.chapters.reduce(
-                                      (coveredVerses, chapter) =>
-                                        coveredVerses +
-                                        (chapter.verseCoverage?.coveredVerses ||
-                                          0),
-                                      0
-                                    )}
-                                    /
-                                    {book.chapters.reduce(
-                                      (totalVerses, chapter) =>
-                                        totalVerses +
-                                        (chapter.verseCoverage?.totalVerses ||
-                                          0),
-                                      0
-                                    )}
-                                  </span>
-                                </div>
-                                <Progress
-                                  value={
-                                    book.chapters.reduce(
-                                      (totalVerses, chapter) =>
-                                        totalVerses +
-                                        (chapter.verseCoverage?.totalVerses ||
-                                          0),
-                                      0
-                                    ) > 0
-                                      ? (book.chapters.reduce(
-                                          (coveredVerses, chapter) =>
-                                            coveredVerses +
-                                            (chapter.verseCoverage
-                                              ?.coveredVerses || 0),
-                                          0
-                                        ) /
-                                          book.chapters.reduce(
-                                            (totalVerses, chapter) =>
-                                              totalVerses +
-                                              (chapter.verseCoverage
-                                                ?.totalVerses || 0),
-                                            0
-                                          )) *
-                                        100
-                                      : 0
-                                  }
-                                  color='success'
-                                  className='h-2'
-                                />
-                              </>
+                        <div className='flex justify-between text-xs mb-1'>
+                          <span className='text-neutral-600 dark:text-neutral-400'>
+                            Chapters:{' '}
+                            {Math.round(
+                              (book.progress * book.totalChapters) / 100
                             )}
-                          </>
-                        )}
+                            /{book.totalChapters} complete
+                          </span>
+                        </div>
+                        <Progress
+                          value={book.progress}
+                          color={
+                            book.status === 'complete'
+                              ? 'secondary'
+                              : book.status === 'in_progress'
+                                ? 'primary'
+                                : 'primary'
+                          }
+                          className='h-2'
+                        />
                       </div>
 
                       {/* Status badge */}
                       <div className='w-24'>
                         <span
-                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(book.status)}`}
-                        >
+                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(book.status)}`}>
                           {formatStatus(book.status)}
                         </span>
                       </div>

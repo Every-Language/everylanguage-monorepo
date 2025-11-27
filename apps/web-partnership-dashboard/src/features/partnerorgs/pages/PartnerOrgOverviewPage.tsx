@@ -118,14 +118,12 @@ export const PartnerOrgOverviewPage: React.FC = () => {
           return (
             <Card
               key={project.project_id}
-              className='border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-shadow'
-            >
+              className='border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-shadow'>
               <CardHeader>
                 <CardTitle className='text-lg'>
                   <Link
-                    href={`/partner-org/${orgId}/progress`}
-                    className='text-accent-600 hover:text-accent-700 dark:text-accent-600 dark:hover:text-accent-500'
-                  >
+                    href={`/dashboard/partner-org/${orgId}/progress`}
+                    className='text-accent-600 hover:text-accent-700 dark:text-accent-600 dark:hover:text-accent-500'>
                     {project.language_name}
                   </Link>
                 </CardTitle>

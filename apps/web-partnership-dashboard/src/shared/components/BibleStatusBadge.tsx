@@ -74,8 +74,7 @@ export const BibleStatusBadge: React.FC<BibleStatusBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center rounded font-medium ${statusInfo.bgColor} ${statusInfo.textColor} ${sizeClasses[size]} ${className}`}
-    >
+      className={`inline-flex items-center rounded font-medium ${statusInfo.bgColor} ${statusInfo.textColor} ${sizeClasses[size]} ${className}`}>
       {showLabel ? statusInfo.label : null}
     </span>
   );

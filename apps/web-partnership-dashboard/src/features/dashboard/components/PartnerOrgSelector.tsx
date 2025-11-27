@@ -24,7 +24,7 @@ export const PartnerOrgSelector: React.FC<PartnerOrgSelectorProps> = ({
     if (value === 'global') {
       router.push('/dashboard/global-statistics');
     } else if (value && value !== '') {
-      router.push(`/partner-org/${encodeURIComponent(value)}`);
+      router.push(`/dashboard/partner-org/${encodeURIComponent(value)}`);
     }
   };
 
@@ -36,8 +36,10 @@ export const PartnerOrgSelector: React.FC<PartnerOrgSelectorProps> = ({
     if (currentOrgId) {
       return currentOrgId;
     }
-    // Try to extract from pathname
-    const match = pathname?.match(/\/partner-org\/([^/]+)/);
+    // Try to extract from pathname (support both old and new routes)
+    const match =
+      pathname?.match(/\/dashboard\/partner-org\/([^/]+)/) ||
+      pathname?.match(/\/partner-org\/([^/]+)/);
     return match ? match[1] : '';
   }, [pathname, currentOrgId]);
 
@@ -45,8 +47,7 @@ export const PartnerOrgSelector: React.FC<PartnerOrgSelectorProps> = ({
     <div className={className}>
       <label
         htmlFor='partner-org-selector'
-        className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2'
-      >
+        className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2'>
         Partner Organization
       </label>
       <select
@@ -54,8 +55,7 @@ export const PartnerOrgSelector: React.FC<PartnerOrgSelectorProps> = ({
         value={currentValue}
         onChange={handleChange}
         disabled={isLoading}
-        className='block w-full rounded-md border-neutral-300 dark:border-neutral-700 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-neutral-800 dark:text-neutral-100 sm:text-sm'
-      >
+        className='block w-full rounded-md border-neutral-300 dark:border-neutral-700 shadow-sm focus:border-accent-500 focus:ring-accent-500 dark:bg-neutral-800 dark:text-neutral-100 sm:text-sm'>
         <option value=''>Select an organization...</option>
         <option value='global'>Global translation statistics</option>
         {partnerOrgs.map(org => (

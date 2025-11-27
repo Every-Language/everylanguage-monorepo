@@ -52,7 +52,7 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
 
       switch (tabLabel) {
         case 'Overview':
-          // Prefetch projects, progress, and distribution for overview
+          // Prefetch projects and listening sessions for overview
           queryClient.prefetchQuery({
             queryKey: ['partner-org-projects', orgId],
             queryFn: async () => {
@@ -65,23 +65,8 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
               return data ?? [];
             },
           });
-          queryClient.prefetchQuery({
-            queryKey: ['project-progress', 'all', orgId],
-            queryFn: async () => {
-              // Simplified prefetch - just trigger the query
-              // The actual query logic is in useProjectProgress hook
-              return null;
-            },
-          });
-          queryClient.prefetchQuery({
-            queryKey: ['project-distribution', 'all', orgId],
-            queryFn: async () => {
-              // Simplified prefetch - just trigger the query
-              return null;
-            },
-          });
           break;
-        case 'Progress':
+        case 'Projects':
           queryClient.prefetchQuery({
             queryKey: ['partner-org-projects', orgId],
             queryFn: async () => {
@@ -220,15 +205,15 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
 
   // Define tabs for partner org pages
   const tabs: Array<{ to: string; label: string }> = React.useMemo(() => {
-    const basePath = `/partner-org/${encodeURIComponent(orgId ?? '')}`;
+    const basePath = `/dashboard/partner-org/${encodeURIComponent(orgId ?? '')}`;
     return [
       {
         to: basePath,
         label: 'Overview',
       },
       {
-        to: `${basePath}/progress`,
-        label: 'Progress',
+        to: `${basePath}/projects`,
+        label: 'Projects',
       },
       {
         to: `${basePath}/distribution`,
@@ -249,46 +234,19 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
     ];
   }, [orgId]);
 
-  const activeTabLabel = React.useMemo(() => {
-    const current = tabs.find(t => {
-      if (t.to === `/partner-org/${encodeURIComponent(orgId ?? '')}`) {
-        // Exact match for overview - must be exactly the base path
-        return pathname === t.to;
-      }
-      // For other tabs, check if pathname starts with the tab path
-      return pathname.startsWith(t.to + '/') || pathname === t.to;
-    });
-    return current?.label;
-  }, [pathname, tabs, orgId]);
+  // If we're on a project route, don't render the partner org layout - just pass through
+  if (pathname?.includes('/project/')) {
+    return <>{children}</>;
+  }
 
   return (
     <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950'>
       <div className='mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-6'>
-        {/* Breadcrumbs and Back Button */}
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-4'>
-            <Link
-              href='/dashboard'
-              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors'
-              aria-label='Back'
-            >
-              ←
-            </Link>
-            <div>
-              <div className='text-xs text-neutral-500'>
-                <Link href='/dashboard' className='hover:underline'>
-                  Dashboard
-                </Link>{' '}
-                / {(partner.data as any)?.name ?? '—'}
-                {activeTabLabel && activeTabLabel !== 'Overview' ? (
-                  <> / {activeTabLabel}</>
-                ) : null}
-              </div>
-              <h1 className='text-2xl font-bold'>
-                {(partner.data as any)?.name ?? 'Partner Organization'}
-              </h1>
-            </div>
-          </div>
+        {/* Title */}
+        <div>
+          <h1 className='text-2xl font-bold'>
+            {(partner.data as any)?.name ?? 'Partner Organization'}
+          </h1>
         </div>
 
         {/* Tabs */}
@@ -298,7 +256,8 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
               // For overview tab, require exact match
               // For other tabs, check if pathname starts with the tab path
               const isActive =
-                t.to === `/partner-org/${encodeURIComponent(orgId ?? '')}`
+                t.to ===
+                `/dashboard/partner-org/${encodeURIComponent(orgId ?? '')}`
                   ? pathname === t.to
                   : pathname.startsWith(t.to + '/') || pathname === t.to;
               return (
@@ -306,8 +265,7 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
                   key={t.to}
                   href={t.to}
                   onMouseEnter={() => prefetchTabData(t.label)}
-                  className={`whitespace-nowrap px-3 py-2 text-sm border-b-2 ${isActive ? 'border-accent-600 text-neutral-900 dark:text-neutral-100' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}
-                >
+                  className={`whitespace-nowrap px-3 py-2 text-sm border-b-2 ${isActive ? 'border-accent-600 text-neutral-900 dark:text-neutral-100' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}>
                   {t.label}
                 </Link>
               );

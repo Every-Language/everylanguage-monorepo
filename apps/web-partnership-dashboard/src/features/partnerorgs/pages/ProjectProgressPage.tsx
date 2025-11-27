@@ -11,6 +11,8 @@ import {
 import { AnimatedProgress } from '../components/AnimatedProgress';
 import { CountUp } from '../components/CountUp';
 import { useProjectProgress } from '../hooks/useProjectProgress';
+import { useBookProgress } from '../hooks/useBookProgress';
+import { Progress } from '@/shared/components/ui/Progress';
 
 export const ProjectProgressPage: React.FC = () => {
   const { projectId, orgId } = useParams<{
@@ -21,6 +23,18 @@ export const ProjectProgressPage: React.FC = () => {
     projectId || 'all',
     orgId
   );
+
+  // Get audio version IDs for book progress
+  const audioVersionIds = React.useMemo(() => {
+    if (!versions || !Array.isArray(versions)) return [];
+    return versions
+      .filter((v: any) => v.version_type === 'audio')
+      .map((v: any) => v.id)
+      .filter((id): id is string => !!id);
+  }, [versions]);
+
+  const { data: bookProgress, isLoading: bookProgressLoading } =
+    useBookProgress(audioVersionIds);
 
   if (isLoading) {
     return (
@@ -126,6 +140,43 @@ export const ProjectProgressPage: React.FC = () => {
         </Card>
       </div>
 
+      {/* Book-by-book breakdown for audio versions */}
+      {bookProgress && bookProgress.length > 0 && (
+        <Card className='border border-neutral-200 dark:border-neutral-800'>
+          <CardHeader>
+            <CardTitle>Book-by-Book Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {bookProgressLoading ? (
+              <div className='text-neutral-500'>Loading book progress...</div>
+            ) : (
+              <div className='space-y-2'>
+                {bookProgress.map(book => {
+                  const progressPercent =
+                    book.total_chapters > 0
+                      ? (book.chapters_with_audio / book.total_chapters) * 100
+                      : 0;
+                  return (
+                    <div
+                      key={book.book_id}
+                      className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-3'>
+                      <div className='flex items-center justify-between mb-2'>
+                        <div className='font-medium'>{book.book.name}</div>
+                        <div className='text-sm text-neutral-500'>
+                          {book.chapters_with_audio} / {book.total_chapters}{' '}
+                          chapters
+                        </div>
+                      </div>
+                      <Progress value={progressPercent} className='h-2' />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Versions */}
       <Card className='border border-neutral-200 dark:border-neutral-800'>
         <CardHeader>
@@ -161,8 +212,7 @@ export const ProjectProgressPage: React.FC = () => {
               return (
                 <div
                   key={version.id}
-                  className='border-b border-neutral-200 dark:border-neutral-800 pb-4 last:border-0'
-                >
+                  className='border-b border-neutral-200 dark:border-neutral-800 pb-4 last:border-0'>
                   <div className='flex items-center gap-2 mb-2'>
                     <div className='font-semibold'>{version.name}</div>
                     <span className='text-xs px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 capitalize'>

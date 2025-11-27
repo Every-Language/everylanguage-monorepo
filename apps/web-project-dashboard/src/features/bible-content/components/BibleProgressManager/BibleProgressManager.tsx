@@ -39,7 +39,6 @@ export const BibleProgressManager: React.FC<BibleProgressManagerProps> = ({
       bookData={progressState.bookData}
       isLoading={progressState.bookDataLoading}
       selectedVersionType={progressState.selectedVersionType}
-      onBookExpand={progressState.loadDetailedProgressForBook}
     />
   );
 
@@ -83,8 +82,7 @@ export const BibleProgressManager: React.FC<BibleProgressManagerProps> = ({
           title='Bible Progress'
           description={`Track recording progress for ${projectName}`}
           table={emptyTable}
-          modals={modalsSection}
-        >
+          modals={modalsSection}>
           {statsCards}
         </DataManagementLayout>
       </div>
@@ -115,8 +113,7 @@ export const BibleProgressManager: React.FC<BibleProgressManagerProps> = ({
         title='Bible Progress'
         description={`Track recording progress for ${projectName}`}
         table={tableSection}
-        modals={modalsSection}
-      >
+        modals={modalsSection}>
         {statsCards}
       </DataManagementLayout>
     </div>

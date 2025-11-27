@@ -115,9 +115,8 @@ export const PartnerOrgDashboardPage: React.FC = () => {
               </div>
               {totalPendingLanguages > 0 && (
                 <Link
-                  href={`/partner-org/${orgId}/pending-languages`}
-                  className='text-xs text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'
-                >
+                  href={`/dashboard/partner-org/${orgId}/pending-languages`}
+                  className='text-xs text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'>
                   View →
                 </Link>
               )}
@@ -188,9 +187,8 @@ export const PartnerOrgDashboardPage: React.FC = () => {
                     <tr key={p.project_id}>
                       <td className='py-3 px-3 sm:px-4'>
                         <Link
-                          href={`/partner-org/${orgId}/project/${p.project_id}/progress`}
-                          className='font-medium text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'
-                        >
+                          href={`/dashboard/partner-org/${orgId}/project/${p.project_id}/progress`}
+                          className='font-medium text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'>
                           {p.language_name}
                         </Link>
                         <div className='text-xs text-neutral-500 mt-1'>
@@ -232,8 +230,7 @@ export const PartnerOrgDashboardPage: React.FC = () => {
                 return (
                   <div
                     key={update.id}
-                    className='rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-card'
-                  >
+                    className='rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-card'>
                     <div className='text-xs text-neutral-500 mb-1'>
                       {formatDate(update.created_at)}
                       {languageEntity && <> • {languageEntity.name}</>}
