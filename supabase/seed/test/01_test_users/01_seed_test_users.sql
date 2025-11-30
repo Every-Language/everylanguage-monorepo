@@ -337,7 +337,7 @@ ON CONFLICT (id) DO NOTHING;
 -- USER ROLES - PROJECT ASSIGNMENTS (direct project roles)
 -- ============================================================================
 INSERT INTO
-  user_roles (user_id, role_id, context_type, context_id)
+  user_roles (user_id, role_id, project_id)
 SELECT
   user_id,
   (
@@ -348,7 +348,6 @@ SELECT
     WHERE
       role_key = role_key_to_use
   ),
-  'project',
   context_id
 FROM
   (
@@ -372,14 +371,14 @@ FROM
         'aa0e8400-e29b-41d4-a716-446655440001'::UUID
       )
   ) AS t (user_id, role_key_to_use, context_id)
-ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+ON CONFLICT (user_id, role_id, project_id) WHERE project_id IS NOT NULL DO NOTHING;
 
 
 -- ============================================================================
 -- USER ROLES - BASE ASSIGNMENTS
 -- ============================================================================
 INSERT INTO
-  user_roles (user_id, role_id, context_type, context_id)
+  user_roles (user_id, role_id, base_id)
 SELECT
   user_id,
   (
@@ -390,7 +389,6 @@ SELECT
     WHERE
       role_key = role_key_to_use
   ),
-  'base',
   context_id
 FROM
   (
@@ -444,7 +442,7 @@ FROM
         '660e8400-e29b-41d4-a716-446655440002'::UUID
       )
   ) AS t (user_id, role_key_to_use, context_id)
-ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+ON CONFLICT (user_id, role_id, base_id) WHERE base_id IS NOT NULL DO NOTHING;
 
 
 -- =========================================================================
@@ -542,8 +540,8 @@ p.name as project,
 FROM public.users u
 JOIN user_roles ur ON u.id = ur.user_id
 JOIN roles r ON ur.role_id = r.id
-JOIN projects p ON ur.context_id = p.id
-WHERE ur.context_type = 'project'
+JOIN projects p ON ur.project_id = p.id
+WHERE ur.project_id IS NOT NULL
 ORDER BY u.first_name;
 
 -- Check user base assignments  
@@ -555,8 +553,8 @@ b.name as base,
 FROM public.users u
 JOIN user_roles ur ON u.id = ur.user_id
 JOIN roles r ON ur.role_id = r.id
-JOIN bases b ON ur.context_id = b.id
-WHERE ur.context_type = 'base'
+JOIN bases b ON ur.base_id = b.id
+WHERE ur.base_id IS NOT NULL
 ORDER BY u.first_name;
 
 -- Check base-project relationships
