@@ -193,6 +193,12 @@ Deno.serve(async (req: Request) => {
           paymentAttemptData.stripe_charge_id = chargeId;
         }
 
+        // Update payment_attempt with stripe_customer_id if not already set
+        // Get customer ID from Stripe PaymentIntent
+        if (pi.customer && typeof pi.customer === 'string') {
+          paymentAttemptData.stripe_customer_id = pi.customer;
+        }
+
         // Upsert payment attempt (unique constraint on stripe_payment_intent_id)
         await supabase.from('payment_attempts').upsert(paymentAttemptData, {
           onConflict: 'stripe_payment_intent_id',
@@ -217,36 +223,12 @@ Deno.serve(async (req: Request) => {
             donations.map((d: { id: string }) => d.id)
           );
 
-        // If payment succeeded, create transaction records (accounting layer) for each donation
+        // Payment succeeded - no need to create transactions
+        // All financial tracking is done via donations, payment_attempts, and donation_allocations
         if (pi.status === 'succeeded') {
-          // Get the payment_attempt we just created
-          const { data: paymentAttempt } = await supabase
-            .from('payment_attempts')
-            .select('id')
-            .eq('stripe_payment_intent_id', pi.id)
-            .single();
-
-          const paymentAttemptId = paymentAttempt?.id ?? null;
-
-          // Create transaction for each donation
-          // Note: All transactions share the same payment_attempt_id since there's only one per PaymentIntent
-          for (const donation of donations) {
-            await supabase.from('transactions').insert({
-              donation_id: donation.id,
-              payment_attempt_id: paymentAttemptId,
-              user_id: donation.user_id,
-              project_id: null, // Will be set when admin allocates
-              operation_id: null, // Will be set when admin allocates
-              amount_cents: pi.amount_received ?? pi.amount, // Total amount (will be allocated)
-              kind: 'payment',
-              occurred_at: new Date().toISOString(),
-              stripe_charge_id: chargeId,
-              stripe_event_id: event.id,
-              description: `Donation payment via ${pi.metadata?.payment_method ?? 'card'}`,
-            });
-
-            console.log(`Transaction created for donation ${donation.id}`);
-          }
+          console.log(
+            `Payment succeeded for ${donations.length} donation(s) via PaymentIntent ${pi.id}`
+          );
         }
 
         console.log(
@@ -261,15 +243,20 @@ Deno.serve(async (req: Request) => {
 
         if (!customerId) break;
 
-        // Find user or partner_org by stripe_customer_id from donations
-        const { data: donations } = await supabase
-          .from('donations')
-          .select('user_id, partner_org_id')
+        // Find user or partner_org by stripe_customer_id from payment_attempts
+        // stripe_customer_id is now in payment_attempts (payment provider layer)
+        const { data: paymentAttempts } = await supabase
+          .from('payment_attempts')
+          .select('donation_id, donations!inner(user_id, partner_org_id)')
           .eq('stripe_customer_id', customerId)
           .limit(1);
 
-        const userId = donations?.[0]?.user_id ?? null;
-        const partnerOrgId = donations?.[0]?.partner_org_id ?? null;
+        const donation = paymentAttempts?.[0]?.donations as
+          | { user_id: string | null; partner_org_id: string | null }
+          | undefined;
+
+        const userId = donation?.user_id ?? null;
+        const partnerOrgId = donation?.partner_org_id ?? null;
 
         if (!userId && !partnerOrgId) {
           console.warn(`No user/partner_org found for customer ${customerId}`);
@@ -334,15 +321,19 @@ Deno.serve(async (req: Request) => {
             },
           });
 
-          // Find user or partner_org
-          const { data: donations } = await supabase
-            .from('donations')
-            .select('user_id, partner_org_id')
+          // Find user or partner_org by stripe_customer_id from payment_attempts
+          const { data: paymentAttempts } = await supabase
+            .from('payment_attempts')
+            .select('donation_id, donations!inner(user_id, partner_org_id)')
             .eq('stripe_customer_id', customerId)
             .limit(1);
 
-          const userId = donations?.[0]?.user_id ?? null;
-          const partnerOrgId = donations?.[0]?.partner_org_id ?? null;
+          const donation = paymentAttempts?.[0]?.donations as
+            | { user_id: string | null; partner_org_id: string | null }
+            | undefined;
+
+          const userId = donation?.user_id ?? null;
+          const partnerOrgId = donation?.partner_org_id ?? null;
 
           if (userId || partnerOrgId) {
             // Mark this payment method as default
@@ -381,12 +372,232 @@ Deno.serve(async (req: Request) => {
 
         if (!stripeSubscriptionId) break;
 
-        // Find subscription - NOTE: subscriptions table doesn't exist yet in new model
-        // We'll need to create this when implementing recurring donations
-        console.log(`Invoice paid for subscription: ${stripeSubscriptionId}`);
+        // Find subscription record
+        const { data: subscription, error: subErr } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('stripe_subscription_id', stripeSubscriptionId)
+          .single();
 
-        // TODO: When subscriptions are implemented, create donation + transaction here
-        // For now, just log it
+        if (subErr || !subscription) {
+          console.error(
+            `Subscription not found for Stripe subscription ID: ${stripeSubscriptionId}`,
+            subErr
+          );
+          break;
+        }
+
+        // Get payment_intent from invoice
+        const paymentIntentId =
+          typeof inv.payment_intent === 'string' ? inv.payment_intent : null;
+
+        if (!paymentIntentId) {
+          console.warn(
+            `No payment_intent found in invoice ${inv.id} for subscription ${stripeSubscriptionId}`
+          );
+          break;
+        }
+
+        // Create new donation record for this subscription payment
+        const { data: newDonation, error: donationErr } = await supabase
+          .from('donations')
+          .insert({
+            user_id: subscription.user_id,
+            partner_org_id: subscription.partner_org_id,
+            intent_type: subscription.intent_type,
+            intent_language_entity_id: subscription.intent_language_entity_id,
+            intent_region_id: subscription.intent_region_id,
+            intent_operation_id: subscription.intent_operation_id,
+            amount_cents: inv.amount_paid, // Amount actually paid (may differ from subscription amount due to prorations)
+            currency_code: (inv.currency ?? 'usd').toUpperCase(),
+            status: 'completed',
+            payment_method: 'card', // Default, can be enhanced later
+            is_recurring: true,
+            subscription_id: subscription.id,
+            completed_at: new Date().toISOString(),
+            created_by: subscription.user_id,
+          })
+          .select('id')
+          .single();
+
+        if (donationErr || !newDonation) {
+          console.error('Failed to create donation for subscription payment', {
+            error: donationErr,
+            subscriptionId: subscription.id,
+          });
+          break;
+        }
+
+        // Create payment_attempt record
+        const { error: attemptErr } = await supabase
+          .from('payment_attempts')
+          .insert({
+            donation_id: newDonation.id,
+            stripe_payment_intent_id: paymentIntentId,
+            stripe_customer_id: subscription.stripe_customer_id,
+            stripe_subscription_id: stripeSubscriptionId,
+            amount_cents: inv.amount_paid,
+            amount_received_cents: inv.amount_paid, // For subscriptions, amount_paid is net
+            currency_code: (inv.currency ?? 'usd').toUpperCase(),
+            status: 'succeeded',
+            stripe_event_id: event.id,
+            succeeded_at: new Date().toISOString(),
+            created_by: subscription.user_id,
+          });
+
+        if (attemptErr) {
+          console.error('Failed to create payment_attempt for subscription', {
+            error: attemptErr,
+            donationId: newDonation.id,
+          });
+        }
+
+        // Update subscription current_period_start and current_period_end
+        // Fetch latest subscription data from Stripe
+        const updatedSubscription =
+          await stripe.subscriptions.retrieve(stripeSubscriptionId);
+
+        await supabase
+          .from('subscriptions')
+          .update({
+            current_period_start: updatedSubscription.current_period_start
+              ? new Date(
+                  updatedSubscription.current_period_start * 1000
+                ).toISOString()
+              : null,
+            current_period_end: updatedSubscription.current_period_end
+              ? new Date(
+                  updatedSubscription.current_period_end * 1000
+                ).toISOString()
+              : null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', subscription.id);
+
+        console.log(
+          `Created donation ${newDonation.id} for subscription payment ${stripeSubscriptionId}`
+        );
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        // Handle subscription status updates
+        const sub = event.data.object as Stripe.Subscription;
+        const stripeSubscriptionId = sub.id;
+
+        // Find subscription record
+        const { data: subscription, error: subErr } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('stripe_subscription_id', stripeSubscriptionId)
+          .single();
+
+        if (subErr || !subscription) {
+          console.error(
+            `Subscription not found for update: ${stripeSubscriptionId}`,
+            subErr
+          );
+          break;
+        }
+
+        // Update subscription status and period dates
+        await supabase
+          .from('subscriptions')
+          .update({
+            status: sub.status as any,
+            current_period_start: sub.current_period_start
+              ? new Date(sub.current_period_start * 1000).toISOString()
+              : null,
+            current_period_end: sub.current_period_end
+              ? new Date(sub.current_period_end * 1000).toISOString()
+              : null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', subscription.id);
+
+        console.log(
+          `Updated subscription ${stripeSubscriptionId} status: ${sub.status}`
+        );
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        // Handle subscription cancellation
+        const sub = event.data.object as Stripe.Subscription;
+        const stripeSubscriptionId = sub.id;
+
+        // Find subscription record
+        const { data: subscription, error: subErr } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('stripe_subscription_id', stripeSubscriptionId)
+          .single();
+
+        if (subErr || !subscription) {
+          console.error(
+            `Subscription not found for deletion: ${stripeSubscriptionId}`,
+            subErr
+          );
+          break;
+        }
+
+        // Update subscription status to canceled
+        await supabase
+          .from('subscriptions')
+          .update({
+            status: 'canceled',
+            canceled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', subscription.id);
+
+        console.log(`Canceled subscription ${stripeSubscriptionId}`);
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        // Handle subscription payment failures
+        const inv = event.data.object as Stripe.Invoice;
+        const stripeSubscriptionId =
+          typeof inv.subscription === 'string' ? inv.subscription : null;
+
+        if (!stripeSubscriptionId) break;
+
+        // Find subscription record
+        const { data: subscription, error: subErr } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('stripe_subscription_id', stripeSubscriptionId)
+          .single();
+
+        if (subErr || !subscription) {
+          console.error(
+            `Subscription not found for payment failure: ${stripeSubscriptionId}`,
+            subErr
+          );
+          break;
+        }
+
+        // Fetch latest subscription status from Stripe
+        const updatedSubscription =
+          await stripe.subscriptions.retrieve(stripeSubscriptionId);
+
+        // Update subscription status (will be 'past_due' or 'unpaid')
+        await supabase
+          .from('subscriptions')
+          .update({
+            status: updatedSubscription.status as any,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', subscription.id);
+
+        // TODO: Future: Add business logic for payment failure handling
+        // - Send dunning emails to donor
+        // - Custom retry logic (Stripe handles this automatically, but we could add custom logic)
+        // - Notify admins of payment failures
+        console.log(
+          `Payment failed for subscription ${stripeSubscriptionId}. Status: ${updatedSubscription.status}`
+        );
         break;
       }
 

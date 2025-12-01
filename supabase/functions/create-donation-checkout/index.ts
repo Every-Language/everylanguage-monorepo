@@ -265,7 +265,7 @@ Deno.serve(async (req: Request) => {
     const dbPaymentMethod =
       paymentMethod === 'bank_transfer' ? 'us_bank_account' : paymentMethod;
 
-    // Create single donation with user-entered amount
+    // Create single donation with user-entered amount (business logic layer only)
     const donationInsert = {
       user_id: userId,
       partner_org_id: finalPartnerOrgId,
@@ -279,9 +279,8 @@ Deno.serve(async (req: Request) => {
       amount_cents: amountCents,
       currency_code: 'USD',
       status: 'draft' as const, // Will move to pending when payment is initiated
-      payment_method: dbPaymentMethod,
-      is_recurring: isRecurring,
-      stripe_customer_id: customer.id,
+      payment_method: dbPaymentMethod, // Business logic: donor's payment preference
+      is_recurring: isRecurring, // Business logic: donor's intent for recurring
       created_by: userId,
     };
 
@@ -310,95 +309,218 @@ Deno.serve(async (req: Request) => {
     const donationId = donations[0].id;
     const allDonationIds = [donationId];
 
-    // 5. Create Stripe PaymentIntent (payment provider layer) with retry
-    let paymentIntent: Stripe.PaymentIntent;
+    // 5. Handle recurring vs one-time donations
+    let clientSecret: string | null = null;
+    let paymentIntentId: string | null = null;
+    let subscriptionId: string | null = null;
 
-    const createPaymentIntent = async (): Promise<Stripe.PaymentIntent> => {
-      if (paymentMethod === 'card') {
-        // Card payment: create PaymentIntent with automatic_payment_methods
-        return await stripe.paymentIntents.create({
-          amount: amountCents,
-          currency: 'usd',
-          customer: customer.id,
-          automatic_payment_methods: { enabled: true },
-          setup_future_usage: isRecurring ? 'off_session' : undefined,
-          metadata: {
-            purpose: 'donation',
-            donation_ids: allDonationIds.join(','), // Store all donation IDs
-            donation_id: donationId, // Keep for backward compatibility
-            intent_type: intent.type,
-          },
+    if (isRecurring) {
+      // RECURRING DONATION: Create Stripe Subscription
+      try {
+        // Create Stripe Subscription with immediate first payment
+        const subscription = await retryWithBackoff(async () => {
+          return await stripe.subscriptions.create({
+            customer: customer.id,
+            items: [
+              {
+                price_data: {
+                  currency: 'usd',
+                  unit_amount: amountCents,
+                  recurring: {
+                    interval: 'month', // Default to monthly, can be made configurable later
+                  },
+                },
+              },
+            ],
+            payment_behavior: 'default_incomplete', // Immediate first payment
+            expand: ['latest_invoice.payment_intent'], // Get client_secret for first payment
+            metadata: {
+              purpose: 'donation',
+              donation_id: donationId,
+              intent_type: intent.type,
+            },
+          });
         });
-      } else {
-        // Bank transfer (ACH): create PaymentIntent with us_bank_account
-        // Note: This requires collecting bank account details via Stripe Elements
-        // The payment will be in 'processing' status until the ACH transfer clears (1-3 business days)
-        return await stripe.paymentIntents.create({
-          amount: amountCents,
-          currency: 'usd',
-          customer: customer.id,
-          payment_method_types: ['us_bank_account'],
-          setup_future_usage: isRecurring ? 'off_session' : undefined,
-          metadata: {
-            purpose: 'donation',
-            donation_ids: allDonationIds.join(','), // Store all donation IDs
-            donation_id: donationId, // Keep for backward compatibility
+
+        // Get payment_intent from latest_invoice for client_secret
+        const latestInvoice = subscription.latest_invoice as Stripe.Invoice;
+        const paymentIntent =
+          latestInvoice.payment_intent as Stripe.PaymentIntent;
+
+        if (!paymentIntent?.client_secret) {
+          throw new Error(
+            'Failed to get client_secret from subscription invoice'
+          );
+        }
+
+        clientSecret = paymentIntent.client_secret;
+        paymentIntentId = paymentIntent.id;
+        subscriptionId = subscription.id;
+
+        // Create subscription record in database
+        const { data: subscriptionRecord, error: subErr } = await supabase
+          .from('subscriptions')
+          .insert({
+            stripe_subscription_id: subscription.id,
+            stripe_customer_id: customer.id,
+            original_donation_id: donationId,
+            amount_cents: amountCents,
+            currency_code: 'USD',
+            interval_type: 'month',
+            status: subscription.status as any,
+            current_period_start: subscription.current_period_start
+              ? new Date(subscription.current_period_start * 1000).toISOString()
+              : null,
+            current_period_end: subscription.current_period_end
+              ? new Date(subscription.current_period_end * 1000).toISOString()
+              : null,
             intent_type: intent.type,
-            payment_method: 'bank_transfer',
-          },
-        });
+            intent_language_entity_id:
+              intent.type === 'language'
+                ? (intent.languageEntityId ?? null)
+                : null,
+            intent_region_id:
+              intent.type === 'region' ? (intent.regionId ?? null) : null,
+            intent_operation_id:
+              intent.type === 'operation' ? (intent.operationId ?? null) : null,
+            user_id: userId,
+            partner_org_id: finalPartnerOrgId,
+          })
+          .select('id')
+          .single();
+
+        if (subErr || !subscriptionRecord) {
+          console.error('Failed to create subscription record', {
+            error: subErr,
+            errorMessage: subErr?.message,
+          });
+          // Don't fail the request, but log the error
+        } else {
+          // Update donation with subscription_id
+          await supabase
+            .from('donations')
+            .update({
+              subscription_id: subscriptionRecord.id,
+              status: 'pending',
+            })
+            .eq('id', donationId);
+
+          // Create payment_attempt for first payment
+          await supabase.from('payment_attempts').insert({
+            donation_id: donationId,
+            stripe_payment_intent_id: paymentIntent.id,
+            stripe_customer_id: customer.id,
+            stripe_subscription_id: subscription.id,
+            amount_cents: amountCents,
+            currency_code: 'USD',
+            status: paymentIntent.status as any,
+            stripe_event_id: null, // Will be populated by webhook
+            created_by: userId,
+          });
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+        console.error('Failed to create subscription:', errorMessage);
+        return createErrorResponse(
+          `Failed to create subscription: ${errorMessage}`,
+          500
+        );
       }
-    };
+    } else {
+      // ONE-TIME DONATION: Create PaymentIntent (existing flow)
+      let paymentIntent: Stripe.PaymentIntent;
 
-    try {
-      paymentIntent = await retryWithBackoff(createPaymentIntent);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      console.error('Failed to create PaymentIntent:', errorMessage);
-      return createErrorResponse(
-        `Failed to create payment: ${errorMessage}`,
-        500
-      );
-    }
+      const createPaymentIntent = async (): Promise<Stripe.PaymentIntent> => {
+        if (paymentMethod === 'card') {
+          // Card payment: create PaymentIntent with automatic_payment_methods
+          return await stripe.paymentIntents.create({
+            amount: amountCents,
+            currency: 'usd',
+            customer: customer.id,
+            automatic_payment_methods: { enabled: true },
+            metadata: {
+              purpose: 'donation',
+              donation_ids: allDonationIds.join(','), // Store all donation IDs
+              donation_id: donationId, // Keep for backward compatibility
+              intent_type: intent.type,
+            },
+          });
+        } else {
+          // Bank transfer (ACH): create PaymentIntent with us_bank_account
+          // Note: This requires collecting bank account details via Stripe Elements
+          // The payment will be in 'processing' status until the ACH transfer clears (1-3 business days)
+          return await stripe.paymentIntents.create({
+            amount: amountCents,
+            currency: 'usd',
+            customer: customer.id,
+            payment_method_types: ['us_bank_account'],
+            metadata: {
+              purpose: 'donation',
+              donation_ids: allDonationIds.join(','), // Store all donation IDs
+              donation_id: donationId, // Keep for backward compatibility
+              intent_type: intent.type,
+              payment_method: 'bank_transfer',
+            },
+          });
+        }
+      };
 
-    // 6. Create payment_attempt record(s) (payment provider layer)
-    // Create one payment attempt per donation, all linked to same PaymentIntent
-    const paymentAttempts = allDonationIds.map((dId: string) => ({
-      donation_id: dId,
-      stripe_payment_intent_id: paymentIntent.id,
-      amount_cents: amountCents, // Total amount (will be allocated by webhook if needed)
-      currency_code: 'USD',
-      status: paymentIntent.status as any, // Cast to match enum
-      stripe_event_id: null, // Will be populated by webhook
-      created_by: userId,
-    }));
+      try {
+        paymentIntent = await retryWithBackoff(createPaymentIntent);
+        clientSecret = paymentIntent.client_secret;
+        paymentIntentId = paymentIntent.id;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+        console.error('Failed to create PaymentIntent:', errorMessage);
+        return createErrorResponse(
+          `Failed to create payment: ${errorMessage}`,
+          500
+        );
+      }
 
-    const { error: attemptErr } = await supabase
-      .from('payment_attempts')
-      .insert(paymentAttempts);
-
-    if (attemptErr) {
-      console.error('Failed to create payment_attempts', attemptErr.message);
-      // Don't fail the request, but log the error
-    }
-
-    // 7. Update all donations with stripe_payment_intent_id and move to 'pending'
-    await supabase
-      .from('donations')
-      .update({
+      // Create payment_attempt record(s) (payment provider layer)
+      // Create one payment attempt per donation, all linked to same PaymentIntent
+      // payment_attempts is the single source of truth for Stripe payment details
+      const paymentAttempts = allDonationIds.map((dId: string) => ({
+        donation_id: dId,
         stripe_payment_intent_id: paymentIntent.id,
-        status: 'pending',
-      })
-      .in('id', allDonationIds);
+        stripe_customer_id: customer.id, // Stripe customer ID (payment provider detail)
+        amount_cents: amountCents, // Total amount (will be allocated by webhook if needed)
+        currency_code: 'USD',
+        status: paymentIntent.status as any, // Cast to match enum
+        stripe_event_id: null, // Will be populated by webhook
+        created_by: userId,
+      }));
 
-    // 8. Return response
+      const { error: attemptErr } = await supabase
+        .from('payment_attempts')
+        .insert(paymentAttempts);
+
+      if (attemptErr) {
+        console.error('Failed to create payment_attempts', attemptErr.message);
+        // Don't fail the request, but log the error
+      }
+
+      // Update all donations status to 'pending' (business logic only)
+      // Stripe payment details are in payment_attempts, not donations
+      await supabase
+        .from('donations')
+        .update({
+          status: 'pending',
+        })
+        .in('id', allDonationIds);
+    }
+
+    // 6. Return response
     return createSuccessResponse({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
+      clientSecret,
+      paymentIntentId,
       donationId,
       customerId: customer.id,
       partnerOrgId: finalPartnerOrgId,
+      subscriptionId, // Include subscriptionId if recurring
     });
   } catch (e) {
     console.error('create-donation-checkout error', e);
