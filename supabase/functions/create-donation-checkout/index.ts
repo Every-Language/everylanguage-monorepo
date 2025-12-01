@@ -318,6 +318,18 @@ Deno.serve(async (req: Request) => {
       // RECURRING DONATION: Create Stripe Subscription
       try {
         // Create Stripe Subscription with immediate first payment
+        // Build product name based on donation intent
+        let productName = 'Monthly Donation';
+        if (intent.type === 'language') {
+          productName = 'Monthly Language Donation';
+        } else if (intent.type === 'region') {
+          productName = 'Monthly Region Donation';
+        } else if (intent.type === 'operation') {
+          productName = 'Monthly Operation Donation';
+        } else {
+          productName = 'Monthly Unrestricted Donation';
+        }
+
         const subscription = await retryWithBackoff(async () => {
           return await stripe.subscriptions.create({
             customer: customer.id,
@@ -326,6 +338,10 @@ Deno.serve(async (req: Request) => {
                 price_data: {
                   currency: 'usd',
                   unit_amount: amountCents,
+                  product_data: {
+                    name: productName,
+                    description: `Recurring monthly donation`,
+                  },
                   recurring: {
                     interval: 'month', // Default to monthly, can be made configurable later
                   },
