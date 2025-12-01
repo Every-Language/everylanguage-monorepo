@@ -371,7 +371,7 @@ FROM
         'aa0e8400-e29b-41d4-a716-446655440001'::UUID
       )
   ) AS t (user_id, role_key_to_use, context_id)
-ON CONFLICT (user_id, role_id, project_id) WHERE project_id IS NOT NULL DO NOTHING;
+ON CONFLICT (user_id, project_id) WHERE project_id IS NOT NULL DO UPDATE SET role_id = EXCLUDED.role_id;
 
 
 -- ============================================================================
@@ -442,7 +442,7 @@ FROM
         '660e8400-e29b-41d4-a716-446655440002'::UUID
       )
   ) AS t (user_id, role_key_to_use, context_id)
-ON CONFLICT (user_id, role_id, base_id) WHERE base_id IS NOT NULL DO NOTHING;
+ON CONFLICT (user_id, base_id) WHERE base_id IS NOT NULL DO UPDATE SET role_id = EXCLUDED.role_id;
 
 
 -- =========================================================================
