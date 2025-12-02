@@ -330,6 +330,19 @@ Deno.serve(async (req: Request) => {
           productName = 'Monthly Unrestricted Donation';
         }
 
+        // Create product first, then use it in the subscription
+        const product = await retryWithBackoff(async () => {
+          return await stripe.products.create({
+            name: productName,
+            description: 'Recurring monthly donation',
+            metadata: {
+              purpose: 'donation',
+              donation_id: donationId,
+              intent_type: intent.type,
+            },
+          });
+        });
+
         const subscription = await retryWithBackoff(async () => {
           return await stripe.subscriptions.create({
             customer: customer.id,
@@ -338,10 +351,7 @@ Deno.serve(async (req: Request) => {
                 price_data: {
                   currency: 'usd',
                   unit_amount: amountCents,
-                  product_data: {
-                    name: productName,
-                    description: `Recurring monthly donation`,
-                  },
+                  product: product.id,
                   recurring: {
                     interval: 'month', // Default to monthly, can be made configurable later
                   },
