@@ -53,12 +53,25 @@ Deno.serve(async (req: Request) => {
 
   try {
     // Authenticate the request - only logged-in users can request upload URLs
+    const authHeader = req.headers.get('Authorization');
+    console.log('[AUTH DEBUG] Authorization header present:', !!authHeader);
+    console.log(
+      '[AUTH DEBUG] Authorization header length:',
+      authHeader?.length || 0
+    );
+    console.log(
+      '[AUTH DEBUG] Authorization header prefix:',
+      authHeader?.substring(0, 20) || 'none'
+    );
+
     const authCtx = await authenticateRequest(req);
     if (isAuthError(authCtx)) {
+      console.log('[AUTH DEBUG] Auth error:', JSON.stringify(authCtx));
       return createAuthErrorResponse(authCtx);
     }
 
     const { publicUserId } = authCtx;
+    console.log('[AUTH DEBUG] Authenticated user ID:', publicUserId);
 
     let body: RequestBody;
     try {
@@ -279,7 +292,7 @@ Deno.serve(async (req: Request) => {
           'has_permission',
           {
             user_id: publicUserId,
-            permission: 'project.write',
+            action: 'project.write',
             resource_type: 'project',
             resource_id: updateData.project_id,
           }

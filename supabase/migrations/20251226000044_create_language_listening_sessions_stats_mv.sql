@@ -62,7 +62,7 @@ CREATE UNIQUE INDEX language_listening_sessions_stats_pkey ON language_listening
 CREATE INDEX language_listening_sessions_stats_language_entity_id_idx ON language_listening_sessions_stats (language_entity_id);
 
 
-comment ON materialized view language_listening_sessions_stats IS 'Materialized view aggregating listening session statistics by language_entity_id. ' 'Includes distinct session count and total duration (from media_file_listens only). ' 'Refresh periodically or on-demand for optimal performance.';
+comment ON materialized view language_listening_sessions_stats IS 'Materialized view aggregating listening session statistics by language_entity_id. Includes distinct session count and total duration (from media_file_listens only). Refresh periodically or on-demand for optimal performance.';
 
 
 -- Update refresh functions to include the new MV

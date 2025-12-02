@@ -24,6 +24,18 @@ export async function authenticateRequest(
   try {
     // Initialize Supabase client with auth headers
     const authHeader = req.headers.get('Authorization');
+    console.log(
+      '[AUTH MIDDLEWARE] Authorization header:',
+      authHeader ? 'present' : 'missing'
+    );
+    console.log('[AUTH MIDDLEWARE] Header length:', authHeader?.length || 0);
+    if (authHeader) {
+      console.log(
+        '[AUTH MIDDLEWARE] Header prefix:',
+        authHeader.substring(0, 30)
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -40,7 +52,20 @@ export async function authenticateRequest(
       error: authError,
     } = await supabaseClient.auth.getUser();
 
+    console.log(
+      '[AUTH MIDDLEWARE] getUser result - user:',
+      user ? 'present' : 'missing',
+      'error:',
+      authError?.message || 'none'
+    );
+
     if (authError || !user) {
+      console.log(
+        '[AUTH MIDDLEWARE] Returning 401 - error:',
+        authError?.message,
+        'user:',
+        !!user
+      );
       return {
         status: 401,
         error: 'Authentication required',
