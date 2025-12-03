@@ -3,7 +3,7 @@
     {
       "ID": "prod-web-access",
       "AllowedHeaders": ["*"],
-      "AllowedMethods": ["GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS"],
+      "AllowedMethods": ["GET", "HEAD", "PUT", "POST", "DELETE"],
       "AllowedOrigins": [
         "https://projects.everylanguage.com",
         "https://app.everylanguage.com",
@@ -27,14 +27,6 @@
       "AllowedOrigins": ["https://*"],
       "ExposeHeaders": ["Content-Range", "Accept-Ranges"],
       "MaxAgeSeconds": 86400
-    },
-    {
-      "ID": "prod-upload-requests",
-      "AllowedHeaders": ["*"],
-      "AllowedMethods": ["PUT", "OPTIONS"],
-      "AllowedOrigins": ["https://*"],
-      "ExposeHeaders": ["ETag"],
-      "MaxAgeSeconds": 3600
     }
   ]
 }

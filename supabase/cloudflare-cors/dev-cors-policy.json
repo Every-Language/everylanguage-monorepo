@@ -3,7 +3,7 @@
     {
       "ID": "dev-web-access",
       "AllowedHeaders": ["*"],
-      "AllowedMethods": ["GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS"],
+      "AllowedMethods": ["GET", "HEAD", "PUT", "POST", "DELETE"],
       "AllowedOrigins": [
         "http://localhost:5173",
         "http://localhost:5174",
@@ -29,14 +29,6 @@
       "AllowedOrigins": ["*"],
       "ExposeHeaders": ["Content-Range", "Accept-Ranges"],
       "MaxAgeSeconds": 86400
-    },
-    {
-      "ID": "dev-upload-requests",
-      "AllowedHeaders": ["*"],
-      "AllowedMethods": ["PUT", "OPTIONS"],
-      "AllowedOrigins": ["*"],
-      "ExposeHeaders": ["ETag"],
-      "MaxAgeSeconds": 3600
     }
   ]
 }
