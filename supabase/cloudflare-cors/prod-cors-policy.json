@@ -3,11 +3,13 @@
     {
       "ID": "prod-web-access",
       "AllowedHeaders": ["*"],
-      "AllowedMethods": ["GET", "HEAD", "PUT", "POST", "DELETE"],
+      "AllowedMethods": ["GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS"],
       "AllowedOrigins": [
         "https://projects.everylanguage.com",
         "https://app.everylanguage.com",
-        "https://everylanguage.com"
+        "https://everylanguage.com",
+        "https://admin.everylanguage.com",
+        "https://map.everylanguage.com"
       ],
       "ExposeHeaders": [
         "ETag",
@@ -25,6 +27,14 @@
       "AllowedOrigins": ["https://*"],
       "ExposeHeaders": ["Content-Range", "Accept-Ranges"],
       "MaxAgeSeconds": 86400
+    },
+    {
+      "ID": "prod-upload-requests",
+      "AllowedHeaders": ["*"],
+      "AllowedMethods": ["PUT", "OPTIONS"],
+      "AllowedOrigins": ["https://*"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3600
     }
   ]
 }
