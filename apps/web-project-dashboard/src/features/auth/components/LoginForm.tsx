@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { Button, Input } from '../../../shared/design-system';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'; // Importing icons
 
 interface LoginFormData {
   email: string;
@@ -21,6 +22,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
 
   const {
     register,
@@ -64,6 +66,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev);
   };
 
   return (
@@ -137,7 +143,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <div>
           <Input
             id='password'
-            type='password'
+            type={showPassword ? 'text' : 'password'} // Dynamically set type
             label='Password'
             placeholder='Enter your password'
             variant='filled'
@@ -156,6 +162,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                   d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
                 />
               </svg>
+            }
+            rightIcon={
+              <button
+                type='button'
+                onClick={togglePasswordVisibility}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className='text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 focus:outline-none'
+              >
+                {showPassword ? (
+                  <EyeIcon className='h-5 w-5' />
+                ) : (
+                  <EyeSlashIcon className='h-5 w-5' />
+                )}
+              </button>
             }
             {...register('password', {
               required: 'Password is required',

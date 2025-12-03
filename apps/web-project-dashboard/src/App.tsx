@@ -61,6 +61,12 @@ const MyProfilePage = React.lazy(() =>
   }))
 );
 
+const LandingPage = React.lazy(() =>
+  import('./app/pages/LandingPage').then(module => ({
+    default: module.LandingPage,
+  }))
+);
+
 // Helper component to reduce repetition
 const ProtectedLayoutRoute = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
@@ -178,10 +184,14 @@ function App() {
 
                 {/* Other protected routes without layout */}
 
-                {/* Default redirect */}
+                {/* Default route - Landing Page */}
                 <Route
                   path='/'
-                  element={<Navigate to='/dashboard' replace />}
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <LandingPage />
+                    </Suspense>
+                  }
                 />
 
                 {/* Catch all - redirect to dashboard */}

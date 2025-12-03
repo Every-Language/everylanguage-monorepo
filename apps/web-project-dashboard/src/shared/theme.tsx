@@ -16,7 +16,7 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>('system');
+  const [theme, setTheme] = useState<Theme>('light');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   // Check system preference
@@ -37,13 +37,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setResolvedTheme(newTheme);
   };
 
-  // Initialize theme from localStorage or system
+  // Initialize theme from localStorage or default to light
   useEffect(() => {
     const savedTheme = localStorage.getItem('omt-theme') as Theme;
     if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
       setTheme(savedTheme);
     } else {
-      setTheme('system');
+      setTheme('light'); // Default to light mode
     }
   }, []);
 

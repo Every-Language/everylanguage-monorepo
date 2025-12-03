@@ -229,22 +229,22 @@ A high-performance, user-friendly web application for uploading and managing aud
 - **Export Features**: Various format exports
 - **Quality Assurance**: Automated audio quality checks 
 
-
-
-
 - website to upload audio files to a postgres supabase db with this schema @database.ts 
 
 technologies
 - react
 - otherwise, choose what you think is best according to the below requirements
 
+
 requirements
 - as quick and highly performant as possible
 - as simple to use as possible
 
-flow - login 
+
+flow - login
 1. login using supabase auth
 2. shows a list of user's projects, as well as 'new project'. if user selects a current project, goes to project data
+
 
 flow - project creation
 1. present the user with a heirachical list of language_entities - this should collapse according to the parent heirachy

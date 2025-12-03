@@ -21,7 +21,7 @@ export const ProjectContext = createContext<ProjectContextValue | undefined>(
   undefined
 );
 
-const SELECTED_PROJECT_STORAGE_KEY = 'omt_selected_project';
+const SELECTED_PROJECT_STORAGE_KEY = 'current_project_id';
 
 interface ProjectProviderProps {
   children: ReactNode;
@@ -55,7 +55,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({
     const currentUserId = user?.id ?? null;
     const prevUserId = prevUserIdRef.current;
 
-    if (prevUserId !== currentUserId) {
+    if (prevUserId !== null && prevUserId !== currentUserId) {
       // If user changed (includes logout), clear selection
       if (selectedProject) {
         setSelectedProjectState(null);

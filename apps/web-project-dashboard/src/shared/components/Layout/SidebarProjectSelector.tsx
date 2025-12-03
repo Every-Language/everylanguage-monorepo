@@ -47,7 +47,6 @@ export const SidebarProjectSelector: React.FC = () => {
       : languagesLoading
         ? 'Loading...'
         : '';
-
   return (
     <>
       <div className='px-1'>
