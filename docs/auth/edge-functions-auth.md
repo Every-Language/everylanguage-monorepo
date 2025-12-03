@@ -85,7 +85,7 @@ Deno.serve(async (req: Request) => {
   // Public endpoint - no auth required
   const supabaseClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? ''
+    Deno.env.get('SUPABASE_ANON_KEY') ?? ''
   );
 
   // Use unauthenticated client

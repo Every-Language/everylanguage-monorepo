@@ -8,7 +8,6 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 import { Button } from '@/shared/components/ui/Button';
-import { createDonationCheckout } from '../../api/fundingApi';
 import { getStripePromise } from '@/shared/services/stripe';
 import type { DonateFlow } from '../../hooks/useDonateFlow';
 
@@ -84,8 +83,16 @@ const Inner: React.FC<{ flow: DonateFlow; clientSecret: string | null }> = ({
         throw confirmed.error;
       }
 
-      // Payment successful - advance to thank you step
-      flow.next();
+      // Payment successful - for card payments, Stripe confirms immediately
+      // Webhook will update final status, but we can show receipt optimistically
+      // For bank transfers, we wait for webhook (handled separately)
+      if (confirmed.paymentIntent?.status === 'succeeded') {
+        // Card payment confirmed - advance to thank you step
+        flow.next();
+      } else {
+        // Payment requires action or is processing
+        throw new Error('Payment is still processing. Please wait.');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Payment failed';
       setFormError(message);
@@ -130,14 +137,15 @@ const Inner: React.FC<{ flow: DonateFlow; clientSecret: string | null }> = ({
     );
   }
 
-  // Card payment UI
+  // Card payment UI - Hide placeholder text since we use floating labels
+  // Stripe Elements don't support conditional placeholder styling, so we hide it entirely
   const elementStyle = {
     base: {
       color: isDarkMode ? '#ffffff' : '#18181b',
       fontFamily: 'Inter, system-ui, sans-serif',
       fontSize: '16px',
       '::placeholder': {
-        color: isDarkMode ? '#737373' : '#a3a3a3',
+        color: 'transparent', // Hide placeholder - floating labels provide context instead
       },
     },
     invalid: {
@@ -244,63 +252,44 @@ const Inner: React.FC<{ flow: DonateFlow; clientSecret: string | null }> = ({
 };
 
 export const StepPayment: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
-  const [clientSecret, setClientSecret] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Create checkout on mount
+  // OPTIMIZATION: Use pre-created checkout from StepReviewAndPayment
+  // If checkout doesn't exist yet, wait for it or show error
   React.useEffect(() => {
-    const createCheckout = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    const { clientSecret, donor, donorType, intent, paymentMethod, amount } =
+      flow.state;
 
-        const { donor, donorType, intent, paymentMethod, amount } = flow.state;
+    // If we have clientSecret, we're ready
+    if (clientSecret !== undefined) {
+      setLoading(false);
+      if (!clientSecret) {
+        setError('Payment setup failed. Please try again.');
+      }
+      return;
+    }
 
-        if (!donor || !donorType || !intent || !paymentMethod || !amount) {
-          throw new Error('Missing required donation details');
-        }
+    // If we don't have required data, show error
+    if (!donor || !donorType || !intent || !paymentMethod || !amount) {
+      setError('Missing required donation details');
+      setLoading(false);
+      return;
+    }
 
-        const response = await createDonationCheckout({
-          donor: {
-            firstName: donor.firstName,
-            lastName: donor.lastName,
-            email: donor.email,
-            phone: donor.phone,
-          },
-          donorType: donorType.type,
-          partnerOrgId: donorType.partnerOrgId,
-          newPartnerOrg: donorType.newPartnerOrg,
-          intent: {
-            type: intent.type,
-            languageEntityId: intent.languageEntityId,
-            regionId: intent.regionId,
-            operationId: intent.operationId,
-          },
-          paymentMethod,
-          amountCents: amount.amountCents,
-          isRecurring: amount.isRecurring,
-        });
-
-        setClientSecret(response.clientSecret);
-
-        // Store IDs in flow
-        flow.setDonationId(response.donationId);
-        flow.setCustomerId(response.customerId);
-        if (response.partnerOrgId) {
-          flow.setPartnerOrgId(response.partnerOrgId);
-        }
-      } catch (err) {
-        console.error('Failed to create checkout:', err);
-        setError((err as Error).message);
-      } finally {
+    // Otherwise, wait a bit more for checkout to be created
+    // (it should have been started in StepReviewAndPayment)
+    const timeout = setTimeout(() => {
+      if (!flow.state.clientSecret) {
+        setError(
+          'Payment setup is taking longer than expected. Please try again.'
+        );
         setLoading(false);
       }
-    };
+    }, 5000); // Wait up to 5 seconds
 
-    createCheckout();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => clearTimeout(timeout);
+  }, [flow.state.clientSecret, flow]);
 
   if (loading) {
     return (
@@ -320,6 +309,20 @@ export const StepPayment: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
       <div className='space-y-4'>
         <div className='text-error-600 dark:text-error-400 bg-error-50 dark:bg-error-900/20 p-4 rounded-lg'>
           <strong>Error:</strong> {error}
+        </div>
+        <Button onClick={() => flow.back()}>Go back</Button>
+      </div>
+    );
+  }
+
+  const clientSecret = flow.state.clientSecret;
+
+  if (!clientSecret) {
+    return (
+      <div className='space-y-4'>
+        <div className='text-error-600 dark:text-error-400 bg-error-50 dark:bg-error-900/20 p-4 rounded-lg'>
+          <strong>Error:</strong>{' '}
+          {error || 'Payment setup failed. Please go back and try again.'}
         </div>
         <Button onClick={() => flow.back()}>Go back</Button>
       </div>

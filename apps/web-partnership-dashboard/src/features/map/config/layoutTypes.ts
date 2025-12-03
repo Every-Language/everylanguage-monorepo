@@ -7,15 +7,13 @@
 export type SectionType =
   | 'hierarchy'
   | 'linked-entities'
-  | 'info'
-  | 'bible-progress'
-  | 'bible-listening'
   | 'map-controls'
-  | 'jp-gospel-access'
   | 'jp-people-groups'
   | 'jp-country-stats'
   | 'jp-language-stats'
-  | 'jp-resources';
+  | 'grn-language-sample'
+  | 'grn-gospel-resources'
+  | 'people-group-stats';
 
 export type PanelPosition = 'left' | 'right' | 'bottom';
 

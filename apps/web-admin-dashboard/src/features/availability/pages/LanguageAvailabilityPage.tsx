@@ -1,0 +1,763 @@
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { languageAvailabilityApi } from '../api/languageAvailabilityApi';
+import { languagesApi } from '@/features/languages/api/languagesApi';
+import type { LanguageFundingStatus, LanguageEntityWithRegions } from '@/types';
+import {
+  Search,
+  Plus,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Edit2,
+  Check,
+  X as XIcon,
+} from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
+
+// Component for draft language row with external IDs
+function DraftLanguageRow({
+  language,
+  onAddLanguage,
+  onCloseModal,
+  isPending,
+}: {
+  language: LanguageEntityWithRegions;
+  onAddLanguage: (id: string) => void;
+  onCloseModal: () => void;
+  isPending: boolean;
+}) {
+  // Fetch language entity sources for external IDs
+  const { data: sources } = useQuery({
+    queryKey: ['language-entity-sources', language.id],
+    queryFn: () => languagesApi.fetchLanguageEntitySources(language.id),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const externalIds =
+    sources
+      ?.filter(s => s.external_id && s.external_id_type)
+      .map(s => `${s.external_id_type}:${s.external_id}`) || [];
+
+  return (
+    <tr className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors'>
+      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+        {language.name}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        <span className='px-2 py-1 text-xs font-medium rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300'>
+          {language.level}
+        </span>
+      </td>
+      <td className='px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400'>
+        {externalIds.length > 0 ? (
+          <div className='flex flex-col gap-1'>
+            {externalIds.map((id, idx) => (
+              <span key={idx} className='font-mono text-xs'>
+                {id}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className='text-neutral-400 dark:text-neutral-600'>—</span>
+        )}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
+        <button
+          onClick={() => {
+            onAddLanguage(language.id);
+            onCloseModal();
+          }}
+          disabled={isPending}
+          className='px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+        >
+          Add Language
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+// Component for language row with external IDs
+function LanguageAvailabilityRow({
+  language,
+  editingBudget,
+  budgetValue,
+  onBudgetChange,
+  onBudgetSave,
+  onBudgetCancel,
+  onBudgetStartEdit,
+  onStatusChange,
+  updateBudgetMutation,
+  updateStatusMutation,
+}: {
+  language: LanguageEntityWithRegions;
+  editingBudget: string | null;
+  budgetValue: string;
+  onBudgetChange: (value: string) => void;
+  onBudgetSave: (id: string) => void;
+  onBudgetCancel: () => void;
+  onBudgetStartEdit: (id: string, currentBudget: number | null) => void;
+  onStatusChange: (id: string, status: LanguageFundingStatus) => void;
+  updateBudgetMutation: { isPending: boolean };
+  updateStatusMutation: { isPending: boolean };
+}) {
+  // Fetch language entity sources for external IDs
+  const { data: sources } = useQuery({
+    queryKey: ['language-entity-sources', language.id],
+    queryFn: () => languagesApi.fetchLanguageEntitySources(language.id),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const externalIds =
+    sources
+      ?.filter(s => s.external_id && s.external_id_type)
+      .map(s => `${s.external_id_type}:${s.external_id}`) || [];
+
+  return (
+    <tr className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors'>
+      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+        {language.name}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        {editingBudget === language.id ? (
+          <div className='flex items-center gap-2'>
+            <span className='text-neutral-600 dark:text-neutral-400'>$</span>
+            <input
+              type='number'
+              step='0.01'
+              min='0'
+              value={budgetValue}
+              onChange={e => onBudgetChange(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  onBudgetSave(language.id);
+                } else if (e.key === 'Escape') {
+                  onBudgetCancel();
+                }
+              }}
+              className='w-24 px-2 py-1 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+              autoFocus
+            />
+            <button
+              onClick={() => onBudgetSave(language.id)}
+              disabled={updateBudgetMutation.isPending}
+              className='p-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 disabled:opacity-50'
+            >
+              <Check className='h-4 w-4' />
+            </button>
+            <button
+              onClick={onBudgetCancel}
+              className='p-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300'
+            >
+              <XIcon className='h-4 w-4' />
+            </button>
+          </div>
+        ) : (
+          <div className='flex items-center gap-2'>
+            <span className='text-neutral-900 dark:text-neutral-100'>
+              {language.language_funding?.budget_cents
+                ? `$${((language.language_funding.budget_cents || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : '—'}
+            </span>
+            <button
+              onClick={() =>
+                onBudgetStartEdit(
+                  language.id,
+                  language.language_funding?.budget_cents || null
+                )
+              }
+              className='p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'
+              title='Edit budget'
+            >
+              <Edit2 className='h-3 w-3' />
+            </button>
+          </div>
+        )}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        <div onClick={e => e.stopPropagation()} className='w-full'>
+          <Select
+            value={language.language_funding?.funding_status || 'draft'}
+            onValueChange={value =>
+              onStatusChange(language.id, value as LanguageFundingStatus)
+            }
+            disabled={updateStatusMutation.isPending}
+          >
+            <SelectItem value='draft'>Draft</SelectItem>
+            <SelectItem value='available'>Available</SelectItem>
+            <SelectItem value='in_progress'>In Progress</SelectItem>
+            <SelectItem value='funded'>Funded</SelectItem>
+            <SelectItem value='archived'>Archived</SelectItem>
+          </Select>
+        </div>
+      </td>
+      <td className='px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400'>
+        {externalIds.length > 0 ? (
+          <div className='flex flex-col gap-1'>
+            {externalIds.map((id, idx) => (
+              <span key={idx} className='font-mono text-xs'>
+                {id}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className='text-neutral-400 dark:text-neutral-600'>—</span>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+export function LanguageAvailabilityPage() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(50);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addModalSearchTerm, setAddModalSearchTerm] = useState('');
+  const [addModalDebouncedSearch, setAddModalDebouncedSearch] = useState('');
+  const [addModalExternalIdSearch, setAddModalExternalIdSearch] = useState('');
+  const [
+    addModalDebouncedExternalIdSearch,
+    setAddModalDebouncedExternalIdSearch,
+  ] = useState('');
+  const [addModalPage, setAddModalPage] = useState(1);
+  const [editingBudget, setEditingBudget] = useState<string | null>(null);
+  const [budgetValue, setBudgetValue] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortField, setSortField] = useState<'name' | 'budget'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [externalIdSearch, setExternalIdSearch] = useState('');
+  const [debouncedExternalIdSearch, setDebouncedExternalIdSearch] =
+    useState('');
+  const queryClient = useQueryClient();
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Debounce add modal search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAddModalDebouncedSearch(addModalSearchTerm);
+      setAddModalPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [addModalSearchTerm]);
+
+  // Debounce add modal external ID search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAddModalDebouncedExternalIdSearch(addModalExternalIdSearch);
+      setAddModalPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [addModalExternalIdSearch]);
+
+  // Debounce external ID search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedExternalIdSearch(externalIdSearch);
+      setPage(1); // Reset to page 1 on search
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [externalIdSearch]);
+
+  // Fetch available languages
+  const { data: response, isLoading } = useQuery({
+    queryKey: [
+      'available-languages',
+      page,
+      pageSize,
+      debouncedSearch,
+      statusFilter,
+      sortField,
+      sortDirection,
+      debouncedExternalIdSearch,
+    ],
+    queryFn: () =>
+      languageAvailabilityApi.fetchAvailableLanguages({
+        page,
+        pageSize,
+        searchQuery: debouncedSearch,
+        statusFilter:
+          statusFilter !== 'all'
+            ? (statusFilter as LanguageFundingStatus)
+            : undefined,
+        sortField,
+        sortDirection,
+        externalIdSearch:
+          debouncedExternalIdSearch.trim().length > 0
+            ? debouncedExternalIdSearch.trim()
+            : undefined,
+      }),
+  });
+
+  // Fetch all languages (with no funding record) for add modal
+  const { data: allLanguagesResponse, isLoading: isLoadingAllLanguages } =
+    useQuery({
+      queryKey: [
+        'all-languages',
+        addModalPage,
+        pageSize,
+        addModalDebouncedSearch,
+        addModalDebouncedExternalIdSearch,
+      ],
+      queryFn: () =>
+        languageAvailabilityApi.fetchAllLanguages({
+          page: addModalPage,
+          pageSize,
+          searchQuery: addModalDebouncedSearch,
+          externalIdSearch:
+            addModalDebouncedExternalIdSearch.trim().length > 0
+              ? addModalDebouncedExternalIdSearch.trim()
+              : undefined,
+        }),
+      enabled: showAddModal,
+    });
+
+  const languages = response?.data || [];
+  const totalCount = response?.count || 0;
+  const totalPages = response?.totalPages || 1;
+
+  const allLanguages = allLanguagesResponse?.data || [];
+  const allLanguagesTotalCount = allLanguagesResponse?.count || 0;
+  const allLanguagesTotalPages = allLanguagesResponse?.totalPages || 1;
+
+  const handleSort = (field: 'name' | 'budget') => {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection(field === 'name' ? 'asc' : 'desc');
+    }
+    setPage(1);
+  };
+
+  const getSortIndicator = (field: 'name' | 'budget') => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? '↑' : '↓';
+  };
+
+  // Update status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: ({
+      languageId,
+      status,
+    }: {
+      languageId: string;
+      status: LanguageFundingStatus;
+    }) =>
+      languageAvailabilityApi.updateLanguageFundingStatus(languageId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['available-languages'] });
+    },
+  });
+
+  // Update budget mutation
+  const updateBudgetMutation = useMutation({
+    mutationFn: ({
+      languageId,
+      budgetCents,
+    }: {
+      languageId: string;
+      budgetCents: number | null;
+    }) => languageAvailabilityApi.updateLanguageBudget(languageId, budgetCents),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['available-languages'] });
+      setEditingBudget(null);
+    },
+  });
+
+  // Set language available mutation
+  const setAvailableMutation = useMutation({
+    mutationFn: (languageId: string) =>
+      languageAvailabilityApi.setLanguageAvailable(languageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['available-languages'] });
+      queryClient.invalidateQueries({ queryKey: ['all-languages'] });
+    },
+  });
+
+  const handleStatusChange = (
+    languageId: string,
+    newStatus: LanguageFundingStatus
+  ) => {
+    updateStatusMutation.mutate({ languageId, status: newStatus });
+  };
+
+  const handleAddLanguage = (languageId: string) => {
+    setAvailableMutation.mutate(languageId);
+  };
+
+  const handleStartEditBudget = (
+    languageId: string,
+    currentBudget: number | null
+  ) => {
+    setEditingBudget(languageId);
+    setBudgetValue(currentBudget ? (currentBudget / 100).toFixed(2) : '');
+  };
+
+  const handleSaveBudget = (languageId: string) => {
+    const budgetCents =
+      budgetValue.trim() === ''
+        ? null
+        : Math.round(parseFloat(budgetValue) * 100);
+    if (budgetCents !== null && (isNaN(budgetCents) || budgetCents < 0)) {
+      return; // Invalid input
+    }
+    updateBudgetMutation.mutate({ languageId, budgetCents });
+  };
+
+  const handleCancelEditBudget = () => {
+    setEditingBudget(null);
+    setBudgetValue('');
+  };
+
+  return (
+    <div className='p-8'>
+      <div className='mb-8 flex items-center justify-between'>
+        <div>
+          <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
+            Language Availability
+          </h1>
+          <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
+            Manage language funding status and budgets
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setShowAddModal(true);
+            setAddModalSearchTerm('');
+            setAddModalExternalIdSearch('');
+            setAddModalPage(1);
+          }}
+          className='inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors'
+        >
+          <Plus className='h-5 w-5 mr-2' />
+          Add Language
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className='mb-4'>
+        <div className='relative'>
+          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400 dark:text-neutral-500' />
+          <input
+            type='text'
+            placeholder='Search languages...'
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className='w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 focus:border-primary-500 dark:focus:border-primary-600'
+          />
+        </div>
+      </div>
+
+      <div className='mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4'>
+        <Select
+          label='Funding Status'
+          value={statusFilter}
+          onValueChange={value => {
+            setStatusFilter(value);
+            setPage(1);
+          }}
+        >
+          <SelectItem value='all'>All statuses</SelectItem>
+          <SelectItem value='draft'>Draft</SelectItem>
+          <SelectItem value='available'>Available</SelectItem>
+          <SelectItem value='in_progress'>In Progress</SelectItem>
+          <SelectItem value='funded'>Funded</SelectItem>
+          <SelectItem value='archived'>Archived</SelectItem>
+        </Select>
+
+        {/* External ID Search */}
+        <div>
+          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+            Search by External ID
+          </label>
+          <div className='relative'>
+            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500' />
+            <input
+              type='text'
+              placeholder='Search external IDs...'
+              value={externalIdSearch}
+              onChange={e => setExternalIdSearch(e.target.value)}
+              className='w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 focus:border-primary-500 dark:focus:border-primary-600'
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className='bg-white dark:bg-neutral-900 rounded-lg shadow dark:shadow-dark-card border border-neutral-200 dark:border-neutral-800 overflow-hidden'>
+        {isLoading ? (
+          <div className='p-8 text-center'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 dark:border-primary-500 mx-auto'></div>
+            <p className='mt-4 text-neutral-600 dark:text-neutral-400'>
+              Loading languages...
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className='overflow-x-auto'>
+              <table className='min-w-full divide-y divide-neutral-200 dark:divide-neutral-800'>
+                <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
+                  <tr>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                      <button
+                        type='button'
+                        onClick={() => handleSort('name')}
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                      >
+                        Name
+                        <span>{getSortIndicator('name')}</span>
+                      </button>
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                      <button
+                        type='button'
+                        onClick={() => handleSort('budget')}
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
+                      >
+                        Budget
+                        <span>{getSortIndicator('budget')}</span>
+                      </button>
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                      Status
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                      External IDs
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className='bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-800'>
+                  {languages && languages.length > 0 ? (
+                    languages.map(language => (
+                      <LanguageAvailabilityRow
+                        key={language.id}
+                        language={language}
+                        editingBudget={editingBudget}
+                        budgetValue={budgetValue}
+                        onBudgetChange={setBudgetValue}
+                        onBudgetSave={handleSaveBudget}
+                        onBudgetCancel={handleCancelEditBudget}
+                        onBudgetStartEdit={handleStartEditBudget}
+                        onStatusChange={handleStatusChange}
+                        updateBudgetMutation={updateBudgetMutation}
+                        updateStatusMutation={updateStatusMutation}
+                      />
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
+                      >
+                        {debouncedSearch
+                          ? 'No languages found matching your search'
+                          : 'No languages found'}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {!isLoading && totalPages > 1 && (
+              <div className='mt-4 flex items-center justify-between px-6 py-3 border-t border-neutral-200 dark:border-neutral-800'>
+                <div className='text-sm text-neutral-600 dark:text-neutral-400'>
+                  Page {page} of {totalPages} ({totalCount.toLocaleString()}{' '}
+                  total)
+                </div>
+                <div className='flex items-center gap-2'>
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                  >
+                    <ChevronLeft className='h-4 w-4' />
+                  </button>
+                  <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
+                    {((page - 1) * pageSize + 1).toLocaleString()} -{' '}
+                    {Math.min(page * pageSize, totalCount).toLocaleString()}
+                  </span>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                  >
+                    <ChevronRight className='h-4 w-4' />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Add Language Modal */}
+      {showAddModal && (
+        <div className='fixed inset-0 z-50 overflow-y-auto'>
+          <div className='flex min-h-screen items-center justify-center p-4'>
+            <div
+              className='fixed inset-0 bg-black/50 transition-opacity'
+              onClick={() => {
+                setShowAddModal(false);
+                setAddModalSearchTerm('');
+                setAddModalExternalIdSearch('');
+                setAddModalPage(1);
+              }}
+            />
+            <div className='relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl max-w-4xl w-full h-[80vh] overflow-hidden flex flex-col'>
+              {/* Header */}
+              <div className='flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800 flex-shrink-0'>
+                <h2 className='text-xl font-semibold text-neutral-900 dark:text-neutral-100'>
+                  Add Language
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setAddModalSearchTerm('');
+                    setAddModalExternalIdSearch('');
+                    setAddModalPage(1);
+                  }}
+                  className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
+                >
+                  <X className='h-5 w-5 text-neutral-500 dark:text-neutral-400' />
+                </button>
+              </div>
+
+              {/* Search */}
+              <div className='p-6 border-b border-neutral-200 dark:border-neutral-800 flex-shrink-0 space-y-3'>
+                <div className='relative'>
+                  <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400 dark:text-neutral-500' />
+                  <input
+                    type='text'
+                    placeholder='Search languages by name...'
+                    value={addModalSearchTerm}
+                    onChange={e => setAddModalSearchTerm(e.target.value)}
+                    className='w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 focus:border-primary-500 dark:focus:border-primary-600'
+                  />
+                </div>
+                <div className='relative'>
+                  <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400 dark:text-neutral-500' />
+                  <input
+                    type='text'
+                    placeholder='Search languages by external ID...'
+                    value={addModalExternalIdSearch}
+                    onChange={e => setAddModalExternalIdSearch(e.target.value)}
+                    className='w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 focus:border-primary-500 dark:focus:border-primary-600'
+                  />
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className='flex-1 overflow-y-auto min-h-0'>
+                {isLoadingAllLanguages ? (
+                  <div className='p-8 text-center'>
+                    <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 dark:border-primary-500 mx-auto'></div>
+                    <p className='mt-4 text-neutral-600 dark:text-neutral-400'>
+                      Loading languages...
+                    </p>
+                  </div>
+                ) : (
+                  <div className='overflow-x-auto'>
+                    <table className='min-w-full divide-y divide-neutral-200 dark:divide-neutral-800'>
+                      <thead className='bg-neutral-50 dark:bg-neutral-800/50 sticky top-0'>
+                        <tr>
+                          <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                            Name
+                          </th>
+                          <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                            Level
+                          </th>
+                          <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                            External IDs
+                          </th>
+                          <th className='px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className='bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-800'>
+                        {allLanguages && allLanguages.length > 0 ? (
+                          allLanguages.map(language => (
+                            <DraftLanguageRow
+                              key={language.id}
+                              language={language}
+                              onAddLanguage={handleAddLanguage}
+                              onCloseModal={() => setShowAddModal(false)}
+                              isPending={setAvailableMutation.isPending}
+                            />
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={4}
+                              className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
+                            >
+                              {addModalDebouncedSearch ||
+                              addModalDebouncedExternalIdSearch
+                                ? 'No languages found matching your search'
+                                : 'No languages available to add'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {!isLoadingAllLanguages && allLanguagesTotalPages > 1 && (
+                <div className='flex items-center justify-between px-6 py-3 border-t border-neutral-200 dark:border-neutral-800 flex-shrink-0'>
+                  <div className='text-sm text-neutral-600 dark:text-neutral-400'>
+                    Page {addModalPage} of {allLanguagesTotalPages} (
+                    {allLanguagesTotalCount.toLocaleString()} total)
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <button
+                      onClick={() => setAddModalPage(p => Math.max(1, p - 1))}
+                      disabled={addModalPage === 1}
+                      className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                    >
+                      <ChevronLeft className='h-4 w-4' />
+                    </button>
+                    <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
+                      {((addModalPage - 1) * pageSize + 1).toLocaleString()} -{' '}
+                      {Math.min(
+                        addModalPage * pageSize,
+                        allLanguagesTotalCount
+                      ).toLocaleString()}
+                    </span>
+                    <button
+                      onClick={() =>
+                        setAddModalPage(p =>
+                          Math.min(allLanguagesTotalPages, p + 1)
+                        )
+                      }
+                      disabled={addModalPage === allLanguagesTotalPages}
+                      className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                    >
+                      <ChevronRight className='h-4 w-4' />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

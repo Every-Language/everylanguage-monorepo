@@ -12,10 +12,10 @@ export type Database = {
         Functions: {
             graphql: {
                 Args: {
-                    extensions?: Json;
-                    operationName?: string;
                     query?: string;
+                    extensions?: Json;
                     variables?: Json;
+                    operationName?: string;
                 };
                 Returns: Json;
             };
@@ -37,7 +37,7 @@ export type Database = {
                     device_id: string;
                     downloaded_at: string | null;
                     id: string;
-                    location: unknown;
+                    location: unknown | null;
                     origin_share_id: string | null;
                     os: string | null;
                     os_version: string | null;
@@ -52,7 +52,7 @@ export type Database = {
                     device_id: string;
                     downloaded_at?: string | null;
                     id?: string;
-                    location?: unknown;
+                    location?: unknown | null;
                     origin_share_id?: string | null;
                     os?: string | null;
                     os_version?: string | null;
@@ -67,7 +67,7 @@ export type Database = {
                     device_id?: string;
                     downloaded_at?: string | null;
                     id?: string;
-                    location?: unknown;
+                    location?: unknown | null;
                     origin_share_id?: string | null;
                     os?: string | null;
                     os_version?: string | null;
@@ -149,6 +149,20 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "audio_versions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
+                        foreignKeyName: "audio_versions_project_id_fkey";
+                        columns: ["project_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["project_id"];
+                    },
+                    {
                         foreignKeyName: "audio_versions_project_id_fkey";
                         columns: ["project_id"];
                         isOneToOne: false;
@@ -176,7 +190,7 @@ export type Database = {
                     created_at: string | null;
                     created_by: string | null;
                     id: string;
-                    location: unknown;
+                    location: unknown | null;
                     name: string;
                     region_id: string | null;
                     updated_at: string | null;
@@ -185,7 +199,7 @@ export type Database = {
                     created_at?: string | null;
                     created_by?: string | null;
                     id?: string;
-                    location?: unknown;
+                    location?: unknown | null;
                     name: string;
                     region_id?: string | null;
                     updated_at?: string | null;
@@ -194,7 +208,7 @@ export type Database = {
                     created_at?: string | null;
                     created_by?: string | null;
                     id?: string;
-                    location?: unknown;
+                    location?: unknown | null;
                     name?: string;
                     region_id?: string | null;
                     updated_at?: string | null;
@@ -255,6 +269,85 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "teams";
                         referencedColumns: ["id"];
+                    }
+                ];
+            };
+            bible_translation_overrides: {
+                Row: {
+                    coverage: Database["public"]["Enums"]["scripture_coverage"];
+                    created_at: string;
+                    created_by: string | null;
+                    deleted_at: string | null;
+                    external_url: string | null;
+                    id: string;
+                    is_audio: boolean;
+                    is_text: boolean;
+                    language_entity_id: string;
+                    notes: string | null;
+                    nt_books_completed: number | null;
+                    ot_books_completed: number | null;
+                    source: string | null;
+                    updated_at: string;
+                    version_name: string;
+                    year_completed: string | null;
+                };
+                Insert: {
+                    coverage?: Database["public"]["Enums"]["scripture_coverage"];
+                    created_at?: string;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    external_url?: string | null;
+                    id?: string;
+                    is_audio?: boolean;
+                    is_text?: boolean;
+                    language_entity_id: string;
+                    notes?: string | null;
+                    nt_books_completed?: number | null;
+                    ot_books_completed?: number | null;
+                    source?: string | null;
+                    updated_at?: string;
+                    version_name: string;
+                    year_completed?: string | null;
+                };
+                Update: {
+                    coverage?: Database["public"]["Enums"]["scripture_coverage"];
+                    created_at?: string;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    external_url?: string | null;
+                    id?: string;
+                    is_audio?: boolean;
+                    is_text?: boolean;
+                    language_entity_id?: string;
+                    notes?: string | null;
+                    nt_books_completed?: number | null;
+                    ot_books_completed?: number | null;
+                    source?: string | null;
+                    updated_at?: string;
+                    version_name?: string;
+                    year_completed?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "bible_translation_overrides_created_by_fkey";
+                        columns: ["created_by"];
+                        isOneToOne: false;
+                        referencedRelation: "users";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "bible_translation_overrides_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "bible_translation_overrides_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -367,6 +460,13 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "chapter_listens_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "chapter_listens_origin_share_id_fkey";
                         columns: ["origin_share_id"];
                         isOneToOne: false;
@@ -418,6 +518,13 @@ export type Database = {
                     updated_at?: string | null;
                 };
                 Relationships: [
+                    {
+                        foreignKeyName: "chapters_book_id_fkey";
+                        columns: ["book_id"];
+                        isOneToOne: false;
+                        referencedRelation: "audio_version_book_progress";
+                        referencedColumns: ["book_id"];
+                    },
                     {
                         foreignKeyName: "chapters_book_id_fkey";
                         columns: ["book_id"];
@@ -486,6 +593,13 @@ export type Database = {
                         foreignKeyName: "donation_allocations_donation_id_fkey";
                         columns: ["donation_id"];
                         isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["donation_id"];
+                    },
+                    {
+                        foreignKeyName: "donation_allocations_donation_id_fkey";
+                        columns: ["donation_id"];
+                        isOneToOne: false;
                         referencedRelation: "vw_donation_remaining";
                         referencedColumns: ["donation_id"];
                     },
@@ -509,6 +623,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "vw_operation_balances";
                         referencedColumns: ["operation_id"];
+                    },
+                    {
+                        foreignKeyName: "donation_allocations_project_id_fkey";
+                        columns: ["project_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["project_id"];
                     },
                     {
                         foreignKeyName: "donation_allocations_project_id_fkey";
@@ -619,6 +740,13 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "donations_intent_language_entity_id_fkey";
+                        columns: ["intent_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "donations_intent_operation_id_fkey";
                         columns: ["intent_operation_id"];
                         isOneToOne: false;
@@ -636,8 +764,29 @@ export type Database = {
                         foreignKeyName: "donations_intent_region_id_fkey";
                         columns: ["intent_region_id"];
                         isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_region_id_fkey";
+                        columns: ["intent_region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_region_id_fkey";
+                        columns: ["intent_region_id"];
+                        isOneToOne: false;
                         referencedRelation: "regions";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "donations_partner_org_id_fkey";
+                        columns: ["partner_org_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["partner_org_id"];
                     },
                     {
                         foreignKeyName: "donations_partner_org_id_fkey";
@@ -682,6 +831,85 @@ export type Database = {
                 };
                 Relationships: [];
             };
+            external_projects_overrides: {
+                Row: {
+                    completed_chapters: number;
+                    completion_date: string | null;
+                    created_at: string;
+                    created_by: string | null;
+                    deleted_at: string | null;
+                    id: string;
+                    is_active: boolean;
+                    is_audio: boolean;
+                    is_text: boolean;
+                    language_entity_id: string;
+                    notes: string | null;
+                    partner_organization: string | null;
+                    project_name: string;
+                    start_date: string | null;
+                    total_chapters: number;
+                    updated_at: string;
+                };
+                Insert: {
+                    completed_chapters?: number;
+                    completion_date?: string | null;
+                    created_at?: string;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    is_active?: boolean;
+                    is_audio?: boolean;
+                    is_text?: boolean;
+                    language_entity_id: string;
+                    notes?: string | null;
+                    partner_organization?: string | null;
+                    project_name: string;
+                    start_date?: string | null;
+                    total_chapters: number;
+                    updated_at?: string;
+                };
+                Update: {
+                    completed_chapters?: number;
+                    completion_date?: string | null;
+                    created_at?: string;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    is_active?: boolean;
+                    is_audio?: boolean;
+                    is_text?: boolean;
+                    language_entity_id?: string;
+                    notes?: string | null;
+                    partner_organization?: string | null;
+                    project_name?: string;
+                    start_date?: string | null;
+                    total_chapters?: number;
+                    updated_at?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "external_projects_overrides_created_by_fkey";
+                        columns: ["created_by"];
+                        isOneToOne: false;
+                        referencedRelation: "users";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "external_projects_overrides_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "external_projects_overrides_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    }
+                ];
+            };
             funding_settings: {
                 Row: {
                     created_at: string;
@@ -703,6 +931,152 @@ export type Database = {
                     id?: string;
                     recurring_months?: number;
                     updated_at?: string | null;
+                };
+                Relationships: [];
+            };
+            grn_coordinates_unmatched: {
+                Row: {
+                    cache_id: string;
+                    country_name: string | null;
+                    first_seen_at: string;
+                    grn_number: number | null;
+                    id: string;
+                    iso_code: string | null;
+                    language_name: string | null;
+                    last_seen_at: string;
+                    resolution_notes: string | null;
+                    resolved_at: string | null;
+                    resolved_by: string | null;
+                    skip_reason: string;
+                };
+                Insert: {
+                    cache_id: string;
+                    country_name?: string | null;
+                    first_seen_at?: string;
+                    grn_number?: number | null;
+                    id?: string;
+                    iso_code?: string | null;
+                    language_name?: string | null;
+                    last_seen_at?: string;
+                    resolution_notes?: string | null;
+                    resolved_at?: string | null;
+                    resolved_by?: string | null;
+                    skip_reason: string;
+                };
+                Update: {
+                    cache_id?: string;
+                    country_name?: string | null;
+                    first_seen_at?: string;
+                    grn_number?: number | null;
+                    id?: string;
+                    iso_code?: string | null;
+                    language_name?: string | null;
+                    last_seen_at?: string;
+                    resolution_notes?: string | null;
+                    resolved_at?: string | null;
+                    resolved_by?: string | null;
+                    skip_reason?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "grn_coordinates_unmatched_cache_id_fkey";
+                        columns: ["cache_id"];
+                        isOneToOne: false;
+                        referencedRelation: "grn_language_coordinates_cache";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            grn_language_cache: {
+                Row: {
+                    alternate_names: Json | null;
+                    audio_sample: boolean | null;
+                    created_at: string;
+                    grn_language_id: number;
+                    has_recordings: boolean;
+                    id: string;
+                    ietf: string | null;
+                    iso639_3: string | null;
+                    language_name: string;
+                    last_synced_at: string;
+                    media_ids: Json | null;
+                    name_ietf: string | null;
+                    parent_id: number | null;
+                    program_count: number | null;
+                    programs: Json | null;
+                    updated_at: string;
+                };
+                Insert: {
+                    alternate_names?: Json | null;
+                    audio_sample?: boolean | null;
+                    created_at?: string;
+                    grn_language_id: number;
+                    has_recordings?: boolean;
+                    id?: string;
+                    ietf?: string | null;
+                    iso639_3?: string | null;
+                    language_name: string;
+                    last_synced_at?: string;
+                    media_ids?: Json | null;
+                    name_ietf?: string | null;
+                    parent_id?: number | null;
+                    program_count?: number | null;
+                    programs?: Json | null;
+                    updated_at?: string;
+                };
+                Update: {
+                    alternate_names?: Json | null;
+                    audio_sample?: boolean | null;
+                    created_at?: string;
+                    grn_language_id?: number;
+                    has_recordings?: boolean;
+                    id?: string;
+                    ietf?: string | null;
+                    iso639_3?: string | null;
+                    language_name?: string;
+                    last_synced_at?: string;
+                    media_ids?: Json | null;
+                    name_ietf?: string | null;
+                    parent_id?: number | null;
+                    program_count?: number | null;
+                    programs?: Json | null;
+                    updated_at?: string;
+                };
+                Relationships: [];
+            };
+            grn_language_coordinates_cache: {
+                Row: {
+                    country_name: string | null;
+                    created_at: string;
+                    grn_number: number | null;
+                    id: string;
+                    iso_code: string | null;
+                    language_name: string | null;
+                    last_synced_at: string;
+                    location: unknown | null;
+                    updated_at: string;
+                };
+                Insert: {
+                    country_name?: string | null;
+                    created_at?: string;
+                    grn_number?: number | null;
+                    id?: string;
+                    iso_code?: string | null;
+                    language_name?: string | null;
+                    last_synced_at?: string;
+                    location?: unknown | null;
+                    updated_at?: string;
+                };
+                Update: {
+                    country_name?: string | null;
+                    created_at?: string;
+                    grn_number?: number | null;
+                    id?: string;
+                    iso_code?: string | null;
+                    language_name?: string | null;
+                    last_synced_at?: string;
+                    location?: unknown | null;
+                    updated_at?: string;
                 };
                 Relationships: [];
             };
@@ -804,6 +1178,483 @@ export type Database = {
                     }
                 ];
             };
+            jp_countries_cache: {
+                Row: {
+                    bible_complete: number | null;
+                    bible_new_testament: number | null;
+                    bible_portions: number | null;
+                    capital: string | null;
+                    cnt_peoples: number | null;
+                    cnt_peoples_lr: number | null;
+                    cnt_primary_languages: number | null;
+                    created_at: string;
+                    ctry: string | null;
+                    deleted_at: string | null;
+                    id: string;
+                    iso2: string | null;
+                    iso3: string | null;
+                    jpscale_ctry: number | null;
+                    jpscale_image_url: string | null;
+                    jpscale_text: string | null;
+                    last_synced_at: string;
+                    percent_buddhism: number | null;
+                    percent_christianity: number | null;
+                    percent_ethnic_religions: number | null;
+                    percent_evangelical: number | null;
+                    percent_hinduism: number | null;
+                    percent_islam: number | null;
+                    percent_non_religious: number | null;
+                    percent_other_small: number | null;
+                    percent_unknown: number | null;
+                    popl_peoples_fpg: number | null;
+                    popl_peoples_lr: number | null;
+                    population: number | null;
+                    region_code: number | null;
+                    region_name: string | null;
+                    religion_primary: string | null;
+                    rlg3_primary: number | null;
+                    rog2: string | null;
+                    rog3: string;
+                    rol3_official_language: string | null;
+                    security_level: number | null;
+                    translation_needed: number | null;
+                    translation_started: number | null;
+                    translation_unspecified: number | null;
+                    updated_at: string;
+                    window_1040: string | null;
+                };
+                Insert: {
+                    bible_complete?: number | null;
+                    bible_new_testament?: number | null;
+                    bible_portions?: number | null;
+                    capital?: string | null;
+                    cnt_peoples?: number | null;
+                    cnt_peoples_lr?: number | null;
+                    cnt_primary_languages?: number | null;
+                    created_at?: string;
+                    ctry?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    iso2?: string | null;
+                    iso3?: string | null;
+                    jpscale_ctry?: number | null;
+                    jpscale_image_url?: string | null;
+                    jpscale_text?: string | null;
+                    last_synced_at?: string;
+                    percent_buddhism?: number | null;
+                    percent_christianity?: number | null;
+                    percent_ethnic_religions?: number | null;
+                    percent_evangelical?: number | null;
+                    percent_hinduism?: number | null;
+                    percent_islam?: number | null;
+                    percent_non_religious?: number | null;
+                    percent_other_small?: number | null;
+                    percent_unknown?: number | null;
+                    popl_peoples_fpg?: number | null;
+                    popl_peoples_lr?: number | null;
+                    population?: number | null;
+                    region_code?: number | null;
+                    region_name?: string | null;
+                    religion_primary?: string | null;
+                    rlg3_primary?: number | null;
+                    rog2?: string | null;
+                    rog3: string;
+                    rol3_official_language?: string | null;
+                    security_level?: number | null;
+                    translation_needed?: number | null;
+                    translation_started?: number | null;
+                    translation_unspecified?: number | null;
+                    updated_at?: string;
+                    window_1040?: string | null;
+                };
+                Update: {
+                    bible_complete?: number | null;
+                    bible_new_testament?: number | null;
+                    bible_portions?: number | null;
+                    capital?: string | null;
+                    cnt_peoples?: number | null;
+                    cnt_peoples_lr?: number | null;
+                    cnt_primary_languages?: number | null;
+                    created_at?: string;
+                    ctry?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    iso2?: string | null;
+                    iso3?: string | null;
+                    jpscale_ctry?: number | null;
+                    jpscale_image_url?: string | null;
+                    jpscale_text?: string | null;
+                    last_synced_at?: string;
+                    percent_buddhism?: number | null;
+                    percent_christianity?: number | null;
+                    percent_ethnic_religions?: number | null;
+                    percent_evangelical?: number | null;
+                    percent_hinduism?: number | null;
+                    percent_islam?: number | null;
+                    percent_non_religious?: number | null;
+                    percent_other_small?: number | null;
+                    percent_unknown?: number | null;
+                    popl_peoples_fpg?: number | null;
+                    popl_peoples_lr?: number | null;
+                    population?: number | null;
+                    region_code?: number | null;
+                    region_name?: string | null;
+                    religion_primary?: string | null;
+                    rlg3_primary?: number | null;
+                    rog2?: string | null;
+                    rog3?: string;
+                    rol3_official_language?: string | null;
+                    security_level?: number | null;
+                    translation_needed?: number | null;
+                    translation_started?: number | null;
+                    translation_unspecified?: number | null;
+                    updated_at?: string;
+                    window_1040?: string | null;
+                };
+                Relationships: [];
+            };
+            jp_language_cache: {
+                Row: {
+                    bible_status: number | null;
+                    bible_year: string | null;
+                    country_code: string | null;
+                    created_at: string;
+                    fcbh_url: string | null;
+                    grn_url: string | null;
+                    has_audio_recordings: boolean;
+                    has_jesus_film: boolean | null;
+                    hub_country: string | null;
+                    id: string;
+                    iso639_3: string;
+                    jf_url: string | null;
+                    jp_scale: number | null;
+                    language_name: string;
+                    last_synced_at: string;
+                    least_reached: boolean | null;
+                    nbr_countries: number | null;
+                    nbr_pgics: number | null;
+                    nt_year: string | null;
+                    percent_adherents: number | null;
+                    percent_evangelical: number | null;
+                    portions_year: string | null;
+                    primary_religion: string | null;
+                    religion_code: string | null;
+                    status: string | null;
+                    translation_need_questionable: boolean | null;
+                    updated_at: string;
+                };
+                Insert: {
+                    bible_status?: number | null;
+                    bible_year?: string | null;
+                    country_code?: string | null;
+                    created_at?: string;
+                    fcbh_url?: string | null;
+                    grn_url?: string | null;
+                    has_audio_recordings?: boolean;
+                    has_jesus_film?: boolean | null;
+                    hub_country?: string | null;
+                    id?: string;
+                    iso639_3: string;
+                    jf_url?: string | null;
+                    jp_scale?: number | null;
+                    language_name: string;
+                    last_synced_at?: string;
+                    least_reached?: boolean | null;
+                    nbr_countries?: number | null;
+                    nbr_pgics?: number | null;
+                    nt_year?: string | null;
+                    percent_adherents?: number | null;
+                    percent_evangelical?: number | null;
+                    portions_year?: string | null;
+                    primary_religion?: string | null;
+                    religion_code?: string | null;
+                    status?: string | null;
+                    translation_need_questionable?: boolean | null;
+                    updated_at?: string;
+                };
+                Update: {
+                    bible_status?: number | null;
+                    bible_year?: string | null;
+                    country_code?: string | null;
+                    created_at?: string;
+                    fcbh_url?: string | null;
+                    grn_url?: string | null;
+                    has_audio_recordings?: boolean;
+                    has_jesus_film?: boolean | null;
+                    hub_country?: string | null;
+                    id?: string;
+                    iso639_3?: string;
+                    jf_url?: string | null;
+                    jp_scale?: number | null;
+                    language_name?: string;
+                    last_synced_at?: string;
+                    least_reached?: boolean | null;
+                    nbr_countries?: number | null;
+                    nbr_pgics?: number | null;
+                    nt_year?: string | null;
+                    percent_adherents?: number | null;
+                    percent_evangelical?: number | null;
+                    portions_year?: string | null;
+                    primary_religion?: string | null;
+                    religion_code?: string | null;
+                    status?: string | null;
+                    translation_need_questionable?: boolean | null;
+                    updated_at?: string;
+                };
+                Relationships: [];
+            };
+            jp_people_groups_cache: {
+                Row: {
+                    affinity_bloc: string | null;
+                    audio_recordings: string | null;
+                    audio_scripture: string | null;
+                    bible_status: number | null;
+                    bible_translation_need: string | null;
+                    bible_year: string | null;
+                    continent_code: string | null;
+                    continent_name: string | null;
+                    country_url: string | null;
+                    created_at: string;
+                    ctry: string | null;
+                    four_laws: string | null;
+                    frontier: string | null;
+                    god_story: string | null;
+                    gospel_radio: string | null;
+                    grn: string | null;
+                    grn_lang: string | null;
+                    has_audio_recordings: string | null;
+                    has_jesus_film: string | null;
+                    id: string;
+                    image_url: string | null;
+                    indigenous_language: string | null;
+                    iso3: string | null;
+                    jf: string | null;
+                    jf_lang: string | null;
+                    jf_primary_text: string | null;
+                    jpscale: number | null;
+                    jpscale_image_url: string | null;
+                    jpscale_pcimg: string | null;
+                    jpscale_pctxt: string | null;
+                    jpscale_text: string | null;
+                    last_synced_at: string;
+                    latitude: number | null;
+                    least_reached: string | null;
+                    least_reached_basis: string | null;
+                    location_in_country: string | null;
+                    longitude: number | null;
+                    map_id: string | null;
+                    medium_type_gospel_presentation: string | null;
+                    nt_year: string | null;
+                    number_languages_spoken: number | null;
+                    pc_christian_pc: number | null;
+                    pc_christian_pd: number | null;
+                    pc_evangelical: number | null;
+                    peop_name_across_countries: string | null;
+                    peop_name_in_country: string | null;
+                    people_cluster: string | null;
+                    people_group_photo_url: string | null;
+                    people_group_url: string | null;
+                    people_id3: number;
+                    people_id3_rog3: string;
+                    photo_address: string | null;
+                    photo_credits: string | null;
+                    population: number | null;
+                    population_percent_un: number | null;
+                    population_pgac: number | null;
+                    portions_year: string | null;
+                    primary_language_dialect: string | null;
+                    primary_language_name: string | null;
+                    primary_medium_language: string | null;
+                    primary_religion: string | null;
+                    profile_text_exists: string | null;
+                    race_code: string | null;
+                    race_name: string | null;
+                    region_code: string | null;
+                    region_name: string | null;
+                    rlg3: string | null;
+                    rog2: string | null;
+                    rog3: string | null;
+                    rol3: string | null;
+                    rop2: string | null;
+                    rop25: string | null;
+                    rop3: string | null;
+                    security_level: number | null;
+                    some_medium_language: string | null;
+                    summary: string | null;
+                    translation_need_questionable: string | null;
+                    translation_need_year: number | null;
+                    unengaged: string | null;
+                    updated_at: string;
+                    window_status: string | null;
+                };
+                Insert: {
+                    affinity_bloc?: string | null;
+                    audio_recordings?: string | null;
+                    audio_scripture?: string | null;
+                    bible_status?: number | null;
+                    bible_translation_need?: string | null;
+                    bible_year?: string | null;
+                    continent_code?: string | null;
+                    continent_name?: string | null;
+                    country_url?: string | null;
+                    created_at?: string;
+                    ctry?: string | null;
+                    four_laws?: string | null;
+                    frontier?: string | null;
+                    god_story?: string | null;
+                    gospel_radio?: string | null;
+                    grn?: string | null;
+                    grn_lang?: string | null;
+                    has_audio_recordings?: string | null;
+                    has_jesus_film?: string | null;
+                    id?: string;
+                    image_url?: string | null;
+                    indigenous_language?: string | null;
+                    iso3?: string | null;
+                    jf?: string | null;
+                    jf_lang?: string | null;
+                    jf_primary_text?: string | null;
+                    jpscale?: number | null;
+                    jpscale_image_url?: string | null;
+                    jpscale_pcimg?: string | null;
+                    jpscale_pctxt?: string | null;
+                    jpscale_text?: string | null;
+                    last_synced_at?: string;
+                    latitude?: number | null;
+                    least_reached?: string | null;
+                    least_reached_basis?: string | null;
+                    location_in_country?: string | null;
+                    longitude?: number | null;
+                    map_id?: string | null;
+                    medium_type_gospel_presentation?: string | null;
+                    nt_year?: string | null;
+                    number_languages_spoken?: number | null;
+                    pc_christian_pc?: number | null;
+                    pc_christian_pd?: number | null;
+                    pc_evangelical?: number | null;
+                    peop_name_across_countries?: string | null;
+                    peop_name_in_country?: string | null;
+                    people_cluster?: string | null;
+                    people_group_photo_url?: string | null;
+                    people_group_url?: string | null;
+                    people_id3: number;
+                    people_id3_rog3: string;
+                    photo_address?: string | null;
+                    photo_credits?: string | null;
+                    population?: number | null;
+                    population_percent_un?: number | null;
+                    population_pgac?: number | null;
+                    portions_year?: string | null;
+                    primary_language_dialect?: string | null;
+                    primary_language_name?: string | null;
+                    primary_medium_language?: string | null;
+                    primary_religion?: string | null;
+                    profile_text_exists?: string | null;
+                    race_code?: string | null;
+                    race_name?: string | null;
+                    region_code?: string | null;
+                    region_name?: string | null;
+                    rlg3?: string | null;
+                    rog2?: string | null;
+                    rog3?: string | null;
+                    rol3?: string | null;
+                    rop2?: string | null;
+                    rop25?: string | null;
+                    rop3?: string | null;
+                    security_level?: number | null;
+                    some_medium_language?: string | null;
+                    summary?: string | null;
+                    translation_need_questionable?: string | null;
+                    translation_need_year?: number | null;
+                    unengaged?: string | null;
+                    updated_at?: string;
+                    window_status?: string | null;
+                };
+                Update: {
+                    affinity_bloc?: string | null;
+                    audio_recordings?: string | null;
+                    audio_scripture?: string | null;
+                    bible_status?: number | null;
+                    bible_translation_need?: string | null;
+                    bible_year?: string | null;
+                    continent_code?: string | null;
+                    continent_name?: string | null;
+                    country_url?: string | null;
+                    created_at?: string;
+                    ctry?: string | null;
+                    four_laws?: string | null;
+                    frontier?: string | null;
+                    god_story?: string | null;
+                    gospel_radio?: string | null;
+                    grn?: string | null;
+                    grn_lang?: string | null;
+                    has_audio_recordings?: string | null;
+                    has_jesus_film?: string | null;
+                    id?: string;
+                    image_url?: string | null;
+                    indigenous_language?: string | null;
+                    iso3?: string | null;
+                    jf?: string | null;
+                    jf_lang?: string | null;
+                    jf_primary_text?: string | null;
+                    jpscale?: number | null;
+                    jpscale_image_url?: string | null;
+                    jpscale_pcimg?: string | null;
+                    jpscale_pctxt?: string | null;
+                    jpscale_text?: string | null;
+                    last_synced_at?: string;
+                    latitude?: number | null;
+                    least_reached?: string | null;
+                    least_reached_basis?: string | null;
+                    location_in_country?: string | null;
+                    longitude?: number | null;
+                    map_id?: string | null;
+                    medium_type_gospel_presentation?: string | null;
+                    nt_year?: string | null;
+                    number_languages_spoken?: number | null;
+                    pc_christian_pc?: number | null;
+                    pc_christian_pd?: number | null;
+                    pc_evangelical?: number | null;
+                    peop_name_across_countries?: string | null;
+                    peop_name_in_country?: string | null;
+                    people_cluster?: string | null;
+                    people_group_photo_url?: string | null;
+                    people_group_url?: string | null;
+                    people_id3?: number;
+                    people_id3_rog3?: string;
+                    photo_address?: string | null;
+                    photo_credits?: string | null;
+                    population?: number | null;
+                    population_percent_un?: number | null;
+                    population_pgac?: number | null;
+                    portions_year?: string | null;
+                    primary_language_dialect?: string | null;
+                    primary_language_name?: string | null;
+                    primary_medium_language?: string | null;
+                    primary_religion?: string | null;
+                    profile_text_exists?: string | null;
+                    race_code?: string | null;
+                    race_name?: string | null;
+                    region_code?: string | null;
+                    region_name?: string | null;
+                    rlg3?: string | null;
+                    rog2?: string | null;
+                    rog3?: string | null;
+                    rol3?: string | null;
+                    rop2?: string | null;
+                    rop25?: string | null;
+                    rop3?: string | null;
+                    security_level?: number | null;
+                    some_medium_language?: string | null;
+                    summary?: string | null;
+                    translation_need_questionable?: string | null;
+                    translation_need_year?: number | null;
+                    unengaged?: string | null;
+                    updated_at?: string;
+                    window_status?: string | null;
+                };
+                Relationships: [];
+            };
             language_aliases: {
                 Row: {
                     alias_name: string;
@@ -833,6 +1684,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_aliases_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -840,7 +1698,6 @@ export type Database = {
                 Row: {
                     created_at: string | null;
                     deleted_at: string | null;
-                    funding_status: Database["public"]["Enums"]["entity_status"] | null;
                     id: string;
                     level: Database["public"]["Enums"]["language_entity_level"];
                     name: string;
@@ -850,7 +1707,6 @@ export type Database = {
                 Insert: {
                     created_at?: string | null;
                     deleted_at?: string | null;
-                    funding_status?: Database["public"]["Enums"]["entity_status"] | null;
                     id?: string;
                     level: Database["public"]["Enums"]["language_entity_level"];
                     name: string;
@@ -860,7 +1716,6 @@ export type Database = {
                 Update: {
                     created_at?: string | null;
                     deleted_at?: string | null;
-                    funding_status?: Database["public"]["Enums"]["entity_status"] | null;
                     id?: string;
                     level?: Database["public"]["Enums"]["language_entity_level"];
                     name?: string;
@@ -874,6 +1729,59 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_parent_id_fkey";
+                        columns: ["parent_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    }
+                ];
+            };
+            language_entities_people_groups_regions: {
+                Row: {
+                    created_at: string | null;
+                    id: string;
+                    is_primary: boolean;
+                    language_entity_id: string;
+                    people_group_region_id: string;
+                };
+                Insert: {
+                    created_at?: string | null;
+                    id?: string;
+                    is_primary?: boolean;
+                    language_entity_id: string;
+                    people_group_region_id: string;
+                };
+                Update: {
+                    created_at?: string | null;
+                    id?: string;
+                    is_primary?: boolean;
+                    language_entity_id?: string;
+                    people_group_region_id?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "language_entities_people_groups_reg_people_group_region_id_fkey";
+                        columns: ["people_group_region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups_regions";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_people_groups_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_people_groups_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -884,6 +1792,8 @@ export type Database = {
                     dominance_level: number | null;
                     id: string;
                     language_entity_id: string;
+                    location: unknown | null;
+                    location_source: string | null;
                     region_id: string;
                     updated_at: string | null;
                 };
@@ -893,6 +1803,8 @@ export type Database = {
                     dominance_level?: number | null;
                     id?: string;
                     language_entity_id: string;
+                    location?: unknown | null;
+                    location_source?: string | null;
                     region_id: string;
                     updated_at?: string | null;
                 };
@@ -902,6 +1814,8 @@ export type Database = {
                     dominance_level?: number | null;
                     id?: string;
                     language_entity_id?: string;
+                    location?: unknown | null;
+                    location_source?: string | null;
                     region_id?: string;
                     updated_at?: string | null;
                 };
@@ -912,6 +1826,27 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
                     },
                     {
                         foreignKeyName: "language_entities_regions_region_id_fkey";
@@ -973,6 +1908,68 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entity_sources_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    }
+                ];
+            };
+            language_funding: {
+                Row: {
+                    budget_cents: number | null;
+                    created_at: string;
+                    created_by: string | null;
+                    deleted_at: string | null;
+                    funding_status: string;
+                    id: string;
+                    language_entity_id: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    budget_cents?: number | null;
+                    created_at?: string;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    funding_status?: string;
+                    id?: string;
+                    language_entity_id: string;
+                    updated_at?: string;
+                };
+                Update: {
+                    budget_cents?: number | null;
+                    created_at?: string;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    funding_status?: string;
+                    id?: string;
+                    language_entity_id?: string;
+                    updated_at?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "language_funding_created_by_fkey";
+                        columns: ["created_by"];
+                        isOneToOne: false;
+                        referencedRelation: "users";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_funding_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: true;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_funding_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: true;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -1008,6 +2005,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_properties_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -1052,6 +2056,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "media_file_listens_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "media_file_listens_media_file_id_fkey";
@@ -1161,7 +2172,14 @@ export type Database = {
                         foreignKeyName: "media_files_audio_version_id_fkey";
                         columns: ["audio_version_id"];
                         isOneToOne: false;
-                        referencedRelation: "audio_version_progress_summary";
+                        referencedRelation: "audio_version_book_progress";
+                        referencedColumns: ["audio_version_id"];
+                    },
+                    {
+                        foreignKeyName: "media_files_audio_version_id_fkey";
+                        columns: ["audio_version_id"];
+                        isOneToOne: false;
+                        referencedRelation: "audio_version_progress";
                         referencedColumns: ["audio_version_id"];
                     },
                     {
@@ -1170,20 +2188,6 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "audio_versions";
                         referencedColumns: ["id"];
-                    },
-                    {
-                        foreignKeyName: "media_files_audio_version_id_fkey";
-                        columns: ["audio_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "language_entity_best_audio_version";
-                        referencedColumns: ["audio_version_id"];
-                    },
-                    {
-                        foreignKeyName: "media_files_audio_version_id_fkey";
-                        columns: ["audio_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "mv_audio_version_progress_summary";
-                        referencedColumns: ["audio_version_id"];
                     },
                     {
                         foreignKeyName: "media_files_chapter_id_fkey";
@@ -1212,6 +2216,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "media_files_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "media_files_start_verse_id_fkey";
@@ -1368,7 +2379,14 @@ export type Database = {
                         foreignKeyName: "media_files_verses_denormalized_audio_version_id_fkey";
                         columns: ["denormalized_audio_version_id"];
                         isOneToOne: false;
-                        referencedRelation: "audio_version_progress_summary";
+                        referencedRelation: "audio_version_book_progress";
+                        referencedColumns: ["audio_version_id"];
+                    },
+                    {
+                        foreignKeyName: "media_files_verses_denormalized_audio_version_id_fkey";
+                        columns: ["denormalized_audio_version_id"];
+                        isOneToOne: false;
+                        referencedRelation: "audio_version_progress";
                         referencedColumns: ["audio_version_id"];
                     },
                     {
@@ -1377,20 +2395,6 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "audio_versions";
                         referencedColumns: ["id"];
-                    },
-                    {
-                        foreignKeyName: "media_files_verses_denormalized_audio_version_id_fkey";
-                        columns: ["denormalized_audio_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "language_entity_best_audio_version";
-                        referencedColumns: ["audio_version_id"];
-                    },
-                    {
-                        foreignKeyName: "media_files_verses_denormalized_audio_version_id_fkey";
-                        columns: ["denormalized_audio_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "mv_audio_version_progress_summary";
-                        referencedColumns: ["audio_version_id"];
                     },
                     {
                         foreignKeyName: "media_files_verses_media_file_id_fkey";
@@ -1474,6 +2478,7 @@ export type Database = {
             };
             operations: {
                 Row: {
+                    budget_cents: number | null;
                     category: Database["public"]["Enums"]["operation_category"];
                     created_at: string;
                     created_by: string | null;
@@ -1487,6 +2492,7 @@ export type Database = {
                     updated_at: string | null;
                 };
                 Insert: {
+                    budget_cents?: number | null;
                     category: Database["public"]["Enums"]["operation_category"];
                     created_at?: string;
                     created_by?: string | null;
@@ -1500,6 +2506,7 @@ export type Database = {
                     updated_at?: string | null;
                 };
                 Update: {
+                    budget_cents?: number | null;
                     category?: Database["public"]["Enums"]["operation_category"];
                     created_at?: string;
                     created_by?: string | null;
@@ -1635,6 +2642,13 @@ export type Database = {
                         foreignKeyName: "partner_wallets_partner_org_id_fkey";
                         columns: ["partner_org_id"];
                         isOneToOne: true;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["partner_org_id"];
+                    },
+                    {
+                        foreignKeyName: "partner_wallets_partner_org_id_fkey";
+                        columns: ["partner_org_id"];
+                        isOneToOne: true;
                         referencedRelation: "partner_orgs";
                         referencedColumns: ["id"];
                     }
@@ -1669,6 +2683,13 @@ export type Database = {
                     updated_at?: string | null;
                 };
                 Relationships: [
+                    {
+                        foreignKeyName: "passages_book_id_fkey";
+                        columns: ["book_id"];
+                        isOneToOne: false;
+                        referencedRelation: "audio_version_book_progress";
+                        referencedColumns: ["book_id"];
+                    },
                     {
                         foreignKeyName: "passages_book_id_fkey";
                         columns: ["book_id"];
@@ -1763,6 +2784,13 @@ export type Database = {
                         foreignKeyName: "payment_attempts_donation_id_fkey";
                         columns: ["donation_id"];
                         isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["donation_id"];
+                    },
+                    {
+                        foreignKeyName: "payment_attempts_donation_id_fkey";
+                        columns: ["donation_id"];
+                        isOneToOne: false;
                         referencedRelation: "vw_donation_remaining";
                         referencedColumns: ["donation_id"];
                     },
@@ -1835,6 +2863,13 @@ export type Database = {
                         foreignKeyName: "payment_methods_partner_org_id_fkey";
                         columns: ["partner_org_id"];
                         isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["partner_org_id"];
+                    },
+                    {
+                        foreignKeyName: "payment_methods_partner_org_id_fkey";
+                        columns: ["partner_org_id"];
+                        isOneToOne: false;
                         referencedRelation: "partner_orgs";
                         referencedColumns: ["id"];
                     },
@@ -1843,6 +2878,241 @@ export type Database = {
                         columns: ["user_id"];
                         isOneToOne: false;
                         referencedRelation: "users";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            people_groups: {
+                Row: {
+                    created_at: string | null;
+                    deleted_at: string | null;
+                    id: string;
+                    name: string;
+                    parent_id: string | null;
+                    people_id3: number;
+                    population_pgac: number | null;
+                    updated_at: string | null;
+                };
+                Insert: {
+                    created_at?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    name: string;
+                    parent_id?: string | null;
+                    people_id3: number;
+                    population_pgac?: number | null;
+                    updated_at?: string | null;
+                };
+                Update: {
+                    created_at?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    name?: string;
+                    parent_id?: string | null;
+                    people_id3?: number;
+                    population_pgac?: number | null;
+                    updated_at?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "people_groups_parent_id_fkey";
+                        columns: ["parent_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_people_group_stats";
+                        referencedColumns: ["people_group_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_parent_id_fkey";
+                        columns: ["parent_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            people_groups_properties: {
+                Row: {
+                    created_at: string | null;
+                    deleted_at: string | null;
+                    id: string;
+                    key: string;
+                    people_group_id: string;
+                    value: string;
+                };
+                Insert: {
+                    created_at?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    key: string;
+                    people_group_id: string;
+                    value: string;
+                };
+                Update: {
+                    created_at?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    key?: string;
+                    people_group_id?: string;
+                    value?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "people_groups_properties_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_people_group_stats";
+                        referencedColumns: ["people_group_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_properties_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            people_groups_regions: {
+                Row: {
+                    created_at: string | null;
+                    deleted_at: string | null;
+                    id: string;
+                    latitude: number | null;
+                    location_point: unknown | null;
+                    longitude: number | null;
+                    peop_name_in_country: string | null;
+                    people_group_id: string;
+                    people_id3_rog3: string;
+                    population: number | null;
+                    primary_language_rol3: string | null;
+                    region_id: string;
+                    updated_at: string | null;
+                };
+                Insert: {
+                    created_at?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    latitude?: number | null;
+                    location_point?: unknown | null;
+                    longitude?: number | null;
+                    peop_name_in_country?: string | null;
+                    people_group_id: string;
+                    people_id3_rog3: string;
+                    population?: number | null;
+                    primary_language_rol3?: string | null;
+                    region_id: string;
+                    updated_at?: string | null;
+                };
+                Update: {
+                    created_at?: string | null;
+                    deleted_at?: string | null;
+                    id?: string;
+                    latitude?: number | null;
+                    location_point?: unknown | null;
+                    longitude?: number | null;
+                    peop_name_in_country?: string | null;
+                    people_group_id?: string;
+                    people_id3_rog3?: string;
+                    population?: number | null;
+                    primary_language_rol3?: string | null;
+                    region_id?: string;
+                    updated_at?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_people_group_stats";
+                        referencedColumns: ["people_group_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "regions";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            people_groups_sources: {
+                Row: {
+                    created_at: string | null;
+                    created_by: string | null;
+                    deleted_at: string | null;
+                    external_id: string | null;
+                    external_id_type: string | null;
+                    id: string;
+                    is_external: boolean;
+                    people_group_id: string;
+                    source: string;
+                    version: string | null;
+                };
+                Insert: {
+                    created_at?: string | null;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    external_id?: string | null;
+                    external_id_type?: string | null;
+                    id?: string;
+                    is_external?: boolean;
+                    people_group_id: string;
+                    source: string;
+                    version?: string | null;
+                };
+                Update: {
+                    created_at?: string | null;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    external_id?: string | null;
+                    external_id_type?: string | null;
+                    id?: string;
+                    is_external?: boolean;
+                    people_group_id?: string;
+                    source?: string;
+                    version?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "people_groups_sources_created_by_fkey";
+                        columns: ["created_by"];
+                        isOneToOne: false;
+                        referencedRelation: "users";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_sources_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_people_group_stats";
+                        referencedColumns: ["people_group_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_sources_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups";
                         referencedColumns: ["id"];
                     }
                 ];
@@ -2039,6 +3309,13 @@ export type Database = {
                         foreignKeyName: "project_budget_actual_costs_project_id_fkey";
                         columns: ["project_id"];
                         isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["project_id"];
+                    },
+                    {
+                        foreignKeyName: "project_budget_actual_costs_project_id_fkey";
+                        columns: ["project_id"];
+                        isOneToOne: false;
                         referencedRelation: "projects";
                         referencedColumns: ["id"];
                     },
@@ -2068,6 +3345,7 @@ export type Database = {
                     project_id: string;
                     title: string;
                     updated_at: string | null;
+                    visibility: Database["public"]["Enums"]["update_visibility"];
                 };
                 Insert: {
                     body: string;
@@ -2078,6 +3356,7 @@ export type Database = {
                     project_id: string;
                     title: string;
                     updated_at?: string | null;
+                    visibility?: Database["public"]["Enums"]["update_visibility"];
                 };
                 Update: {
                     body?: string;
@@ -2088,6 +3367,7 @@ export type Database = {
                     project_id?: string;
                     title?: string;
                     updated_at?: string | null;
+                    visibility?: Database["public"]["Enums"]["update_visibility"];
                 };
                 Relationships: [
                     {
@@ -2096,6 +3376,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "users";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "project_updates_project_id_fkey";
+                        columns: ["project_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["project_id"];
                     },
                     {
                         foreignKeyName: "project_updates_project_id_fkey";
@@ -2197,7 +3484,7 @@ export type Database = {
                     description: string | null;
                     funding_status: Database["public"]["Enums"]["funding_status"];
                     id: string;
-                    location: unknown;
+                    location: unknown | null;
                     name: string;
                     project_status: Database["public"]["Enums"]["project_status"];
                     region_id: string | null;
@@ -2212,7 +3499,7 @@ export type Database = {
                     description?: string | null;
                     funding_status?: Database["public"]["Enums"]["funding_status"];
                     id?: string;
-                    location?: unknown;
+                    location?: unknown | null;
                     name: string;
                     project_status?: Database["public"]["Enums"]["project_status"];
                     region_id?: string | null;
@@ -2227,7 +3514,7 @@ export type Database = {
                     description?: string | null;
                     funding_status?: Database["public"]["Enums"]["funding_status"];
                     id?: string;
-                    location?: unknown;
+                    location?: unknown | null;
                     name?: string;
                     project_status?: Database["public"]["Enums"]["project_status"];
                     region_id?: string | null;
@@ -2247,6 +3534,20 @@ export type Database = {
                         foreignKeyName: "projects_region_id_fkey";
                         columns: ["region_id"];
                         isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "projects_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "projects_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
                         referencedRelation: "regions";
                         referencedColumns: ["id"];
                     },
@@ -2258,11 +3559,25 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "projects_source_language_entity_id_fkey";
+                        columns: ["source_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "projects_target_language_entity_id_fkey";
                         columns: ["target_language_entity_id"];
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "projects_target_language_entity_id_fkey";
+                        columns: ["target_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -2295,6 +3610,13 @@ export type Database = {
                     unassigned_at?: string | null;
                 };
                 Relationships: [
+                    {
+                        foreignKeyName: "projects_teams_project_id_fkey";
+                        columns: ["project_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["project_id"];
+                    },
                     {
                         foreignKeyName: "projects_teams_project_id_fkey";
                         columns: ["project_id"];
@@ -2359,6 +3681,73 @@ export type Database = {
                         foreignKeyName: "region_aliases_region_id_fkey";
                         columns: ["region_id"];
                         isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "region_aliases_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "region_aliases_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "regions";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            region_funding_overrides: {
+                Row: {
+                    created_at: string;
+                    created_by: string | null;
+                    funding_status: string;
+                    region_id: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    created_at?: string;
+                    created_by?: string | null;
+                    funding_status?: string;
+                    region_id: string;
+                    updated_at?: string;
+                };
+                Update: {
+                    created_at?: string;
+                    created_by?: string | null;
+                    funding_status?: string;
+                    region_id?: string;
+                    updated_at?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "region_funding_overrides_created_by_fkey";
+                        columns: ["created_by"];
+                        isOneToOne: false;
+                        referencedRelation: "users";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "region_funding_overrides_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: true;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "region_funding_overrides_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: true;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "region_funding_overrides_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: true;
                         referencedRelation: "regions";
                         referencedColumns: ["id"];
                     }
@@ -2390,6 +3779,20 @@ export type Database = {
                     value?: string;
                 };
                 Relationships: [
+                    {
+                        foreignKeyName: "region_properties_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "region_properties_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
                     {
                         foreignKeyName: "region_properties_region_id_fkey";
                         columns: ["region_id"];
@@ -2448,6 +3851,20 @@ export type Database = {
                         foreignKeyName: "region_sources_region_id_fkey";
                         columns: ["region_id"];
                         isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "region_sources_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "region_sources_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
                         referencedRelation: "regions";
                         referencedColumns: ["id"];
                     }
@@ -2459,13 +3876,12 @@ export type Database = {
                     bbox_max_lon: number | null;
                     bbox_min_lat: number | null;
                     bbox_min_lon: number | null;
-                    boundary: unknown;
-                    boundary_simplified: unknown;
+                    boundary: unknown | null;
+                    boundary_simplified: unknown | null;
                     center_lat: number | null;
                     center_lon: number | null;
                     created_at: string | null;
                     deleted_at: string | null;
-                    funding_status: Database["public"]["Enums"]["entity_status"] | null;
                     id: string;
                     level: Database["public"]["Enums"]["region_level"];
                     name: string;
@@ -2477,13 +3893,12 @@ export type Database = {
                     bbox_max_lon?: number | null;
                     bbox_min_lat?: number | null;
                     bbox_min_lon?: number | null;
-                    boundary?: unknown;
-                    boundary_simplified?: unknown;
+                    boundary?: unknown | null;
+                    boundary_simplified?: unknown | null;
                     center_lat?: number | null;
                     center_lon?: number | null;
                     created_at?: string | null;
                     deleted_at?: string | null;
-                    funding_status?: Database["public"]["Enums"]["entity_status"] | null;
                     id?: string;
                     level: Database["public"]["Enums"]["region_level"];
                     name: string;
@@ -2495,13 +3910,12 @@ export type Database = {
                     bbox_max_lon?: number | null;
                     bbox_min_lat?: number | null;
                     bbox_min_lon?: number | null;
-                    boundary?: unknown;
-                    boundary_simplified?: unknown;
+                    boundary?: unknown | null;
+                    boundary_simplified?: unknown | null;
                     center_lat?: number | null;
                     center_lon?: number | null;
                     created_at?: string | null;
                     deleted_at?: string | null;
-                    funding_status?: Database["public"]["Enums"]["entity_status"] | null;
                     id?: string;
                     level?: Database["public"]["Enums"]["region_level"];
                     name?: string;
@@ -2509,6 +3923,20 @@ export type Database = {
                     updated_at?: string | null;
                 };
                 Relationships: [
+                    {
+                        foreignKeyName: "regions_parent_id_fkey";
+                        columns: ["parent_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "regions_parent_id_fkey";
+                        columns: ["parent_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
                     {
                         foreignKeyName: "regions_parent_id_fkey";
                         columns: ["parent_id"];
@@ -2717,6 +4145,13 @@ export type Database = {
                         foreignKeyName: "sequences_book_id_fkey";
                         columns: ["book_id"];
                         isOneToOne: false;
+                        referencedRelation: "audio_version_book_progress";
+                        referencedColumns: ["book_id"];
+                    },
+                    {
+                        foreignKeyName: "sequences_book_id_fkey";
+                        columns: ["book_id"];
+                        isOneToOne: false;
                         referencedRelation: "books";
                         referencedColumns: ["id"];
                     },
@@ -2733,6 +4168,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "verses";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "sequences_project_id_fkey";
+                        columns: ["project_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["project_id"];
                     },
                     {
                         foreignKeyName: "sequences_project_id_fkey";
@@ -2931,7 +4373,8 @@ export type Database = {
                     country_code: string | null;
                     ended_at: string | null;
                     id: string;
-                    location: unknown;
+                    language_entity_id: string | null;
+                    location: unknown | null;
                     location_source: Database["public"]["Enums"]["location_source_type"] | null;
                     os: string | null;
                     os_version: string | null;
@@ -2948,7 +4391,8 @@ export type Database = {
                     country_code?: string | null;
                     ended_at?: string | null;
                     id?: string;
-                    location?: unknown;
+                    language_entity_id?: string | null;
+                    location?: unknown | null;
                     location_source?: Database["public"]["Enums"]["location_source_type"] | null;
                     os?: string | null;
                     os_version?: string | null;
@@ -2965,7 +4409,8 @@ export type Database = {
                     country_code?: string | null;
                     ended_at?: string | null;
                     id?: string;
-                    location?: unknown;
+                    language_entity_id?: string | null;
+                    location?: unknown | null;
                     location_source?: Database["public"]["Enums"]["location_source_type"] | null;
                     os?: string | null;
                     os_version?: string | null;
@@ -2981,6 +4426,20 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "app_downloads";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "sessions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "sessions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "sessions_user_id_fkey";
@@ -3074,6 +4533,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "shares_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     },
                     {
                         foreignKeyName: "shares_session_id_fkey";
@@ -3272,6 +4738,20 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "text_versions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
+                        foreignKeyName: "text_versions_project_id_fkey";
+                        columns: ["project_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["project_id"];
+                    },
+                    {
                         foreignKeyName: "text_versions_project_id_fkey";
                         columns: ["project_id"];
                         isOneToOne: false;
@@ -3309,7 +4789,7 @@ export type Database = {
                     occurred_at: string;
                     payment_attempt_id: string | null;
                     project_id: string | null;
-                    sponsorship_id: string;
+                    sponsorship_id: string | null;
                     stripe_charge_id: string | null;
                     stripe_event_id: string | null;
                     stripe_invoice_id: string | null;
@@ -3331,7 +4811,7 @@ export type Database = {
                     occurred_at?: string;
                     payment_attempt_id?: string | null;
                     project_id?: string | null;
-                    sponsorship_id: string;
+                    sponsorship_id?: string | null;
                     stripe_charge_id?: string | null;
                     stripe_event_id?: string | null;
                     stripe_invoice_id?: string | null;
@@ -3353,7 +4833,7 @@ export type Database = {
                     occurred_at?: string;
                     payment_attempt_id?: string | null;
                     project_id?: string | null;
-                    sponsorship_id?: string;
+                    sponsorship_id?: string | null;
                     stripe_charge_id?: string | null;
                     stripe_event_id?: string | null;
                     stripe_invoice_id?: string | null;
@@ -3368,6 +4848,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "users";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "contributions_project_id_fkey";
+                        columns: ["project_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["project_id"];
                     },
                     {
                         foreignKeyName: "contributions_project_id_fkey";
@@ -3405,11 +4892,25 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "transactions_donation_allocation_id_fkey";
+                        columns: ["donation_allocation_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["allocation_id"];
+                    },
+                    {
                         foreignKeyName: "transactions_donation_id_fkey";
                         columns: ["donation_id"];
                         isOneToOne: false;
                         referencedRelation: "donations";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "transactions_donation_id_fkey";
+                        columns: ["donation_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["donation_id"];
                     },
                     {
                         foreignKeyName: "transactions_donation_id_fkey";
@@ -3631,7 +5132,14 @@ export type Database = {
                         foreignKeyName: "user_current_selections_selected_audio_version_fkey";
                         columns: ["selected_audio_version"];
                         isOneToOne: false;
-                        referencedRelation: "audio_version_progress_summary";
+                        referencedRelation: "audio_version_book_progress";
+                        referencedColumns: ["audio_version_id"];
+                    },
+                    {
+                        foreignKeyName: "user_current_selections_selected_audio_version_fkey";
+                        columns: ["selected_audio_version"];
+                        isOneToOne: false;
+                        referencedRelation: "audio_version_progress";
                         referencedColumns: ["audio_version_id"];
                     },
                     {
@@ -3642,38 +5150,10 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
-                        foreignKeyName: "user_current_selections_selected_audio_version_fkey";
-                        columns: ["selected_audio_version"];
-                        isOneToOne: false;
-                        referencedRelation: "language_entity_best_audio_version";
-                        referencedColumns: ["audio_version_id"];
-                    },
-                    {
-                        foreignKeyName: "user_current_selections_selected_audio_version_fkey";
-                        columns: ["selected_audio_version"];
-                        isOneToOne: false;
-                        referencedRelation: "mv_audio_version_progress_summary";
-                        referencedColumns: ["audio_version_id"];
-                    },
-                    {
                         foreignKeyName: "user_current_selections_selected_text_version_fkey";
                         columns: ["selected_text_version"];
                         isOneToOne: false;
-                        referencedRelation: "language_entity_best_text_version";
-                        referencedColumns: ["text_version_id"];
-                    },
-                    {
-                        foreignKeyName: "user_current_selections_selected_text_version_fkey";
-                        columns: ["selected_text_version"];
-                        isOneToOne: false;
-                        referencedRelation: "mv_text_version_progress_summary";
-                        referencedColumns: ["text_version_id"];
-                    },
-                    {
-                        foreignKeyName: "user_current_selections_selected_text_version_fkey";
-                        columns: ["selected_text_version"];
-                        isOneToOne: false;
-                        referencedRelation: "text_version_progress_summary";
+                        referencedRelation: "text_version_progress";
                         referencedColumns: ["text_version_id"];
                     },
                     {
@@ -3848,7 +5328,14 @@ export type Database = {
                         foreignKeyName: "user_saved_audio_versions_audio_version_id_fkey";
                         columns: ["audio_version_id"];
                         isOneToOne: false;
-                        referencedRelation: "audio_version_progress_summary";
+                        referencedRelation: "audio_version_book_progress";
+                        referencedColumns: ["audio_version_id"];
+                    },
+                    {
+                        foreignKeyName: "user_saved_audio_versions_audio_version_id_fkey";
+                        columns: ["audio_version_id"];
+                        isOneToOne: false;
+                        referencedRelation: "audio_version_progress";
                         referencedColumns: ["audio_version_id"];
                     },
                     {
@@ -3857,20 +5344,6 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "audio_versions";
                         referencedColumns: ["id"];
-                    },
-                    {
-                        foreignKeyName: "user_saved_audio_versions_audio_version_id_fkey";
-                        columns: ["audio_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "language_entity_best_audio_version";
-                        referencedColumns: ["audio_version_id"];
-                    },
-                    {
-                        foreignKeyName: "user_saved_audio_versions_audio_version_id_fkey";
-                        columns: ["audio_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "mv_audio_version_progress_summary";
-                        referencedColumns: ["audio_version_id"];
                     },
                     {
                         foreignKeyName: "user_saved_audio_versions_user_id_fkey";
@@ -3947,21 +5420,7 @@ export type Database = {
                         foreignKeyName: "user_saved_text_versions_text_version_id_fkey";
                         columns: ["text_version_id"];
                         isOneToOne: false;
-                        referencedRelation: "language_entity_best_text_version";
-                        referencedColumns: ["text_version_id"];
-                    },
-                    {
-                        foreignKeyName: "user_saved_text_versions_text_version_id_fkey";
-                        columns: ["text_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "mv_text_version_progress_summary";
-                        referencedColumns: ["text_version_id"];
-                    },
-                    {
-                        foreignKeyName: "user_saved_text_versions_text_version_id_fkey";
-                        columns: ["text_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "text_version_progress_summary";
+                        referencedRelation: "text_version_progress";
                         referencedColumns: ["text_version_id"];
                     },
                     {
@@ -4010,7 +5469,14 @@ export type Database = {
                         foreignKeyName: "user_version_selections_current_audio_version_id_fkey";
                         columns: ["current_audio_version_id"];
                         isOneToOne: false;
-                        referencedRelation: "audio_version_progress_summary";
+                        referencedRelation: "audio_version_book_progress";
+                        referencedColumns: ["audio_version_id"];
+                    },
+                    {
+                        foreignKeyName: "user_version_selections_current_audio_version_id_fkey";
+                        columns: ["current_audio_version_id"];
+                        isOneToOne: false;
+                        referencedRelation: "audio_version_progress";
                         referencedColumns: ["audio_version_id"];
                     },
                     {
@@ -4021,38 +5487,10 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
-                        foreignKeyName: "user_version_selections_current_audio_version_id_fkey";
-                        columns: ["current_audio_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "language_entity_best_audio_version";
-                        referencedColumns: ["audio_version_id"];
-                    },
-                    {
-                        foreignKeyName: "user_version_selections_current_audio_version_id_fkey";
-                        columns: ["current_audio_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "mv_audio_version_progress_summary";
-                        referencedColumns: ["audio_version_id"];
-                    },
-                    {
                         foreignKeyName: "user_version_selections_current_text_version_id_fkey";
                         columns: ["current_text_version_id"];
                         isOneToOne: false;
-                        referencedRelation: "language_entity_best_text_version";
-                        referencedColumns: ["text_version_id"];
-                    },
-                    {
-                        foreignKeyName: "user_version_selections_current_text_version_id_fkey";
-                        columns: ["current_text_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "mv_text_version_progress_summary";
-                        referencedColumns: ["text_version_id"];
-                    },
-                    {
-                        foreignKeyName: "user_version_selections_current_text_version_id_fkey";
-                        columns: ["current_text_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "text_version_progress_summary";
+                        referencedRelation: "text_version_progress";
                         referencedColumns: ["text_version_id"];
                     },
                     {
@@ -4212,6 +5650,13 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "verse_listens_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "verse_listens_origin_share_id_fkey";
                         columns: ["origin_share_id"];
                         isOneToOne: false;
@@ -4290,21 +5735,7 @@ export type Database = {
                         foreignKeyName: "verse_texts_text_version_id_fkey";
                         columns: ["text_version_id"];
                         isOneToOne: false;
-                        referencedRelation: "language_entity_best_text_version";
-                        referencedColumns: ["text_version_id"];
-                    },
-                    {
-                        foreignKeyName: "verse_texts_text_version_id_fkey";
-                        columns: ["text_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "mv_text_version_progress_summary";
-                        referencedColumns: ["text_version_id"];
-                    },
-                    {
-                        foreignKeyName: "verse_texts_text_version_id_fkey";
-                        columns: ["text_version_id"];
-                        isOneToOne: false;
-                        referencedRelation: "text_version_progress_summary";
+                        referencedRelation: "text_version_progress";
                         referencedColumns: ["text_version_id"];
                     },
                     {
@@ -4360,7 +5791,16 @@ export type Database = {
             };
         };
         Views: {
-            audio_version_progress_summary: {
+            audio_version_book_progress: {
+                Row: {
+                    audio_version_id: string | null;
+                    book_id: string | null;
+                    chapters_with_audio: number | null;
+                    total_chapters: number | null;
+                };
+                Relationships: [];
+            };
+            audio_version_progress: {
                 Row: {
                     audio_version_id: string | null;
                     book_fraction: number | null;
@@ -4368,59 +5808,11 @@ export type Database = {
                     chapter_fraction: number | null;
                     chapters_with_audio: number | null;
                     covered_verses: number | null;
+                    language_entity_id: string | null;
                     total_books: number | null;
                     total_chapters: number | null;
                     total_verses: number | null;
                     verse_fraction: number | null;
-                };
-                Relationships: [];
-            };
-            geography_columns: {
-                Row: {
-                    coord_dimension: number | null;
-                    f_geography_column: unknown;
-                    f_table_catalog: unknown;
-                    f_table_name: unknown;
-                    f_table_schema: unknown;
-                    srid: number | null;
-                    type: string | null;
-                };
-                Relationships: [];
-            };
-            geometry_columns: {
-                Row: {
-                    coord_dimension: number | null;
-                    f_geometry_column: unknown;
-                    f_table_catalog: string | null;
-                    f_table_name: unknown;
-                    f_table_schema: unknown;
-                    srid: number | null;
-                    type: string | null;
-                };
-                Insert: {
-                    coord_dimension?: number | null;
-                    f_geometry_column?: unknown;
-                    f_table_catalog?: string | null;
-                    f_table_name?: unknown;
-                    f_table_schema?: unknown;
-                    srid?: number | null;
-                    type?: string | null;
-                };
-                Update: {
-                    coord_dimension?: number | null;
-                    f_geometry_column?: unknown;
-                    f_table_catalog?: string | null;
-                    f_table_name?: unknown;
-                    f_table_schema?: unknown;
-                    srid?: number | null;
-                    type?: string | null;
-                };
-                Relationships: [];
-            };
-            language_entity_best_audio_version: {
-                Row: {
-                    audio_version_id: string | null;
-                    language_entity_id: string | null;
                 };
                 Relationships: [
                     {
@@ -4429,13 +5821,482 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "audio_versions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
-            language_entity_best_text_version: {
+            geography_columns: {
                 Row: {
+                    coord_dimension: number | null;
+                    f_geography_column: unknown | null;
+                    f_table_catalog: unknown | null;
+                    f_table_name: unknown | null;
+                    f_table_schema: unknown | null;
+                    srid: number | null;
+                    type: string | null;
+                };
+                Relationships: [];
+            };
+            geometry_columns: {
+                Row: {
+                    coord_dimension: number | null;
+                    f_geometry_column: unknown | null;
+                    f_table_catalog: string | null;
+                    f_table_name: unknown | null;
+                    f_table_schema: unknown | null;
+                    srid: number | null;
+                    type: string | null;
+                };
+                Insert: {
+                    coord_dimension?: number | null;
+                    f_geometry_column?: unknown | null;
+                    f_table_catalog?: string | null;
+                    f_table_name?: unknown | null;
+                    f_table_schema?: unknown | null;
+                    srid?: number | null;
+                    type?: string | null;
+                };
+                Update: {
+                    coord_dimension?: number | null;
+                    f_geometry_column?: unknown | null;
+                    f_table_catalog?: string | null;
+                    f_table_name?: unknown | null;
+                    f_table_schema?: unknown | null;
+                    srid?: number | null;
+                    type?: string | null;
+                };
+                Relationships: [];
+            };
+            global_translation_statistics: {
+                Row: {
+                    active_projects_total: number | null;
+                    audio_portions_count: number | null;
+                    audio_portions_percentage: number | null;
+                    completed_projects_total: number | null;
+                    full_audio_bible_count: number | null;
+                    full_audio_bible_percentage: number | null;
+                    generated_at: string | null;
+                    text_portions_count: number | null;
+                    text_portions_percentage: number | null;
+                    total_chapters_completed: number | null;
+                    total_languages: number | null;
+                };
+                Relationships: [];
+            };
+            language_coordinates_for_map: {
+                Row: {
+                    bible_stats_computed_at: string | null;
+                    bible_status: number | null;
+                    has_audio_portions: boolean | null;
+                    has_full_audio_bible: boolean | null;
+                    has_jesus_film: boolean | null;
+                    has_text_portions: boolean | null;
+                    iso639_3: string | null;
+                    language_entity_id: string | null;
+                    language_name: string | null;
+                    latitude: number | null;
+                    location: unknown | null;
+                    location_source: string | null;
+                    longitude: number | null;
+                    region_id: string | null;
+                    region_name: string | null;
+                    rolv_code: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "language_entities_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "regions";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            language_funding_remaining: {
+                Row: {
+                    budget_cents: number | null;
+                    created_at: string | null;
+                    created_by: string | null;
+                    deleted_at: string | null;
+                    funding_status: string | null;
+                    id: string | null;
+                    language_entity_id: string | null;
+                    remaining_budget_cents: number | null;
+                    updated_at: string | null;
+                };
+                Insert: {
+                    budget_cents?: number | null;
+                    created_at?: string | null;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    funding_status?: string | null;
+                    id?: string | null;
+                    language_entity_id?: string | null;
+                    remaining_budget_cents?: never;
+                    updated_at?: string | null;
+                };
+                Update: {
+                    budget_cents?: number | null;
+                    created_at?: string | null;
+                    created_by?: string | null;
+                    deleted_at?: string | null;
+                    funding_status?: string | null;
+                    id?: string | null;
+                    language_entity_id?: string | null;
+                    remaining_budget_cents?: never;
+                    updated_at?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "language_funding_created_by_fkey";
+                        columns: ["created_by"];
+                        isOneToOne: false;
+                        referencedRelation: "users";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_funding_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: true;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_funding_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: true;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    }
+                ];
+            };
+            mv_language_stats: {
+                Row: {
+                    bible_status: number | null;
+                    bible_year: string | null;
+                    computed_at: string | null;
+                    country_code: string | null;
+                    country_count: number | null;
+                    fcbh_url: string | null;
+                    frontier_population: number | null;
+                    grn_url: string | null;
+                    has_audio_portions: boolean | null;
+                    has_audio_recordings: boolean | null;
+                    has_full_audio_bible: boolean | null;
+                    has_jesus_film: boolean | null;
+                    has_new_testament: boolean | null;
+                    has_portions: boolean | null;
+                    has_whole_bible: boolean | null;
+                    hub_country: string | null;
+                    iso639_3: string | null;
+                    jf_url: string | null;
+                    jp_scale: number | null;
+                    language_entity_id: string | null;
+                    language_name: string | null;
+                    least_reached: boolean | null;
+                    least_reached_population: number | null;
+                    nbr_countries: number | null;
+                    nbr_pgics: number | null;
+                    nt_year: string | null;
+                    people_group_count: number | null;
+                    percent_christian: number | null;
+                    percent_evangelical: number | null;
+                    population: number | null;
+                    portions_year: string | null;
+                    primary_religion: string | null;
+                    religion_code: string | null;
+                    rolv_code: string | null;
+                    status: string | null;
+                    translation_need_questionable: boolean | null;
+                };
+                Relationships: [];
+            };
+            mv_people_group_stats: {
+                Row: {
+                    affinity_bloc: string | null;
+                    bible_status: number | null;
+                    bible_year: string | null;
+                    computed_at: string | null;
+                    country_count: number | null;
+                    frontier: boolean | null;
+                    grn: boolean | null;
+                    has_audio_recordings: boolean | null;
+                    has_jesus_film: boolean | null;
+                    image_url: string | null;
+                    jf: boolean | null;
+                    jpscale: number | null;
+                    language_count: number | null;
+                    least_reached: boolean | null;
+                    name: string | null;
+                    nt_year: string | null;
+                    peop_name_across_countries: string | null;
+                    peop_name_in_country: string | null;
+                    people_cluster: string | null;
+                    people_group_id: string | null;
+                    people_id3: number | null;
+                    percent_christian_pc: number | null;
+                    percent_christian_pd: number | null;
+                    percent_evangelical: number | null;
+                    population: number | null;
+                    portions_year: string | null;
+                    primary_language_bible_status: number | null;
+                    primary_language_has_new_testament: boolean | null;
+                    primary_language_has_portions: boolean | null;
+                    primary_language_has_whole_bible: boolean | null;
+                    primary_language_name: string | null;
+                    primary_language_rol3: string | null;
+                    primary_religion: string | null;
+                    rlg3: string | null;
+                };
+                Relationships: [];
+            };
+            mv_region_stats: {
+                Row: {
+                    capital: string | null;
+                    computed_at: string | null;
+                    continent_code: string | null;
+                    iso2: string | null;
+                    iso3: string | null;
+                    jp_country_name: string | null;
+                    jp_region_name: string | null;
+                    jpscale_ctry: number | null;
+                    jpscale_image_url: string | null;
+                    jpscale_text: string | null;
+                    language_count: number | null;
+                    languages_full_bible: number | null;
+                    languages_new_testament: number | null;
+                    languages_no_scripture: number | null;
+                    languages_portions: number | null;
+                    people_group_count: number | null;
+                    percent_buddhism: number | null;
+                    percent_christianity: number | null;
+                    percent_ethnic_religions: number | null;
+                    percent_hinduism: number | null;
+                    percent_islam: number | null;
+                    percent_non_religious: number | null;
+                    percent_other_small: number | null;
+                    population: number | null;
+                    region_code: number | null;
+                    region_id: string | null;
+                    region_name: string | null;
+                    religion_primary: string | null;
+                    rlg3_primary: number | null;
+                    rog3: string | null;
+                    security_level: number | null;
+                    window_status: string | null;
+                };
+                Relationships: [];
+            };
+            partner_org_projects_via_donations: {
+                Row: {
+                    allocation_amount_cents: number | null;
+                    allocation_currency_code: string | null;
+                    allocation_id: string | null;
+                    donation_id: string | null;
+                    donation_status: Database["public"]["Enums"]["donation_status"] | null;
+                    effective_from: string | null;
+                    effective_to: string | null;
+                    intent_language_entity_id: string | null;
+                    intent_operation_id: string | null;
+                    intent_region_id: string | null;
+                    intent_type: Database["public"]["Enums"]["donation_intent_type"] | null;
+                    language_entity_id: string | null;
+                    language_name: string | null;
+                    partner_org_id: string | null;
+                    project_description: string | null;
+                    project_id: string | null;
+                    project_name: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "donations_intent_language_entity_id_fkey";
+                        columns: ["intent_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_language_entity_id_fkey";
+                        columns: ["intent_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_operation_id_fkey";
+                        columns: ["intent_operation_id"];
+                        isOneToOne: false;
+                        referencedRelation: "operations";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_operation_id_fkey";
+                        columns: ["intent_operation_id"];
+                        isOneToOne: false;
+                        referencedRelation: "vw_operation_balances";
+                        referencedColumns: ["operation_id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_region_id_fkey";
+                        columns: ["intent_region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_region_id_fkey";
+                        columns: ["intent_region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_region_id_fkey";
+                        columns: ["intent_region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "regions";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "projects_target_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "projects_target_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    }
+                ];
+            };
+            people_groups_coordinates_for_map: {
+                Row: {
+                    bible_status: number | null;
+                    country_count: number | null;
+                    frontier: boolean | null;
+                    has_audio_recordings: boolean | null;
+                    has_jesus_film: boolean | null;
+                    image_url: string | null;
+                    jpscale: number | null;
+                    language_count: number | null;
+                    latitude: number | null;
+                    least_reached: boolean | null;
+                    location_point: unknown | null;
+                    longitude: number | null;
+                    peop_name_in_country: string | null;
+                    people_group_id: string | null;
+                    people_group_name: string | null;
+                    percent_christian_pc: number | null;
+                    percent_evangelical: number | null;
+                    population: number | null;
+                    primary_language_bible_status: number | null;
+                    primary_language_name: string | null;
+                    primary_language_rol3: string | null;
+                    primary_religion: string | null;
+                    region_id: string | null;
+                    region_name: string | null;
+                    stats_computed_at: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_people_group_stats";
+                        referencedColumns: ["people_group_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "regions";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            region_funding: {
+                Row: {
+                    budget_cents: number | null;
+                    funding_status: string | null;
+                    region_id: string | null;
+                    region_level: Database["public"]["Enums"]["region_level"] | null;
+                    region_name: string | null;
+                    remaining_budget_cents: number | null;
+                };
+                Relationships: [];
+            };
+            text_version_progress: {
+                Row: {
+                    book_fraction: number | null;
+                    books_complete: number | null;
+                    chapter_fraction: number | null;
+                    complete_chapters: number | null;
+                    covered_verses: number | null;
                     language_entity_id: string | null;
                     text_version_id: string | null;
+                    total_books: number | null;
+                    total_chapters: number | null;
+                    total_verses: number | null;
+                    verse_fraction: number | null;
                 };
                 Relationships: [
                     {
@@ -4444,77 +6305,15 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "text_versions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
-            };
-            mv_audio_version_progress_summary: {
-                Row: {
-                    audio_version_id: string | null;
-                    book_fraction: number | null;
-                    books_complete: number | null;
-                    chapter_fraction: number | null;
-                    chapters_with_audio: number | null;
-                    covered_verses: number | null;
-                    total_books: number | null;
-                    total_chapters: number | null;
-                    total_verses: number | null;
-                    verse_fraction: number | null;
-                };
-                Relationships: [];
-            };
-            mv_language_listens_stats: {
-                Row: {
-                    country_code: string | null;
-                    downloads: number | null;
-                    language_entity_id: string | null;
-                    last_download_at: string | null;
-                    last_listened_at: string | null;
-                    popular_chapters: Json | null;
-                    region_id: string | null;
-                    total_listened_seconds: number | null;
-                };
-                Relationships: [];
-            };
-            mv_text_version_progress_summary: {
-                Row: {
-                    book_fraction: number | null;
-                    books_complete: number | null;
-                    chapter_fraction: number | null;
-                    complete_chapters: number | null;
-                    covered_verses: number | null;
-                    text_version_id: string | null;
-                    total_books: number | null;
-                    total_chapters: number | null;
-                    total_verses: number | null;
-                    verse_fraction: number | null;
-                };
-                Relationships: [];
-            };
-            text_version_progress_summary: {
-                Row: {
-                    book_fraction: number | null;
-                    books_complete: number | null;
-                    chapter_fraction: number | null;
-                    complete_chapters: number | null;
-                    covered_verses: number | null;
-                    text_version_id: string | null;
-                    total_books: number | null;
-                    total_chapters: number | null;
-                    total_verses: number | null;
-                    verse_fraction: number | null;
-                };
-                Relationships: [];
-            };
-            vw_country_language_listens_heatmap: {
-                Row: {
-                    country_code: string | null;
-                    event_count: number | null;
-                    grid: unknown;
-                    language_entity_id: string | null;
-                    last_event_at: string | null;
-                    region_id: string | null;
-                };
-                Relationships: [];
             };
             vw_donation_remaining: {
                 Row: {
@@ -4543,6 +6342,13 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "donations_intent_language_entity_id_fkey";
+                        columns: ["intent_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "donations_intent_operation_id_fkey";
                         columns: ["intent_operation_id"];
                         isOneToOne: false;
@@ -4560,8 +6366,29 @@ export type Database = {
                         foreignKeyName: "donations_intent_region_id_fkey";
                         columns: ["intent_region_id"];
                         isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_region_id_fkey";
+                        columns: ["intent_region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_region_id_fkey";
+                        columns: ["intent_region_id"];
+                        isOneToOne: false;
                         referencedRelation: "regions";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "donations_partner_org_id_fkey";
+                        columns: ["partner_org_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["partner_org_id"];
                     },
                     {
                         foreignKeyName: "donations_partner_org_id_fkey";
@@ -4579,6 +6406,18 @@ export type Database = {
                     }
                 ];
             };
+            vw_global_sessions_heatmap: {
+                Row: {
+                    grid: unknown | null;
+                    intensity: number | null;
+                    languages: Json | null;
+                    most_recent_chapter_listen: string | null;
+                    most_recent_session_start: string | null;
+                    session_count: number | null;
+                    total_duration_seconds: number | null;
+                };
+                Relationships: [];
+            };
             vw_iso_country_to_region: {
                 Row: {
                     code: string | null;
@@ -4589,24 +6428,139 @@ export type Database = {
             vw_language_listens_heatmap: {
                 Row: {
                     event_count: number | null;
-                    grid: unknown;
+                    grid: unknown | null;
                     language_entity_id: string | null;
                     last_event_at: string | null;
                 };
                 Relationships: [];
             };
-            vw_language_listens_stats: {
+            vw_languages_by_people_group: {
                 Row: {
-                    country_code: string | null;
-                    downloads: number | null;
+                    bible_status: number | null;
+                    frontier_population: number | null;
+                    has_audio_recordings: boolean | null;
+                    has_jesus_film: boolean | null;
+                    has_new_testament: boolean | null;
+                    has_portions: boolean | null;
+                    has_whole_bible: boolean | null;
+                    is_primary: boolean | null;
+                    iso639_3: string | null;
+                    jp_scale: number | null;
+                    language_country_count: number | null;
                     language_entity_id: string | null;
-                    last_download_at: string | null;
-                    last_listened_at: string | null;
-                    popular_chapters: Json | null;
-                    region_id: string | null;
-                    total_listened_seconds: number | null;
+                    language_name: string | null;
+                    language_people_group_count: number | null;
+                    language_population: number | null;
+                    least_reached_population: number | null;
+                    people_group_id: string | null;
+                    people_group_region_id: string | null;
+                    percent_christian: number | null;
+                    percent_evangelical: number | null;
+                    primary_religion: string | null;
+                    rolv_code: string | null;
                 };
-                Relationships: [];
+                Relationships: [
+                    {
+                        foreignKeyName: "language_entities_people_groups_reg_people_group_region_id_fkey";
+                        columns: ["people_group_region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups_regions";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_people_groups_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_people_groups_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_people_group_stats";
+                        referencedColumns: ["people_group_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            vw_languages_in_region: {
+                Row: {
+                    bible_status: number | null;
+                    country_count: number | null;
+                    frontier_population: number | null;
+                    has_audio_recordings: boolean | null;
+                    has_jesus_film: boolean | null;
+                    has_new_testament: boolean | null;
+                    has_portions: boolean | null;
+                    has_whole_bible: boolean | null;
+                    iso639_3: string | null;
+                    jp_scale: number | null;
+                    language_entity_id: string | null;
+                    language_name: string | null;
+                    latitude: number | null;
+                    least_reached_population: number | null;
+                    location: unknown | null;
+                    location_source: string | null;
+                    longitude: number | null;
+                    people_group_count: number | null;
+                    percent_christian: number | null;
+                    percent_evangelical: number | null;
+                    population: number | null;
+                    primary_religion: string | null;
+                    region_id: string | null;
+                    rolv_code: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "language_entities_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "regions";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             vw_operation_balances: {
                 Row: {
@@ -4625,6 +6579,155 @@ export type Database = {
                     updated_at: string | null;
                 };
                 Relationships: [];
+            };
+            vw_people_groups_by_language: {
+                Row: {
+                    bible_status: number | null;
+                    country_count: number | null;
+                    frontier: boolean | null;
+                    has_audio_recordings: boolean | null;
+                    has_jesus_film: boolean | null;
+                    image_url: string | null;
+                    instance_population: number | null;
+                    is_primary: boolean | null;
+                    jpscale: number | null;
+                    language_count: number | null;
+                    language_entity_id: string | null;
+                    latitude: number | null;
+                    least_reached: boolean | null;
+                    location_point: unknown | null;
+                    longitude: number | null;
+                    peop_name_in_country: string | null;
+                    people_group_id: string | null;
+                    people_group_name: string | null;
+                    people_id3: number | null;
+                    percent_christian_pc: number | null;
+                    percent_evangelical: number | null;
+                    population: number | null;
+                    primary_language_bible_status: number | null;
+                    primary_language_name: string | null;
+                    primary_language_rol3: string | null;
+                    primary_religion: string | null;
+                    region_id: string | null;
+                    region_name: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "language_entities_people_groups_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_people_groups_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_people_group_stats";
+                        referencedColumns: ["people_group_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "regions";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            vw_people_groups_in_region: {
+                Row: {
+                    bible_status: number | null;
+                    country_count: number | null;
+                    frontier: boolean | null;
+                    has_audio_recordings: boolean | null;
+                    has_jesus_film: boolean | null;
+                    image_url: string | null;
+                    instance_population: number | null;
+                    jpscale: number | null;
+                    language_count: number | null;
+                    latitude: number | null;
+                    least_reached: boolean | null;
+                    location_point: unknown | null;
+                    longitude: number | null;
+                    peop_name_in_country: string | null;
+                    people_group_id: string | null;
+                    people_group_name: string | null;
+                    people_id3: number | null;
+                    percent_christian_pc: number | null;
+                    percent_evangelical: number | null;
+                    population: number | null;
+                    primary_language_bible_status: number | null;
+                    primary_language_name: string | null;
+                    primary_language_rol3: string | null;
+                    primary_religion: string | null;
+                    region_id: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_people_group_stats";
+                        referencedColumns: ["people_group_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "regions";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             vw_project_balances: {
                 Row: {
@@ -4649,6 +6752,13 @@ export type Database = {
                         isOneToOne: false;
                         referencedRelation: "language_entities";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "projects_target_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
                     }
                 ];
             };
@@ -4676,6 +6786,148 @@ export type Database = {
                         columns: ["language_entity_id"];
                         isOneToOne: false;
                         referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "projects_target_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    }
+                ];
+            };
+            vw_regions_for_language: {
+                Row: {
+                    iso2: string | null;
+                    iso3: string | null;
+                    jpscale_ctry: number | null;
+                    language_entity_id: string | null;
+                    languages_full_bible: number | null;
+                    languages_new_testament: number | null;
+                    languages_no_scripture: number | null;
+                    languages_portions: number | null;
+                    latitude: number | null;
+                    location: unknown | null;
+                    location_source: string | null;
+                    longitude: number | null;
+                    percent_buddhism: number | null;
+                    percent_christianity: number | null;
+                    percent_ethnic_religions: number | null;
+                    percent_hinduism: number | null;
+                    percent_islam: number | null;
+                    percent_non_religious: number | null;
+                    percent_other_small: number | null;
+                    region_id: string | null;
+                    region_language_count: number | null;
+                    region_name: string | null;
+                    region_people_group_count: number | null;
+                    region_population: number | null;
+                    rog3: string | null;
+                    window_status: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "language_entities_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "language_entities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_language_entity_id_fkey";
+                        columns: ["language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "language_entities_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "regions";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            vw_regions_for_people_group: {
+                Row: {
+                    instance_population: number | null;
+                    iso2: string | null;
+                    iso3: string | null;
+                    jpscale_ctry: number | null;
+                    languages_full_bible: number | null;
+                    languages_new_testament: number | null;
+                    languages_no_scripture: number | null;
+                    languages_portions: number | null;
+                    latitude: number | null;
+                    location_point: unknown | null;
+                    longitude: number | null;
+                    peop_name_in_country: string | null;
+                    people_group_id: string | null;
+                    percent_buddhism: number | null;
+                    percent_christianity: number | null;
+                    percent_ethnic_religions: number | null;
+                    percent_hinduism: number | null;
+                    percent_islam: number | null;
+                    percent_non_religious: number | null;
+                    percent_other_small: number | null;
+                    region_id: string | null;
+                    region_language_count: number | null;
+                    region_name: string | null;
+                    region_people_group_count: number | null;
+                    region_population: number | null;
+                    rog3: string | null;
+                    window_status: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_people_group_stats";
+                        referencedColumns: ["people_group_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_people_group_id_fkey";
+                        columns: ["people_group_id"];
+                        isOneToOne: false;
+                        referencedRelation: "people_groups";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "people_groups_regions_region_id_fkey";
+                        columns: ["region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "regions";
                         referencedColumns: ["id"];
                     }
                 ];
@@ -4707,6 +6959,13 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
+                        foreignKeyName: "donations_intent_language_entity_id_fkey";
+                        columns: ["intent_language_entity_id"];
+                        isOneToOne: false;
+                        referencedRelation: "mv_language_stats";
+                        referencedColumns: ["language_entity_id"];
+                    },
+                    {
                         foreignKeyName: "donations_intent_operation_id_fkey";
                         columns: ["intent_operation_id"];
                         isOneToOne: false;
@@ -4724,8 +6983,29 @@ export type Database = {
                         foreignKeyName: "donations_intent_region_id_fkey";
                         columns: ["intent_region_id"];
                         isOneToOne: false;
+                        referencedRelation: "mv_region_stats";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_region_id_fkey";
+                        columns: ["intent_region_id"];
+                        isOneToOne: false;
+                        referencedRelation: "region_funding";
+                        referencedColumns: ["region_id"];
+                    },
+                    {
+                        foreignKeyName: "donations_intent_region_id_fkey";
+                        columns: ["intent_region_id"];
+                        isOneToOne: false;
                         referencedRelation: "regions";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "donations_partner_org_id_fkey";
+                        columns: ["partner_org_id"];
+                        isOneToOne: false;
+                        referencedRelation: "partner_org_projects_via_donations";
+                        referencedColumns: ["partner_org_id"];
                     },
                     {
                         foreignKeyName: "donations_partner_org_id_fkey";
@@ -4747,9 +7027,9 @@ export type Database = {
         Functions: {
             _postgis_deprecate: {
                 Args: {
+                    version: string;
                     newname: string;
                     oldname: string;
-                    version: string;
                 };
                 Returns: undefined;
             };
@@ -4761,29 +7041,21 @@ export type Database = {
                 Returns: unknown;
             };
             _postgis_pgsql_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             _postgis_scripts_pgsql_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             _postgis_selectivity: {
                 Args: {
-                    att_name: string;
-                    geom: unknown;
                     mode?: string;
+                    att_name: string;
                     tbl: unknown;
+                    geom: unknown;
                 };
                 Returns: number;
-            };
-            _postgis_stats: {
-                Args: {
-                    ""?: string;
-                    att_name: string;
-                    tbl: unknown;
-                };
-                Returns: string;
             };
             _st_3dintersects: {
                 Args: {
@@ -4791,6 +7063,12 @@ export type Database = {
                     geom2: unknown;
                 };
                 Returns: boolean;
+            };
+            _st_bestsrid: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
             };
             _st_contains: {
                 Args: {
@@ -4810,10 +7088,7 @@ export type Database = {
                 Args: {
                     geog1: unknown;
                     geog2: unknown;
-                };
-                Returns: boolean;
-            } | {
-                Args: {
+                } | {
                     geom1: unknown;
                     geom2: unknown;
                 };
@@ -4823,10 +7098,7 @@ export type Database = {
                 Args: {
                     geog1: unknown;
                     geog2: unknown;
-                };
-                Returns: boolean;
-            } | {
-                Args: {
+                } | {
                     geom1: unknown;
                     geom2: unknown;
                 };
@@ -4897,6 +7169,12 @@ export type Database = {
                 };
                 Returns: boolean;
             };
+            _st_pointoutside: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             _st_sortablehash: {
                 Args: {
                     geom: unknown;
@@ -4913,9 +7191,9 @@ export type Database = {
             _st_voronoi: {
                 Args: {
                     clip?: unknown;
-                    g1: unknown;
-                    return_polygons?: boolean;
                     tolerance?: number;
+                    return_polygons?: boolean;
+                    g1: unknown;
                 };
                 Returns: unknown;
             };
@@ -4935,36 +7213,116 @@ export type Database = {
             addgeometrycolumn: {
                 Args: {
                     column_name: string;
-                    new_dim: number;
-                    new_srid: number;
-                    new_type: string;
-                    schema_name: string;
-                    table_name: string;
                     use_typmod?: boolean;
-                };
-                Returns: string;
-            } | {
-                Args: {
-                    column_name: string;
                     new_dim: number;
-                    new_srid: number;
                     new_type: string;
-                    table_name: string;
-                    use_typmod?: boolean;
-                };
-                Returns: string;
-            } | {
-                Args: {
                     catalog_name: string;
-                    column_name: string;
-                    new_dim: number;
-                    new_srid_in: number;
-                    new_type: string;
                     schema_name: string;
                     table_name: string;
+                    new_srid_in: number;
+                } | {
+                    new_srid: number;
+                    schema_name: string;
+                    table_name: string;
+                    column_name: string;
+                    new_type: string;
+                    new_dim: number;
                     use_typmod?: boolean;
+                } | {
+                    use_typmod?: boolean;
+                    column_name: string;
+                    new_srid: number;
+                    new_type: string;
+                    new_dim: number;
+                    table_name: string;
                 };
                 Returns: string;
+            };
+            box: {
+                Args: {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            box2d: {
+                Args: {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            box2d_in: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            box2d_out: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            box2df_in: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            box2df_out: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            box3d: {
+                Args: {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            box3d_in: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            box3d_out: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            box3dtobox: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            bytea: {
+                Args: {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            calculate_language_funding_status: {
+                Args: {
+                    language_id: string;
+                };
+                Returns: string;
+            };
+            check_language_project_allocations: {
+                Args: {
+                    language_id: string;
+                };
+                Returns: boolean;
             };
             convert_to_usd: {
                 Args: {
@@ -4980,60 +7338,64 @@ export type Database = {
                 };
                 Returns: string;
             };
+            debug_language_coordinates_stats: {
+                Args: {
+                    p_min_lng: number;
+                    p_min_lat: number;
+                    p_max_lng: number;
+                    p_max_lat: number;
+                    p_location_source?: string;
+                };
+                Returns: {
+                    total_in_mv: number;
+                    total_in_bbox: number;
+                    total_in_bbox_with_source_filter: number;
+                    mv_sample_count: number;
+                    bbox_sample_count: number;
+                }[];
+            };
             disablelongtransactions: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             drain_progress_refresh_queue: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: {
-                    kind: string;
                     version_id: string;
+                    kind: string;
                 }[];
             };
             dropgeometrycolumn: {
                 Args: {
                     column_name: string;
-                    schema_name: string;
                     table_name: string;
-                };
-                Returns: string;
-            } | {
-                Args: {
+                } | {
+                    schema_name: string;
                     column_name: string;
                     table_name: string;
-                };
-                Returns: string;
-            } | {
-                Args: {
+                } | {
+                    schema_name: string;
+                    table_name: string;
+                    column_name: string;
                     catalog_name: string;
-                    column_name: string;
-                    schema_name: string;
-                    table_name: string;
                 };
                 Returns: string;
             };
             dropgeometrytable: {
                 Args: {
                     schema_name: string;
-                    table_name: string;
-                };
-                Returns: string;
-            } | {
-                Args: {
-                    table_name: string;
-                };
-                Returns: string;
-            } | {
-                Args: {
                     catalog_name: string;
+                    table_name: string;
+                } | {
                     schema_name: string;
+                    table_name: string;
+                } | {
                     table_name: string;
                 };
                 Returns: string;
             };
             enablelongtransactions: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             enqueue_progress_refresh: {
@@ -5050,9 +7412,79 @@ export type Database = {
                 };
                 Returns: boolean;
             };
+            geography: {
+                Args: {
+                    "": string;
+                } | {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geography_analyze: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: boolean;
+            };
+            geography_gist_compress: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geography_gist_decompress: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geography_out: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geography_send: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            geography_spgist_compress_nd: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geography_typmod_in: {
+                Args: {
+                    "": unknown[];
+                };
+                Returns: number;
+            };
+            geography_typmod_out: {
+                Args: {
+                    "": number;
+                };
+                Returns: unknown;
+            };
             geometry: {
                 Args: {
                     "": string;
+                } | {
+                    "": string;
+                } | {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                } | {
+                    "": unknown;
                 };
                 Returns: unknown;
             };
@@ -5060,6 +7492,12 @@ export type Database = {
                 Args: {
                     geom1: unknown;
                     geom2: unknown;
+                };
+                Returns: boolean;
+            };
+            geometry_analyze: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: boolean;
             };
@@ -5072,8 +7510,8 @@ export type Database = {
             };
             geometry_cmp: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: number;
             };
@@ -5093,8 +7531,8 @@ export type Database = {
             };
             geometry_contains_3d: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: boolean;
             };
@@ -5107,24 +7545,54 @@ export type Database = {
             };
             geometry_distance_centroid: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: number;
             };
             geometry_eq: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: boolean;
             };
             geometry_ge: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: boolean;
+            };
+            geometry_gist_compress_2d: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geometry_gist_compress_nd: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geometry_gist_decompress_2d: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geometry_gist_decompress_nd: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geometry_gist_sortsupport_2d: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: undefined;
             };
             geometry_gt: {
                 Args: {
@@ -5133,10 +7601,22 @@ export type Database = {
                 };
                 Returns: boolean;
             };
+            geometry_hash: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            geometry_in: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             geometry_le: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: boolean;
             };
@@ -5154,10 +7634,16 @@ export type Database = {
                 };
                 Returns: boolean;
             };
+            geometry_out: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             geometry_overabove: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: boolean;
             };
@@ -5191,15 +7677,21 @@ export type Database = {
             };
             geometry_overright: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: boolean;
             };
+            geometry_recv: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             geometry_right: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: boolean;
             };
@@ -5217,6 +7709,48 @@ export type Database = {
                 };
                 Returns: boolean;
             };
+            geometry_send: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            geometry_sortsupport: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: undefined;
+            };
+            geometry_spgist_compress_2d: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geometry_spgist_compress_3d: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geometry_spgist_compress_nd: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            geometry_typmod_in: {
+                Args: {
+                    "": unknown[];
+                };
+                Returns: number;
+            };
+            geometry_typmod_out: {
+                Args: {
+                    "": number;
+                };
+                Returns: unknown;
+            };
             geometry_within: {
                 Args: {
                     geom1: unknown;
@@ -5224,22 +7758,142 @@ export type Database = {
                 };
                 Returns: boolean;
             };
+            geometrytype: {
+                Args: {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            geomfromewkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
             geomfromewkt: {
                 Args: {
                     "": string;
                 };
                 Returns: unknown;
             };
+            get_active_projects_with_progress: {
+                Args: Record<PropertyKey, never>;
+                Returns: {
+                    project_id: string;
+                    project_name: string;
+                    language_name: string;
+                    has_audio: boolean;
+                    has_text: boolean;
+                    completed_chapters: number;
+                    total_chapters: number;
+                    progress_percentage: number;
+                }[];
+            };
+            get_all_language_coordinates: {
+                Args: {
+                    p_min_lng: number;
+                    p_min_lat: number;
+                    p_max_lng: number;
+                    p_max_lat: number;
+                    p_limit?: number;
+                    p_location_source?: string;
+                };
+                Returns: {
+                    language_entity_id: string;
+                    language_name: string;
+                    region_id: string;
+                    region_name: string;
+                    longitude: number;
+                    latitude: number;
+                    location_source: string;
+                    has_full_audio_bible: boolean;
+                    has_audio_portions: boolean;
+                    has_text_portions: boolean;
+                    bible_status: number;
+                    has_jesus_film: boolean;
+                    iso639_3: string;
+                    rolv_code: string;
+                    bible_stats_computed_at: string;
+                }[];
+            };
+            get_all_people_group_coordinates: {
+                Args: {
+                    p_min_lng: number;
+                    p_min_lat: number;
+                    p_max_lng: number;
+                    p_max_lat: number;
+                    p_limit?: number;
+                    p_location_source?: string;
+                };
+                Returns: {
+                    people_group_id: string;
+                    people_group_name: string;
+                    region_id: string;
+                    region_name: string;
+                    longitude: number;
+                    latitude: number;
+                    peop_name_in_country: string;
+                    population: number;
+                    language_count: number;
+                    country_count: number;
+                    primary_language_rol3: string;
+                    primary_language_name: string;
+                    primary_language_bible_status: number;
+                    image_url: string;
+                    jpscale: number;
+                    least_reached: boolean;
+                    frontier: boolean;
+                    primary_religion: string;
+                    percent_evangelical: number;
+                    percent_christian_pc: number;
+                    bible_status: number;
+                    has_audio_recordings: boolean;
+                    has_jesus_film: boolean;
+                    stats_computed_at: string;
+                }[];
+            };
             get_chapter_global_order: {
                 Args: {
                     chapter_text_id: string;
-                };
-                Returns: number;
-            } | {
-                Args: {
+                } | {
                     chapter_uuid: string;
                 };
                 Returns: number;
+            };
+            get_coordinates_by_region: {
+                Args: {
+                    p_region_id: string;
+                };
+                Returns: {
+                    language_entity_id: string;
+                    language_name: string;
+                    region_id: string;
+                    longitude: number;
+                    latitude: number;
+                    location_source: string;
+                    has_full_audio_bible: boolean;
+                    has_audio_portions: boolean;
+                    has_text_portions: boolean;
+                    iso639_3: string;
+                    rolv_code: string;
+                    bible_stats_computed_at: string;
+                }[];
+            };
+            get_countries_with_bible_status: {
+                Args: Record<PropertyKey, never>;
+                Returns: {
+                    bible_status_score: number;
+                    region_id: string;
+                    region_name: string;
+                    boundary_simplified: unknown;
+                    language_count: number;
+                    languages_no_scripture: number;
+                    languages_portions: number;
+                    languages_new_testament: number;
+                    languages_full_bible: number;
+                }[];
             };
             get_country_code_from_point: {
                 Args: {
@@ -5247,6 +7901,103 @@ export type Database = {
                     lon: number;
                 };
                 Returns: string;
+            };
+            get_global_sessions_heatmap: {
+                Args: {
+                    p_min_lng: number;
+                    p_min_lat: number;
+                    p_max_lng: number;
+                    p_max_lat: number;
+                    p_time_period_hours: number;
+                    p_grid_size?: number;
+                    p_point_limit?: number;
+                };
+                Returns: {
+                    languages: Json;
+                    lon: number;
+                    lat: number;
+                    intensity: number;
+                    session_count: number;
+                    total_duration_seconds: number;
+                    most_recent_session_start: string;
+                    most_recent_chapter_listen: string;
+                    age_normalized: number;
+                }[];
+            };
+            get_global_sessions_heatmap_from_view: {
+                Args: {
+                    p_min_lng: number;
+                    p_min_lat: number;
+                    p_max_lng: number;
+                    p_max_lat: number;
+                    p_time_period_hours: number;
+                    p_point_limit?: number;
+                } | {
+                    p_region_id?: string;
+                    p_min_lng: number;
+                    p_min_lat: number;
+                    p_max_lng: number;
+                    p_max_lat: number;
+                    p_time_period_hours: number;
+                    p_language_entity_id?: string;
+                    p_point_limit?: number;
+                };
+                Returns: {
+                    total_duration_seconds: number;
+                    most_recent_chapter_listen: string;
+                    languages: Json;
+                    age_normalized: number;
+                    lon: number;
+                    lat: number;
+                    intensity: number;
+                    session_count: number;
+                    most_recent_session_start: string;
+                }[];
+            };
+            get_grn_coordinates_unmatched_summary: {
+                Args: Record<PropertyKey, never>;
+                Returns: {
+                    unique_countries: number;
+                    unique_grn_numbers: number;
+                    skip_reason: string;
+                    count: number;
+                }[];
+            };
+            get_grn_coordinates_unmatched_unresolved: {
+                Args: {
+                    p_limit?: number;
+                    p_skip_reason?: string;
+                };
+                Returns: {
+                    country_name: string;
+                    skip_reason: string;
+                    first_seen_at: string;
+                    last_seen_at: string;
+                    cache_id: string;
+                    grn_number: number;
+                    language_name: string;
+                    iso_code: string;
+                    id: string;
+                }[];
+            };
+            get_language_coordinates: {
+                Args: {
+                    p_language_entity_id: string;
+                };
+                Returns: {
+                    bible_stats_computed_at: string;
+                    language_entity_id: string;
+                    region_id: string;
+                    region_name: string;
+                    longitude: number;
+                    latitude: number;
+                    location_source: string;
+                    has_full_audio_bible: boolean;
+                    has_audio_portions: boolean;
+                    has_text_portions: boolean;
+                    iso639_3: string;
+                    rolv_code: string;
+                }[];
             };
             get_language_entity_hierarchy: {
                 Args: {
@@ -5256,11 +8007,11 @@ export type Database = {
                 };
                 Returns: {
                     generation_distance: number;
-                    hierarchy_entity_id: string;
+                    relationship_type: string;
+                    hierarchy_parent_id: string;
                     hierarchy_entity_level: string;
                     hierarchy_entity_name: string;
-                    hierarchy_parent_id: string;
-                    relationship_type: string;
+                    hierarchy_entity_id: string;
                 }[];
             };
             get_language_entity_path: {
@@ -5275,33 +8026,84 @@ export type Database = {
                 };
                 Returns: number;
             };
+            get_partner_org_members: {
+                Args: {
+                    p_partner_org_id: string;
+                };
+                Returns: {
+                    role_resource_type: string;
+                    role_key: string;
+                    user_full_name: string;
+                    role_name: string;
+                    user_email: string;
+                    user_last_name: string;
+                    user_first_name: string;
+                    user_id: string;
+                    role_id: string;
+                }[];
+            };
+            get_proj4_from_srid: {
+                Args: {
+                    "": number;
+                };
+                Returns: string;
+            };
             get_project_balance: {
                 Args: {
                     project_uuid: string;
                 };
                 Returns: number;
             };
+            get_recent_bible_audio_uploads: {
+                Args: {
+                    limit_count?: number;
+                };
+                Returns: {
+                    media_file_id: string;
+                    language_name: string;
+                    book_name: string;
+                    uploaded_at: string;
+                    object_key: string;
+                    audio_version_id: string;
+                    chapter_number: number;
+                }[];
+            };
+            get_recent_public_updates: {
+                Args: {
+                    limit_count?: number;
+                };
+                Returns: {
+                    title: string;
+                    media_keys: string[];
+                    created_at: string;
+                    update_id: string;
+                    project_id: string;
+                    project_name: string;
+                    language_name: string;
+                    body: string;
+                }[];
+            };
             get_region_bbox_by_id: {
                 Args: {
                     p_region_id: string;
                 };
                 Returns: {
-                    center_lat: number;
-                    center_lon: number;
-                    id: string;
-                    level: Database["public"]["Enums"]["region_level"];
-                    max_lat: number;
-                    max_lon: number;
-                    min_lat: number;
-                    min_lon: number;
                     name: string;
+                    level: Database["public"]["Enums"]["region_level"];
                     parent_id: string;
+                    min_lon: number;
+                    min_lat: number;
+                    max_lon: number;
+                    max_lat: number;
+                    center_lon: number;
+                    center_lat: number;
+                    id: string;
                 }[];
             };
             get_region_boundary_simplified_by_id: {
                 Args: {
-                    p_region_id: string;
                     p_tolerance?: number;
+                    p_region_id: string;
                 };
                 Returns: {
                     boundary: unknown;
@@ -5313,8 +8115,8 @@ export type Database = {
                 };
                 Returns: {
                     id: string;
-                    level: Database["public"]["Enums"]["region_level"];
                     name: string;
+                    level: Database["public"]["Enums"]["region_level"];
                     parent_id: string;
                     properties: Json;
                 }[];
@@ -5322,35 +8124,35 @@ export type Database = {
             get_region_hierarchy: {
                 Args: {
                     generations_down?: number;
-                    generations_up?: number;
                     region_id: string;
+                    generations_up?: number;
                 };
                 Returns: {
-                    generation_distance: number;
-                    hierarchy_parent_id: string;
                     hierarchy_region_id: string;
-                    hierarchy_region_level: string;
-                    hierarchy_region_name: string;
+                    hierarchy_parent_id: string;
+                    generation_distance: number;
                     relationship_type: string;
+                    hierarchy_region_name: string;
+                    hierarchy_region_level: string;
                 }[];
             };
             get_region_minimal_by_point: {
                 Args: {
-                    lat: number;
                     lon: number;
+                    lat: number;
                     lookup_level?: Database["public"]["Enums"]["region_level"];
                 };
                 Returns: {
-                    center_lat: number;
-                    center_lon: number;
                     id: string;
-                    level: Database["public"]["Enums"]["region_level"];
-                    max_lat: number;
-                    max_lon: number;
-                    min_lat: number;
-                    min_lon: number;
                     name: string;
+                    level: Database["public"]["Enums"]["region_level"];
                     parent_id: string;
+                    min_lon: number;
+                    min_lat: number;
+                    max_lon: number;
+                    max_lat: number;
+                    center_lon: number;
+                    center_lat: number;
                 }[];
             };
             get_region_path: {
@@ -5370,36 +8172,87 @@ export type Database = {
                     target_user_id: string;
                 };
                 Returns: {
-                    context_id: string;
-                    context_type: string;
                     resource_type: string;
+                    context_id: string;
                     role_key: string;
                     role_name: string;
+                    context_type: string;
                 }[];
             };
             get_verse_global_order: {
                 Args: {
                     verse_text_id: string;
-                };
-                Returns: number;
-            } | {
-                Args: {
+                } | {
                     verse_uuid: string;
                 };
                 Returns: number;
             };
             gettransactionid: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
+                Returns: unknown;
+            };
+            gidx_in: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            gidx_out: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            gtrgm_compress: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            gtrgm_decompress: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            gtrgm_in: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            gtrgm_options: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: undefined;
+            };
+            gtrgm_out: {
+                Args: {
+                    "": unknown;
+                };
                 Returns: unknown;
             };
             has_permission: {
                 Args: {
                     p_action: Database["public"]["Enums"]["permission_key"];
-                    p_resource_id: string;
                     p_resource_type: Database["public"]["Enums"]["resource_type"];
+                    p_resource_id: string;
                     p_user_id: string;
                 };
                 Returns: boolean;
+            };
+            json: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: Json;
+            };
+            jsonb: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: Json;
             };
             list_languages_for_region: {
                 Args: {
@@ -5408,12 +8261,12 @@ export type Database = {
                 };
                 Returns: {
                     id: string;
-                    level: Database["public"]["Enums"]["language_entity_level"];
                     name: string;
+                    level: Database["public"]["Enums"]["language_entity_level"];
                 }[];
             };
             longtransactionsenabled: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: boolean;
             };
             mojibake_fix_hard: {
@@ -5428,30 +8281,117 @@ export type Database = {
                 };
                 Returns: string;
             };
+            path: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            pgis_asflatgeobuf_finalfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            pgis_asgeobuf_finalfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            pgis_asmvt_finalfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            pgis_asmvt_serialfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            pgis_geometry_clusterintersecting_finalfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown[];
+            };
+            pgis_geometry_clusterwithin_finalfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown[];
+            };
+            pgis_geometry_collect_finalfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            pgis_geometry_makeline_finalfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            pgis_geometry_polygonize_finalfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            pgis_geometry_union_parallel_finalfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            pgis_geometry_union_parallel_serialfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            point: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            polygon: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             populate_geometry_columns: {
                 Args: {
                     use_typmod?: boolean;
+                } | {
+                    use_typmod?: boolean;
+                    tbl_oid: unknown;
                 };
                 Returns: string;
-            } | {
+            };
+            postgis_addbbox: {
                 Args: {
-                    tbl_oid: unknown;
-                    use_typmod?: boolean;
+                    "": unknown;
                 };
-                Returns: number;
+                Returns: unknown;
             };
             postgis_constraint_dims: {
                 Args: {
+                    geomtable: string;
                     geomcolumn: string;
                     geomschema: string;
-                    geomtable: string;
                 };
                 Returns: number;
             };
             postgis_constraint_srid: {
                 Args: {
-                    geomcolumn: string;
                     geomschema: string;
+                    geomcolumn: string;
                     geomtable: string;
                 };
                 Returns: number;
@@ -5459,124 +8399,202 @@ export type Database = {
             postgis_constraint_type: {
                 Args: {
                     geomcolumn: string;
-                    geomschema: string;
                     geomtable: string;
+                    geomschema: string;
                 };
                 Returns: string;
             };
+            postgis_dropbbox: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             postgis_extensions_upgrade: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_full_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
+            };
+            postgis_geos_noop: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
             };
             postgis_geos_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
+            postgis_getbbox: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            postgis_hasbbox: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: boolean;
+            };
+            postgis_index_supportfn: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             postgis_lib_build_date: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_lib_revision: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_lib_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_libjson_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_liblwgeom_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_libprotobuf_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_libxml_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
+            postgis_noop: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             postgis_proj_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_scripts_build_date: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_scripts_installed: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_scripts_released: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_svn_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_type_name: {
                 Args: {
-                    coord_dimension: number;
                     geomname: string;
+                    coord_dimension: number;
                     use_new_name?: boolean;
                 };
                 Returns: string;
             };
+            postgis_typmod_dims: {
+                Args: {
+                    "": number;
+                };
+                Returns: number;
+            };
+            postgis_typmod_srid: {
+                Args: {
+                    "": number;
+                };
+                Returns: number;
+            };
+            postgis_typmod_type: {
+                Args: {
+                    "": number;
+                };
+                Returns: string;
+            };
             postgis_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             postgis_wagyu_version: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: string;
             };
             recommend_language_versions: {
                 Args: {
-                    filter_type?: Database["public"]["Enums"]["version_filter_type"];
-                    include_regions?: boolean;
                     lookback_days?: number;
                     max_results?: number;
+                    filter_type?: Database["public"]["Enums"]["version_filter_type"];
+                    include_regions?: boolean;
                 };
                 Returns: {
-                    alias_id: string;
-                    alias_name: string;
-                    alias_similarity_score: number;
-                    audio_version_count: number;
-                    audio_versions: Json;
-                    entity_id: string;
+                    text_versions: Json;
+                    regions: Json;
+                    entity_parent_id: string;
                     entity_level: string;
                     entity_name: string;
-                    entity_parent_id: string;
-                    regions: Json;
+                    entity_id: string;
+                    alias_similarity_score: number;
+                    alias_name: string;
+                    alias_id: string;
                     similarity_threshold_used: number;
+                    audio_version_count: number;
                     text_version_count: number;
-                    text_versions: Json;
+                    audio_versions: Json;
                 }[];
             };
             refresh_all_global_orders: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
+                Returns: undefined;
+            };
+            refresh_all_stats_mvs: {
+                Args: Record<PropertyKey, never>;
+                Returns: undefined;
+            };
+            refresh_language_coordinates_map: {
+                Args: Record<PropertyKey, never>;
+                Returns: undefined;
+            };
+            refresh_mv_language_stats: {
+                Args: Record<PropertyKey, never>;
+                Returns: undefined;
+            };
+            refresh_mv_people_group_stats: {
+                Args: Record<PropertyKey, never>;
+                Returns: undefined;
+            };
+            refresh_mv_region_stats: {
+                Args: Record<PropertyKey, never>;
+                Returns: undefined;
+            };
+            refresh_people_groups_coordinates_map: {
+                Args: Record<PropertyKey, never>;
                 Returns: undefined;
             };
             refresh_progress_materialized_views_concurrently: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: undefined;
             };
             refresh_progress_materialized_views_full: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: undefined;
             };
             refresh_progress_materialized_views_safe: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: undefined;
             };
             refresh_region_spatial_cache: {
@@ -5585,82 +8603,123 @@ export type Database = {
                 };
                 Returns: undefined;
             };
+            resolve_grn_coordinates_unmatched: {
+                Args: {
+                    p_resolved_by?: string;
+                    p_resolution_notes?: string;
+                    p_ids: string[];
+                };
+                Returns: number;
+            };
             search_language_aliases: {
                 Args: {
-                    include_regions?: boolean;
+                    search_query: string;
                     max_results?: number;
                     min_similarity?: number;
-                    search_query: string;
+                    include_regions?: boolean;
                 };
                 Returns: {
-                    alias_id: string;
                     alias_name: string;
+                    similarity_threshold_used: number;
+                    alias_id: string;
                     alias_similarity_score: number;
                     entity_id: string;
-                    entity_level: string;
                     entity_name: string;
+                    entity_level: string;
                     entity_parent_id: string;
                     regions: Json;
-                    similarity_threshold_used: number;
                 }[];
             };
             search_language_aliases_with_versions: {
                 Args: {
-                    filter_type?: Database["public"]["Enums"]["version_filter_type"];
                     include_regions?: boolean;
-                    max_results?: number;
                     min_similarity?: number;
+                    max_results?: number;
+                    filter_type?: Database["public"]["Enums"]["version_filter_type"];
                     search_query: string;
                 };
                 Returns: {
+                    audio_versions: Json;
+                    text_versions: Json;
+                    text_version_count: number;
+                    similarity_threshold_used: number;
                     alias_id: string;
                     alias_name: string;
                     alias_similarity_score: number;
-                    audio_version_count: number;
-                    audio_versions: Json;
                     entity_id: string;
-                    entity_level: string;
                     entity_name: string;
+                    entity_level: string;
                     entity_parent_id: string;
                     regions: Json;
-                    similarity_threshold_used: number;
-                    text_version_count: number;
-                    text_versions: Json;
+                    audio_version_count: number;
+                }[];
+            };
+            search_operations: {
+                Args: {
+                    search_query: string;
+                    max_results?: number;
+                    min_similarity?: number;
+                };
+                Returns: {
+                    operation_name: string;
+                    operation_id: string;
+                    category: string;
+                    similarity_score: number;
                 }[];
             };
             search_partner_orgs: {
                 Args: {
-                    max_results?: number;
                     search_query: string;
+                    max_results?: number;
                 };
                 Returns: {
-                    description: string;
-                    id: string;
-                    name: string;
                     similarity_score: number;
+                    description: string;
+                    name: string;
+                    id: string;
+                }[];
+            };
+            search_projects: {
+                Args: {
+                    search_query: string;
+                    max_results?: number;
+                    min_similarity?: number;
+                };
+                Returns: {
+                    target_language_name: string;
+                    similarity_score: number;
+                    project_id: string;
+                    project_name: string;
+                    target_language_entity_id: string;
                 }[];
             };
             search_region_aliases: {
                 Args: {
-                    include_languages?: boolean;
+                    search_query: string;
                     max_results?: number;
                     min_similarity?: number;
-                    search_query: string;
+                    include_languages?: boolean;
                 };
                 Returns: {
+                    similarity_threshold_used: number;
                     alias_id: string;
                     alias_name: string;
                     alias_similarity_score: number;
-                    languages: Json;
                     region_id: string;
-                    region_level: string;
                     region_name: string;
+                    region_level: string;
                     region_parent_id: string;
-                    similarity_threshold_used: number;
+                    languages: Json;
                 }[];
             };
+            set_limit: {
+                Args: {
+                    "": number;
+                };
+                Returns: number;
+            };
             show_limit: {
-                Args: never;
+                Args: Record<PropertyKey, never>;
                 Returns: number;
             };
             show_trgm: {
@@ -5669,17 +8728,29 @@ export type Database = {
                 };
                 Returns: string[];
             };
+            spheroid_in: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            spheroid_out: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             st_3dclosestpoint: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: unknown;
             };
             st_3ddistance: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: number;
             };
@@ -5690,10 +8761,16 @@ export type Database = {
                 };
                 Returns: boolean;
             };
+            st_3dlength: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
             st_3dlongestline: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: unknown;
             };
@@ -5706,15 +8783,21 @@ export type Database = {
             };
             st_3dmaxdistance: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
+                };
+                Returns: number;
+            };
+            st_3dperimeter: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: number;
             };
             st_3dshortestline: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: unknown;
             };
@@ -5729,28 +8812,38 @@ export type Database = {
                 Args: {
                     line1: unknown;
                     line2: unknown;
-                };
-                Returns: number;
-            } | {
-                Args: {
-                    pt1: unknown;
+                } | {
                     pt2: unknown;
                     pt3: unknown;
                     pt4?: unknown;
+                    pt1: unknown;
                 };
                 Returns: number;
             };
             st_area: {
                 Args: {
+                    "": string;
+                } | {
+                    "": unknown;
+                } | {
                     geog: unknown;
                     use_spheroid?: boolean;
                 };
                 Returns: number;
-            } | {
+            };
+            st_area2d: {
                 Args: {
-                    "": string;
+                    "": unknown;
                 };
                 Returns: number;
+            };
+            st_asbinary: {
+                Args: {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                };
+                Returns: string;
             };
             st_asencodedpolyline: {
                 Args: {
@@ -5759,99 +8852,88 @@ export type Database = {
                 };
                 Returns: string;
             };
+            st_asewkb: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: string;
+            };
             st_asewkt: {
                 Args: {
                     "": string;
+                } | {
+                    "": unknown;
+                } | {
+                    "": unknown;
                 };
                 Returns: string;
             };
             st_asgeojson: {
                 Args: {
-                    geom_column?: string;
-                    maxdecimaldigits?: number;
-                    pretty_bool?: boolean;
-                    r: Record<string, unknown>;
-                };
-                Returns: string;
-            } | {
-                Args: {
+                    "": string;
+                } | {
                     geom: unknown;
                     maxdecimaldigits?: number;
                     options?: number;
-                };
-                Returns: string;
-            } | {
-                Args: {
-                    geog: unknown;
+                } | {
                     maxdecimaldigits?: number;
                     options?: number;
-                };
-                Returns: string;
-            } | {
-                Args: {
-                    "": string;
+                    geog: unknown;
+                } | {
+                    r: Record<string, unknown>;
+                    geom_column?: string;
+                    maxdecimaldigits?: number;
+                    pretty_bool?: boolean;
                 };
                 Returns: string;
             };
             st_asgml: {
                 Args: {
-                    geom: unknown;
-                    maxdecimaldigits?: number;
-                    options?: number;
-                };
-                Returns: string;
-            } | {
-                Args: {
-                    geom: unknown;
-                    id?: string;
-                    maxdecimaldigits?: number;
-                    nprefix?: string;
-                    options?: number;
-                    version: number;
-                };
-                Returns: string;
-            } | {
-                Args: {
-                    geog: unknown;
-                    id?: string;
-                    maxdecimaldigits?: number;
-                    nprefix?: string;
-                    options?: number;
-                    version: number;
-                };
-                Returns: string;
-            } | {
-                Args: {
-                    geog: unknown;
-                    id?: string;
-                    maxdecimaldigits?: number;
-                    nprefix?: string;
-                    options?: number;
-                };
-                Returns: string;
-            } | {
-                Args: {
                     "": string;
+                } | {
+                    geom: unknown;
+                    maxdecimaldigits?: number;
+                    options?: number;
+                } | {
+                    maxdecimaldigits?: number;
+                    geog: unknown;
+                    options?: number;
+                    nprefix?: string;
+                    id?: string;
+                } | {
+                    version: number;
+                    geog: unknown;
+                    maxdecimaldigits?: number;
+                    options?: number;
+                    nprefix?: string;
+                    id?: string;
+                } | {
+                    version: number;
+                    geom: unknown;
+                    maxdecimaldigits?: number;
+                    options?: number;
+                    nprefix?: string;
+                    id?: string;
+                };
+                Returns: string;
+            };
+            st_ashexewkb: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: string;
             };
             st_askml: {
                 Args: {
+                    "": string;
+                } | {
                     geom: unknown;
                     maxdecimaldigits?: number;
                     nprefix?: string;
-                };
-                Returns: string;
-            } | {
-                Args: {
+                } | {
+                    nprefix?: string;
                     geog: unknown;
                     maxdecimaldigits?: number;
-                    nprefix?: string;
-                };
-                Returns: string;
-            } | {
-                Args: {
-                    "": string;
                 };
                 Returns: string;
             };
@@ -5864,66 +8946,61 @@ export type Database = {
             };
             st_asmarc21: {
                 Args: {
-                    format?: string;
                     geom: unknown;
+                    format?: string;
                 };
                 Returns: string;
             };
             st_asmvtgeom: {
                 Args: {
+                    geom: unknown;
                     bounds: unknown;
+                    extent?: number;
                     buffer?: number;
                     clip_geom?: boolean;
-                    extent?: number;
-                    geom: unknown;
                 };
                 Returns: unknown;
             };
             st_assvg: {
                 Args: {
-                    geom: unknown;
-                    maxdecimaldigits?: number;
-                    rel?: number;
-                };
-                Returns: string;
-            } | {
-                Args: {
-                    geog: unknown;
-                    maxdecimaldigits?: number;
-                    rel?: number;
-                };
-                Returns: string;
-            } | {
-                Args: {
                     "": string;
+                } | {
+                    geog: unknown;
+                    rel?: number;
+                    maxdecimaldigits?: number;
+                } | {
+                    geom: unknown;
+                    rel?: number;
+                    maxdecimaldigits?: number;
                 };
                 Returns: string;
             };
             st_astext: {
                 Args: {
                     "": string;
+                } | {
+                    "": unknown;
+                } | {
+                    "": unknown;
                 };
                 Returns: string;
             };
             st_astwkb: {
                 Args: {
-                    geom: unknown[];
                     ids: number[];
+                    geom: unknown[];
                     prec?: number;
+                    prec_z?: number;
                     prec_m?: number;
+                    with_sizes?: boolean;
+                    with_boxes?: boolean;
+                } | {
                     prec_z?: number;
                     with_boxes?: boolean;
                     with_sizes?: boolean;
-                };
-                Returns: string;
-            } | {
-                Args: {
                     geom: unknown;
                     prec?: number;
                     prec_m?: number;
-                    prec_z?: number;
-                    with_boxes?: boolean;
-                    with_sizes?: boolean;
                 };
                 Returns: string;
             };
@@ -5937,16 +9014,19 @@ export type Database = {
             };
             st_azimuth: {
                 Args: {
-                    geom1: unknown;
-                    geom2: unknown;
-                };
-                Returns: number;
-            } | {
-                Args: {
-                    geog1: unknown;
                     geog2: unknown;
+                    geog1: unknown;
+                } | {
+                    geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: number;
+            };
+            st_boundary: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
             };
             st_boundingdiagonal: {
                 Args: {
@@ -5960,26 +9040,37 @@ export type Database = {
                     geom: unknown;
                     options?: string;
                     radius: number;
-                };
-                Returns: unknown;
-            } | {
-                Args: {
+                } | {
                     geom: unknown;
                     quadsegs: number;
                     radius: number;
                 };
                 Returns: unknown;
             };
+            st_buildarea: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             st_centroid: {
                 Args: {
                     "": string;
+                } | {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_cleangeometry: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: unknown;
             };
             st_clipbybox2d: {
                 Args: {
-                    box: unknown;
                     geom: unknown;
+                    box: unknown;
                 };
                 Returns: unknown;
             };
@@ -5990,18 +9081,38 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            st_clusterintersecting: {
+                Args: {
+                    "": unknown[];
+                };
+                Returns: unknown[];
+            };
             st_collect: {
                 Args: {
+                    "": unknown[];
+                } | {
                     geom1: unknown;
                     geom2: unknown;
                 };
                 Returns: unknown;
             };
+            st_collectionextract: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_collectionhomogenize: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             st_concavehull: {
                 Args: {
-                    param_allow_holes?: boolean;
                     param_geom: unknown;
                     param_pctconvex: number;
+                    param_allow_holes?: boolean;
                 };
                 Returns: unknown;
             };
@@ -6019,6 +9130,12 @@ export type Database = {
                 };
                 Returns: boolean;
             };
+            st_convexhull: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             st_coorddim: {
                 Args: {
                     geometry: unknown;
@@ -6029,10 +9146,7 @@ export type Database = {
                 Args: {
                     geog1: unknown;
                     geog2: unknown;
-                };
-                Returns: boolean;
-            } | {
-                Args: {
+                } | {
                     geom1: unknown;
                     geom2: unknown;
                 };
@@ -6042,10 +9156,7 @@ export type Database = {
                 Args: {
                     geog1: unknown;
                     geog2: unknown;
-                };
-                Returns: boolean;
-            } | {
-                Args: {
+                } | {
                     geom1: unknown;
                     geom2: unknown;
                 };
@@ -6070,18 +9181,24 @@ export type Database = {
             st_delaunaytriangles: {
                 Args: {
                     flags?: number;
-                    g1: unknown;
                     tolerance?: number;
+                    g1: unknown;
                 };
                 Returns: unknown;
             };
             st_difference: {
                 Args: {
+                    gridsize?: number;
                     geom1: unknown;
                     geom2: unknown;
-                    gridsize?: number;
                 };
                 Returns: unknown;
+            };
+            st_dimension: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
             };
             st_disjoint: {
                 Args: {
@@ -6092,15 +9209,12 @@ export type Database = {
             };
             st_distance: {
                 Args: {
+                    geog1: unknown;
+                    use_spheroid?: boolean;
+                    geog2: unknown;
+                } | {
                     geom1: unknown;
                     geom2: unknown;
-                };
-                Returns: number;
-            } | {
-                Args: {
-                    geog1: unknown;
-                    geog2: unknown;
-                    use_spheroid?: boolean;
                 };
                 Returns: number;
             };
@@ -6108,10 +9222,7 @@ export type Database = {
                 Args: {
                     geom1: unknown;
                     geom2: unknown;
-                };
-                Returns: number;
-            } | {
-                Args: {
+                } | {
                     geom1: unknown;
                     geom2: unknown;
                     radius: number;
@@ -6120,10 +9231,34 @@ export type Database = {
             };
             st_distancespheroid: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: number;
+            };
+            st_dump: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: Database["public"]["CompositeTypes"]["geometry_dump"][];
+            };
+            st_dumppoints: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: Database["public"]["CompositeTypes"]["geometry_dump"][];
+            };
+            st_dumprings: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: Database["public"]["CompositeTypes"]["geometry_dump"][];
+            };
+            st_dumpsegments: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: Database["public"]["CompositeTypes"]["geometry_dump"][];
             };
             st_dwithin: {
                 Args: {
@@ -6134,6 +9269,18 @@ export type Database = {
                 };
                 Returns: boolean;
             };
+            st_endpoint: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_envelope: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             st_equals: {
                 Args: {
                     geom1: unknown;
@@ -6143,26 +9290,38 @@ export type Database = {
             };
             st_expand: {
                 Args: {
-                    dm?: number;
+                    box: unknown;
                     dx: number;
                     dy: number;
+                } | {
+                    dy: number;
+                    box: unknown;
+                    dx: number;
                     dz?: number;
+                } | {
                     geom: unknown;
-                };
-                Returns: unknown;
-            } | {
-                Args: {
-                    box: unknown;
                     dx: number;
                     dy: number;
                     dz?: number;
+                    dm?: number;
                 };
                 Returns: unknown;
-            } | {
+            };
+            st_exteriorring: {
                 Args: {
-                    box: unknown;
-                    dx: number;
-                    dy: number;
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_flipcoordinates: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_force2d: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: unknown;
             };
@@ -6189,27 +9348,66 @@ export type Database = {
             };
             st_force4d: {
                 Args: {
-                    geom: unknown;
-                    mvalue?: number;
                     zvalue?: number;
+                    mvalue?: number;
+                    geom: unknown;
+                };
+                Returns: unknown;
+            };
+            st_forcecollection: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_forcecurve: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_forcepolygonccw: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_forcepolygoncw: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_forcerhr: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_forcesfs: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: unknown;
             };
             st_generatepoints: {
                 Args: {
                     area: unknown;
-                    npoints: number;
-                };
-                Returns: unknown;
-            } | {
-                Args: {
-                    area: unknown;
-                    npoints: number;
                     seed: number;
+                    npoints: number;
+                } | {
+                    npoints: number;
+                    area: unknown;
                 };
                 Returns: unknown;
             };
             st_geogfromtext: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
+            st_geogfromwkb: {
                 Args: {
                     "": string;
                 };
@@ -6223,13 +9421,10 @@ export type Database = {
             };
             st_geohash: {
                 Args: {
-                    geom: unknown;
-                    maxchars?: number;
-                };
-                Returns: string;
-            } | {
-                Args: {
                     geog: unknown;
+                    maxchars?: number;
+                } | {
+                    geom: unknown;
                     maxchars?: number;
                 };
                 Returns: string;
@@ -6240,16 +9435,34 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            st_geomcollfromwkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
             st_geometricmedian: {
                 Args: {
-                    fail_if_not_converged?: boolean;
                     g: unknown;
-                    max_iter?: number;
                     tolerance?: number;
+                    max_iter?: number;
+                    fail_if_not_converged?: boolean;
                 };
                 Returns: unknown;
             };
             st_geometryfromtext: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
+            st_geometrytype: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            st_geomfromewkb: {
                 Args: {
                     "": string;
                 };
@@ -6264,15 +9477,9 @@ export type Database = {
             st_geomfromgeojson: {
                 Args: {
                     "": Json;
-                };
-                Returns: unknown;
-            } | {
-                Args: {
+                } | {
                     "": Json;
-                };
-                Returns: unknown;
-            } | {
-                Args: {
+                } | {
                     "": string;
                 };
                 Returns: unknown;
@@ -6301,6 +9508,18 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            st_geomfromtwkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
+            st_geomfromwkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
             st_gmltosql: {
                 Args: {
                     "": string;
@@ -6323,9 +9542,9 @@ export type Database = {
             st_hexagon: {
                 Args: {
                     cell_i: number;
-                    cell_j: number;
                     origin?: unknown;
                     size: number;
+                    cell_j: number;
                 };
                 Returns: unknown;
             };
@@ -6338,8 +9557,8 @@ export type Database = {
             };
             st_interpolatepoint: {
                 Args: {
-                    line: unknown;
                     point: unknown;
+                    line: unknown;
                 };
                 Returns: number;
             };
@@ -6353,46 +9572,102 @@ export type Database = {
             };
             st_intersects: {
                 Args: {
+                    geog1: unknown;
+                    geog2: unknown;
+                } | {
                     geom1: unknown;
                     geom2: unknown;
                 };
                 Returns: boolean;
-            } | {
+            };
+            st_isclosed: {
                 Args: {
-                    geog1: unknown;
-                    geog2: unknown;
+                    "": unknown;
+                };
+                Returns: boolean;
+            };
+            st_iscollection: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: boolean;
+            };
+            st_isempty: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: boolean;
+            };
+            st_ispolygonccw: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: boolean;
+            };
+            st_ispolygoncw: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: boolean;
+            };
+            st_isring: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: boolean;
+            };
+            st_issimple: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: boolean;
+            };
+            st_isvalid: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: boolean;
             };
             st_isvaliddetail: {
                 Args: {
-                    flags?: number;
                     geom: unknown;
+                    flags?: number;
                 };
                 Returns: Database["public"]["CompositeTypes"]["valid_detail"];
-                SetofOptions: {
-                    from: "*";
-                    to: "valid_detail";
-                    isOneToOne: true;
-                    isSetofReturn: false;
+            };
+            st_isvalidreason: {
+                Args: {
+                    "": unknown;
                 };
+                Returns: string;
+            };
+            st_isvalidtrajectory: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: boolean;
             };
             st_length: {
                 Args: {
+                    "": string;
+                } | {
+                    "": unknown;
+                } | {
                     geog: unknown;
                     use_spheroid?: boolean;
                 };
                 Returns: number;
-            } | {
+            };
+            st_length2d: {
                 Args: {
-                    "": string;
+                    "": unknown;
                 };
                 Returns: number;
             };
             st_letters: {
                 Args: {
-                    font?: Json;
                     letters: string;
+                    font?: Json;
                 };
                 Returns: unknown;
             };
@@ -6405,12 +9680,24 @@ export type Database = {
             };
             st_linefromencodedpolyline: {
                 Args: {
-                    nprecision?: number;
                     txtin: string;
+                    nprecision?: number;
+                };
+                Returns: unknown;
+            };
+            st_linefrommultipoint: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: unknown;
             };
             st_linefromtext: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
+            st_linefromwkb: {
                 Args: {
                     "": string;
                 };
@@ -6422,6 +9709,18 @@ export type Database = {
                     geom2: unknown;
                 };
                 Returns: number;
+            };
+            st_linemerge: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_linestringfromwkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
             };
             st_linetocurve: {
                 Args: {
@@ -6440,17 +9739,17 @@ export type Database = {
             st_locatebetween: {
                 Args: {
                     frommeasure: number;
-                    geometry: unknown;
                     leftrightoffset?: number;
+                    geometry: unknown;
                     tomeasure: number;
                 };
                 Returns: unknown;
             };
             st_locatebetweenelevations: {
                 Args: {
-                    fromelevation: number;
-                    geometry: unknown;
                     toelevation: number;
+                    geometry: unknown;
+                    fromelevation: number;
                 };
                 Returns: unknown;
             };
@@ -6461,22 +9760,38 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            st_m: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
             st_makebox2d: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: unknown;
             };
             st_makeline: {
                 Args: {
-                    geom1: unknown;
+                    "": unknown[];
+                } | {
                     geom2: unknown;
+                    geom1: unknown;
+                };
+                Returns: unknown;
+            };
+            st_makepolygon: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: unknown;
             };
             st_makevalid: {
                 Args: {
+                    "": unknown;
+                } | {
                     geom: unknown;
                     params: string;
                 };
@@ -6489,6 +9804,18 @@ export type Database = {
                 };
                 Returns: number;
             };
+            st_maximuminscribedcircle: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: Record<string, unknown>;
+            };
+            st_memsize: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
             st_minimumboundingcircle: {
                 Args: {
                     inputgeom: unknown;
@@ -6496,7 +9823,31 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            st_minimumboundingradius: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: Record<string, unknown>;
+            };
+            st_minimumclearance: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_minimumclearanceline: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             st_mlinefromtext: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
+            st_mlinefromwkb: {
                 Args: {
                     "": string;
                 };
@@ -6508,7 +9859,31 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            st_mpointfromwkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
             st_mpolyfromtext: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
+            st_mpolyfromwkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
+            st_multi: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_multilinefromwkb: {
                 Args: {
                     "": string;
                 };
@@ -6526,11 +9901,29 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            st_multipointfromwkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
+            st_multipolyfromwkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
             st_multipolygonfromtext: {
                 Args: {
                     "": string;
                 };
                 Returns: unknown;
+            };
+            st_ndims: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
             };
             st_node: {
                 Args: {
@@ -6544,11 +9937,53 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            st_npoints: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_nrings: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_numgeometries: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_numinteriorring: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_numinteriorrings: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_numpatches: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_numpoints: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
             st_offsetcurve: {
                 Args: {
-                    distance: number;
-                    line: unknown;
                     params?: string;
+                    line: unknown;
+                    distance: number;
                 };
                 Returns: unknown;
             };
@@ -6559,6 +9994,12 @@ export type Database = {
                 };
                 Returns: boolean;
             };
+            st_orientedenvelope: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             st_overlaps: {
                 Args: {
                     geom1: unknown;
@@ -6568,8 +10009,16 @@ export type Database = {
             };
             st_perimeter: {
                 Args: {
+                    "": unknown;
+                } | {
                     geog: unknown;
                     use_spheroid?: boolean;
+                };
+                Returns: number;
+            };
+            st_perimeter2d: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: number;
             };
@@ -6579,12 +10028,30 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            st_pointfromwkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
             st_pointm: {
                 Args: {
-                    mcoordinate: number;
                     srid?: number;
                     xcoordinate: number;
                     ycoordinate: number;
+                    mcoordinate: number;
+                };
+                Returns: unknown;
+            };
+            st_pointonsurface: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
+            st_points: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: unknown;
             };
@@ -6600,14 +10067,20 @@ export type Database = {
             st_pointzm: {
                 Args: {
                     mcoordinate: number;
+                    zcoordinate: number;
                     srid?: number;
                     xcoordinate: number;
                     ycoordinate: number;
-                    zcoordinate: number;
                 };
                 Returns: unknown;
             };
             st_polyfromtext: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
+            st_polyfromwkb: {
                 Args: {
                     "": string;
                 };
@@ -6619,20 +10092,32 @@ export type Database = {
                 };
                 Returns: unknown;
             };
+            st_polygonfromwkb: {
+                Args: {
+                    "": string;
+                };
+                Returns: unknown;
+            };
+            st_polygonize: {
+                Args: {
+                    "": unknown[];
+                };
+                Returns: unknown;
+            };
             st_project: {
                 Args: {
+                    geog: unknown;
                     azimuth: number;
                     distance: number;
-                    geog: unknown;
                 };
                 Returns: unknown;
             };
             st_quantizecoordinates: {
                 Args: {
-                    g: unknown;
                     prec_m?: number;
-                    prec_x: number;
                     prec_y?: number;
+                    prec_x: number;
+                    g: unknown;
                     prec_z?: number;
                 };
                 Returns: unknown;
@@ -6653,8 +10138,14 @@ export type Database = {
             };
             st_removerepeatedpoints: {
                 Args: {
-                    geom: unknown;
                     tolerance?: number;
+                    geom: unknown;
+                };
+                Returns: unknown;
+            };
+            st_reverse: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: unknown;
             };
@@ -6667,13 +10158,10 @@ export type Database = {
             };
             st_setsrid: {
                 Args: {
-                    geom: unknown;
-                    srid: number;
-                };
-                Returns: unknown;
-            } | {
-                Args: {
                     geog: unknown;
+                    srid: number;
+                } | {
+                    geom: unknown;
                     srid: number;
                 };
                 Returns: unknown;
@@ -6682,6 +10170,12 @@ export type Database = {
                 Args: {
                     geom1: unknown;
                     geom2: unknown;
+                };
+                Returns: unknown;
+            };
+            st_shiftlongitude: {
+                Args: {
+                    "": unknown;
                 };
                 Returns: unknown;
             };
@@ -6695,24 +10189,24 @@ export type Database = {
             st_simplifypolygonhull: {
                 Args: {
                     geom: unknown;
-                    is_outer?: boolean;
                     vertex_fraction: number;
+                    is_outer?: boolean;
                 };
                 Returns: unknown;
             };
             st_split: {
                 Args: {
-                    geom1: unknown;
                     geom2: unknown;
+                    geom1: unknown;
                 };
                 Returns: unknown;
             };
             st_square: {
                 Args: {
                     cell_i: number;
-                    cell_j: number;
                     origin?: unknown;
                     size: number;
+                    cell_j: number;
                 };
                 Returns: unknown;
             };
@@ -6725,22 +10219,33 @@ export type Database = {
             };
             st_srid: {
                 Args: {
-                    geom: unknown;
-                };
-                Returns: number;
-            } | {
-                Args: {
                     geog: unknown;
+                } | {
+                    geom: unknown;
                 };
                 Returns: number;
             };
+            st_startpoint: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: unknown;
+            };
             st_subdivide: {
                 Args: {
-                    geom: unknown;
-                    gridsize?: number;
                     maxvertices?: number;
+                    gridsize?: number;
+                    geom: unknown;
                 };
                 Returns: unknown[];
+            };
+            st_summary: {
+                Args: {
+                    "": unknown;
+                } | {
+                    "": unknown;
+                };
+                Returns: string;
             };
             st_swapordinates: {
                 Args: {
@@ -6752,8 +10257,8 @@ export type Database = {
             st_symdifference: {
                 Args: {
                     geom1: unknown;
-                    geom2: unknown;
                     gridsize?: number;
+                    geom2: unknown;
                 };
                 Returns: unknown;
             };
@@ -6766,11 +10271,11 @@ export type Database = {
             };
             st_tileenvelope: {
                 Args: {
-                    bounds?: unknown;
-                    margin?: number;
+                    zoom: number;
                     x: number;
                     y: number;
-                    zoom: number;
+                    bounds?: unknown;
+                    margin?: number;
                 };
                 Returns: unknown;
             };
@@ -6783,20 +10288,14 @@ export type Database = {
             };
             st_transform: {
                 Args: {
+                    from_proj: string;
                     geom: unknown;
                     to_proj: string;
-                };
-                Returns: unknown;
-            } | {
-                Args: {
+                } | {
                     from_proj: string;
                     geom: unknown;
                     to_srid: number;
-                };
-                Returns: unknown;
-            } | {
-                Args: {
-                    from_proj: string;
+                } | {
                     geom: unknown;
                     to_proj: string;
                 };
@@ -6810,31 +10309,30 @@ export type Database = {
             };
             st_union: {
                 Args: {
+                    "": unknown[];
+                } | {
                     geom1: unknown;
                     geom2: unknown;
-                };
-                Returns: unknown;
-            } | {
-                Args: {
-                    geom1: unknown;
+                } | {
                     geom2: unknown;
                     gridsize: number;
+                    geom1: unknown;
                 };
                 Returns: unknown;
             };
             st_voronoilines: {
                 Args: {
-                    extend_to?: unknown;
                     g1: unknown;
+                    extend_to?: unknown;
                     tolerance?: number;
                 };
                 Returns: unknown;
             };
             st_voronoipolygons: {
                 Args: {
-                    extend_to?: unknown;
-                    g1: unknown;
                     tolerance?: number;
+                    g1: unknown;
+                    extend_to?: unknown;
                 };
                 Returns: unknown;
             };
@@ -6860,10 +10358,133 @@ export type Database = {
             st_wrapx: {
                 Args: {
                     geom: unknown;
-                    move: number;
                     wrap: number;
+                    move: number;
                 };
                 Returns: unknown;
+            };
+            st_x: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_xmax: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_xmin: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_y: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_ymax: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_ymin: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_z: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_zmax: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_zmflag: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            st_zmin: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: number;
+            };
+            text: {
+                Args: {
+                    "": unknown;
+                };
+                Returns: string;
+            };
+            transform_grn_coordinates_cache_to_language_entities_regions: {
+                Args: Record<PropertyKey, never>;
+                Returns: {
+                    skipped_no_region: number;
+                    processed: number;
+                    matched: number;
+                    skipped_no_language_entity: number;
+                    upserted: number;
+                }[];
+            };
+            transform_jp_countries_cache_to_regions: {
+                Args: Record<PropertyKey, never>;
+                Returns: {
+                    errors: Json;
+                    countries_processed: number;
+                    countries_matched: number;
+                    countries_created: number;
+                    regions_updated: number;
+                    sources_created: number;
+                    aliases_created: number;
+                }[];
+            };
+            transform_jp_people_groups_cache: {
+                Args: Record<PropertyKey, never> | {
+                    batch_size?: number;
+                    start_offset?: number;
+                };
+                Returns: {
+                    people_groups_created: number;
+                    people_groups_updated: number;
+                    people_groups_regions_created: number;
+                    people_groups_regions_updated: number;
+                    languages_linked: number;
+                    languages_created: number;
+                    unmatched_languages_count: number;
+                    unmatched_regions_count: number;
+                    errors: Json;
+                    processed_count: number;
+                    total_remaining: number;
+                }[];
+            };
+            transform_language_caches_to_entities: {
+                Args: Record<PropertyKey, never>;
+                Returns: {
+                    jp_aliases_created: number;
+                    jp_sources_created: number;
+                    jp_entities_matched: number;
+                    jp_entities_created: number;
+                    grn_entities_created: number;
+                    grn_entities_matched: number;
+                    jp_regions_linked: number;
+                    grn_sources_created: number;
+                    jp_processed: number;
+                    grn_aliases_created: number;
+                    grn_processed: number;
+                }[];
             };
             try_fix_mojibake: {
                 Args: {
@@ -6883,26 +10504,29 @@ export type Database = {
                 };
                 Returns: number;
             };
+            update_region_funding_status: {
+                Args: {
+                    region_id: string;
+                };
+                Returns: undefined;
+            };
             updategeometrysrid: {
                 Args: {
-                    catalogn_name: string;
-                    column_name: string;
-                    new_srid_in: number;
                     schema_name: string;
+                    new_srid_in: number;
+                    column_name: string;
+                    catalogn_name: string;
                     table_name: string;
                 };
                 Returns: string;
             };
             validate_verse_range: {
                 Args: {
-                    end_verse_text_id: string;
                     start_verse_text_id: string;
-                };
-                Returns: boolean;
-            } | {
-                Args: {
-                    end_verse_uuid: string;
+                    end_verse_text_id: string;
+                } | {
                     start_verse_uuid: string;
+                    end_verse_uuid: string;
                 };
                 Returns: boolean;
             };
@@ -6916,7 +10540,7 @@ export type Database = {
             contribution_status: "approved" | "not_approved";
             donation_intent_type: "language" | "region" | "operation" | "unrestricted";
             donation_status: "draft" | "pending" | "processing" | "completed" | "failed" | "refunded" | "cancelled";
-            entity_status: "draft" | "available" | "funded" | "archived";
+            entity_status: "draft" | "available" | "funded" | "archived" | "in_progress";
             feedback_actioned: "pending" | "actioned" | "rejected";
             feedback_type: "approved" | "change_required";
             funding_status: "unfunded" | "partially_funded" | "fully_funded";
@@ -6933,12 +10557,14 @@ export type Database = {
             publish_status: "pending" | "published" | "archived";
             region_level: "continent" | "world_region" | "country" | "state" | "province" | "district" | "town" | "village";
             resource_type: "global" | "team" | "project" | "base" | "partner";
+            scripture_coverage: "none" | "portions" | "ot" | "nt" | "full_bible";
             segment_type: "source" | "target";
             share_entity_type: "app" | "chapter" | "playlist" | "verse" | "passage";
             target_type: "chapter" | "book" | "sermon" | "passage" | "verse" | "podcast" | "film_segment" | "audio_segment";
             testament: "old" | "new";
             text_version_source: "official_translation" | "ai_transcription" | "user_submitted";
             transaction_kind: "payment" | "refund" | "adjustment" | "transfer";
+            update_visibility: "private" | "project" | "public";
             upload_status: "pending" | "uploading" | "completed" | "failed";
             version_filter_type: "audio_only" | "text_only" | "both_required" | "either";
             wallet_tx_type: "deposit" | "withdrawal" | "adjustment";
@@ -6946,65 +10572,64 @@ export type Database = {
         CompositeTypes: {
             geometry_dump: {
                 path: number[] | null;
-                geom: unknown;
+                geom: unknown | null;
             };
             valid_detail: {
                 valid: boolean | null;
                 reason: string | null;
-                location: unknown;
+                location: unknown | null;
             };
         };
     };
 };
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
+type DefaultSchema = Database[Extract<keyof Database, "public">];
 export type Tables<DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"]) | {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof Database;
 }, TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-} ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] & DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"]) : never = never> = DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-} ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] & DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+    schema: keyof Database;
+} ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] & Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"]) : never = never> = DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database;
+} ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] & Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
     Row: infer R;
 } ? R : never : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"]) ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
     Row: infer R;
 } ? R : never : never;
 export type TablesInsert<DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"] | {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof Database;
 }, TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-} ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] : never = never> = DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-} ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+    schema: keyof Database;
+} ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] : never = never> = DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database;
+} ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
     Insert: infer I;
 } ? I : never : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"] ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
     Insert: infer I;
 } ? I : never : never;
 export type TablesUpdate<DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"] | {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof Database;
 }, TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-} ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] : never = never> = DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-} ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+    schema: keyof Database;
+} ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] : never = never> = DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database;
+} ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
     Update: infer U;
 } ? U : never : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"] ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
     Update: infer U;
 } ? U : never : never;
 export type Enums<DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"] | {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof Database;
 }, EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-} ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"] : never = never> = DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-} ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName] : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"] ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions] : never;
+    schema: keyof Database;
+} ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"] : never = never> = DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database;
+} ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName] : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"] ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions] : never;
 export type CompositeTypes<PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"] | {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof Database;
 }, CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-} ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"] : never = never> = PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-} ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName] : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"] ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions] : never;
+    schema: keyof Database;
+} ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"] : never = never> = PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database;
+} ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName] : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"] ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions] : never;
 export declare const Constants: {
     readonly graphql_public: {
         readonly Enums: {};
@@ -7019,7 +10644,7 @@ export declare const Constants: {
             readonly contribution_status: readonly ["approved", "not_approved"];
             readonly donation_intent_type: readonly ["language", "region", "operation", "unrestricted"];
             readonly donation_status: readonly ["draft", "pending", "processing", "completed", "failed", "refunded", "cancelled"];
-            readonly entity_status: readonly ["draft", "available", "funded", "archived"];
+            readonly entity_status: readonly ["draft", "available", "funded", "archived", "in_progress"];
             readonly feedback_actioned: readonly ["pending", "actioned", "rejected"];
             readonly feedback_type: readonly ["approved", "change_required"];
             readonly funding_status: readonly ["unfunded", "partially_funded", "fully_funded"];
@@ -7036,12 +10661,14 @@ export declare const Constants: {
             readonly publish_status: readonly ["pending", "published", "archived"];
             readonly region_level: readonly ["continent", "world_region", "country", "state", "province", "district", "town", "village"];
             readonly resource_type: readonly ["global", "team", "project", "base", "partner"];
+            readonly scripture_coverage: readonly ["none", "portions", "ot", "nt", "full_bible"];
             readonly segment_type: readonly ["source", "target"];
             readonly share_entity_type: readonly ["app", "chapter", "playlist", "verse", "passage"];
             readonly target_type: readonly ["chapter", "book", "sermon", "passage", "verse", "podcast", "film_segment", "audio_segment"];
             readonly testament: readonly ["old", "new"];
             readonly text_version_source: readonly ["official_translation", "ai_transcription", "user_submitted"];
             readonly transaction_kind: readonly ["payment", "refund", "adjustment", "transfer"];
+            readonly update_visibility: readonly ["private", "project", "public"];
             readonly upload_status: readonly ["pending", "uploading", "completed", "failed"];
             readonly version_filter_type: readonly ["audio_only", "text_only", "both_required", "either"];
             readonly wallet_tx_type: readonly ["deposit", "withdrawal", "adjustment"];

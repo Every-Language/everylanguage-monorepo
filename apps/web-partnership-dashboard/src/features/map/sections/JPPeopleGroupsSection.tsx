@@ -1,7 +1,27 @@
 import React, { useMemo, useState } from 'react';
-import { useJPCountryData, useJPLanguageData, useHasJPCountryData, useHasJPLanguageData } from '../hooks/useJoshuaProject';
-import type { JPPeopleGroup } from '../services/joshuaProjectApi';
-import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
+import { useRouter } from 'next/navigation';
+import {
+  useJPCountryStats,
+  useJPLanguageStats,
+  useHasJPCountryData,
+  useHasJPLanguageData,
+} from '../hooks/useJoshuaProject';
+import {
+  useJPPeopleGroupsByCountryCache,
+  useJPPeopleGroupsByLanguageCache,
+} from '../hooks/useJPPeopleGroupsCache';
+import {
+  ChevronUpIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from '@heroicons/react/24/solid';
+import { PeopleGroupCard } from '@/shared/components/PeopleGroupCard';
+import { usePeopleGroupIdFromPeopleId3 } from '../hooks/usePeopleGroupIdFromPeopleId3';
+import {
+  useSelection,
+  useSetSelection,
+} from '../inspector/state/inspectorStore';
 
 // Helper function to safely convert to number
 function safeToNumber(value: unknown): number | null {
@@ -37,69 +57,164 @@ type JPPeopleGroupsSectionProps = {
 type SortField = 'name' | 'population' | 'scale' | 'evangelical';
 type SortDirection = 'asc' | 'desc';
 
+// Wrapper component to handle PeopleID3 to people_group_id mapping
+const PeopleGroupCardWrapper: React.FC<{
+  group: any; // JPPeopleGroup type
+  type: 'language' | 'region';
+  entityId: string;
+}> = ({ group, type, entityId }) => {
+  const router = useRouter();
+  const selection = useSelection();
+  const setSelection = useSetSelection();
+
+  // Map PeopleID3 to people_group_id
+  const { data: peopleGroupId } = usePeopleGroupIdFromPeopleId3(
+    group.PeopleID3
+  );
+
+  if (!peopleGroupId) {
+    // Fallback to old display if mapping fails
+    return (
+      <div className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-3 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors'>
+        <div className='grid grid-cols-12 gap-2 items-start'>
+          <div className='col-span-5'>
+            <div className='font-medium text-sm leading-tight'>
+              {group.PeopNameInCountry}
+            </div>
+            {group.PrimaryLanguageName && (
+              <div className='text-xs text-neutral-500 mt-0.5'>
+                {group.PrimaryLanguageName}
+              </div>
+            )}
+          </div>
+          <div className='col-span-3 text-right text-sm'>
+            {formatPopulation(group.Population)}
+          </div>
+          <div className='col-span-2 flex justify-center'>
+            {getScaleBadge(group.JPScale)}
+          </div>
+          <div className='col-span-2 text-right text-sm font-medium text-accent-600 dark:text-accent-500'>
+            {formatPercent(group.PercentEvangelical)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <PeopleGroupCard
+      peopleGroupId={peopleGroupId}
+      contextualRegionId={type === 'region' ? entityId : undefined}
+      showName={true}
+      showPopulation={true}
+      showPrimaryLanguageBibleStatus={true}
+      showLanguageCount={false}
+      showCountryCount={false}
+      showImage={false}
+      showRegionName={true}
+      regionName={group.RegionName || group.Ctry || undefined}
+      isSelected={
+        selection?.kind === 'people_group' && selection.id === peopleGroupId
+      }
+      onClick={id => {
+        router.push(`/map/people-group/${encodeURIComponent(id)}`);
+        setSelection({ kind: 'people_group', id });
+      }}
+    />
+  );
+};
+
+// Helper functions (moved outside component)
+const getScaleBadge = (scale: number | null) => {
+  if (!scale) return null;
+
+  const scaleColors: Record<number, string> = {
+    1: 'bg-error-600',
+    2: 'bg-warning-500',
+    3: 'bg-accent-500',
+    4: 'bg-secondary-500',
+    5: 'bg-secondary-600',
+  };
+
+  return (
+    <span
+      className={`${scaleColors[scale] || 'bg-neutral-500'} text-white text-xs font-bold px-2 py-0.5 rounded`}
+    >
+      {scale}
+    </span>
+  );
+};
+
 /**
  * People Groups Section displays people groups from Joshua Project
  * with sorting, filtering, and pagination
  */
-export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({ type, entityId }) => {
+export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
+  type,
+  entityId,
+}) => {
   const isRegion = type === 'region';
   const hasCountryData = useHasJPCountryData(isRegion ? entityId : null);
   const hasLanguageData = useHasJPLanguageData(!isRegion ? entityId : null);
-  
-  const countryData = useJPCountryData(isRegion ? entityId : null);
-  const languageData = useJPLanguageData(!isRegion ? entityId : null);
 
-  const peopleGroups = isRegion ? countryData.peopleGroups : languageData.peopleGroups;
-  const isLoading = isRegion ? countryData.isLoading : languageData.isLoading;
-  const error = isRegion ? countryData.error : languageData.error;
-  const hasAnyData = isRegion ? hasCountryData : hasLanguageData;
+  // Fetch stats for total count
+  const { data: countryStats } = useJPCountryStats(isRegion ? entityId : null);
+  const { data: languageStats } = useJPLanguageStats(
+    !isRegion ? entityId : null
+  );
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>('population');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [showAll, setShowAll] = useState(false);
+  const pageSize = 20;
 
-  // Sort people groups - useMemo must be called unconditionally
-  const sortedGroups = useMemo(() => {
-    if (!peopleGroups || peopleGroups.length === 0) {
-      return [];
+  // Map sort field to API sort field
+  const apiSortField = useMemo(() => {
+    switch (sortField) {
+      case 'name':
+        return 'PeopNameInCountry';
+      case 'population':
+        return 'Population';
+      case 'scale':
+        return 'JPScale';
+      case 'evangelical':
+        return 'PercentEvangelical';
+      default:
+        return 'Population';
     }
-    
-    const groups = [...peopleGroups];
-    
-    groups.sort((a, b) => {
-      let aVal: number | string = 0;
-      let bVal: number | string = 0;
-      
-      switch (sortField) {
-        case 'name':
-          aVal = a.PeopNameInCountry || '';
-          bVal = b.PeopNameInCountry || '';
-          break;
-        case 'population':
-          aVal = safeToNumber(a.Population) ?? 0;
-          bVal = safeToNumber(b.Population) ?? 0;
-          break;
-        case 'scale':
-          aVal = safeToNumber(a.JPScale) ?? 0;
-          bVal = safeToNumber(b.JPScale) ?? 0;
-          break;
-        case 'evangelical':
-          aVal = safeToNumber(a.PercentEvangelical) ?? 0;
-          bVal = safeToNumber(b.PercentEvangelical) ?? 0;
-          break;
-      }
-      
-      if (typeof aVal === 'string') {
-        const comparison = aVal.localeCompare(bVal as string);
-        return sortDirection === 'asc' ? comparison : -comparison;
-      } else {
-        const comparison = aVal - (bVal as number);
-        return sortDirection === 'asc' ? comparison : -comparison;
-      }
-    });
-    
-    return groups;
-  }, [peopleGroups, sortField, sortDirection]);
+  }, [sortField]);
+
+  // Fetch paginated people groups from cache - hooks must be called unconditionally
+  const countryPeopleGroups = useJPPeopleGroupsByCountryCache(
+    isRegion ? entityId : null,
+    currentPage,
+    pageSize,
+    apiSortField,
+    sortDirection
+  );
+  const languagePeopleGroups = useJPPeopleGroupsByLanguageCache(
+    !isRegion ? entityId : null,
+    currentPage,
+    pageSize,
+    apiSortField,
+    sortDirection
+  );
+
+  const {
+    data: peopleGroups = [],
+    isLoading: peopleGroupsLoading,
+    error: peopleGroupsError,
+  } = isRegion ? countryPeopleGroups : languagePeopleGroups;
+
+  const hasAnyData = isRegion ? hasCountryData : hasLanguageData;
+  const totalPeopleGroups = isRegion
+    ? (countryStats?.CntPeoples ?? 0)
+    : (languageStats?.NbrPGICs ?? languageStats?.Peoples ?? 0);
+  const totalPages = Math.ceil(totalPeopleGroups / pageSize);
+
+  // People groups are already sorted by API, but we keep this for client-side fallback
+  const sortedGroups = peopleGroups;
 
   // Early returns AFTER all hooks
   // Don't show section if no external ID mapping exists
@@ -107,28 +222,25 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({ ty
     return null;
   }
 
-  if (isLoading) {
+  if (peopleGroupsLoading) {
     return (
-      <div className="space-y-2">
+      <div className='space-y-2'>
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-16 bg-neutral-200 rounded animate-pulse" />
+          <div key={i} className='h-16 bg-neutral-200 rounded animate-pulse' />
         ))}
       </div>
     );
   }
 
-  if (error || !peopleGroups || peopleGroups.length === 0) {
+  if (peopleGroupsError || !peopleGroups || peopleGroups.length === 0) {
     return (
-      <div className="text-sm text-neutral-500">
+      <div className='text-sm text-neutral-500'>
         No people group data available
       </div>
     );
   }
 
-  // Pagination
-  const displayLimit = 10;
-  const displayedGroups = showAll ? sortedGroups : sortedGroups.slice(0, displayLimit);
-  const hasMore = sortedGroups.length > displayLimit;
+  const displayedGroups = sortedGroups;
 
   // Handle sort
   const handleSort = (field: SortField) => {
@@ -137,6 +249,8 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({ ty
     } else {
       setSortField(field);
       setSortDirection('desc');
+      // Reset to first page when changing sort field
+      setCurrentPage(1);
     }
   };
 
@@ -144,138 +258,98 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({ ty
   const SortIndicator = ({ field }: { field: SortField }) => {
     if (sortField !== field) return null;
     return sortDirection === 'asc' ? (
-      <ChevronUpIcon className="w-3 h-3" />
+      <ChevronUpIcon className='w-3 h-3' />
     ) : (
-      <ChevronDownIcon className="w-3 h-3" />
-    );
-  };
-
-  // Helper to format JP Scale
-  const getScaleBadge = (scale: number | null) => {
-    if (!scale) return null;
-    
-    const scaleColors: Record<number, string> = {
-      1: 'bg-red-600',
-      2: 'bg-orange-500',
-      3: 'bg-yellow-500',
-      4: 'bg-lime-500',
-      5: 'bg-green-600',
-    };
-    
-    return (
-      <span className={`${scaleColors[scale] || 'bg-neutral-500'} text-white text-xs font-bold px-2 py-0.5 rounded`}>
-        {scale}
-      </span>
+      <ChevronDownIcon className='w-3 h-3' />
     );
   };
 
   return (
-    <div className="space-y-3">
-      {/* Summary */}
-      <div className="flex items-center justify-between">
-        <div className="font-semibold text-sm">
-          People Groups ({sortedGroups.length})
+    <div className='space-y-3'>
+      {/* Summary and Pagination Controls */}
+      <div className='flex items-center justify-between'>
+        <div className='font-semibold text-sm'>
+          People Groups (
+          {totalPeopleGroups > 0 ? totalPeopleGroups : sortedGroups.length}{' '}
+          total)
         </div>
+        {totalPages > 1 && (
+          <div className='flex items-center gap-2'>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1 || peopleGroupsLoading}
+              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'
+            >
+              <ChevronLeftIcon className='w-5 h-5' />
+            </button>
+            <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[80px] text-center'>
+              {totalPages > 0
+                ? `Page ${currentPage} of ${totalPages}`
+                : 'No data'}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages || peopleGroupsLoading}
+              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'
+            >
+              <ChevronRightIcon className='w-5 h-5' />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Table Header - Sorting Controls */}
-      <div className="grid grid-cols-12 gap-2 text-xs font-medium text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 pb-1">
+      <div className='grid grid-cols-12 gap-2 text-xs font-medium text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 pb-1'>
         <button
           onClick={() => handleSort('name')}
-          className="col-span-5 text-left flex items-center gap-1 hover:text-neutral-700"
+          className='col-span-5 text-left flex items-center gap-1 hover:text-neutral-700'
         >
           Name
-          <SortIndicator field="name" />
+          <SortIndicator field='name' />
         </button>
         <button
           onClick={() => handleSort('population')}
-          className="col-span-3 text-right flex items-center justify-end gap-1 hover:text-neutral-700"
+          className='col-span-3 text-right flex items-center justify-end gap-1 hover:text-neutral-700'
         >
           Population
-          <SortIndicator field="population" />
+          <SortIndicator field='population' />
         </button>
         <button
           onClick={() => handleSort('scale')}
-          className="col-span-2 text-center flex items-center justify-center gap-1 hover:text-neutral-700"
+          className='col-span-2 text-center flex items-center justify-center gap-1 hover:text-neutral-700'
         >
           Scale
-          <SortIndicator field="scale" />
+          <SortIndicator field='scale' />
         </button>
         <button
           onClick={() => handleSort('evangelical')}
-          className="col-span-2 text-right flex items-center justify-end gap-1 hover:text-neutral-700"
+          className='col-span-2 text-right flex items-center justify-end gap-1 hover:text-neutral-700'
         >
           % Evan.
-          <SortIndicator field="evangelical" />
+          <SortIndicator field='evangelical' />
         </button>
       </div>
 
       {/* People Groups List */}
-      <div className="space-y-2">
-        {displayedGroups.map((group) => (
-          <div
-            key={`${group.PeopleID3}-${group.ROG3}`}
-            className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-3 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
-          >
-            {/* Header row */}
-            <div className="grid grid-cols-12 gap-2 items-start">
-              <div className="col-span-5">
-                <div className="font-medium text-sm leading-tight">
-                  {group.PeopNameInCountry}
-                </div>
-                {group.PrimaryLanguageName && (
-                  <div className="text-xs text-neutral-500 mt-0.5">
-                    {group.PrimaryLanguageName}
-                  </div>
-                )}
-              </div>
-              <div className="col-span-3 text-right text-sm">
-                {formatPopulation(group.Population)}
-              </div>
-              <div className="col-span-2 flex justify-center">
-                {getScaleBadge(group.JPScale)}
-              </div>
-              <div className="col-span-2 text-right text-sm font-medium text-purple-600">
-                {formatPercent(group.PercentEvangelical)}
-              </div>
-            </div>
-
-            {/* Details row */}
-            <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
-              <span>{group.PrimaryReligion}</span>
-              {group.LeastReached === 'Y' && (
-                <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-medium">
-                  Least Reached
-                </span>
-              )}
-              {group.FrontierPeopleGroup === 'Y' && (
-                <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-xs font-medium">
-                  Frontier
-                </span>
-              )}
-            </div>
-            </div>
-          ))}
+      <div className='space-y-2'>
+        {displayedGroups.map((group, index) => (
+          <PeopleGroupCardWrapper
+            key={`${group.PeopleID3}-${group.RegionName || group.Ctry || index}`}
+            group={group}
+            type={type}
+            entityId={entityId}
+          />
+        ))}
       </div>
 
-      {/* Show More/Less Button */}
-      {hasMore && (
-        <button
-          onClick={() => setShowAll(!showAll)}
-          className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-2 border border-neutral-200 dark:border-neutral-800 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-        >
-          {showAll ? 'Show Less' : `Show All (${sortedGroups.length})`}
-        </button>
-      )}
-
       {/* Data Source Attribution */}
-      <div className="text-xs text-neutral-400 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+      <div className='text-xs text-neutral-400 pt-2 border-t border-neutral-200 dark:border-neutral-800'>
         Data from{' '}
         <a
-          href="https://joshuaproject.net"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-neutral-600"
+          href='https://joshuaproject.net'
+          target='_blank'
+          rel='noopener noreferrer'
+          className='underline hover:text-neutral-600'
         >
           Joshua Project
         </a>
@@ -283,5 +357,3 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({ ty
     </div>
   );
 };
-
-

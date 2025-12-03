@@ -1,0 +1,152 @@
+import React from 'react';
+import { Search } from 'lucide-react';
+import { Input } from '@/shared/components/ui/Input';
+import { EntityCard } from './EntityCard';
+import type { DonateFlow } from '../../hooks/useDonateFlow';
+import type { SelectedEntity, DonationIntent } from '../../state/types';
+import {
+  fetchLanguagesForDonation,
+  fetchRegionsForDonation,
+  fetchOperationsForDonation,
+  type EntityForDonation,
+} from '../../api/fundingApi';
+
+export const StepEntitySelection: React.FC<{ flow: DonateFlow }> = ({
+  flow,
+}) => {
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [entities, setEntities] = React.useState<EntityForDonation[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  const intent = flow.state.intent;
+
+  // Determine entity type from intent
+  const entityType =
+    intent?.type === 'language'
+      ? 'language'
+      : intent?.type === 'region'
+        ? 'region'
+        : 'operation';
+
+  const entityTypeLabel =
+    intent?.type === 'language'
+      ? 'language'
+      : intent?.type === 'region'
+        ? 'region'
+        : 'operation';
+
+  // Fetch entities based on intent type
+  React.useEffect(() => {
+    const fetchEntities = async () => {
+      setLoading(true);
+      try {
+        let data: EntityForDonation[];
+        if (intent?.type === 'language') {
+          data = await fetchLanguagesForDonation();
+        } else if (intent?.type === 'region') {
+          data = await fetchRegionsForDonation();
+        } else if (intent?.type === 'operation') {
+          data = await fetchOperationsForDonation();
+        } else {
+          data = [];
+        }
+        setEntities(data);
+      } catch (error) {
+        console.error('Failed to fetch entities:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (intent?.type && intent.type !== 'unrestricted') {
+      fetchEntities();
+    }
+  }, [intent?.type]);
+
+  // Filter entities by search query
+  const filteredEntities = React.useMemo(() => {
+    if (!searchQuery.trim()) return entities;
+    const query = searchQuery.toLowerCase();
+    return entities.filter(e => e.name.toLowerCase().includes(query));
+  }, [entities, searchQuery]);
+
+  // Handle entity selection - immediately proceed to amount entry
+  const handleSelectEntity = (entity: EntityForDonation) => {
+    const selectedEntity: SelectedEntity = {
+      id: entity.id,
+      type: entityType,
+      name: entity.name,
+      budgetCents: entity.budgetCents,
+    };
+
+    // Set selected entity in flow state
+    flow.setSelectedEntity(selectedEntity);
+
+    // Update intent with the selected entity ID
+    if (intent) {
+      const updatedIntent: DonationIntent = {
+        ...intent,
+        ...(intent.type === 'language'
+          ? { languageEntityId: entity.id }
+          : intent.type === 'region'
+            ? { regionId: entity.id }
+            : { operationId: entity.id }),
+        displayName: entity.name,
+      };
+      flow.setIntent(updatedIntent);
+    }
+
+    // Navigate to next step (amount entry)
+    flow.next();
+  };
+
+  if (!intent || intent.type === 'unrestricted') {
+    // Should not happen, but handle gracefully
+    return null;
+  }
+
+  return (
+    <div className='space-y-4'>
+      <div className='text-sm text-neutral-600 dark:text-neutral-400'>
+        Select {entityTypeLabel}s to support
+      </div>
+
+      {/* Search Input */}
+      <div className='relative'>
+        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400' />
+        <Input
+          type='text'
+          placeholder={`Search ${entityTypeLabel}s...`}
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className='pl-9'
+        />
+      </div>
+
+      {/* Entity List */}
+      {loading ? (
+        <div className='text-sm text-neutral-500 py-8 text-center'>
+          Loading {entityTypeLabel}s...
+        </div>
+      ) : filteredEntities.length === 0 ? (
+        <div className='text-sm text-neutral-500 py-8 text-center'>
+          {searchQuery
+            ? `No ${entityTypeLabel}s found matching "${searchQuery}"`
+            : `No ${entityTypeLabel}s available`}
+        </div>
+      ) : (
+        <div className='space-y-2'>
+          {filteredEntities.map(entity => (
+            <EntityCard
+              key={entity.id}
+              entity={entity}
+              onClick={() => handleSelectEntity(entity)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default StepEntitySelection;

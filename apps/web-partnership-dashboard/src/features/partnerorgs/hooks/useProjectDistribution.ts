@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 
 export function useProjectDistribution(
@@ -11,7 +11,7 @@ export function useProjectDistribution(
       const langQuery =
         projectId === 'all'
           ? (supabase as any)
-              .from('vw_partner_org_language_entities')
+              .from('partner_org_projects_via_donations')
               .select('language_entity_id')
               .eq('partner_org_id', partnerOrgId!)
           : supabase
@@ -20,38 +20,35 @@ export function useProjectDistribution(
               .eq('project_id', projectId);
 
       const { data: langData } = await langQuery;
-      const languageIds = langData?.map((l: any) => l.language_entity_id) || [];
+      // Deduplicate language_entity_id values since partner_org_projects_via_donations
+      // can have multiple rows per language_entity_id (one per project/allocation)
+      const languageIds = [
+        ...new Set(
+          langData?.map((l: any) => l.language_entity_id).filter(Boolean) || []
+        ),
+      ];
 
-      // Get heatmap data
-      const { data: heatmap } = await supabase
+      // Handle empty languageIds array to avoid 400 error
+      if (languageIds.length === 0) {
+        return {
+          heatmap: [],
+        };
+      }
+
+      // Get heatmap data only
+      const { data: heatmap, error: heatmapError } = await supabase
         .from('vw_language_listens_heatmap')
         .select('*')
         .in('language_entity_id', languageIds);
 
-      // Get download counts from mv_language_listens_stats
-      const { data: stats } = await supabase
-        .from('mv_language_listens_stats')
-        .select('downloads, total_listened_seconds')
-        .in('language_entity_id', languageIds);
-
-      const totalDownloads =
-        (stats as any)?.reduce(
-          (sum: number, d: any) => sum + (d.downloads || 0),
-          0
-        ) || 0;
-      const totalListeningHours = Math.round(
-        ((stats as any)?.reduce(
-          (sum: number, l: any) => sum + (l.total_listened_seconds || 0),
-          0
-        ) || 0) / 3600
-      );
+      if (heatmapError) throw heatmapError;
 
       return {
         heatmap: heatmap || [],
-        totalDownloads,
-        totalListeningHours,
       };
     },
     enabled: !!(projectId && (projectId !== 'all' || partnerOrgId)),
+    staleTime: 5 * 60 * 1000, // 5 minutes - distribution data doesn't change frequently
+    placeholderData: keepPreviousData, // Keep previous data while fetching new data for smoother transitions
   });
 }

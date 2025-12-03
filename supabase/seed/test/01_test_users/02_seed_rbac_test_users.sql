@@ -11,7 +11,6 @@
 -- 
 -- Required roles (by role_key):
 -- - project_viewer, project_editor, project_admin
--- - team_member, team_leader
 -- - base_member, base_staff  
 -- - partner_member, partner_leader, partner_admin
 -- - system_admin
@@ -31,36 +30,17 @@ ON CONFLICT (id) DO NOTHING;
 
 
 -- ============================================================================
--- TEST TEAM
+-- TEST BASES-PROJECTS RELATIONSHIP (replaces bases-teams)
 -- ============================================================================
 INSERT INTO
-  teams (id, name, type)
+  bases_projects (base_id, project_id)
 VALUES
   (
-    '770e8400-e29b-41d4-a716-446655440005',
-    'Test Team',
-    'translation'
+    '660e8400-e29b-41d4-a716-446655440004'::UUID,
+    'aa0e8400-e29b-41d4-a716-446655440002'::UUID
   )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================================
--- TEST BASES-TEAMS RELATIONSHIP
--- ============================================================================
-INSERT INTO
-  bases_teams (team_id, base_id, role_id)
-SELECT
-  '770e8400-e29b-41d4-a716-446655440005'::UUID,
-  '660e8400-e29b-41d4-a716-446655440004'::UUID,
-  (
-    SELECT
-      id
-    FROM
-      roles
-    WHERE
-      role_key = 'base_staff'
-  )
-ON CONFLICT (team_id, base_id, role_id) DO NOTHING;
+ON CONFLICT (base_id, project_id)
+WHERE unassigned_at IS NULL DO NOTHING;
 
 
 -- ============================================================================
@@ -87,26 +67,8 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 
--- ============================================================================
--- TEST PROJECTS_TEAMS RELATIONSHIP
--- ============================================================================
-INSERT INTO
-  public.projects_teams (project_id, team_id, project_role_id, is_primary)
-SELECT
-  'aa0e8400-e29b-41d4-a716-446655440002'::UUID,
-  '770e8400-e29b-41d4-a716-446655440005'::UUID,
-  (
-    SELECT
-      id
-    FROM
-      roles
-    WHERE
-      role_key = 'project_editor'
-  ),
-  TRUE
-ON CONFLICT (project_id, team_id)
-WHERE
-  (unassigned_at IS NULL) DO NOTHING;
+-- Note: projects_teams table has been removed
+-- Base-project relationships are now managed via bases_projects table
 
 
 -- ============================================================================
@@ -372,47 +334,15 @@ WHERE
 ON CONFLICT (id) DO NOTHING;
 
 
--- ============================================================================
--- USER ROLES - TEAM ASSIGNMENTS
--- ============================================================================
-INSERT INTO
-  user_roles (user_id, role_id, context_type, context_id)
-SELECT
-  user_id,
-  (
-    SELECT
-      id
-    FROM
-      roles
-    WHERE
-      role_key = role_key_to_use
-  ),
-  'team',
-  context_id
-FROM
-  (
-    VALUES
-      -- teamleader@everylanguage.com - Team Leader in Test Team
-      (
-        '880e8400-e29b-41d4-a716-446655440009'::UUID,
-        'team_leader',
-        '770e8400-e29b-41d4-a716-446655440005'::UUID
-      ),
-      -- teammember@everylanguage.com - Team Member in Test Team
-      (
-        '880e8400-e29b-41d4-a716-446655440010'::UUID,
-        'team_member',
-        '770e8400-e29b-41d4-a716-446655440005'::UUID
-      )
-  ) AS t (user_id, role_key_to_use, context_id)
-ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+-- Note: Team assignments removed - teams system has been removed
+-- Users now get project access via direct project roles or base-project inheritance
 
 
 -- ============================================================================
 -- USER ROLES - BASE ASSIGNMENTS
 -- ============================================================================
 INSERT INTO
-  user_roles (user_id, role_id, context_type, context_id)
+  user_roles (user_id, role_id, base_id)
 SELECT
   user_id,
   (
@@ -423,7 +353,6 @@ SELECT
     WHERE
       role_key = 'base_member'
   ),
-  'base',
   '660e8400-e29b-41d4-a716-446655440004'::UUID
 FROM
   (
@@ -439,14 +368,14 @@ FROM
       ('880e8400-e29b-41d4-a716-446655440016'::UUID),
       ('880e8400-e29b-41d4-a716-446655440017'::UUID)
   ) AS t (user_id)
-ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+ON CONFLICT (user_id, role_id, base_id) WHERE base_id IS NOT NULL DO NOTHING;
 
 
 -- ============================================================================
 -- USER ROLES - PARTNER ORG ASSIGNMENTS
 -- ============================================================================
 INSERT INTO
-  user_roles (user_id, role_id, context_type, context_id)
+  user_roles (user_id, role_id, partner_org_id)
 SELECT
   user_id,
   (
@@ -457,7 +386,6 @@ SELECT
     WHERE
       role_key = role_key_to_use
   ),
-  'partner',
   context_id
 FROM
   (
@@ -481,14 +409,14 @@ FROM
         'bb0e8400-e29b-41d4-a716-446655440002'::UUID
       )
   ) AS t (user_id, role_key_to_use, context_id)
-ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+ON CONFLICT (user_id, role_id, partner_org_id) WHERE partner_org_id IS NOT NULL DO NOTHING;
 
 
 -- ============================================================================
 -- USER ROLES - PROJECT DIRECT ASSIGNMENTS (not team-based)
 -- ============================================================================
 INSERT INTO
-  user_roles (user_id, role_id, context_type, context_id)
+  user_roles (user_id, role_id, project_id)
 SELECT
   user_id,
   (
@@ -499,7 +427,6 @@ SELECT
     WHERE
       role_key = role_key_to_use
   ),
-  'project',
   context_id
 FROM
   (
@@ -523,14 +450,14 @@ FROM
         'aa0e8400-e29b-41d4-a716-446655440002'::UUID
       )
   ) AS t (user_id, role_key_to_use, context_id)
-ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+ON CONFLICT (user_id, role_id, project_id) WHERE project_id IS NOT NULL DO NOTHING;
 
 
 -- ============================================================================
 -- USER ROLES - GLOBAL/SYSTEM ADMIN ASSIGNMENTS
 -- ============================================================================
 INSERT INTO
-  user_roles (user_id, role_id, context_type, context_id)
+  user_roles (user_id, role_id, is_global)
 SELECT
   '880e8400-e29b-41d4-a716-446655440017'::UUID,
   (
@@ -541,22 +468,13 @@ SELECT
     WHERE
       role_key = 'system_admin'
   ),
-  'global',
-  NULL
-ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+  TRUE
+ON CONFLICT (user_id, role_id) WHERE is_global = TRUE DO NOTHING;
 
 
 -- ============================================================================
 -- SET created_by FOR TEST ENTITIES
 -- ============================================================================
--- Test Team
-UPDATE public.teams
-SET
-  created_by = '880e8400-e29b-41d4-a716-446655440009' -- teamleader@everylanguage.com
-WHERE
-  id = '770e8400-e29b-41d4-a716-446655440005';
-
-
 -- Test Base
 UPDATE public.bases
 SET

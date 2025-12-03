@@ -60,7 +60,7 @@ export function useProjectFunding(
       if (projectId === 'all') {
         // Aggregate funding across all partner org projects
         const { data: activeProjects } = await (supabase as any)
-          .from('vw_partner_org_active_projects')
+          .from('partner_org_projects_via_donations')
           .select('project_id')
           .eq('partner_org_id', partnerOrgId!);
 

@@ -5,11 +5,20 @@ import type { DonationIntentType } from '../../state/types';
 
 export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
   const handleSelect = (intentType: DonationIntentType) => {
-    // TODO: Add language/region/operation selection step for non-unrestricted intents
-    // For now, all intents are treated as unrestricted to allow testing
-    // Set intent and move to next step
+    // Set intent
     flow.setIntent({ type: intentType });
-    flow.next();
+
+    // Navigate to next step
+    // For unrestricted: skip Step 1 (entity selection) and go to Step 2 (amount entry)
+    // For language/region/operation: go to Step 1 (entity selection)
+    if (intentType === 'unrestricted') {
+      // Skip Step 1, go directly to Step 2
+      flow.next(); // Step 0 -> Step 1
+      flow.next(); // Step 1 -> Step 2
+    } else {
+      // Go to Step 1 (entity selection)
+      flow.next();
+    }
   };
 
   return (
@@ -30,7 +39,7 @@ export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
             <div className='flex-1'>
               <div className='flex items-start justify-between mb-2'>
                 <h3 className='font-semibold text-lg text-neutral-900 dark:text-neutral-100'>
-                  A specific language
+                  A language
                 </h3>
                 <ArrowRight className='h-5 w-5 text-neutral-400 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors' />
               </div>
@@ -59,8 +68,7 @@ export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
                 <ArrowRight className='h-5 w-5 text-neutral-400 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors' />
               </div>
               <p className='text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed'>
-                Support translation work in a specific geographical region or
-                country.
+                Support translation work in a specific geographical region.
               </p>
             </div>
           </div>
@@ -83,8 +91,7 @@ export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
                 <ArrowRight className='h-5 w-5 text-neutral-400 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors' />
               </div>
               <p className='text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed'>
-                Support background operations like administration, servers,
-                travel, and legal fees.
+                Support the background operations of Every Language.
               </p>
             </div>
           </div>

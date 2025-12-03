@@ -15,7 +15,7 @@ schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 # The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
 # for accidental or malicious requests.
-max_rows = 1000
+max_rows = 50000
 
 [api.tls]
 # Enable HTTPS endpoints locally using a self-signed certificate.
@@ -324,50 +324,40 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # These functions are publicly accessible and use service role key internally
 # -----------------------------------------------------------------------------
 
-[functions.create-adoption-checkout]
-enabled = true
-verify_jwt = false
-entrypoint = "./functions/create-adoption-checkout/index.ts"
-
 [functions.create-donation-checkout]
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/create-donation-checkout/index.ts"
 
-[functions.calculate-adoption-costs]
+[functions.sync-jp-languages]
 enabled = true
 verify_jwt = false
-entrypoint = "./functions/calculate-adoption-costs/index.ts"
+entrypoint = "./functions/sync-jp-languages/index.ts"
 
-[functions.search-partner-orgs]
+[functions.sync-grn-languages]
 enabled = true
 verify_jwt = false
-entrypoint = "./functions/search-partner-orgs/index.ts"
+entrypoint = "./functions/sync-grn-languages/index.ts"
 
-[functions.get-download-urls-by-id]
+[functions.sync-grn-coordinates]
 enabled = true
 verify_jwt = false
-entrypoint = "./functions/get-download-urls-by-id/index.ts"
+entrypoint = "./functions/sync-grn-coordinates/index.ts"
 
-[functions.stripe-webhook]
+[functions.sync-jp-people-groups]
 enabled = true
 verify_jwt = false
-entrypoint = "./functions/stripe-webhook/index.ts"
+entrypoint = "./functions/sync-jp-people-groups/index.ts"
 
-[functions.crm-lead-intake]
+[functions.sync-jp-countries]
 enabled = true
 verify_jwt = false
-entrypoint = "./functions/crm-lead-intake/index.ts"
+entrypoint = "./functions/sync-jp-countries/index.ts"
 
-[functions.refresh-progress]
+[functions.stripe-webhook-donations]
 enabled = true
 verify_jwt = false
-entrypoint = "./functions/refresh-progress/index.ts"
-
-[functions.expire-bank-transfers]
-enabled = true
-verify_jwt = false
-entrypoint = "./functions/expire-bank-transfers/index.ts"
+entrypoint = "./functions/stripe-webhook-donations/index.ts"
 
 # -----------------------------------------------------------------------------
 # AUTHENTICATED ENDPOINTS - JWT verification required
@@ -384,12 +374,12 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/get-upload-urls-by-id/index.ts"
 
+[functions.get-download-urls-by-id]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/get-download-urls-by-id/index.ts"
+
 [functions.close-session]
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/close-session/index.ts"
-
-[functions.project-financials]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/project-financials/index.ts"

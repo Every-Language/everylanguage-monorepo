@@ -134,8 +134,13 @@ export interface ButtonProps
   rightIcon?: React.ReactNode;
   loadingText?: string;
   fullWidth?: boolean;
-  as?: 'button' | 'a';
+  as?:
+    | 'button'
+    | 'a'
+    | React.ComponentType<Record<string, unknown>>
+    | React.ElementType;
   href?: string;
+  to?: string;
   target?: string;
   rel?: string;
 }
@@ -157,6 +162,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       as = 'button',
       href,
+      to,
       target,
       rel,
       ...props
@@ -200,6 +206,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       fullWidth && 'w-full',
       className
     );
+
+    // Handle React Router Link or other custom components
+    if (as && typeof as !== 'string') {
+      const Component = as as React.ElementType;
+      return (
+        <Component
+          ref={ref}
+          to={to || href}
+          className={baseClassName}
+          {...props}
+        >
+          {content}
+        </Component>
+      );
+    }
 
     if (as === 'a') {
       return (

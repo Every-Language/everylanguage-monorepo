@@ -1,0 +1,42 @@
+---
+description: General project rules for Every Language monorepo
+globs: ["**/*.{ts,tsx,js,jsx}"]
+alwaysApply: true
+---
+
+# Every Language Monorepo
+
+## Stack
+React 19, TypeScript 5.8, Vite 7, TailwindCSS, TanStack Query 5.83, Zustand 5.0, React Hook Form 7.60, Supabase (Postgres 17), Deno Edge Functions
+
+## Structure
+- `apps/` - React dashboards (web-project-dashboard, web-partnership-dashboard, web-admin-dashboard)
+- `packages/shared-types` - Generated DB types from Supabase
+- `supabase/` - Migrations, Edge Functions, seeds
+
+## TypeScript
+- Always use explicit return types
+- Never use `any`, prefer `unknown`
+- Use const assertions for literals
+- Strict mode enabled
+- Run tpecheck after making changes
+
+## Monorepo Commands
+- `pnpm --filter=<workspace>` for workspace-specific commands
+- Path aliases: `@/` for src, `@everylanguage/shared-types` for DB types
+
+## Git Commits
+- Conventional: `feat:`, `fix:`, `chore:`, `docs:`, `test:`
+- Never push to `main` or `develop` directly
+- Breaking changes: `feat!:` or `BREAKING CHANGE:` in body
+
+## Environments
+
+- **Development**: `develop` branch → dev Supabase project
+- **Production**: `main` branch → prod Supabase project
+- **All changes**: Only make changes through CI/CD to `develop` branch
+
+## AI Agent Behavior
+- **No unsolicited documentation**: Don't create .md files for summaries, documentation, or explanations unless explicitly requested
+- **Write tests**: When implementing features or fixing bugs, write corresponding tests (see testing.mdc for patterns)
+- **Look up best practices**: Use context7 MCP or available tools to reference official documentation for libraries before implementing patterns

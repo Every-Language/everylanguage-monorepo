@@ -13,7 +13,7 @@ export function usePendingLanguages(partnerOrgId: string) {
 
       if (error) throw error;
 
-      // For each pending language, get contributions and language stats
+      // For each pending language, get contributions
       const enrichedData = await Promise.all(
         data.map(async (lang: any) => {
           // Get contributions for this sponsorship
@@ -28,21 +28,10 @@ export function usePendingLanguages(partnerOrgId: string) {
               0
             ) || 0;
 
-          // Get language-level stats (downloads, listening time)
-          const { data: stats } = await supabase
-            .from('mv_language_listens_stats')
-            .select('downloads, total_listened_seconds')
-            .eq('language_entity_id', (lang as any).language_entity_id)
-            .maybeSingle();
-
           return {
             ...lang,
             total_contributed_cents: totalContributed,
             contributions: contributions || [],
-            language_stats: stats || {
-              downloads: 0,
-              total_listened_seconds: 0,
-            },
           };
         })
       );

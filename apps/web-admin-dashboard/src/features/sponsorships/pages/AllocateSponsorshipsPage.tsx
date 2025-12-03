@@ -4,6 +4,7 @@ import { sponsorshipsApi } from '../api/sponsorshipsApi';
 import { languagesApi } from '../../languages/api/languagesApi';
 import { useAuth } from '@/features/auth';
 import { Search, DollarSign } from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 export function AllocateSponsorshipsPage() {
   const { user } = useAuth();
@@ -261,21 +262,19 @@ export function AllocateSponsorshipsPage() {
             {projects && projects.length > 0 ? (
               <div className='space-y-6'>
                 <div>
-                  <label className='block text-sm font-medium text-neutral-700 mb-2'>
-                    Select Project
-                  </label>
-                  <select
+                  <Select
+                    label='Select Project'
                     value={selectedProjectId || ''}
-                    onChange={e => setSelectedProjectId(e.target.value)}
-                    className='w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500'
+                    onValueChange={value => setSelectedProjectId(value)}
+                    placeholder='Choose a project...'
                   >
-                    <option value=''>Choose a project...</option>
+                    <SelectItem value=''>Choose a project...</SelectItem>
                     {projects.map(project => (
-                      <option key={project.id} value={project.id}>
+                      <SelectItem key={project.id} value={project.id}>
                         {project.name}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 <div>

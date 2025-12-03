@@ -20,12 +20,18 @@ export const StepThankYou: React.FC<StepThankYouProps> = ({
 
   const intent = state.intent;
   const amount = state.amount;
+  const paymentMethod = state.paymentMethod;
 
   // Calculate display values
   const isMonthly = amount?.isRecurring ?? false;
   const displayAmount = (amount?.amountCents ?? 0) / 100;
   const currency = 'USD'; // Default currency
   const cadenceSuffix = isMonthly ? '/month' : '';
+
+  // Payment status based on payment method
+  // Card payments: Confirmed immediately by Stripe (webhook will finalize)
+  // Bank transfers: Pending until webhook confirms funds received
+  const isBankTransfer = paymentMethod === 'bank_transfer';
 
   const donationType =
     intent?.type === 'operation'
@@ -61,11 +67,20 @@ export const StepThankYou: React.FC<StepThankYouProps> = ({
         </div>
         <div>
           <h3 className='text-2xl font-semibold text-neutral-900 dark:text-neutral-100 mb-1'>
-            Thank you for your donation!
+            {isBankTransfer
+              ? 'Donation submitted!'
+              : 'Thank you for your donation!'}
           </h3>
           <p className='text-sm text-neutral-600 dark:text-neutral-400'>
-            Your generosity helps bring God's Word to every language.
+            {isBankTransfer
+              ? "Your bank transfer is pending. We'll process your donation once we receive the funds (usually 1-3 business days)."
+              : "Your generosity helps bring God's Word to every language."}
           </p>
+          {isBankTransfer && (
+            <p className='text-xs text-neutral-500 dark:text-neutral-500 mt-2'>
+              You'll receive a confirmation email once the transfer is complete.
+            </p>
+          )}
         </div>
       </div>
 
@@ -118,6 +133,21 @@ export const StepThankYou: React.FC<StepThankYouProps> = ({
             </span>
           </div>
         )}
+
+        <div className='flex justify-between text-sm'>
+          <span className='text-neutral-600 dark:text-neutral-400'>Status</span>
+          <span className='font-medium text-neutral-900 dark:text-neutral-100'>
+            {isBankTransfer ? (
+              <span className='text-yellow-600 dark:text-yellow-400'>
+                Pending
+              </span>
+            ) : (
+              <span className='text-success-600 dark:text-success-400'>
+                Confirmed
+              </span>
+            )}
+          </span>
+        </div>
       </div>
 
       {/* Action Buttons */}

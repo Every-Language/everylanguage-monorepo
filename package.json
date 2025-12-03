@@ -10,6 +10,7 @@
     "supabase"
   ],
   "scripts": {
+    "checkall": "turbo run lint && turbo run type-check && turbo run build",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
@@ -32,7 +33,18 @@
     "db:type-check": "cd supabase && tsc --noEmit",
     "db:type-check:functions": "cd supabase/functions && deno check **/*.ts",
     "frontend:project:dev": "turbo run dev --filter=web-project-dashboard",
-    "frontend:partnership:dev": "turbo run dev --filter=web-partnership-dashboard"
+    "frontend:partnership:dev": "turbo run dev --filter=web-partnership-dashboard",
+    "app-bible:dev": "turbo run start --filter=app-bible",
+    "app-bible:ios": "pnpm --filter=app-bible run ios",
+    "app-bible:android": "pnpm --filter=app-bible run android",
+    "app-bible:prebuild": "pnpm --filter=app-bible run prebuild",
+    "app-bible:prebuild:clean": "pnpm --filter=app-bible run prebuild:clean",
+    "app-bible:build:dev": "pnpm --filter=app-bible run build:dev",
+    "app-bible:build:dev:ios": "pnpm --filter=app-bible run build:dev:ios",
+    "app-bible:build:dev:android": "pnpm --filter=app-bible run build:dev:android",
+    "app-bible:build:prod": "pnpm --filter=app-bible run build:prod",
+    "app-bible:build:prod:ios": "pnpm --filter=app-bible run build:prod:ios",
+    "app-bible:build:prod:android": "pnpm --filter=app-bible run build:prod:android"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

@@ -43,24 +43,42 @@ export class DownloadService {
   async getDownloadUrlsById(params: {
     mediaFileIds?: string[];
     imageIds?: string[];
+    projectUpdatesMediaIds?: string[];
     expirationHours?: number;
   }): Promise<{
     success: boolean;
     expiresIn: number;
     media?: Record<string, string>;
     images?: Record<string, string>;
+    projectUpdatesMedia?: Record<string, string>;
     errors?: Record<string, string>;
   }> {
-    const { mediaFileIds = [], imageIds = [], expirationHours = 24 } = params;
+    const {
+      mediaFileIds = [],
+      imageIds = [],
+      projectUpdatesMediaIds = [],
+      expirationHours = 24,
+    } = params;
 
-    if (mediaFileIds.length === 0 && imageIds.length === 0) {
-      throw new Error('Provide at least one mediaFileId or imageId');
+    if (
+      mediaFileIds.length === 0 &&
+      imageIds.length === 0 &&
+      projectUpdatesMediaIds.length === 0
+    ) {
+      throw new Error(
+        'Provide at least one mediaFileId, imageId, or projectUpdatesMediaId'
+      );
     }
 
     const { data, error } = await supabase.functions.invoke(
       'get-download-urls-by-id',
       {
-        body: { mediaFileIds, imageIds, expirationHours },
+        body: {
+          mediaFileIds,
+          imageIds,
+          projectUpdatesMediaIds,
+          expirationHours,
+        },
       }
     );
 

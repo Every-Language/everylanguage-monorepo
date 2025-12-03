@@ -9,15 +9,18 @@ import { useTheme } from '@/shared/theme';
 import { MapProvider } from '../context/MapContext';
 import { supabase } from '@/shared/services/supabase';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/shared/theme/hooks/useToast';
 
 // MapLibre CSS should be imported by the app's CSS pipeline or here
 // import 'maplibre-gl/dist/maplibre-gl.css';
 
+// Zoom limits: minZoom for globe at ~80% viewport, maxZoom for city-level detail
+const MIN_ZOOM = 1.0;
+const MAX_ZOOM = 11.0;
+
 interface MapShellProps {
   children?: React.ReactNode;
   countriesEnabled?: boolean;
-  padding?: { top: number; bottom: number; left: number; right: number };
+  padding: { top: number; bottom: number; left: number; right: number };
 }
 
 export const MapShell: React.FC<MapShellProps> = ({
@@ -28,7 +31,6 @@ export const MapShell: React.FC<MapShellProps> = ({
   const mapRef = React.useRef<MapRef | null>(null);
   const { resolvedTheme } = useTheme();
   const router = useRouter();
-  const { toast } = useToast();
 
   // No interactiveLayerIds to ensure clicks fire everywhere; we'll filter features manually
 
@@ -135,10 +137,23 @@ export const MapShell: React.FC<MapShellProps> = ({
     if (!map) return;
     setProjection(map, true);
     applyAtmosphere(map, resolvedTheme);
+
+    // Disable rotation interactions while keeping pan and zoom enabled
+    // Disable drag rotation (right-click + drag)
+    map.dragRotate?.disable();
+    // Disable touch rotation gesture (two-finger rotate on touch devices)
+    map.touchZoomRotate?.disableRotation();
+    // Disable keyboard rotation (note: this also disables keyboard panning)
+    map.keyboard?.disable();
+
     // Re-apply atmosphere after each style change
     map.on('style.load', () => {
       setProjection(map, true);
       applyAtmosphere(map, resolvedTheme);
+      // Re-disable rotation after style reload
+      map.dragRotate?.disable();
+      map.touchZoomRotate?.disableRotation();
+      map.keyboard?.disable();
     });
   }, [applyAtmosphere, resolvedTheme]);
 
@@ -149,29 +164,40 @@ export const MapShell: React.FC<MapShellProps> = ({
     applyAtmosphere(map, resolvedTheme);
   }, [resolvedTheme, applyAtmosphere]);
 
+  // Track previous padding to detect structural changes (breakpoint crossings)
+  const prevPaddingRef = React.useRef<typeof padding | null>(null);
+
+  // Update map padding when structure changes (e.g., crossing breakpoint)
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const prevPadding = prevPaddingRef.current;
+    const hasStructuralChange =
+      !prevPadding ||
+      prevPadding.left !== padding.left ||
+      prevPadding.right !== padding.right;
+
+    prevPaddingRef.current = padding;
+
+    // Only trigger resize if padding structure changed (breakpoint crossing)
+    // This prevents blinking when resizing within the same breakpoint
+    if (hasStructuralChange) {
+      const frameId = requestAnimationFrame(() => {
+        const underlyingMap = map.getMap();
+        if (underlyingMap) {
+          underlyingMap.resize();
+        }
+      });
+
+      return () => cancelAnimationFrame(frameId);
+    }
+  }, [padding]);
+
   const handleMapClick = React.useCallback(
     async (e: maplibregl.MapLayerMouseEvent) => {
       try {
         if (!countriesEnabled) {
-          const map = mapRef.current?.getMap() as unknown as MLMap | undefined;
-          if (!map) return;
-          const features = map.queryRenderedFeatures(e.point);
-          const hasInteractable = features.some(f => {
-            const layerId =
-              (f as unknown as { layer?: { id?: string } }).layer?.id || '';
-            // Treat existing analytics layers as interactable, suppress toast
-            return (
-              layerId.includes('listens-heatmap') ||
-              layerId.includes('region-listens')
-            );
-          });
-          if (!hasInteractable) {
-            toast({
-              description: 'Turn on the countries layer to see country borders',
-              duration: 3000,
-              variant: 'info',
-            });
-          }
           return;
         }
 
@@ -205,7 +231,7 @@ export const MapShell: React.FC<MapShellProps> = ({
         console.error('Map click handler failed', err);
       }
     },
-    [countriesEnabled, router, toast]
+    [countriesEnabled, router]
   );
 
   return (
@@ -221,8 +247,11 @@ export const MapShell: React.FC<MapShellProps> = ({
             onLoad={handleMapLoad}
             onClick={handleMapClick}
             padding={padding}
+            minZoom={MIN_ZOOM}
+            maxZoom={MAX_ZOOM}
+            dragRotate={false}
           >
-            <NavigationControl position='bottom-right' />
+            <NavigationControl position='bottom-right' showCompass={false} />
             {children}
           </Map>
         )}

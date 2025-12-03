@@ -57,9 +57,5 @@ Junction table linking projects to teams. Includes optional `project_role_id` fo
 
 - RBAC system supports scoped roles (team, project, base, partner, global)
 - Permissions inherit across relationships (team → project, base → project, partner → project)
-- See [RBAC documentation](../../auth/rbac.md) for detailed permission evaluation logic
+- See [RBAC documentation](../auth/rbac.md) for detailed permission evaluation logic
 - All organizational tables use `created_by` indicating shared resources
-
-## Related Documentation
-
-- [Functions & Triggers](./functions-and-triggers.md) - User and RBAC functions and triggers

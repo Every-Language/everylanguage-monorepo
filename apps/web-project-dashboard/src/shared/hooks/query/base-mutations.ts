@@ -32,6 +32,23 @@ export function useCreateRecord<T extends TableName>(
 
   return useMutation({
     mutationFn: async (data: TableInsert<T>) => {
+      // DEBUG: Log insert attempt
+      console.log(
+        `[DEBUG] base-mutations - Attempting to insert into ${table}`
+      );
+      console.log(`[DEBUG] Insert data:`, JSON.stringify(data, null, 2));
+
+      // Get current auth user for debugging
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+      console.log(`[DEBUG] Auth user ID:`, authUser?.id);
+      console.log(`[DEBUG] Auth user email:`, authUser?.email);
+      if (authError) {
+        console.error(`[DEBUG] Auth error:`, authError);
+      }
+
       // Use any to bypass TypeScript complexity with Supabase types
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: result, error } = await (supabase as any)
@@ -41,6 +58,13 @@ export function useCreateRecord<T extends TableName>(
         .single();
 
       if (error) {
+        console.error(`[DEBUG] Insert error for ${table}:`, error);
+        console.error(`[DEBUG] Error details:`, {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
         throw transformError(error);
       }
 

@@ -8,7 +8,15 @@ interface CircularProgressProps {
   className?: string;
   children?: React.ReactNode;
   showPercentage?: boolean;
-  color?: 'blue' | 'green' | 'yellow' | 'red' | 'purple';
+  color?:
+    | 'blue'
+    | 'green'
+    | 'yellow'
+    | 'red'
+    | 'purple'
+    | 'accent'
+    | 'secondary'
+    | 'primary';
 }
 
 export const CircularProgress: React.FC<CircularProgressProps> = ({
@@ -33,6 +41,9 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
     yellow: 'stroke-yellow-600 dark:stroke-yellow-400',
     red: 'stroke-red-600 dark:stroke-red-400',
     purple: 'stroke-purple-600 dark:stroke-purple-400',
+    accent: 'stroke-accent-600 dark:stroke-accent-500',
+    secondary: 'stroke-secondary-600 dark:stroke-secondary-500',
+    primary: 'stroke-primary-600 dark:stroke-primary-500',
   };
 
   return (

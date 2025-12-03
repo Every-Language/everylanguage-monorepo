@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'EverlyLanguage Partnership Dashboard',
-    short_name: 'EverlyLanguage',
+    name: 'Every Language Partnership Dashboard',
+    short_name: 'Every Language',
     description:
       'Track Bible translation progress and support language projects worldwide',
     start_url: '/',

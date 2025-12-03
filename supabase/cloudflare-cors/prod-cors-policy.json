@@ -7,7 +7,9 @@
       "AllowedOrigins": [
         "https://projects.everylanguage.com",
         "https://app.everylanguage.com",
-        "https://everylanguage.com"
+        "https://everylanguage.com",
+        "https://admin.everylanguage.com",
+        "https://map.everylanguage.com"
       ],
       "ExposeHeaders": [
         "ETag",

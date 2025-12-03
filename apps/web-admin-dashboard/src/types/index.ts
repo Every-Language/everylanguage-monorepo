@@ -1,4 +1,4 @@
-import type { Tables } from '@everylanguage/shared-types';
+import type { Tables, Enums } from '@everylanguage/shared-types';
 
 // Database types
 export type LanguageEntity = Tables<'language_entities'>;
@@ -11,6 +11,43 @@ export type Donation = Tables<'donations'>;
 export type DonationAllocation = Tables<'donation_allocations'>;
 export type Operation = Tables<'operations'>;
 export type Project = Tables<'projects'>;
+
+// Enum types
+export type EntityStatus = Enums<'entity_status'> | 'in_progress'; // 'in_progress' added in migration, will be in types after regeneration
+
+// Funding status types
+export type LanguageFundingStatus =
+  | 'draft'
+  | 'available'
+  | 'in_progress'
+  | 'funded'
+  | 'archived';
+export type RegionFundingStatus =
+  | 'not_started'
+  | 'available'
+  | 'in_progress'
+  | 'funded'
+  | 'archived';
+
+// Funding interfaces
+export interface LanguageFunding {
+  id: string;
+  language_entity_id: string;
+  funding_status: LanguageFundingStatus;
+  budget_cents: number | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  deleted_at: string | null;
+}
+
+export interface RegionFunding {
+  region_id: string;
+  region_name: string;
+  region_level: string;
+  budget_cents: number;
+  funding_status: RegionFundingStatus;
+}
 
 // Temporary types for sponsorships (until database types are regenerated)
 export interface Sponsorship {
@@ -39,6 +76,7 @@ export interface SponsorshipAllocation {
 export interface LanguageEntityWithRegions extends LanguageEntity {
   regions?: Region[];
   region_count?: number;
+  language_funding?: LanguageFunding | null;
 }
 
 export interface LanguageHierarchyNode {
@@ -53,6 +91,7 @@ export interface LanguageHierarchyNode {
 export interface RegionWithLanguages extends Region {
   language_entities?: LanguageEntity[];
   language_count?: number;
+  region_funding?: RegionFunding | null;
 }
 
 export interface RegionHierarchyNode {

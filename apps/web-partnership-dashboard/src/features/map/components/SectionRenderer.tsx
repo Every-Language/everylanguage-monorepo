@@ -1,36 +1,34 @@
 import React from 'react';
 import { type SectionType } from '../config/layoutTypes';
-import { type MapSelection } from '../inspector/state/inspectorStore';
+import {
+  type MapSelection,
+  type SelectionMode,
+} from '../inspector/state/inspectorStore';
 import { HierarchySection } from '../sections/HierarchySection';
 import { LinkedEntitiesSection } from '../sections/LinkedEntitiesSection';
-import { InfoSection } from '../sections/InfoSection';
-import { BibleProgressSection } from '../sections/BibleProgressSection';
-import { BibleListeningSection } from '../sections/BibleListeningSection';
 import {
   MapControlsSection,
   type LayerState,
 } from '../sections/MapControlsSection';
-import { JPGospelAccessSection } from '../sections/JPGospelAccessSection';
 import { JPPeopleGroupsSection } from '../sections/JPPeopleGroupsSection';
 import { JPCountryStatsSection } from '../sections/JPCountryStatsSection';
 import { JPLanguageStatsSection } from '../sections/JPLanguageStatsSection';
-import { JPResourcesSection } from '../sections/JPResourcesSection';
-import { useLanguageEntity } from '../hooks/useLanguageEntity';
+import { PeopleGroupStatsSection } from '../sections/PeopleGroupStatsSection';
+import { GRNLanguageSampleSection } from '../sections/GRNLanguageSampleSection';
+import { GRNGospelResourcesSection } from '../sections/GRNGospelResourcesSection';
 import { CollapsibleSection } from './shared/CollapsibleSection';
 
 // Mapping of section types to display names
 const SECTION_TITLES: Record<SectionType, string> = {
-  'hierarchy': 'Hierarchy',
+  hierarchy: 'Hierarchy',
   'linked-entities': 'Related',
-  'info': 'Information',
-  'bible-progress': 'Bible Progress',
-  'bible-listening': 'Bible Listening',
   'map-controls': 'Map Controls',
-  'jp-gospel-access': 'Gospel Access',
   'jp-people-groups': 'People Groups',
   'jp-country-stats': 'Country Statistics',
   'jp-language-stats': 'Language Statistics',
-  'jp-resources': 'Resources',
+  'grn-language-sample': 'Language Sample',
+  'grn-gospel-resources': 'Gospel Resources',
+  'people-group-stats': 'People Group Statistics',
 };
 
 interface SectionRendererProps {
@@ -39,6 +37,23 @@ interface SectionRendererProps {
   scrollRef?: React.RefObject<HTMLDivElement | null>;
   layers?: LayerState;
   onLayersChange?: (next: LayerState) => void;
+  globalListeningSettings?: {
+    timePeriodHours: number;
+    colorGradient: import('../analytics/types').ColorGradient;
+  };
+  onGlobalListeningSettingsChange?: (settings: {
+    timePeriodHours: number;
+    colorGradient: import('../analytics/types').ColorGradient;
+  }) => void;
+  languagesSettings?: {
+    clustered: boolean;
+  };
+  onLanguagesSettingsChange?: (settings: { clustered: boolean }) => void;
+  peopleGroupsSettings?: {
+    clustered: boolean;
+  };
+  onPeopleGroupsSettingsChange?: (settings: { clustered: boolean }) => void;
+  selectionMode?: SelectionMode;
 }
 
 /**
@@ -51,25 +66,34 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
   scrollRef,
   layers,
   onLayersChange,
+  globalListeningSettings,
+  onGlobalListeningSettingsChange,
+  languagesSettings,
+  onLanguagesSettingsChange,
+  peopleGroupsSettings,
+  onPeopleGroupsSettingsChange,
+  selectionMode = 'language',
 }) => {
-  // Get descendant IDs for language entities (used by progress and listening sections)
-  const languageData = useLanguageEntity(
-    selection?.kind === 'language_entity' ? selection.id : ''
-  );
-  const descendantIds = languageData.descendants.data ?? [];
+  // Helper function to get section title (dynamic for linked-entities)
+  const getSectionTitle = (sectionType: SectionType): string => {
+    if (sectionType === 'linked-entities' && selection) {
+      return selection.kind === 'language_entity' ? 'Regions' : 'Languages';
+    }
+    return SECTION_TITLES[sectionType];
+  };
 
   // Helper function to render a section wrapped in CollapsibleSection
   const renderSection = (content: React.ReactNode): React.ReactNode => {
     if (!content) return null;
-    
+
     // Map controls don't need collapsible wrapper when there's no selection
     if (!selection && type === 'map-controls') {
       return content;
     }
-    
+
     return (
       <CollapsibleSection
-        title={SECTION_TITLES[type]}
+        title={getSectionTitle(type)}
         sectionId={type}
         defaultExpanded={true}
       >
@@ -83,7 +107,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
     if (type === 'map-controls' && layers && onLayersChange) {
       return (
         <CollapsibleSection
-          title={SECTION_TITLES[type]}
+          title={getSectionTitle(type)}
           sectionId={type}
           defaultExpanded={true}
         >
@@ -91,24 +115,31 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             value={layers}
             onChange={onLayersChange}
             embeddable
+            selectionMode={selectionMode}
+            globalListeningSettings={globalListeningSettings}
+            onGlobalListeningSettingsChange={onGlobalListeningSettingsChange}
+            languagesSettings={languagesSettings}
+            onLanguagesSettingsChange={onLanguagesSettingsChange}
+            peopleGroupsSettings={peopleGroupsSettings}
+            onPeopleGroupsSettingsChange={onPeopleGroupsSettingsChange}
           />
         </CollapsibleSection>
       );
     }
-    return (
-      <div className='text-sm text-neutral-500'>
-        Select a country, language, or project to view details.
-      </div>
-    );
+    return null;
   }
 
   switch (type) {
     case 'hierarchy':
       if (selection.kind === 'language_entity') {
-        return renderSection(<HierarchySection type='language' entityId={selection.id} />);
+        return renderSection(
+          <HierarchySection type='language' entityId={selection.id} />
+        );
       }
       if (selection.kind === 'region') {
-        return renderSection(<HierarchySection type='region' entityId={selection.id} />);
+        return renderSection(
+          <HierarchySection type='region' entityId={selection.id} />
+        );
       }
       return null;
 
@@ -118,6 +149,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
           <LinkedEntitiesSection
             type='regions'
             parentId={selection.id}
+            parentType='language_entity'
             scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
           />
         );
@@ -127,47 +159,35 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
           <LinkedEntitiesSection
             type='languages'
             parentId={selection.id}
+            parentType='region'
             scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
           />
         );
       }
-      return null;
-
-    case 'info':
-      if (selection.kind === 'language_entity') {
-        return renderSection(<InfoSection type='language' entityId={selection.id} />);
-      }
-      if (selection.kind === 'region') {
-        return renderSection(<InfoSection type='region' entityId={selection.id} />);
-      }
-      return null;
-
-    case 'bible-progress':
-      if (selection.kind === 'language_entity') {
+      if (selection.kind === 'people_group') {
+        // Show both languages and regions for people groups
         return renderSection(
-          <BibleProgressSection
-            languageId={selection.id}
-            descendantIds={descendantIds}
-            includeDescendants={descendantIds.length > 1}
-          />
+          <div className='space-y-4'>
+            <div>
+              <div className='text-sm font-medium mb-2'>Languages</div>
+              <LinkedEntitiesSection
+                type='languages'
+                parentId={selection.id}
+                parentType='people_group'
+                scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
+              />
+            </div>
+            <div>
+              <div className='text-sm font-medium mb-2'>Regions</div>
+              <LinkedEntitiesSection
+                type='regions'
+                parentId={selection.id}
+                parentType='people_group'
+                scrollRef={scrollRef as React.RefObject<HTMLDivElement>}
+              />
+            </div>
+          </div>
         );
-      }
-      // Progress section only applies to languages
-      return null;
-
-    case 'bible-listening':
-      if (selection.kind === 'language_entity') {
-        return renderSection(
-          <BibleListeningSection
-            type='language'
-            entityId={selection.id}
-            descendantIds={descendantIds}
-            includeDescendants={descendantIds.length > 1}
-          />
-        );
-      }
-      if (selection.kind === 'region') {
-        return renderSection(<BibleListeningSection type='region' entityId={selection.id} />);
       }
       return null;
 
@@ -178,26 +198,28 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             value={layers}
             onChange={onLayersChange}
             embeddable
+            selectionMode={selectionMode}
+            globalListeningSettings={globalListeningSettings}
+            onGlobalListeningSettingsChange={onGlobalListeningSettingsChange}
+            languagesSettings={languagesSettings}
+            onLanguagesSettingsChange={onLanguagesSettingsChange}
+            peopleGroupsSettings={peopleGroupsSettings}
+            onPeopleGroupsSettingsChange={onPeopleGroupsSettingsChange}
           />
         );
       }
       return null;
 
-    case 'jp-gospel-access':
-      if (selection.kind === 'language_entity') {
-        return renderSection(<JPGospelAccessSection type='language' entityId={selection.id} />);
-      }
-      if (selection.kind === 'region') {
-        return renderSection(<JPGospelAccessSection type='region' entityId={selection.id} />);
-      }
-      return null;
-
     case 'jp-people-groups':
       if (selection.kind === 'language_entity') {
-        return renderSection(<JPPeopleGroupsSection type='language' entityId={selection.id} />);
+        return renderSection(
+          <JPPeopleGroupsSection type='language' entityId={selection.id} />
+        );
       }
       if (selection.kind === 'region') {
-        return renderSection(<JPPeopleGroupsSection type='region' entityId={selection.id} />);
+        return renderSection(
+          <JPPeopleGroupsSection type='region' entityId={selection.id} />
+        );
       }
       return null;
 
@@ -211,16 +233,36 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
     case 'jp-language-stats':
       // Only show for language entities
       if (selection.kind === 'language_entity') {
-        return renderSection(<JPLanguageStatsSection entityId={selection.id} />);
+        return renderSection(
+          <JPLanguageStatsSection entityId={selection.id} />
+        );
       }
       return null;
 
-    case 'jp-resources':
+    case 'grn-language-sample':
+      // Only show for language entities
       if (selection.kind === 'language_entity') {
-        return renderSection(<JPResourcesSection type='language' entityId={selection.id} />);
+        return renderSection(
+          <GRNLanguageSampleSection entityId={selection.id} />
+        );
       }
-      if (selection.kind === 'region') {
-        return renderSection(<JPResourcesSection type='region' entityId={selection.id} />);
+      return null;
+
+    case 'grn-gospel-resources':
+      // Only show for language entities
+      if (selection.kind === 'language_entity') {
+        return renderSection(
+          <GRNGospelResourcesSection entityId={selection.id} />
+        );
+      }
+      return null;
+
+    case 'people-group-stats':
+      // Only show for people groups
+      if (selection.kind === 'people_group') {
+        return renderSection(
+          <PeopleGroupStatsSection entityId={selection.id} />
+        );
       }
       return null;
 

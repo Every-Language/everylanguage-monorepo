@@ -32,9 +32,63 @@ const DonationsPage = lazy(() =>
     default: m.DonationsPage,
   }))
 );
-const AllocationsPage = lazy(() =>
-  import('./features/donations/pages/AllocationsPage').then(m => ({
-    default: m.AllocationsPage,
+const LanguageAvailabilityPage = lazy(() =>
+  import('./features/availability/pages/LanguageAvailabilityPage').then(m => ({
+    default: m.LanguageAvailabilityPage,
+  }))
+);
+const ProjectsPage = lazy(() =>
+  import('./features/availability/pages/ProjectsPage').then(m => ({
+    default: m.ProjectsPage,
+  }))
+);
+const AudioVersionsPage = lazy(() =>
+  import('./features/availability/pages/AudioVersionsPage').then(m => ({
+    default: m.AudioVersionsPage,
+  }))
+);
+const TextVersionsPage = lazy(() =>
+  import('./features/availability/pages/TextVersionsPage').then(m => ({
+    default: m.TextVersionsPage,
+  }))
+);
+const OperationsPage = lazy(() =>
+  import('./features/operations/pages/OperationsPage').then(m => ({
+    default: m.OperationsPage,
+  }))
+);
+const BibleTranslationOverridesPage = lazy(() =>
+  import('./features/statistics/pages/BibleTranslationOverridesPage').then(
+    m => ({
+      default: m.BibleTranslationOverridesPage,
+    })
+  )
+);
+const ExternalProjectsOverridesPage = lazy(() =>
+  import('./features/statistics/pages/ExternalProjectsOverridesPage').then(
+    m => ({
+      default: m.ExternalProjectsOverridesPage,
+    })
+  )
+);
+const UsersPage = lazy(() =>
+  import('./features/users/pages/UsersPage').then(m => ({
+    default: m.UsersPage,
+  }))
+);
+const PartnerOrgsPage = lazy(() =>
+  import('./features/users/pages/PartnerOrgsPage').then(m => ({
+    default: m.PartnerOrgsPage,
+  }))
+);
+const TeamsPage = lazy(() =>
+  import('./features/users/pages/TeamsPage').then(m => ({
+    default: m.TeamsPage,
+  }))
+);
+const BasesPage = lazy(() =>
+  import('./features/users/pages/BasesPage').then(m => ({
+    default: m.BasesPage,
   }))
 );
 
@@ -82,7 +136,32 @@ function App() {
             <Route path='/languages' element={<LanguagesPage />} />
             <Route path='/regions' element={<RegionsPage />} />
             <Route path='/donations' element={<DonationsPage />} />
-            <Route path='/allocations' element={<AllocationsPage />} />
+            <Route
+              path='/budgets/languages'
+              element={<LanguageAvailabilityPage />}
+            />
+            <Route path='/projects' element={<ProjectsPage />} />
+            <Route
+              path='/projects/audio-versions'
+              element={<AudioVersionsPage />}
+            />
+            <Route
+              path='/projects/text-versions'
+              element={<TextVersionsPage />}
+            />
+            <Route path='/budgets/operations' element={<OperationsPage />} />
+            <Route
+              path='/statistics/bible-translations'
+              element={<BibleTranslationOverridesPage />}
+            />
+            <Route
+              path='/statistics/external-projects'
+              element={<ExternalProjectsOverridesPage />}
+            />
+            <Route path='/users' element={<UsersPage />} />
+            <Route path='/users/partner-orgs' element={<PartnerOrgsPage />} />
+            <Route path='/users/teams' element={<TeamsPage />} />
+            <Route path='/users/bases' element={<BasesPage />} />
           </Route>
 
           {/* Default redirect */}

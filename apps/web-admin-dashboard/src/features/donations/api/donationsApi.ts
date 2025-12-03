@@ -4,7 +4,12 @@ import type { Database } from '@everylanguage/shared-types';
 
 type DonationStatus = Database['public']['Enums']['donation_status'];
 type DonationIntentType = Database['public']['Enums']['donation_intent_type'];
-type PaymentMethodType = Database['public']['Enums']['payment_method_type'];
+const isValidUuid = (value: string | undefined): boolean => {
+  if (!value) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value.trim()
+  );
+};
 
 export const donationsApi = {
   /**
@@ -16,7 +21,10 @@ export const donationsApi = {
     searchQuery?: string;
     statusFilter?: string;
     intentTypeFilter?: string;
-    paymentMethodFilter?: string;
+    intentLanguageId?: string;
+    intentOperationId?: string;
+    sortField?: 'date' | 'amount' | 'remaining' | 'donor';
+    sortDirection?: 'asc' | 'desc';
     onlyUnallocated?: boolean;
   }): Promise<{
     data: DonationWithAllocations[];
@@ -29,6 +37,10 @@ export const donationsApi = {
     const pageSize = params?.pageSize || 50;
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
+
+    const sortField = params?.sortField ?? 'date';
+    const sortDirection = params?.sortDirection ?? 'desc';
+    const sortAscending = sortDirection === 'asc';
 
     // Build query for donations
     let query = supabase
@@ -47,7 +59,22 @@ export const donationsApi = {
           created_by,
           effective_from,
           effective_to,
-          currency_code
+          currency_code,
+          operation:operations!donation_allocations_operation_id_fkey (
+            id,
+            name,
+            category
+          ),
+          project:projects!donation_allocations_project_id_fkey (
+            id,
+            name,
+            target_language_entity_id,
+            target_language:language_entities!projects_target_language_entity_id_fkey (
+              id,
+              name,
+              level
+            )
+          )
         ),
         intent_language:language_entities!donations_intent_language_entity_id_fkey (
           id,
@@ -77,8 +104,7 @@ export const donationsApi = {
       `,
         { count: 'exact' }
       )
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+      .is('deleted_at', null);
 
     // Apply status filter
     if (params?.statusFilter) {
@@ -93,12 +119,71 @@ export const donationsApi = {
       );
     }
 
-    // Apply payment method filter
-    if (params?.paymentMethodFilter) {
-      query = query.eq(
-        'payment_method',
-        params.paymentMethodFilter as PaymentMethodType
-      );
+    if (params?.intentLanguageId) {
+      query = query.eq('intent_language_entity_id', params.intentLanguageId);
+    }
+
+    if (params?.intentOperationId) {
+      query = query.eq('intent_operation_id', params.intentOperationId);
+    }
+
+    // Apply search filter in SQL before pagination
+    if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
+      const searchTerm = params.searchQuery.trim();
+      const orFilters = [
+        `user.first_name.ilike.%${searchTerm}%`,
+        `user.last_name.ilike.%${searchTerm}%`,
+        `user.email.ilike.%${searchTerm}%`,
+        `partner_org.name.ilike.%${searchTerm}%`,
+        `intent_language.name.ilike.%${searchTerm}%`,
+        `intent_region.name.ilike.%${searchTerm}%`,
+        `intent_operation.name.ilike.%${searchTerm}%`,
+      ];
+
+      if (isValidUuid(searchTerm)) {
+        orFilters.push(`id.eq.${searchTerm}`);
+      }
+
+      query = query.or(orFilters.join(','));
+    }
+
+    // Apply sorting
+    switch (sortField) {
+      case 'amount':
+        query = query.order('amount_cents', { ascending: sortAscending });
+        break;
+      case 'remaining':
+        // Cannot sort by remaining on server-side, will sort in JavaScript after calculation
+        query = query.order('amount_cents', {
+          ascending: sortAscending,
+        });
+        break;
+      case 'donor':
+        query = query
+          .order('last_name', {
+            ascending: sortAscending,
+            nullsFirst: sortAscending,
+            referencedTable: 'user',
+          })
+          .order('first_name', {
+            ascending: sortAscending,
+            nullsFirst: sortAscending,
+            referencedTable: 'user',
+          })
+          .order('name', {
+            ascending: sortAscending,
+            nullsFirst: !sortAscending,
+            referencedTable: 'partner_org',
+          });
+        break;
+      case 'date':
+      default:
+        query = query.order('created_at', { ascending: sortAscending });
+        break;
+    }
+
+    if (sortField !== 'date') {
+      query = query.order('created_at', { ascending: false });
     }
 
     // Apply pagination
@@ -141,58 +226,33 @@ export const donationsApi = {
       }
     );
 
-    // Apply unallocated filter in-memory (after fetching)
+    // Apply onlyUnallocated filter if needed (must be done after calculating remaining)
     if (params?.onlyUnallocated) {
       transformedData = transformedData.filter(
         donation => donation.remaining_cents > 0
       );
     }
 
-    // Apply search filter in-memory
-    if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
-      const searchLower = params.searchQuery.toLowerCase();
-      transformedData = transformedData.filter(donation => {
-        const userName = donation.user
-          ? `${donation.user.first_name} ${donation.user.last_name}`.toLowerCase()
-          : '';
-        const userEmail = donation.user?.email?.toLowerCase() || '';
-        const partnerOrgName = donation.partner_org?.name?.toLowerCase() || '';
-        const intentLanguageName =
-          donation.intent_language?.name?.toLowerCase() || '';
-        const intentRegionName =
-          donation.intent_region?.name?.toLowerCase() || '';
-        const intentOperationName =
-          donation.intent_operation?.name?.toLowerCase() || '';
-
-        return (
-          userName.includes(searchLower) ||
-          userEmail.includes(searchLower) ||
-          partnerOrgName.includes(searchLower) ||
-          intentLanguageName.includes(searchLower) ||
-          intentRegionName.includes(searchLower) ||
-          intentOperationName.includes(searchLower) ||
-          donation.id.toLowerCase().includes(searchLower)
-        );
+    // Apply remaining sort if needed (must be done after calculating remaining)
+    if (sortField === 'remaining') {
+      transformedData.sort((a, b) => {
+        const diff = a.remaining_cents - b.remaining_cents;
+        return sortAscending ? diff : -diff;
       });
     }
 
-    // Recalculate pagination after filters
-    const filteredCount = transformedData.length;
-    const paginatedData = transformedData.slice(0, pageSize);
+    // Note: count and pagination are approximate when onlyUnallocated filter is applied
+    // since we filter after fetching. For accurate counts, we'd need a separate query.
+    const finalCount = params?.onlyUnallocated
+      ? transformedData.length
+      : count || 0;
 
     return {
-      data: paginatedData,
-      count:
-        params?.onlyUnallocated || params?.searchQuery
-          ? filteredCount
-          : count || 0,
+      data: transformedData,
+      count: finalCount,
       page,
       pageSize,
-      totalPages: Math.ceil(
-        (params?.onlyUnallocated || params?.searchQuery
-          ? filteredCount
-          : count || 0) / pageSize
-      ),
+      totalPages: Math.ceil(finalCount / pageSize),
     };
   },
 
@@ -216,7 +276,22 @@ export const donationsApi = {
           created_by,
           effective_from,
           effective_to,
-          currency_code
+          currency_code,
+          operation:operations!donation_allocations_operation_id_fkey (
+            id,
+            name,
+            category
+          ),
+          project:projects!donation_allocations_project_id_fkey (
+            id,
+            name,
+            target_language_entity_id,
+            target_language:language_entities!projects_target_language_entity_id_fkey (
+              id,
+              name,
+              level
+            )
+          )
         ),
         intent_language:language_entities!donations_intent_language_entity_id_fkey (
           id,
@@ -298,17 +373,120 @@ export const donationsApi = {
       throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase
+    const { data: insertedData, error: insertError } = await supabase
       .from('donation_allocations')
       .insert({
         ...allocation,
         created_by: userData.user.id,
       })
-      .select()
+      .select('id')
+      .single();
+
+    if (insertError) throw insertError;
+    if (!insertedData?.id) {
+      throw new Error('Failed to create allocation');
+    }
+
+    // Fetch the full allocation record
+    const { data, error } = await supabase
+      .from('donation_allocations')
+      .select(
+        'id, donation_id, operation_id, project_id, amount_cents, currency_code, effective_from, effective_to, created_by, created_at, notes'
+      )
+      .eq('id', insertedData.id)
       .single();
 
     if (error) throw error;
     return data;
+  },
+
+  /**
+   * Search operations using simple ilike pattern matching
+   */
+  async searchOperations(
+    searchQuery: string,
+    maxResults: number = 50
+  ): Promise<Array<{ id: string; name: string; category: string }>> {
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      return [];
+    }
+
+    const { data, error } = await (
+      supabase as unknown as {
+        rpc: (
+          fn: string,
+          params?: Record<string, unknown>
+        ) => Promise<{ data: unknown; error: Error | null }>;
+      }
+    ).rpc('search_operations', {
+      search_query: searchQuery.trim(),
+      max_results: maxResults,
+      min_similarity: 0.1,
+    });
+
+    if (error) throw error;
+
+    const rows =
+      (data as Array<{
+        operation_id: string;
+        operation_name: string;
+        category: string | null;
+      }>) || [];
+
+    return rows.map(row => ({
+      id: row.operation_id,
+      name: row.operation_name,
+      category: row.category || '',
+    }));
+  },
+
+  /**
+   * Search projects using simple ilike pattern matching
+   */
+  async searchProjects(
+    searchQuery: string,
+    maxResults: number = 50
+  ): Promise<
+    Array<{
+      id: string;
+      name: string;
+      target_language_entity_id: string | null;
+      target_language_name: string | null;
+    }>
+  > {
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      return [];
+    }
+
+    const { data, error } = await (
+      supabase as unknown as {
+        rpc: (
+          fn: string,
+          params?: Record<string, unknown>
+        ) => Promise<{ data: unknown; error: Error | null }>;
+      }
+    ).rpc('search_projects', {
+      search_query: searchQuery.trim(),
+      max_results: maxResults,
+      min_similarity: 0.1,
+    });
+
+    if (error) throw error;
+
+    const rows =
+      (data as Array<{
+        project_id: string;
+        project_name: string;
+        target_language_entity_id: string | null;
+        target_language_name: string | null;
+      }>) || [];
+
+    return rows.map(item => ({
+      id: item.project_id,
+      name: item.project_name,
+      target_language_entity_id: item.target_language_entity_id,
+      target_language_name: item.target_language_name || null,
+    }));
   },
 
   /**
@@ -329,6 +507,42 @@ export const donationsApi = {
   },
 
   /**
+   * Fetch paginated operations for dropdown (alphabetical order)
+   */
+  async fetchOperationsPaginated(params?: {
+    page?: number;
+    pageSize?: number;
+  }): Promise<{
+    data: Array<{ id: string; name: string; category: string }>;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    count: number;
+  }> {
+    const page = params?.page || 1;
+    const pageSize = params?.pageSize || 20;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error, count } = await supabase
+      .from('operations')
+      .select('id, name, category', { count: 'exact' })
+      .is('deleted_at', null)
+      .eq('status', 'available' as const)
+      .order('name', { ascending: true })
+      .range(from, to);
+
+    if (error) throw error;
+    return {
+      data: data || [],
+      page,
+      pageSize,
+      totalPages: Math.ceil((count || 0) / pageSize),
+      count: count || 0,
+    };
+  },
+
+  /**
    * Fetch all projects for allocation dropdown
    */
   async fetchProjects(): Promise<
@@ -342,5 +556,63 @@ export const donationsApi = {
 
     if (error) throw error;
     return data || [];
+  },
+
+  /**
+   * Fetch paginated projects for dropdown (alphabetical order)
+   */
+  async fetchProjectsPaginated(params?: {
+    page?: number;
+    pageSize?: number;
+  }): Promise<{
+    data: Array<{
+      id: string;
+      name: string;
+      target_language_entity_id: string | null;
+      target_language_name: string | null;
+    }>;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    count: number;
+  }> {
+    const page = params?.page || 1;
+    const pageSize = params?.pageSize || 20;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error, count } = await supabase
+      .from('projects')
+      .select(
+        `
+        id,
+        name,
+        target_language_entity_id,
+        target_language:language_entities!projects_target_language_entity_id_fkey (
+          id,
+          name
+        )
+      `,
+        { count: 'exact' }
+      )
+      .is('deleted_at', null)
+      .order('name', { ascending: true })
+      .range(from, to);
+
+    if (error) throw error;
+    return {
+      data:
+        data?.map(proj => ({
+          id: proj.id,
+          name: proj.name,
+          target_language_entity_id: proj.target_language_entity_id,
+          target_language_name:
+            (proj.target_language as { name: string } | null)?.name || null,
+        })) || [],
+      page,
+      pageSize,
+      totalPages: Math.ceil((count || 0) / pageSize),
+      count: count || 0,
+    };
   },
 };

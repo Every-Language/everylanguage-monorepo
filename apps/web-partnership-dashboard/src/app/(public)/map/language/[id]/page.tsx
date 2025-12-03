@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Language Details | EverlyLanguage Map',
+  title: 'Language Details | Every Language Map',
   description: 'View Bible translation progress for this language',
 };
 

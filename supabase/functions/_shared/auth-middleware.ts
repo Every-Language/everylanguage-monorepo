@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from './response-utils.ts';
 
 export interface AuthenticatedContext {
@@ -22,23 +22,38 @@ export async function authenticateRequest(
   req: Request
 ): Promise<AuthenticatedContext | AuthError> {
   try {
-    // Initialize Supabase client with auth headers
+    // Get Authorization header
     const authHeader = req.headers.get('Authorization');
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '',
-      {
-        global: {
-          headers: authHeader ? { Authorization: authHeader } : {},
-        },
-      }
-    );
 
-    // Get authenticated user
+    if (!authHeader) {
+      return {
+        status: 401,
+        error: 'Authentication required',
+        details: 'Missing Authorization header',
+      };
+    }
+
+    // Extract token from Bearer format
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+
+    if (!token) {
+      return {
+        status: 401,
+        error: 'Authentication required',
+        details: 'Invalid Authorization header format',
+      };
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+    // Get authenticated user by passing token directly
     const {
       data: { user },
       error: authError,
-    } = await supabaseClient.auth.getUser();
+    } = await supabaseClient.auth.getUser(token);
 
     if (authError || !user) {
       return {
@@ -87,15 +102,14 @@ export function isAuthError(
  * Helper to create error response from auth error
  */
 export function createAuthErrorResponse(authError: AuthError): Response {
-  return new Response(
-    JSON.stringify({
-      success: false,
-      error: authError.error,
-      details: authError.details,
-    }),
-    {
-      status: authError.status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    }
-  );
+  const responseBody = {
+    success: false,
+    error: authError.error,
+    details: authError.details,
+  };
+
+  return new Response(JSON.stringify(responseBody), {
+    status: authError.status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 }

@@ -5,7 +5,6 @@
 
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import type { Database } from '@everylanguage/shared-types';
 
 export async function updateSession(request: NextRequest) {
   // Create a new response with the incoming request headers
@@ -15,10 +14,17 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  // Check for required environment variables
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing Supabase environment variables in middleware');
+    return { response, user: null };
+  }
+
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -30,13 +36,16 @@ export async function updateSession(request: NextRequest) {
           });
         },
       },
-    }
-  );
+    });
 
-  // Refresh the session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Refresh the session
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  return { response, user };
+    return { response, user };
+  } catch (error) {
+    console.error('Error updating session in middleware:', error);
+    return { response, user: null };
+  }
 }

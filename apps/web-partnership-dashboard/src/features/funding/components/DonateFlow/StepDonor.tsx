@@ -2,7 +2,7 @@ import React from 'react';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
 import { CustomPhoneInput } from '@/features/auth/components/CustomPhoneInput';
-import { supabase } from '@/shared/services/supabase';
+import { PartnerOrgDropdown } from './PartnerOrgDropdown';
 import type { DonateFlow } from '../../hooks/useDonateFlow';
 
 export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
@@ -19,28 +19,6 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
   const [newOrgPublic, setNewOrgPublic] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-
-  // Fetch partner orgs for dropdown
-  const [partnerOrgs, setPartnerOrgs] = React.useState<
-    Array<{ id: string; name: string }>
-  >([]);
-
-  React.useEffect(() => {
-    if (donorMode === 'existing') {
-      supabase
-        .from('partner_orgs' as any)
-        .select('id, name')
-        .eq('is_public', true)
-        .order('name')
-        .then(({ data, error }) => {
-          if (!error && data) {
-            setPartnerOrgs(
-              data as unknown as Array<{ id: string; name: string }>
-            );
-          }
-        });
-    }
-  }, [donorMode]);
 
   const handleSubmit = async () => {
     // Validation
@@ -84,6 +62,8 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
         });
       }
 
+      // Automatically set payment method to card and skip payment method selection step
+      flow.setPaymentMethod('card');
       flow.next();
     } finally {
       setLoading(false);
@@ -177,18 +157,15 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
           <label className='text-sm text-neutral-700 dark:text-neutral-300 block font-medium'>
             Select organization
           </label>
-          <select
-            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+          <PartnerOrgDropdown
             value={partnerOrgId}
-            onChange={e => setPartnerOrgId(e.target.value)}
-          >
-            <option value=''>-- Select --</option>
-            {partnerOrgs.map(org => (
-              <option key={org.id} value={org.id}>
-                {org.name}
-              </option>
-            ))}
-          </select>
+            onChange={setPartnerOrgId}
+            error={
+              error && donorMode === 'existing' && !partnerOrgId
+                ? 'Please select an organization.'
+                : undefined
+            }
+          />
         </div>
       )}
 

@@ -63,3 +63,14 @@ audio files
 - filter audio table by not deleted
 - bulk timestamp upload broken (violates rls)
 - prompt to create an audio version before first upload
+
+GRN API integration
+
+- build a background sync job to pull region language list
+- Add GRN codes to language_entities_sources
+- also pull 'audio/video from other sources'
+- add 'recordings in related languages'
+
+Joshua project API integration
+
+- reduce staletime

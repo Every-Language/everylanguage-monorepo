@@ -3,15 +3,14 @@ import { Source, Layer } from 'react-map-gl/maplibre';
 import { useSelection } from '../state/inspectorStore';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
-import {
-  useLanguageOverlayGeometries,
-  useRegionBoundary,
-} from '../hooks/overlay';
+import { useLanguageOverlayGeometries } from '../hooks/overlay';
 
-// Minimal overlay that highlights the selected region or the union of regions for a language.
-export const MapOverlayLayers: React.FC<{ countriesEnabled?: boolean }> = ({
-  countriesEnabled = true,
-}) => {
+// Overlay that highlights regions for selected language or project.
+// Region highlighting is now handled by MapCountriesLayer in region mode.
+export const MapOverlayLayers: React.FC<{
+  countriesEnabled?: boolean;
+  opacity?: number;
+}> = ({ countriesEnabled = true, opacity = 1.0 }) => {
   const selection = useSelection();
 
   const projectRegionIdQuery = useQuery({
@@ -36,49 +35,45 @@ export const MapOverlayLayers: React.FC<{ countriesEnabled?: boolean }> = ({
     retry: false,
   });
 
-  const regionBoundary = useRegionBoundary(
-    selection?.kind === 'region'
-      ? selection.id
-      : (projectRegionIdQuery.data ?? null),
-    {
-      enabled:
-        !!selection &&
-        (selection.kind === 'region' || !!projectRegionIdQuery.data),
-    }
-  );
-
+  // Only show language regions overlay (for language mode)
   const langRegionsQuery = useLanguageOverlayGeometries(
     selection?.kind === 'language_entity' ? selection.id : null,
     { enabled: !!selection && selection.kind === 'language_entity' }
   );
 
   const features: GeoJSON.Feature[] = [];
-  if (regionBoundary.data)
-    features.push({
-      type: 'Feature',
-      geometry: regionBoundary.data,
-      properties: {},
-    });
+
+  // Add language regions (for language mode)
   if (langRegionsQuery.data?.length) {
     for (const g of langRegionsQuery.data)
       features.push({ type: 'Feature', geometry: g, properties: {} });
+  }
+
+  // Add project region (for project selection)
+  if (projectRegionIdQuery.data) {
+    // Note: We would need to fetch the boundary here, but for now
+    // project region highlighting can be handled separately if needed
+    // This keeps the component focused on language region overlays
   }
 
   if (!countriesEnabled || !features.length) return null;
 
   const fc: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features };
 
+  const fillOpacity = 0.25 * opacity;
+  const lineWidth = 2;
+
   return (
     <Source id='selection-overlay' type='geojson' data={fc}>
       <Layer
         id='selection-fill'
         type='fill'
-        paint={{ 'fill-color': '#ad915a', 'fill-opacity': 0.25 }}
+        paint={{ 'fill-color': '#ad915a', 'fill-opacity': fillOpacity }}
       />
       <Layer
         id='selection-outline'
         type='line'
-        paint={{ 'line-color': '#ad915a', 'line-width': 2 }}
+        paint={{ 'line-color': '#ad915a', 'line-width': lineWidth }}
       />
     </Source>
   );

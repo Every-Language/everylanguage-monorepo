@@ -8,10 +8,10 @@ export default [
   // Base configuration for all files
   js.configs.recommended,
 
-  // TypeScript files configuration (excluding edge functions)
+  // TypeScript files configuration (excluding edge functions and Deno scripts)
   {
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['functions/**/*.ts'], // Edge functions handled separately
+    ignores: ['functions/**/*.ts', 'scripts/**/*.ts'], // Edge functions and Deno scripts handled separately
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -94,6 +94,8 @@ export default [
         globalThis: 'readonly',
         TextEncoder: 'readonly',
         TextDecoder: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
       },
     },
     plugins: {
@@ -118,6 +120,64 @@ export default [
       '@typescript-eslint/no-floating-promises': 'off', // Disable (needs project)
       '@typescript-eslint/await-thenable': 'off', // Disable (needs project)
       '@typescript-eslint/no-unnecessary-condition': 'off', // Disable (needs project)
+      'prettier/prettier': 'off',
+    },
+  },
+
+  // Deno scripts configuration (test scripts that use Deno)
+  {
+    files: ['scripts/**/*.ts'],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+        // Don't use project checking for Deno scripts
+      },
+      globals: {
+        Deno: 'readonly',
+        Response: 'readonly',
+        Request: 'readonly',
+        Headers: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        fetch: 'readonly',
+        btoa: 'readonly',
+        atob: 'readonly',
+        FormData: 'readonly',
+        File: 'readonly',
+        console: 'readonly',
+        crypto: 'readonly',
+        globalThis: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint,
+      prettier,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
+      'no-console': 'off', // Console is ok in test scripts
+      '@typescript-eslint/no-explicit-any': 'off', // More lenient for test scripts
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/no-unsafe-assignment': 'off', // Disable for Deno environment
+      '@typescript-eslint/no-unsafe-member-access': 'off', // Disable for Deno environment
+      '@typescript-eslint/no-unsafe-call': 'off', // Disable for Deno environment
+      '@typescript-eslint/no-unsafe-return': 'off', // Disable for Deno environment
+      '@typescript-eslint/no-unsafe-argument': 'off', // Disable for Deno environment
+      '@typescript-eslint/prefer-nullish-coalescing': 'off', // Disable (needs project)
+      '@typescript-eslint/no-floating-promises': 'off', // Disable (needs project)
+      '@typescript-eslint/await-thenable': 'off', // Disable (needs project)
+      '@typescript-eslint/no-unnecessary-condition': 'off', // Disable (needs project)
+      'prefer-template': 'off', // Allow string concatenation in test scripts
+      'no-undef': 'off', // Deno globals are handled above
       'prettier/prettier': 'off',
     },
   },

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Global Bible Translation Map | EverlyLanguage',
+  title: 'Global Bible Translation Map | Every Language',
   description:
     'Explore Bible translation progress for 7,000+ languages worldwide. Track real-time progress, see language distribution, and discover translation projects.',
   openGraph: {

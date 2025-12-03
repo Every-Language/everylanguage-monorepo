@@ -8,8 +8,6 @@ import { useDonateFlow } from '../hooks/useDonateFlow';
 import { DonateFlow } from '../components/DonateFlow/DonateFlow';
 import { DonateInfoSection } from '../components/DonateFlow/DonateInfoSection';
 import { DonateFAQ } from '../components/DonateFlow/DonateFAQ';
-import { LanguageSelectionProvider } from '../components/DonateFlow/LanguageSelectionProvider';
-import { StepActionsProvider } from '../components/DonateFlow/StepActionsProvider';
 
 export const DonatePage: React.FC = () => {
   const searchParams = useSearchParams();
@@ -50,14 +48,9 @@ export const DonatePage: React.FC = () => {
 
   const confirmLeave = () => {
     setShowConfirmDialog(false);
-    router.back();
+    // Navigate directly to /donate instead of using router.back() to avoid blank screens
+    router.push('/donate');
   };
-
-  // Check if we're in the adopt flow (steps 1-4 need the language selection provider)
-  const isAdoptFlow =
-    flow.state.intent?.type === 'language' &&
-    flow.state.step >= 1 &&
-    flow.state.step <= 4;
 
   const pageContent = (
     <>
@@ -101,15 +94,15 @@ export const DonatePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Always 2-column layout: info on left, content on right */}
       <div className='flex-1 max-w-7xl w-full mx-auto px-4 py-8'>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12'>
-          {/* Left: Info Panel - dynamic based on step */}
+          {/* Left: Info Panel (information only) */}
           <div className='lg:pr-8'>
             <DonateInfoSection flowState={flow.state} flow={flow} />
           </div>
 
-          {/* Right: Flow Steps - max-width when stacked */}
+          {/* Right: Flow Steps (all interactive content) */}
           <div className='lg:pl-8 max-w-2xl lg:max-w-none mx-auto w-full'>
             <DonateFlow flow={flow} showBackButton={false} />
           </div>
@@ -127,13 +120,7 @@ export const DonatePage: React.FC = () => {
 
   return (
     <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col'>
-      {isAdoptFlow ? (
-        <StepActionsProvider>
-          <LanguageSelectionProvider>{pageContent}</LanguageSelectionProvider>
-        </StepActionsProvider>
-      ) : (
-        pageContent
-      )}
+      {pageContent}
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { useUserDisplayName } from '../../../../shared/hooks/query/user-profile'
 import { ProgressWidgets } from './ProgressWidgets';
 import { RecentActivity } from './RecentActivity';
 import { ProjectInfo } from './ProjectInfo';
+import { RecentUpdates } from './RecentUpdates';
 
 export const DashboardOverview: React.FC = () => {
   const { user } = useAuth();
@@ -48,6 +49,9 @@ export const DashboardOverview: React.FC = () => {
         progressStats={dashboardData.progressStats}
         isLoading={dashboardData.progressLoading}
       />
+
+      {/* Recent Updates */}
+      <RecentUpdates />
 
       {/* Recent Activity */}
       <RecentActivity

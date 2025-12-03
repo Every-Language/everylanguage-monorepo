@@ -4,7 +4,12 @@ import { normalizeBboxForMap, centerOfBbox } from '../inspector/utils/geo';
 
 interface MapContextValue {
   mapRef: React.MutableRefObject<MapRef | null>;
-  flyTo: (opts: { longitude: number; latitude: number; zoom?: number }) => void;
+  flyTo: (opts: {
+    longitude: number;
+    latitude: number;
+    zoom?: number;
+    onComplete?: () => void;
+  }) => void;
   fitBounds: (
     bbox: [number, number, number, number],
     opts?: {
@@ -43,13 +48,30 @@ export const MapProvider: React.FC<{
     };
   }, [mapRef]);
   const flyTo = React.useCallback(
-    (opts: { longitude: number; latitude: number; zoom?: number }) => {
+    (opts: {
+      longitude: number;
+      latitude: number;
+      zoom?: number;
+      onComplete?: () => void;
+    }) => {
       const map = mapRef.current;
       if (!map) return;
+      const underlyingMap = map.getMap();
+      if (!underlyingMap) return;
+
+      // Set up completion callback if provided
+      if (opts.onComplete) {
+        const handleIdle = () => {
+          underlyingMap.off('idle', handleIdle);
+          opts.onComplete?.();
+        };
+        underlyingMap.once('idle', handleIdle);
+      }
+
       map.flyTo({
         center: [opts.longitude, opts.latitude],
         zoom: opts.zoom ?? 4,
-        speed: 0.8,
+        speed: 0.5,
         curve: 1.2,
         essential: true,
       });
@@ -71,7 +93,6 @@ export const MapProvider: React.FC<{
       if (!map) return;
       try {
         const { box, recommendFlyTo } = normalizeBboxForMap(bbox);
-        const opId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
         // Normalize padding for key generation
         const paddingKey =
           typeof opts?.padding === 'object'
@@ -84,29 +105,10 @@ export const MapProvider: React.FC<{
           lastRequestKeyRef.current === key &&
           now - lastRequestAtRef.current < 300
         ) {
-          try {
-            console.info('[MapContext.fitBounds] skipping duplicate request', {
-              opId,
-              key,
-            });
-          } catch {
-            /* noop */
-          }
           return;
         }
         lastRequestKeyRef.current = key;
         lastRequestAtRef.current = now;
-        try {
-          console.info('[MapContext.fitBounds] request', {
-            opId,
-            inputBbox: bbox,
-            normalizedBbox: box,
-            opts,
-            recommendFlyTo,
-          });
-        } catch {
-          /* noop */
-        }
         const perform = () => {
           // Stop any in-flight animations before starting a new camera op
           try {
@@ -114,82 +116,9 @@ export const MapProvider: React.FC<{
           } catch {
             /* noop */
           }
-          const getLngLat = () => {
-            try {
-              return (
-                map as unknown as {
-                  getCenter?: () => { lng: number; lat: number };
-                }
-              ).getCenter?.();
-            } catch {
-              return undefined;
-            }
-          };
-          const getZoom = () => {
-            try {
-              return (map as unknown as { getZoom?: () => number }).getZoom?.();
-            } catch {
-              return undefined;
-            }
-          };
-          const beforeCenter = getLngLat();
-          const beforeZoom = getZoom();
-          try {
-            console.info('[MapContext.fitBounds] before', {
-              opId,
-              beforeCenter,
-              beforeZoom,
-            });
-          } catch {
-            /* noop */
-          }
-          const underlyingNow = (
-            map as unknown as {
-              getMap?: () => {
-                once?: (ev: string, fn: () => void) => void;
-                on?: (ev: string, fn: () => void) => void;
-              };
-            }
-          ).getMap?.();
-          try {
-            underlyingNow?.once?.('movestart', () => {
-              try {
-                console.info('[MapContext.fitBounds] movestart', { opId });
-              } catch {
-                /* noop */
-              }
-            });
-          } catch {
-            /* noop */
-          }
-          try {
-            underlyingNow?.once?.('moveend', () => {
-              try {
-                const afterCenterEvt = getLngLat();
-                const afterZoomEvt = getZoom();
-                console.info('[MapContext.fitBounds] moveend', {
-                  opId,
-                  afterCenter: afterCenterEvt,
-                  afterZoom: afterZoomEvt,
-                });
-              } catch {
-                /* noop */
-              }
-            });
-          } catch {
-            /* noop */
-          }
           if (recommendFlyTo) {
             const [cx, cy] = centerOfBbox(box);
             userInteractedRef.current = false;
-            try {
-              console.info(
-                '[MapContext.fitBounds] using flyTo to center bbox',
-                { opId, center: [cx, cy], zoom: opts?.maxZoom ?? 4 }
-              );
-            } catch {
-              /* noop */
-            }
             map.flyTo({
               center: [cx, cy],
               zoom: opts?.maxZoom ?? 4,
@@ -209,19 +138,6 @@ export const MapProvider: React.FC<{
                   right: opts.padding.right ?? 40,
                 }
               : (opts?.padding ?? 40);
-          try {
-            console.info('[MapContext.fitBounds] invoking fitBounds', {
-              opId,
-              bbox: [
-                [box[0], box[1]],
-                [box[2], box[3]],
-              ],
-              padding,
-              maxZoom: opts?.maxZoom ?? 8,
-            });
-          } catch {
-            /* noop */
-          }
           map.fitBounds(
             [
               [box[0], box[1]],
@@ -255,13 +171,6 @@ export const MapProvider: React.FC<{
           typeof underlying.isStyleLoaded === 'function' &&
           !underlying.isStyleLoaded()
         ) {
-          try {
-            console.info('[MapContext.fitBounds] deferring until style.load', {
-              opId,
-            });
-          } catch {
-            /* noop */
-          }
           underlying.once?.('style.load', perform);
           // Safety net: poll for style load for up to 1500ms in case event was missed
           const start = Date.now();
@@ -277,26 +186,10 @@ export const MapProvider: React.FC<{
               u.isStyleLoaded()
             );
             if (loaded) {
-              try {
-                console.info(
-                  '[MapContext.fitBounds] style loaded via poll, performing',
-                  { opId }
-                );
-              } catch {
-                /* noop */
-              }
               perform();
               return;
             }
             if (Date.now() - start > 1500) {
-              try {
-                console.warn(
-                  '[MapContext.fitBounds] style load timeout; performing anyway',
-                  { opId }
-                );
-              } catch {
-                /* noop */
-              }
               perform();
               return;
             }
@@ -310,24 +203,9 @@ export const MapProvider: React.FC<{
             underlying.isRotating?.())
         ) {
           // Defer until current user move finishes
-          try {
-            console.info(
-              '[MapContext.fitBounds] deferring until current moveend',
-              { opId }
-            );
-          } catch {
-            /* noop */
-          }
           underlying.once?.('moveend', () => requestAnimationFrame(perform));
         } else {
           // Defer to next frame to avoid conflicts with ongoing map transitions
-          try {
-            console.info('[MapContext.fitBounds] scheduling on next frame', {
-              opId,
-            });
-          } catch {
-            /* noop */
-          }
           requestAnimationFrame(perform);
         }
       } catch {

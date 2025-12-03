@@ -143,7 +143,8 @@ jobs:
           TS=$(date +%Y%m%d.%H%M%S)
           DEV_VERSION="${BASE}-dev.${TS}.${GITHUB_RUN_NUMBER}"
           echo "Setting version to $DEV_VERSION"
-          npm version "$DEV_VERSION" --no-git-tag-version
+          # Use node to update package.json directly to avoid npm workspace protocol issues
+          node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8')); pkg.version = '$DEV_VERSION'; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
           echo "version=$DEV_VERSION" >> $GITHUB_OUTPUT
           echo "tag=dev" >> $GITHUB_OUTPUT
 
@@ -196,17 +197,33 @@ jobs:
             echo "📦 Other changes → PATCH version bump (default)"
           fi
           
-          # Bump the version
-          npm version $BUMP_TYPE --no-git-tag-version
+          # Bump the version using node to avoid npm workspace protocol issues
+          CURRENT_MAJOR=$(node -p "require('./package.json').version.split('.')[0]")
+          CURRENT_MINOR=$(node -p "require('./package.json').version.split('.')[1]")
+          CURRENT_PATCH=$(node -p "require('./package.json').version.split('.')[2].split('-')[0]")
+          
+          if [ "$BUMP_TYPE" = "major" ]; then
+            NEW_MAJOR=$((CURRENT_MAJOR + 1))
+            NEW_MINOR=0
+            NEW_PATCH=0
+          elif [ "$BUMP_TYPE" = "minor" ]; then
+            NEW_MAJOR=$CURRENT_MAJOR
+            NEW_MINOR=$((CURRENT_MINOR + 1))
+            NEW_PATCH=0
+          else
+            NEW_MAJOR=$CURRENT_MAJOR
+            NEW_MINOR=$CURRENT_MINOR
+            NEW_PATCH=$((CURRENT_PATCH + 1))
+          fi
+          
+          NEW_VERSION="${NEW_MAJOR}.${NEW_MINOR}.${NEW_PATCH}"
+          node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8')); pkg.version = '$NEW_VERSION'; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
           NEW_VERSION=$(node -p "require('./package.json').version")
           
           echo "Version bumped: $CURRENT_VERSION → $NEW_VERSION ($BUMP_TYPE)"
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "tag=latest" >> $GITHUB_OUTPUT
           echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
-
-      - name: Ensure npm 11.5.1+ for trusted publishing
-        run: npm install -g npm@latest
 
       - name: Publish to NPM with OIDC
         run: |
@@ -218,13 +235,17 @@ jobs:
           echo "🚀 Publishing @everylanguage/shared-types@$VERSION (tag: $TAG) to NPM..."
           
           # Skip if version already exists on NPM (in case of retries)
+          # Use npm view (works fine) but pnpm publish (handles workspace protocol)
           if npm view @everylanguage/shared-types@$VERSION version >/dev/null 2>&1; then
             echo "⚠️ Version $VERSION already exists on NPM, skipping publish"
           else
+            # Use pnpm publish instead of npm publish to handle workspace protocol
+            # pnpm publish uses npm registry and supports OIDC authentication
+            # --no-git-checks: Skip git checks in CI/CD since we have generated files and version bumps
             if [ "$TAG" = "latest" ]; then
-              npm publish --access public
+              pnpm publish --access public --no-git-checks
             else
-              npm publish --access public --tag $TAG
+              pnpm publish --access public --tag $TAG --no-git-checks
             fi
             echo "✅ Package published successfully as '$TAG' ($ENV_NAME)"
           fi

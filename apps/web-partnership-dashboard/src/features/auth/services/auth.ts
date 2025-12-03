@@ -2,8 +2,16 @@ import { createClient } from '@/lib/supabase/client';
 import type { DbUser, User, Session } from '../types';
 import { normalizePhoneNumber } from '../utils/phoneValidation';
 
-// Create a singleton Supabase client for auth operations
-const supabase = createClient();
+// Lazy singleton Supabase client for auth operations
+// Created on first access to avoid throwing errors during static page generation
+let supabaseClient: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseClient() {
+  if (!supabaseClient) {
+    supabaseClient = createClient();
+  }
+  return supabaseClient;
+}
 
 export class AuthService {
   /**
@@ -11,6 +19,7 @@ export class AuthService {
    */
   async getCurrentUser() {
     try {
+      const supabase = getSupabaseClient();
       const {
         data: { user },
         error,
@@ -42,6 +51,7 @@ export class AuthService {
    */
   async getCurrentSession() {
     try {
+      const supabase = getSupabaseClient();
       const {
         data: { session },
         error,
@@ -81,6 +91,7 @@ export class AuthService {
    */
   async getDbUser(userId: string): Promise<DbUser | null> {
     try {
+      const supabase = getSupabaseClient();
       console.log('Fetching dbUser for userId:', userId);
 
       const { data, error } = await (supabase as any)
@@ -108,6 +119,7 @@ export class AuthService {
    */
   async signIn(email: string, password: string) {
     try {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -129,10 +141,19 @@ export class AuthService {
    */
   async signUp(email: string, password: string, userData?: Partial<DbUser>) {
     try {
+      const supabase = getSupabaseClient();
+
+      // Get the current origin for email redirect
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/api/auth/confirm`
+          : undefined;
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo,
           data: userData,
         },
       });
@@ -149,10 +170,43 @@ export class AuthService {
   }
 
   /**
+   * Resend email confirmation
+   */
+  async resendConfirmationEmail(email: string) {
+    try {
+      const supabase = getSupabaseClient();
+
+      // Get the current origin for email redirect
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/api/auth/confirm`
+          : undefined;
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error resending confirmation email:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Sign in with OAuth provider
    */
   async signInWithProvider(provider: 'google' | 'github' | 'facebook') {
     try {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -176,6 +230,7 @@ export class AuthService {
    */
   async signOut() {
     try {
+      const supabase = getSupabaseClient();
       const { error } = await supabase.auth.signOut();
 
       if (error) {
@@ -192,6 +247,7 @@ export class AuthService {
    */
   async resetPassword(email: string) {
     try {
+      const supabase = getSupabaseClient();
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
@@ -210,6 +266,7 @@ export class AuthService {
    */
   async updatePassword(password: string) {
     try {
+      const supabase = getSupabaseClient();
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
@@ -232,6 +289,7 @@ export class AuthService {
       const normalizedPhone = normalizePhoneNumber(phone);
       console.log('📱 Normalized phone number:', normalizedPhone);
 
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signInWithPassword({
         phone: normalizedPhone,
         password,
@@ -260,6 +318,7 @@ export class AuthService {
       const normalizedPhone = normalizePhoneNumber(phone);
       console.log('📱 Normalized phone number:', normalizedPhone);
 
+      const supabase = getSupabaseClient();
       const { error } = await supabase.auth.signInWithOtp({
         phone: normalizedPhone,
         options: {
@@ -290,6 +349,7 @@ export class AuthService {
       const normalizedPhone = normalizePhoneNumber(phone);
       console.log('📱 Normalized phone number:', normalizedPhone);
 
+      const supabase = getSupabaseClient();
       const { error } = await supabase.auth.signInWithOtp({
         phone: normalizedPhone,
         options: {
@@ -324,6 +384,7 @@ export class AuthService {
       const normalizedPhone = normalizePhoneNumber(phone);
       console.log('📱 Normalized phone number:', normalizedPhone);
 
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signUp({
         phone: normalizedPhone,
         password,
@@ -374,6 +435,7 @@ export class AuthService {
       const normalizedPhone = normalizePhoneNumber(phone);
       console.log('📱 Verifying OTP for normalized phone:', normalizedPhone);
 
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.verifyOtp({
         phone: normalizedPhone,
         token,
@@ -400,6 +462,7 @@ export class AuthService {
       const normalizedPhone = normalizePhoneNumber(phone);
       console.log('📱 Updating to normalized phone:', normalizedPhone);
 
+      const supabase = getSupabaseClient();
       const { error } = await supabase.auth.updateUser({
         phone: normalizedPhone,
       });
@@ -424,6 +487,7 @@ export class AuthService {
     try {
       console.log('📝 Updating user profile:', profileData);
 
+      const supabase = getSupabaseClient();
       // Get current user
       const {
         data: { user },
@@ -490,6 +554,7 @@ export class AuthService {
   onAuthStateChange(
     callback: (user: User | null, session: Session | null) => void
   ) {
+    const supabase = getSupabaseClient();
     return supabase.auth.onAuthStateChange((_event, session) => {
       callback(session?.user ?? null, session);
     });

@@ -4,17 +4,46 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
-import { type SectionType } from '../config/layoutTypes';
-import { type MapSelection } from '../inspector/state/inspectorStore';
-import { SectionRenderer } from './SectionRenderer';
+import { Dialog } from '@/shared/components/ui/Dialog';
+import {
+  type MapSelection,
+  useSelectionMode,
+} from '../inspector/state/inspectorStore';
+import { InspectorTabs } from './InspectorTabs';
 import { FadeSwitch } from './shared/FadeTransition';
-import { HeaderSkeleton, BodySkeleton } from './shared/Skeletons';
+import { HeaderSkeleton } from './shared/Skeletons';
+import { DonateButton } from './DonateButton';
+import { DonateModal } from '@/features/funding/components/DonateFlow/DonateModal';
+import { useDonateEnabled } from '@/shared/hooks/useFeatureFlags';
+import type {
+  DonationIntent,
+  SelectedEntity,
+} from '@/features/funding/state/types';
+import { type LayerState } from '../sections/MapControlsSection';
+import type { ColorGradient } from '../analytics/types';
 
 interface MobileBottomSheetProps {
-  sections: SectionType[];
   selection: MapSelection | null;
   onHeightChange?: (height: number, snapPoints: number[]) => void;
   onDraggingChange?: (isDragging: boolean) => void;
+  layers?: LayerState;
+  onLayersChange?: (next: LayerState) => void;
+  globalListeningSettings?: {
+    timePeriodHours: number;
+    colorGradient: ColorGradient;
+  };
+  onGlobalListeningSettingsChange?: (settings: {
+    timePeriodHours: number;
+    colorGradient: ColorGradient;
+  }) => void;
+  languagesSettings?: {
+    clustered: boolean;
+  };
+  onLanguagesSettingsChange?: (settings: { clustered: boolean }) => void;
+  peopleGroupsSettings?: {
+    clustered: boolean;
+  };
+  onPeopleGroupsSettingsChange?: (settings: { clustered: boolean }) => void;
 }
 
 type SheetState = 'collapsed' | 'half' | 'full';
@@ -40,16 +69,31 @@ const SHEET_STATES = {
  * - No map interaction while dragging
  */
 export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
-  sections,
   selection,
   onHeightChange,
   onDraggingChange,
+  layers,
+  onLayersChange,
+  globalListeningSettings,
+  onGlobalListeningSettingsChange,
+  languagesSettings,
+  onLanguagesSettingsChange,
+  peopleGroupsSettings,
+  onPeopleGroupsSettingsChange,
 }) => {
   const router = useRouter();
+  const selectionMode = useSelectionMode();
   const sheetRef = React.useRef<HTMLDivElement | null>(null);
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const handleRef = React.useRef<HTMLDivElement | null>(null);
   const headerRef = React.useRef<HTMLDivElement | null>(null);
+  const [donateOpen, setDonateOpen] = React.useState(false);
+  const [initialDonateState, setInitialDonateState] = React.useState<{
+    intent: DonationIntent;
+    selectedEntity: SelectedEntity;
+    step: number;
+  } | null>(null);
+  const donateEnabled = useDonateEnabled();
 
   // Drag state
   const dragState = React.useRef({
@@ -444,26 +488,84 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </div>
 
         {/* Content */}
-        <div ref={contentRef} className='flex-1 overflow-y-auto p-4'>
+        <div
+          ref={contentRef}
+          className='flex-1 flex flex-col min-h-0 overflow-hidden'
+        >
           {isLoading ? (
-            <BodySkeleton />
-          ) : (
-            <FadeSwitch switchKey={selectionKey}>
+            <div className='flex-1 p-4 overflow-y-auto'>
               <div className='space-y-4'>
-                {sections.map(sectionType => (
-                  <div key={sectionType}>
-                    <SectionRenderer
-                      type={sectionType}
-                      selection={selection}
-                      scrollRef={contentRef as React.RefObject<HTMLDivElement>}
-                    />
-                  </div>
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className='h-20 bg-neutral-200 rounded animate-pulse'
+                  />
                 ))}
               </div>
+            </div>
+          ) : (
+            <FadeSwitch
+              switchKey={selectionKey}
+              className='flex-1 flex flex-col min-h-0'
+            >
+              <InspectorTabs
+                selection={selection}
+                layers={layers}
+                onLayersChange={onLayersChange}
+                selectionMode={selectionMode}
+                globalListeningSettings={globalListeningSettings}
+                onGlobalListeningSettingsChange={
+                  onGlobalListeningSettingsChange
+                }
+                languagesSettings={languagesSettings}
+                onLanguagesSettingsChange={onLanguagesSettingsChange}
+                peopleGroupsSettings={peopleGroupsSettings}
+                onPeopleGroupsSettingsChange={onPeopleGroupsSettingsChange}
+                scrollRef={contentRef}
+              />
             </FadeSwitch>
           )}
         </div>
+
+        {/* Donate button - positioned outside tabs */}
+        {!isLoading && donateEnabled && (
+          <div className='flex-none p-4 border-t border-neutral-200 dark:border-neutral-800'>
+            <DonateButton
+              selection={selection}
+              onClick={({ intent, selectedEntity }) => {
+                setInitialDonateState({
+                  intent,
+                  selectedEntity,
+                  step: 2, // Skip to amount entry step
+                });
+                setDonateOpen(true);
+              }}
+            />
+          </div>
+        )}
       </div>
+
+      {/* Donate Modal */}
+      {donateEnabled && (
+        <Dialog
+          open={donateOpen}
+          onOpenChange={open => {
+            setDonateOpen(open);
+            if (!open) {
+              // Reset initial state when modal closes
+              setInitialDonateState(null);
+            }
+          }}
+        >
+          {initialDonateState && (
+            <DonateModal
+              initialIntent={initialDonateState.intent}
+              initialSelectedEntity={initialDonateState.selectedEntity}
+              initialStep={initialDonateState.step}
+            />
+          )}
+        </Dialog>
+      )}
     </>
   );
 };

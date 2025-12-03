@@ -63,10 +63,12 @@ const selectContentVariants = cva([
 const selectItemVariants = cva([
   'relative flex w-full cursor-default select-none items-center',
   'rounded-sm py-2 pl-8 pr-2 text-sm outline-none',
+  'hover:bg-primary-50 hover:text-primary-900',
   'focus:bg-primary-50 focus:text-primary-900',
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
   'data-[state=checked]:bg-primary-100 data-[state=checked]:text-primary-900',
   // Dark mode support
+  'dark:hover:bg-primary-900/20 dark:hover:text-primary-100',
   'dark:focus:bg-primary-900/20 dark:focus:text-primary-100',
   'dark:data-[state=checked]:bg-primary-900/30 dark:data-[state=checked]:text-primary-100',
 ]);
@@ -115,7 +117,7 @@ export const Select = React.forwardRef<
     const hasError = !!error;
 
     return (
-      <div className='space-y-2'>
+      <div className='space-y-2 w-full'>
         {label && (
           <label
             htmlFor={selectId}
@@ -174,6 +176,9 @@ export const Select = React.forwardRef<
               className={cn(selectContentVariants(), contentClassName)}
               position='popper'
               sideOffset={5}
+              style={{
+                width: 'var(--radix-select-trigger-width)',
+              }}
             >
               <SelectPrimitive.Viewport className='p-1 max-h-[280px] overflow-y-auto'>
                 {children}
@@ -434,7 +439,7 @@ export const SearchableSelect = React.forwardRef<
     }, []);
 
     return (
-      <div className='space-y-2'>
+      <div className='space-y-2 w-full'>
         {label && (
           <label
             htmlFor={selectId}

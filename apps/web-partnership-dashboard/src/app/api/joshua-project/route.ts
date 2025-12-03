@@ -3,13 +3,13 @@ import { serverEnv } from '@/lib/env';
 
 /**
  * Joshua Project API Proxy
- * 
+ *
  * Proxies requests to the Joshua Project API to keep the API key secure on the server.
- * 
+ *
  * Query Parameters:
  * - endpoint: The JP API endpoint (e.g., 'countries', 'languages', 'people_groups')
  * - All other query params are forwarded to the JP API
- * 
+ *
  * Examples:
  * - GET /api/joshua-project?endpoint=countries/URY
  * - GET /api/joshua-project?endpoint=languages/anu
@@ -18,10 +18,10 @@ import { serverEnv } from '@/lib/env';
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Get the endpoint from query params
     const endpoint = searchParams.get('endpoint');
-    
+
     if (!endpoint) {
       return NextResponse.json(
         { error: 'Missing endpoint parameter' },
@@ -41,14 +41,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Build Joshua Project API URL
     const jpBaseUrl = 'https://api.joshuaproject.net/v1';
     const jpUrl = new URL(`${jpBaseUrl}/${endpoint}.json`);
-    
+
     // Forward all query params except 'endpoint' to JP API
     searchParams.forEach((value, key) => {
       if (key !== 'endpoint') {
         jpUrl.searchParams.set(key, value);
       }
     });
-    
+
     // Add API key
     jpUrl.searchParams.set('api_key', serverEnv.JOSHUA_PROJECT_API_KEY);
 
@@ -56,18 +56,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const response = await fetch(jpUrl.toString(), {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
-      // Cache for 10 minutes
-      next: { revalidate: 600 },
+      // Cache for 24 hours
+      next: { revalidate: 86400 },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Joshua Project API error: ${response.status} - ${errorText}`);
-      
+      console.error(
+        `Joshua Project API error: ${response.status} - ${errorText}`
+      );
+
       return NextResponse.json(
-        { 
+        {
           error: 'Failed to fetch from Joshua Project API',
           status: response.status,
         },
@@ -81,16 +83,27 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(data, {
       status: 200,
       headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+        'Cache-Control':
+          'public, s-maxage=86400, stale-while-revalidate=172800',
       },
     });
   } catch (error) {
-    console.error('Joshua Project API proxy error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Joshua Project API proxy error:', {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    // In development/preview, include more error details
+    const isDev =
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERCEL_ENV === 'preview';
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        ...(isDev && { details: errorMessage }),
+      },
       { status: 500 }
     );
   }
 }
-
-

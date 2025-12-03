@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { regionsApi } from '../api/regionsApi';
 import type { RegionWithLanguages } from '@/types';
 import { X, Edit, Save, Plus, Trash2, Search } from 'lucide-react';
+import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 interface RegionModalProps {
   region: RegionWithLanguages;
@@ -43,6 +44,7 @@ export function RegionModal({
   const [editingProperties, setEditingProperties] = useState(false);
   const [editingAliases, setEditingAliases] = useState(false);
   const [editingLanguages, setEditingLanguages] = useState(false);
+  const [editingExternalIds, setEditingExternalIds] = useState(false);
 
   // Form states
   const [name, setName] = useState(region.name);
@@ -67,6 +69,16 @@ export function RegionModal({
   >([]);
   const [selectedLanguageIds, setSelectedLanguageIds] = useState<string[]>([]);
   const [languageSearchQuery, setLanguageSearchQuery] = useState('');
+  const [localSources, setLocalSources] = useState<
+    Array<{
+      id?: string;
+      source: string;
+      version: string;
+      is_external: boolean;
+      external_id: string;
+      external_id_type: string;
+    }>
+  >([]);
 
   // Fetch full region details with language entities
   const { data: fullRegion, isLoading: isLoadingFullRegion } = useQuery({
@@ -91,6 +103,12 @@ export function RegionModal({
   const { data: aliases } = useQuery({
     queryKey: ['region-aliases', region.id],
     queryFn: () => regionsApi.fetchRegionAliases(region.id),
+  });
+
+  // Fetch external IDs (sources)
+  const { data: sources } = useQuery({
+    queryKey: ['region-sources', region.id],
+    queryFn: () => regionsApi.fetchRegionSources(region.id),
   });
 
   // Search languages (for linked languages section)
@@ -120,6 +138,22 @@ export function RegionModal({
       setLocalAliases(aliases.map(a => ({ alias_name: a.alias_name || '' })));
     }
   }, [aliases]);
+
+  // Sync local sources with fetched data
+  useEffect(() => {
+    if (sources) {
+      setLocalSources(
+        sources.map(s => ({
+          id: s.id,
+          source: s.source || '',
+          version: s.version || '',
+          is_external: s.is_external,
+          external_id: s.external_id || '',
+          external_id_type: s.external_id_type || '',
+        }))
+      );
+    }
+  }, [sources]);
 
   // Initialize selected languages when full region is loaded
   useEffect(() => {
@@ -305,12 +339,76 @@ export function RegionModal({
     },
   });
 
+  const updateExternalIdsMutation = useMutation({
+    mutationFn: async () => {
+      // Get existing source IDs
+      const existingIds = sources?.map(s => s.id) || [];
+      const localIds = localSources.filter(s => s.id).map(s => s.id!);
+
+      // Delete sources that were removed
+      const toDelete = existingIds.filter(id => !localIds.includes(id));
+      for (const id of toDelete) {
+        await regionsApi.deleteRegionSource(id);
+      }
+
+      // Update or create sources
+      for (const source of localSources.filter(s => s.source.trim())) {
+        if (source.id) {
+          // Update existing
+          await regionsApi.updateRegionSource(source.id, {
+            source: source.source,
+            version: source.version || null,
+            is_external: source.is_external,
+            external_id: source.is_external ? source.external_id || null : null,
+            external_id_type: source.is_external
+              ? source.external_id_type || null
+              : null,
+          });
+        } else {
+          // Create new
+          await regionsApi.createRegionSource(region.id, {
+            source: source.source,
+            version: source.version || null,
+            is_external: source.is_external,
+            external_id: source.is_external ? source.external_id || null : null,
+            external_id_type: source.is_external
+              ? source.external_id_type || null
+              : null,
+          });
+        }
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.refetchQueries({
+        queryKey: ['region-sources', region.id],
+      });
+      setEditingExternalIds(false);
+    },
+  });
+
   const handleToggleLanguage = (languageId: string) => {
     setSelectedLanguageIds(prev =>
       prev.includes(languageId)
         ? prev.filter(id => id !== languageId)
         : [...prev, languageId]
     );
+  };
+
+  const handleAddSource = () => {
+    setLocalSources([
+      ...localSources,
+      {
+        source: '',
+        version: '',
+        is_external: false,
+        external_id: '',
+        external_id_type: '',
+      },
+    ]);
+  };
+
+  const handleRemoveSource = (index: number) => {
+    setLocalSources(localSources.filter((_, i) => i !== index));
   };
 
   return (
@@ -391,15 +489,13 @@ export function RegionModal({
                   </div>
 
                   <div>
-                    <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                      Level
-                    </label>
                     {editingInfo ? (
-                      <select
+                      <Select
+                        label='Level'
                         value={level}
-                        onChange={e =>
+                        onValueChange={value =>
                           setLevel(
-                            e.target.value as
+                            value as
                               | 'continent'
                               | 'world_region'
                               | 'country'
@@ -410,50 +506,59 @@ export function RegionModal({
                               | 'village'
                           )
                         }
-                        className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500 dark:focus:ring-secondary-600'
                       >
-                        <option value='continent'>Continent</option>
-                        <option value='world_region'>World Region</option>
-                        <option value='country'>Country</option>
-                        <option value='state'>State</option>
-                        <option value='province'>Province</option>
-                        <option value='district'>District</option>
-                        <option value='town'>Town</option>
-                        <option value='village'>Village</option>
-                      </select>
+                        <SelectItem value='continent'>Continent</SelectItem>
+                        <SelectItem value='world_region'>
+                          World Region
+                        </SelectItem>
+                        <SelectItem value='country'>Country</SelectItem>
+                        <SelectItem value='state'>State</SelectItem>
+                        <SelectItem value='province'>Province</SelectItem>
+                        <SelectItem value='district'>District</SelectItem>
+                        <SelectItem value='town'>Town</SelectItem>
+                        <SelectItem value='village'>Village</SelectItem>
+                      </Select>
                     ) : (
-                      <p className='text-neutral-900 dark:text-neutral-100'>
-                        {fullRegion?.level}
-                      </p>
+                      <>
+                        <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                          Level
+                        </label>
+                        <p className='text-neutral-900 dark:text-neutral-100'>
+                          {fullRegion?.level}
+                        </p>
+                      </>
                     )}
                   </div>
 
                   <div>
-                    <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
-                      Parent Region
-                    </label>
                     {editingInfo ? (
-                      <select
+                      <Select
+                        label='Parent Region'
                         value={parentId || ''}
-                        onChange={e => setParentId(e.target.value || null)}
-                        className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500 dark:focus:ring-secondary-600'
+                        onValueChange={value => setParentId(value || null)}
+                        placeholder='None'
                       >
-                        <option value=''>None</option>
+                        <SelectItem value=''>None</SelectItem>
                         {allRegions
-                          ?.filter(r => r.id !== region.id)
+                          ?.filter(r => r.id && r.id !== region.id)
                           .map(r => (
-                            <option key={r.id} value={r.id}>
+                            <SelectItem key={r.id} value={r.id!}>
                               {r.name} ({r.level})
-                            </option>
+                            </SelectItem>
                           ))}
-                      </select>
+                      </Select>
                     ) : (
-                      <p className='text-neutral-900 dark:text-neutral-100'>
-                        {parentId
-                          ? allRegions?.find(r => r.id === parentId)?.name ||
-                            parentId
-                          : 'None'}
-                      </p>
+                      <>
+                        <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                          Parent Region
+                        </label>
+                        <p className='text-neutral-900 dark:text-neutral-100'>
+                          {parentId
+                            ? allRegions?.find(r => r.id === parentId)?.name ||
+                              parentId
+                            : 'None'}
+                        </p>
+                      </>
                     )}
                   </div>
                 </div>
@@ -633,6 +738,170 @@ export function RegionModal({
                     </button>
                   </div>
                 )}
+              </section>
+
+              {/* External IDs */}
+              <section>
+                <div className='flex items-center justify-between mb-4'>
+                  <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
+                    External IDs
+                  </h3>
+                  {!editingExternalIds && (
+                    <button
+                      onClick={() => setEditingExternalIds(true)}
+                      className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center gap-1'
+                    >
+                      <Edit className='h-4 w-4' />
+                      Edit
+                    </button>
+                  )}
+                </div>
+                <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg space-y-3'>
+                  {editingExternalIds ? (
+                    <>
+                      {localSources.map((source, index) => (
+                        <div
+                          key={index}
+                          className='border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 space-y-2'
+                        >
+                          <div className='flex gap-2'>
+                            <input
+                              type='text'
+                              placeholder='Source'
+                              value={source.source}
+                              onChange={e => {
+                                const updated = [...localSources];
+                                updated[index].source = e.target.value;
+                                setLocalSources(updated);
+                              }}
+                              className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500'
+                            />
+                            <input
+                              type='text'
+                              placeholder='Version'
+                              value={source.version}
+                              onChange={e => {
+                                const updated = [...localSources];
+                                updated[index].version = e.target.value;
+                                setLocalSources(updated);
+                              }}
+                              className='w-32 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500'
+                            />
+                            <button
+                              onClick={() => handleRemoveSource(index)}
+                              className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'
+                            >
+                              <Trash2 className='h-4 w-4' />
+                            </button>
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <label className='flex items-center gap-2 text-sm'>
+                              <input
+                                type='checkbox'
+                                checked={source.is_external}
+                                onChange={e => {
+                                  const updated = [...localSources];
+                                  updated[index].is_external = e.target.checked;
+                                  setLocalSources(updated);
+                                }}
+                                className='rounded'
+                              />
+                              External ID
+                            </label>
+                          </div>
+                          {source.is_external && (
+                            <div className='flex gap-2'>
+                              <input
+                                type='text'
+                                placeholder='External ID Type'
+                                value={source.external_id_type}
+                                onChange={e => {
+                                  const updated = [...localSources];
+                                  updated[index].external_id_type =
+                                    e.target.value;
+                                  setLocalSources(updated);
+                                }}
+                                className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500'
+                              />
+                              <input
+                                type='text'
+                                placeholder='External ID'
+                                value={source.external_id}
+                                onChange={e => {
+                                  const updated = [...localSources];
+                                  updated[index].external_id = e.target.value;
+                                  setLocalSources(updated);
+                                }}
+                                className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500'
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        onClick={handleAddSource}
+                        className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'
+                      >
+                        <Plus className='h-4 w-4' />
+                        Add Source
+                      </button>
+                      <div className='flex gap-2 pt-2'>
+                        <button
+                          onClick={() => {
+                            setEditingExternalIds(false);
+                            if (sources) {
+                              setLocalSources(
+                                sources.map(s => ({
+                                  id: s.id,
+                                  source: s.source || '',
+                                  version: s.version || '',
+                                  is_external: s.is_external,
+                                  external_id: s.external_id || '',
+                                  external_id_type: s.external_id_type || '',
+                                }))
+                              );
+                            }
+                          }}
+                          className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => updateExternalIdsMutation.mutate()}
+                          disabled={updateExternalIdsMutation.isPending}
+                          className='px-3 py-1.5 text-sm bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
+                        >
+                          <Save className='h-4 w-4' />
+                          {updateExternalIdsMutation.isPending
+                            ? 'Saving...'
+                            : 'Save'}
+                        </button>
+                      </div>
+                    </>
+                  ) : sources && sources.length > 0 ? (
+                    <div className='flex flex-col gap-2'>
+                      {sources
+                        .filter(s => s.external_id && s.external_id_type)
+                        .map(source => (
+                          <div
+                            key={source.id}
+                            className='flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0'
+                          >
+                            <span className='font-mono text-sm text-neutral-700 dark:text-neutral-300'>
+                              {source.external_id_type}:{source.external_id}
+                            </span>
+                            <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                              {source.source}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className='text-neutral-500 dark:text-neutral-400'>
+                      No external IDs
+                    </p>
+                  )}
+                </div>
               </section>
 
               {/* Alternate Names */}

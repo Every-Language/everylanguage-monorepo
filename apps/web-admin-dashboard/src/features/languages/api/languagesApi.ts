@@ -21,6 +21,7 @@ export const languagesApi = {
     searchQuery?: string;
     levelFilter?: string;
     regionFilters?: string[]; // Changed to array for multi-select
+    externalIdSearch?: string; // Search by external_id in language_entity_sources
   }): Promise<{
     data: LanguageEntityWithRegions[];
     count: number;
@@ -79,6 +80,30 @@ export const languagesApi = {
             }) as LanguageEntityWithRegions
         );
 
+        // Apply external_id search filter if provided
+        if (
+          params?.externalIdSearch &&
+          params.externalIdSearch.trim().length > 0
+        ) {
+          const { data: sourcesData, error: sourcesError } = await supabase
+            .from('language_entity_sources')
+            .select('language_entity_id')
+            .ilike('external_id', `%${params.externalIdSearch.trim()}%`)
+            .is('deleted_at', null);
+
+          if (sourcesError) {
+            console.error('Error searching by external_id:', sourcesError);
+            throw sourcesError;
+          }
+
+          const entityIdsFromExternalId = new Set(
+            sourcesData?.map(s => s.language_entity_id) || []
+          );
+          results = results.filter(entity =>
+            entityIdsFromExternalId.has(entity.id)
+          );
+        }
+
         // Apply level filter to search results (AND logic)
         if (params?.levelFilter) {
           results = results.filter(
@@ -129,17 +154,53 @@ export const languagesApi = {
       }
     }
 
+    // Apply external_id search filter if provided
+    let entityIdsFromExternalId: string[] | undefined;
+    if (params?.externalIdSearch && params.externalIdSearch.trim().length > 0) {
+      const { data: sourcesData, error: sourcesError } = await supabase
+        .from('language_entity_sources')
+        .select('language_entity_id')
+        .ilike('external_id', `%${params.externalIdSearch.trim()}%`)
+        .is('deleted_at', null);
+
+      if (sourcesError) {
+        console.error('Error searching by external_id:', sourcesError);
+        throw sourcesError;
+      }
+
+      entityIdsFromExternalId = [
+        ...new Set(sourcesData?.map(s => s.language_entity_id) || []),
+      ];
+
+      // If no matches, return empty result
+      if (entityIdsFromExternalId.length === 0) {
+        return {
+          data: [],
+          count: 0,
+          page,
+          pageSize,
+          totalPages: 0,
+        };
+      }
+    }
+
     // Otherwise, fetch with pagination and filters
     let query = supabase
       .from('language_entities')
       .select(
         `
         *,
-        language_entities_regions(region_id)
+        language_entities_regions(region_id),
+        language_funding(*)
       `,
         { count: 'exact' }
       )
       .is('deleted_at', null);
+
+    // Apply external_id filter
+    if (entityIdsFromExternalId && entityIdsFromExternalId.length > 0) {
+      query = query.in('id', entityIdsFromExternalId);
+    }
 
     // Apply level filter
     if (params?.levelFilter) {
@@ -177,6 +238,11 @@ export const languagesApi = {
         const transformedData = paginatedData.map(item => ({
           ...item,
           region_count: 0, // By definition, these have no regions
+          language_funding:
+            Array.isArray(item.language_funding) &&
+            item.language_funding.length > 0
+              ? item.language_funding[0]
+              : null,
         })) as LanguageEntityWithRegions[];
 
         return {
@@ -226,6 +292,10 @@ export const languagesApi = {
       region_count: Array.isArray(item.language_entities_regions)
         ? item.language_entities_regions.length
         : 0,
+      language_funding:
+        Array.isArray(item.language_funding) && item.language_funding.length > 0
+          ? item.language_funding[0]
+          : null,
     })) as LanguageEntityWithRegions[];
 
     return {
@@ -246,7 +316,12 @@ export const languagesApi = {
     // Fetch entity first
     const { data: entityData, error: entityError } = await supabase
       .from('language_entities')
-      .select('*')
+      .select(
+        `
+        *,
+        language_funding(*)
+      `
+      )
       .eq('id', id)
       .is('deleted_at', null)
       .single();
@@ -268,6 +343,11 @@ export const languagesApi = {
       return {
         ...entityData,
         regions: [],
+        language_funding:
+          Array.isArray(entityData.language_funding) &&
+          entityData.language_funding.length > 0
+            ? entityData.language_funding[0]
+            : null,
       };
     }
 
@@ -276,6 +356,11 @@ export const languagesApi = {
     return {
       ...entityData,
       regions,
+      language_funding:
+        Array.isArray(entityData.language_funding) &&
+        entityData.language_funding.length > 0
+          ? entityData.language_funding[0]
+          : null,
     };
   },
 
@@ -477,7 +562,48 @@ export const languagesApi = {
   },
 
   /**
-   * Fetch regions with search
+   * Search for language entities
+   */
+  async searchLanguageEntities(query: string): Promise<LanguageEntity[]> {
+    if (!query || query.trim().length < 2) return [];
+
+    const { data, error } = await supabase.rpc('search_language_aliases', {
+      search_query: query,
+      max_results: 20,
+      min_similarity: 0.1,
+      include_regions: false,
+    });
+
+    if (error) {
+      console.error('Language search error:', error);
+      throw error;
+    }
+
+    // Transform search results
+    return (data || []).map(
+      (result: {
+        entity_id: string;
+        entity_name: string;
+        entity_level: string;
+        entity_parent_id: string | null;
+      }) => ({
+        id: result.entity_id,
+        name: result.entity_name,
+        level: result.entity_level as
+          | 'family'
+          | 'language'
+          | 'dialect'
+          | 'mother_tongue',
+        parent_id: result.entity_parent_id,
+        created_at: '',
+        updated_at: '',
+        deleted_at: null,
+      })
+    ) as LanguageEntity[];
+  },
+
+  /**
+   * Search for regions (used in modals)
    */
   async searchRegions(searchQuery: string): Promise<Region[]> {
     if (!searchQuery || searchQuery.trim().length < 2) {
@@ -497,38 +623,169 @@ export const languagesApi = {
   },
 
   /**
-   * Count all descendants of a language entity (recursive, to Nth level)
+   * Fetch language entity sources
    */
-  async countLanguageDescendants(entityId: string): Promise<number> {
-    const { data, error } = await supabase.rpc(
-      'get_language_entity_hierarchy',
-      {
-        entity_id: entityId,
-        generations_up: 0,
-        generations_down: 100, // Large number to get all descendants
-      }
-    );
+  async fetchLanguageEntitySources(entityId: string): Promise<
+    Array<{
+      id: string;
+      language_entity_id: string;
+      source: string;
+      version: string | null;
+      is_external: boolean;
+      external_id: string | null;
+      external_id_type: string | null;
+      created_at: string | null;
+      created_by: string | null;
+      deleted_at: string | null;
+    }>
+  > {
+    const { data, error } = await supabase
+      .from('language_entity_sources')
+      .select('*')
+      .eq('language_entity_id', entityId)
+      .is('deleted_at', null)
+      .order('source');
 
-    if (error) {
-      console.error('Error counting descendants:', error);
-      return 0;
-    }
-
-    // Count only descendants (relationship_type = 'descendant')
-    const hierarchyNodes = (data || []) as LanguageHierarchyNode[];
-    return (
-      hierarchyNodes.filter(node => node.relationship_type === 'descendant')
-        .length || 0
-    );
+    if (error) throw error;
+    return data || [];
   },
 
   /**
-   * Fetch parent language entity
+   * Create language entity source
    */
-  async fetchParentLanguage(
-    parentId: string
-  ): Promise<LanguageEntityWithRegions | null> {
-    if (!parentId) return null;
-    return this.fetchLanguageEntityById(parentId);
+  async createLanguageEntitySource(
+    entityId: string,
+    sourceData: {
+      source: string;
+      version?: string | null;
+      is_external: boolean;
+      external_id?: string | null;
+      external_id_type?: string | null;
+    }
+  ): Promise<void> {
+    const { error } = await supabase.from('language_entity_sources').insert({
+      language_entity_id: entityId,
+      ...sourceData,
+    });
+
+    if (error) throw error;
+  },
+
+  /**
+   * Update language entity source
+   */
+  async updateLanguageEntitySource(
+    sourceId: string,
+    updates: {
+      source?: string;
+      version?: string | null;
+      is_external?: boolean;
+      external_id?: string | null;
+      external_id_type?: string | null;
+    }
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('language_entity_sources')
+      .update(updates)
+      .eq('id', sourceId);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Delete language entity source
+   */
+  async deleteLanguageEntitySource(sourceId: string): Promise<void> {
+    const { error } = await supabase
+      .from('language_entity_sources')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', sourceId);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Fetch language entity regions (with full junction table data)
+   */
+  async fetchLanguageEntityRegions(entityId: string): Promise<
+    Array<{
+      id: string;
+      language_entity_id: string;
+      region_id: string;
+      dominance_level: number | null;
+      location: unknown | null;
+      location_source: string | null;
+      created_at: string | null;
+      updated_at: string | null;
+      deleted_at: string | null;
+      region: Region;
+    }>
+  > {
+    const { data, error } = await supabase
+      .from('language_entities_regions')
+      .select('*, regions(*)')
+      .eq('language_entity_id', entityId)
+      .is('deleted_at', null);
+
+    if (error) throw error;
+    return (data || []).map(item => ({
+      ...item,
+      region: item.regions as Region,
+    }));
+  },
+
+  /**
+   * Create language entity region link
+   */
+  async createLanguageEntityRegion(
+    entityId: string,
+    regionId: string,
+    data?: {
+      dominance_level?: number | null;
+      location?: unknown | null;
+      location_source?: string | null;
+    }
+  ): Promise<void> {
+    const { error } = await supabase.from('language_entities_regions').insert({
+      language_entity_id: entityId,
+      region_id: regionId,
+      ...data,
+    });
+
+    if (error) throw error;
+  },
+
+  /**
+   * Update language entity region link
+   */
+  async updateLanguageEntityRegion(
+    linkId: string,
+    updates: {
+      dominance_level?: number | null;
+      location?: unknown | null;
+      location_source?: string | null;
+    }
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('language_entities_regions')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', linkId);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Delete language entity region link
+   */
+  async deleteLanguageEntityRegion(linkId: string): Promise<void> {
+    const { error } = await supabase
+      .from('language_entities_regions')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', linkId);
+
+    if (error) throw error;
   },
 };

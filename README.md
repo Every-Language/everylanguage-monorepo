@@ -10,6 +10,7 @@ everylanguage-monorepo/
 │   ├── web-project-dashboard/     # Recording app dashboard (React + Vite)
 │   ├── web-partnership-dashboard/ # Partner org dashboard (Next.js)
 │   ├── web-admin-dashboard/       # Admin dashboard (React + Vite)
+│   ├── app-bible/                 # Mobile Bible app (React Native + Expo)
 │   └── r2-media-cdn/              # Cloudflare R2 CDN service
 ├── packages/                      # Shared packages
 │   ├── shared-types/              # Generated database types
@@ -62,6 +63,11 @@ pnpm frontend:partnership:dev
 # Admin Dashboard (via turbo)
 pnpm --filter=web-admin-dashboard dev
 
+# App Bible (React Native)
+pnpm app-bible:dev
+# or
+pnpm --filter=app-bible run start
+
 # Edge Functions
 pnpm db:functions:serve
 ```
@@ -113,6 +119,22 @@ Admin dashboard for managing system-wide data and operations.
 - Access user roles and permissions
 
 📖 [Detailed Documentation](./docs/apps/web-admin-dashboard/README.md)
+
+### App Bible (React Native)
+
+Mobile app for reading and listening to Bible translations in every language.
+
+**Tech Stack:** React Native 0.79, Expo 53, PowerSync, TypeScript, Zustand
+
+**Purpose:**
+
+- Read Bible translations offline
+- Listen to audio Bible recordings
+- Sync content across devices with PowerSync
+- Download Bible translations for offline use
+- Track reading progress
+
+**Dev:** `pnpm --filter=app-bible run start`
 
 ### R2 Media CDN
 

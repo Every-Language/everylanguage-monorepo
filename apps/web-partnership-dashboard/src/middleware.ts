@@ -7,29 +7,35 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
-  const { response, user } = await updateSession(request);
-  const { pathname } = request.nextUrl;
+  try {
+    const { response, user } = await updateSession(request);
+    const { pathname } = request.nextUrl;
 
-  // Protected routes that require authentication
-  const protectedRoutes = [
-    '/dashboard',
-    '/partner-org',
-    '/profile',
-    '/project',
-    '/team',
-    '/base',
-  ];
+    // Protected routes that require authentication
+    const protectedRoutes = [
+      '/partner-org',
+      '/profile',
+      '/project',
+      '/team',
+      '/base',
+    ];
 
-  const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
+    const isProtected = protectedRoutes.some(route =>
+      pathname.startsWith(route)
+    );
 
-  // Redirect to login if accessing protected route without authentication
-  if (isProtected && !user) {
-    const redirectUrl = new URL('/login', request.url);
-    redirectUrl.searchParams.set('redirectTo', pathname);
-    return NextResponse.redirect(redirectUrl);
+    // Redirect to login if accessing protected route without authentication
+    if (isProtected && !user) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    return response;
+  } catch (error) {
+    // Log error but don't block the request
+    console.error('Middleware error:', error);
+    // Return a basic response to prevent middleware failure
+    return NextResponse.next();
   }
-
-  return response;
 }
 
 export const config = {
