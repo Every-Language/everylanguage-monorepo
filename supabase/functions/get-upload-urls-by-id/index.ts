@@ -53,25 +53,12 @@ Deno.serve(async (req: Request) => {
 
   try {
     // Authenticate the request - only logged-in users can request upload URLs
-    const authHeader = req.headers.get('Authorization');
-    console.log('[AUTH DEBUG] Authorization header present:', !!authHeader);
-    console.log(
-      '[AUTH DEBUG] Authorization header length:',
-      authHeader?.length || 0
-    );
-    console.log(
-      '[AUTH DEBUG] Authorization header prefix:',
-      authHeader?.substring(0, 20) || 'none'
-    );
-
     const authCtx = await authenticateRequest(req);
     if (isAuthError(authCtx)) {
-      console.log('[AUTH DEBUG] Auth error:', JSON.stringify(authCtx));
       return createAuthErrorResponse(authCtx);
     }
 
     const { publicUserId } = authCtx;
-    console.log('[AUTH DEBUG] Authenticated user ID:', publicUserId);
 
     let body: RequestBody;
     try {
@@ -87,6 +74,7 @@ Deno.serve(async (req: Request) => {
       expirationHours = 24,
       originalFilenames = {},
     } = body;
+
     if (
       mediaFileIds.length === 0 &&
       imageIds.length === 0 &&
@@ -291,14 +279,14 @@ Deno.serve(async (req: Request) => {
         const { data: hasPermission, error: permError } = await supabase.rpc(
           'has_permission',
           {
-            user_id: publicUserId,
-            action: 'project.write',
-            resource_type: 'project',
-            resource_id: updateData.project_id,
+            p_user_id: publicUserId,
+            p_action: 'project.write',
+            p_resource_type: 'project',
+            p_resource_id: updateData.project_id,
           }
         );
 
-        if (permError || !hasPermission) {
+        if (permError || hasPermission !== true) {
           errors[row.id] = 'Not authorized to upload media for this update';
           continue;
         }

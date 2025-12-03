@@ -22,50 +22,40 @@ export async function authenticateRequest(
   req: Request
 ): Promise<AuthenticatedContext | AuthError> {
   try {
-    // Initialize Supabase client with auth headers
+    // Get Authorization header
     const authHeader = req.headers.get('Authorization');
-    console.log(
-      '[AUTH MIDDLEWARE] Authorization header:',
-      authHeader ? 'present' : 'missing'
-    );
-    console.log('[AUTH MIDDLEWARE] Header length:', authHeader?.length || 0);
-    if (authHeader) {
-      console.log(
-        '[AUTH MIDDLEWARE] Header prefix:',
-        authHeader.substring(0, 30)
-      );
+
+    if (!authHeader) {
+      return {
+        status: 401,
+        error: 'Authentication required',
+        details: 'Missing Authorization header',
+      };
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: authHeader ? { Authorization: authHeader } : {},
-        },
-      }
-    );
+    // Extract token from Bearer format
+    const token = authHeader.replace(/^Bearer\s+/i, '');
 
-    // Get authenticated user
+    if (!token) {
+      return {
+        status: 401,
+        error: 'Authentication required',
+        details: 'Invalid Authorization header format',
+      };
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+    // Get authenticated user by passing token directly
     const {
       data: { user },
       error: authError,
-    } = await supabaseClient.auth.getUser();
-
-    console.log(
-      '[AUTH MIDDLEWARE] getUser result - user:',
-      user ? 'present' : 'missing',
-      'error:',
-      authError?.message || 'none'
-    );
+    } = await supabaseClient.auth.getUser(token);
 
     if (authError || !user) {
-      console.log(
-        '[AUTH MIDDLEWARE] Returning 401 - error:',
-        authError?.message,
-        'user:',
-        !!user
-      );
       return {
         status: 401,
         error: 'Authentication required',
@@ -112,15 +102,14 @@ export function isAuthError(
  * Helper to create error response from auth error
  */
 export function createAuthErrorResponse(authError: AuthError): Response {
-  return new Response(
-    JSON.stringify({
-      success: false,
-      error: authError.error,
-      details: authError.details,
-    }),
-    {
-      status: authError.status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    }
-  );
+  const responseBody = {
+    success: false,
+    error: authError.error,
+    details: authError.details,
+  };
+
+  return new Response(JSON.stringify(responseBody), {
+    status: authError.status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 }
