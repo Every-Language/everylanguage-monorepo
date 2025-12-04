@@ -5,6 +5,7 @@ import {
   extractLocation,
   locationToPostGIS,
 } from '@/shared/utils/locationUtils';
+import type { UserRoleAssignment } from '@/features/users/types';
 
 export interface TextVersionProgress {
   id: string;
@@ -48,7 +49,6 @@ export interface UpdateProjectData {
   region_id?: string | null;
   location?: { lat: number; lng: number } | null;
   project_status?: Database['public']['Enums']['project_status'];
-  funding_status?: Database['public']['Enums']['funding_status'];
 }
 
 export const projectsApi = {
@@ -63,7 +63,6 @@ export const projectsApi = {
     targetLanguageIds?: string[];
     regionIds?: string[];
     statusFilter?: Database['public']['Enums']['project_status'];
-    fundingStatusFilter?: Database['public']['Enums']['funding_status'];
     sortField?: 'name' | 'created_at' | 'source_language' | 'target_language';
     sortDirection?: 'asc' | 'desc';
   }): Promise<{
@@ -80,6 +79,67 @@ export const projectsApi = {
     const sortField = params?.sortField ?? 'created_at';
     const sortDirection = params?.sortDirection ?? 'desc';
     const sortAscending = sortDirection === 'asc';
+
+    // If search query is provided, use the search_projects RPC function
+    // to find matching projects by name or target language name
+    let searchProjectIds: string[] | null = null;
+    if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
+      const searchTerm = params.searchQuery.trim();
+
+      try {
+        const { data: rpcResults, error: rpcError } = await (
+          supabase as unknown as {
+            rpc: (
+              name: string,
+              params: {
+                search_query: string;
+                max_results: number;
+                min_similarity: number;
+              }
+            ) => Promise<{
+              data: Array<{
+                project_id: string;
+                project_name: string;
+                target_language_entity_id: string;
+                target_language_name: string;
+                similarity_score: number;
+              }> | null;
+              error: { message: string } | null;
+            }>;
+          }
+        ).rpc('search_projects', {
+          search_query: searchTerm,
+          max_results: 1000, // Get enough results to apply filters and pagination
+          min_similarity: 0.1,
+        });
+
+        if (rpcError) {
+          console.error('Error searching projects via RPC:', rpcError);
+          // Fall back to name-only search if RPC fails
+          searchProjectIds = null;
+        } else if (rpcResults && rpcResults.length > 0) {
+          searchProjectIds = rpcResults.map(r => r.project_id);
+        } else {
+          // No matches found, return empty result
+          searchProjectIds = [];
+        }
+      } catch (error) {
+        console.error('Error calling search_projects RPC:', error);
+        // Fall back to name-only search if RPC fails
+        searchProjectIds = null;
+      }
+    }
+
+    // If search returned no results, return empty early
+    if (searchProjectIds !== null && searchProjectIds.length === 0) {
+      return {
+        data: [],
+        count: 0,
+        page,
+        pageSize,
+        totalPages: 0,
+      };
+    }
 
     let query = supabase
       .from('projects')
@@ -106,12 +166,9 @@ export const projectsApi = {
       )
       .is('deleted_at', null);
 
-    // Apply search if provided
-    if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
-      const searchTerm = params.searchQuery.trim();
-      query = query.or(
-        `name.ilike.%${searchTerm}%,target_language.name.ilike.%${searchTerm}%,source_language.name.ilike.%${searchTerm}%`
-      );
+    // Apply search filter if we have project IDs from RPC search
+    if (searchProjectIds !== null && searchProjectIds.length > 0) {
+      query = query.in('id', searchProjectIds);
     }
 
     if (params?.sourceLanguageIds?.length) {
@@ -128,10 +185,6 @@ export const projectsApi = {
 
     if (params?.statusFilter) {
       query = query.eq('project_status', params.statusFilter);
-    }
-
-    if (params?.fundingStatusFilter) {
-      query = query.eq('funding_status', params.fundingStatusFilter);
     }
 
     switch (sortField) {
@@ -661,9 +714,6 @@ export const projectsApi = {
     if (updates.project_status !== undefined) {
       updateData.project_status = updates.project_status;
     }
-    if (updates.funding_status !== undefined) {
-      updateData.funding_status = updates.funding_status;
-    }
     if (locationValue !== undefined) updateData.location = locationValue;
 
     const { error } = await supabase
@@ -673,5 +723,607 @@ export const projectsApi = {
       .is('deleted_at', null);
 
     if (error) throw error;
+  },
+
+  /**
+   * Fetch users assigned to project
+   * Uses direct query now that RLS recursion is fixed
+   */
+  async fetchProjectUsers(projectId: string): Promise<UserRoleAssignment[]> {
+    const { data: members, error } = await supabase
+      .from('user_roles')
+      .select(
+        `
+        id,
+        user_id,
+        role_id,
+        user:users!user_roles_user_id_fkey (
+          id,
+          first_name,
+          last_name,
+          email
+        ),
+        role:roles!user_roles_role_id_fkey (
+          id,
+          name,
+          role_key,
+          resource_type
+        )
+      `
+      )
+      .eq('project_id', projectId)
+      .not('project_id', 'is', null);
+
+    if (error) {
+      console.error('Error fetching project users:', error);
+      throw new Error(error.message || 'Failed to fetch project users');
+    }
+
+    if (!members || members.length === 0) {
+      return [];
+    }
+
+    // Map to UserRoleAssignment format
+    type MemberRow = {
+      id: string;
+      user_id: string;
+      role_id: string | null;
+      user: {
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        email: string | null;
+      } | null;
+      role: {
+        id: string;
+        name: string;
+        role_key: string | null;
+        resource_type: Database['public']['Enums']['resource_type'] | null;
+      } | null;
+    };
+
+    return members.map((member: MemberRow) => {
+      const user = member.user;
+      const role = member.role;
+      const userFullName = user
+        ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || null
+        : null;
+
+      return {
+        id: member.id || '',
+        user_id: member.user_id,
+        role_id: member.role_id || '',
+        project_id: projectId,
+        base_id: null,
+        partner_org_id: null,
+        is_global: false,
+        role: role
+          ? {
+              id: role.id || '',
+              name: role.name || '',
+              role_key: role.role_key || null,
+              resource_type: role.resource_type || null,
+              created_at: null,
+              updated_at: null,
+            }
+          : {
+              id: '',
+              name: '',
+              role_key: null,
+              resource_type: null,
+              created_at: null,
+              updated_at: null,
+            },
+        user_email: user?.email || undefined,
+        user_name: userFullName || undefined,
+      };
+    });
+  },
+
+  /**
+   * Assign user to project with role
+   */
+  async assignUserToProject(
+    projectId: string,
+    userId: string,
+    roleId: string
+  ): Promise<UserRoleAssignment> {
+    // Check if user already has a role for this project
+    const { data: existing } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('project_id', projectId)
+      .not('project_id', 'is', null)
+      .maybeSingle();
+
+    let result;
+    if (existing) {
+      // Update existing role
+      const { data, error } = await supabase
+        .from('user_roles')
+        .update({
+          role_id: roleId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
+        .select(
+          `
+          *,
+          roles (*),
+          users (*)
+        `
+        )
+        .single();
+
+      if (error) {
+        console.error('Error updating user role in project:', error);
+        throw new Error(
+          error.message || 'Failed to update user role in project'
+        );
+      }
+      result = data;
+    } else {
+      // Insert new role
+      const { data, error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role_id: roleId,
+          project_id: projectId,
+        })
+        .select(
+          `
+          *,
+          roles (*),
+          users (*)
+        `
+        )
+        .single();
+
+      if (error) {
+        console.error('Error assigning user to project:', error);
+        throw new Error(error.message || 'Failed to assign user to project');
+      }
+      result = data;
+    }
+
+    const role = result.roles as unknown as {
+      id: string;
+      name: string;
+      role_key: string | null;
+      resource_type: string | null;
+      created_at: string | null;
+      updated_at: string | null;
+    };
+    const user = result.users as unknown as {
+      first_name: string | null;
+      last_name: string | null;
+      email: string | null;
+    } | null;
+    return {
+      id: result.id,
+      user_id: result.user_id,
+      role_id: result.role_id,
+      project_id: result.project_id,
+      base_id: result.base_id,
+      partner_org_id: result.partner_org_id,
+      is_global: result.is_global,
+      role: {
+        id: role.id,
+        name: role.name,
+        role_key: role.role_key,
+        resource_type: role.resource_type as
+          | Database['public']['Enums']['resource_type']
+          | null,
+        created_at: role.created_at,
+        updated_at: role.updated_at,
+      },
+      user_email: user?.email || undefined,
+      user_name: user
+        ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || undefined
+        : undefined,
+    };
+  },
+
+  /**
+   * Remove user assignment from project
+   */
+  async removeUserFromProject(assignmentId: string): Promise<void> {
+    const { error } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('id', assignmentId);
+
+    if (error) {
+      console.error('Error removing user from project:', error);
+      throw new Error(error.message || 'Failed to remove user from project');
+    }
+  },
+
+  /**
+   * Get assignment ID for a user-project combination
+   * Helper function to get assignmentId when RPC doesn't return it
+   */
+  async getProjectAssignmentId(
+    projectId: string,
+    userId: string
+  ): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('project_id', projectId)
+      .not('project_id', 'is', null)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching project assignment ID:', error);
+      return null;
+    }
+
+    return data?.id || null;
+  },
+
+  /**
+   * Fetch bases assigned to project
+   */
+  async fetchProjectBases(projectId: string): Promise<
+    Array<{
+      id: string;
+      base_id: string;
+      base_name: string;
+      region_name: string | null;
+    }>
+  > {
+    // First, fetch bases_projects with base info (without region join)
+    const { data: basesProjectsData, error: basesProjectsError } =
+      await supabase
+        .from('bases_projects')
+        .select(
+          `
+        id,
+        base_id,
+        base:bases (
+          name,
+          region_id
+        )
+      `
+        )
+        .eq('project_id', projectId)
+        .is('unassigned_at', null);
+
+    if (basesProjectsError) {
+      console.error('Error fetching project bases:', basesProjectsError);
+      throw new Error(
+        basesProjectsError.message || 'Failed to fetch project bases'
+      );
+    }
+
+    if (!basesProjectsData || basesProjectsData.length === 0) {
+      return [];
+    }
+
+    // Extract unique region_ids
+    const regionIds = new Set<string>();
+    for (const row of basesProjectsData) {
+      const base = row.base as { region_id: string | null } | null;
+      if (base?.region_id) {
+        regionIds.add(base.region_id);
+      }
+    }
+
+    // Fetch regions separately
+    const regionMap = new Map<string, string>();
+    if (regionIds.size > 0) {
+      const { data: regionsData, error: regionsError } = await supabase
+        .from('regions')
+        .select('id, name')
+        .in('id', Array.from(regionIds));
+
+      if (regionsError) {
+        console.error('Error fetching regions:', regionsError);
+        // Don't throw - just continue without region names
+      } else if (regionsData) {
+        for (const region of regionsData) {
+          regionMap.set(region.id, region.name);
+        }
+      }
+    }
+
+    // Map results
+    type ProjectBaseRow = {
+      id: string;
+      base_id: string;
+      base: {
+        name: string;
+        region_id: string | null;
+      } | null;
+    };
+
+    return ((basesProjectsData || []) as unknown as ProjectBaseRow[]).map(
+      row => {
+        const base = row.base;
+        const regionId = base?.region_id || null;
+        const regionName = regionId ? regionMap.get(regionId) || null : null;
+
+        return {
+          id: row.id,
+          base_id: row.base_id,
+          base_name: base?.name || '',
+          region_name: regionName,
+        };
+      }
+    );
+  },
+
+  /**
+   * Assign base to project
+   */
+  async assignBaseToProject(projectId: string, baseId: string): Promise<void> {
+    // Check if assignment already exists
+    const { data: existing } = await supabase
+      .from('bases_projects')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('base_id', baseId)
+      .is('unassigned_at', null)
+      .maybeSingle();
+
+    if (existing) {
+      // Already assigned, do nothing
+      return;
+    }
+
+    // Check if there's an unassigned entry to reactivate
+    const { data: unassigned } = await supabase
+      .from('bases_projects')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('base_id', baseId)
+      .not('unassigned_at', 'is', null)
+      .maybeSingle();
+
+    if (unassigned) {
+      // Reactivate by clearing unassigned_at
+      const { error } = await supabase
+        .from('bases_projects')
+        .update({ unassigned_at: null })
+        .eq('id', unassigned.id);
+
+      if (error) {
+        console.error('Error reactivating project base:', error);
+        throw new Error(error.message || 'Failed to assign base to project');
+      }
+    } else {
+      // Create new assignment
+      const { error } = await supabase.from('bases_projects').insert({
+        project_id: projectId,
+        base_id: baseId,
+      });
+
+      if (error) {
+        console.error('Error assigning base to project:', error);
+        throw new Error(error.message || 'Failed to assign base to project');
+      }
+    }
+  },
+
+  /**
+   * Unassign base from project (soft delete)
+   */
+  async unassignBaseFromProject(assignmentId: string): Promise<void> {
+    const { error } = await supabase
+      .from('bases_projects')
+      .update({ unassigned_at: new Date().toISOString() })
+      .eq('id', assignmentId);
+
+    if (error) {
+      console.error('Error unassigning base from project:', error);
+      throw new Error(error.message || 'Failed to unassign base from project');
+    }
+  },
+
+  /**
+   * Fetch partner orgs assigned to project
+   */
+  async fetchProjectPartnerOrgs(projectId: string): Promise<
+    Array<{
+      id: string;
+      partner_org_id: string;
+      partner_org_name: string;
+      is_public: boolean;
+    }>
+  > {
+    const { data, error } = await supabase
+      .from('partner_orgs_projects')
+      .select(
+        `
+        id,
+        partner_org_id,
+        partner_org:partner_orgs (
+          name,
+          is_public
+        )
+      `
+      )
+      .eq('project_id', projectId)
+      .is('unassigned_at', null);
+
+    if (error) {
+      console.error('Error fetching project partner orgs:', error);
+      throw new Error(error.message || 'Failed to fetch project partner orgs');
+    }
+
+    type ProjectPartnerOrgRow = {
+      id: string;
+      partner_org_id: string;
+      partner_org: {
+        name: string;
+        is_public: boolean;
+      } | null;
+    };
+
+    return ((data || []) as unknown as ProjectPartnerOrgRow[]).map(row => ({
+      id: row.id,
+      partner_org_id: row.partner_org_id,
+      partner_org_name: row.partner_org?.name || '',
+      is_public: row.partner_org?.is_public ?? false,
+    }));
+  },
+
+  /**
+   * Assign partner org to project
+   */
+  async assignPartnerOrgToProject(
+    projectId: string,
+    partnerOrgId: string
+  ): Promise<void> {
+    // Check if assignment already exists
+    const { data: existing } = await supabase
+      .from('partner_orgs_projects')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('partner_org_id', partnerOrgId)
+      .is('unassigned_at', null)
+      .maybeSingle();
+
+    if (existing) {
+      // Already assigned, do nothing
+      return;
+    }
+
+    // Check if there's an unassigned entry to reactivate
+    const { data: unassigned } = await supabase
+      .from('partner_orgs_projects')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('partner_org_id', partnerOrgId)
+      .not('unassigned_at', 'is', null)
+      .maybeSingle();
+
+    if (unassigned) {
+      // Reactivate by clearing unassigned_at
+      const unassignedId = (unassigned as unknown as { id: string }).id;
+      const { error } = await supabase
+        .from('partner_orgs_projects')
+        .update({ unassigned_at: null } as never)
+        .eq('id', unassignedId);
+
+      if (error) {
+        console.error('Error reactivating project partner org:', error);
+        throw new Error(
+          error.message || 'Failed to assign partner org to project'
+        );
+      }
+    } else {
+      // Create new assignment
+      const { error } = await supabase.from('partner_orgs_projects').insert({
+        project_id: projectId,
+        partner_org_id: partnerOrgId,
+        source_type: 'manual',
+      } as never);
+
+      if (error) {
+        console.error('Error assigning partner org to project:', error);
+        throw new Error(
+          error.message || 'Failed to assign partner org to project'
+        );
+      }
+    }
+  },
+
+  /**
+   * Unassign partner org from project (soft delete)
+   */
+  async unassignPartnerOrgFromProject(assignmentId: string): Promise<void> {
+    const { error } = await supabase
+      .from('partner_orgs_projects')
+      .update({ unassigned_at: new Date().toISOString() } as never)
+      .eq('id', assignmentId);
+
+    if (error) {
+      console.error('Error unassigning partner org from project:', error);
+      throw new Error(
+        error.message || 'Failed to unassign partner org from project'
+      );
+    }
+  },
+
+  /**
+   * Create a new project
+   */
+  async createProject(data: {
+    name: string;
+    description?: string | null;
+    source_language_entity_id: string;
+    target_language_entity_id: string;
+    region_id?: string | null;
+    location?: { lat: number; lng: number } | null;
+    project_status?: Database['public']['Enums']['project_status'];
+  }): Promise<ProjectWithDetails> {
+    // Get current authenticated user for created_by field (required by RLS policy)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('User must be authenticated to create a project');
+    }
+
+    // Convert location to PostGIS format if provided
+    const locationValue = data.location
+      ? locationToPostGIS(data.location)
+      : null;
+
+    const insertData: Database['public']['Tables']['projects']['Insert'] = {
+      name: data.name,
+      description: data.description || null,
+      source_language_entity_id: data.source_language_entity_id,
+      target_language_entity_id: data.target_language_entity_id,
+      region_id: data.region_id || null,
+      project_status: data.project_status || 'precreated',
+      publish_status: 'pending',
+      location: locationValue,
+      created_by: user.id,
+    };
+
+    const { data: project, error } = await supabase
+      .from('projects')
+      .insert(insertData)
+      .select(
+        `
+        *,
+        target_language:language_entities!projects_target_language_entity_id_fkey (
+          id,
+          name,
+          level
+        ),
+        source_language:language_entities!projects_source_language_entity_id_fkey (
+          id,
+          name,
+          level
+        ),
+        region:regions!projects_region_id_fkey (
+          id,
+          name,
+          level
+        )
+      `
+      )
+      .single();
+
+    if (error) throw error;
+
+    // Extract location from PostGIS geometry
+    const location = extractLocation(project.location);
+
+    return {
+      ...project,
+      location,
+      progress: null,
+      textVersions: [],
+      audioVersions: [],
+    } as unknown as ProjectWithDetails;
   },
 };

@@ -10,7 +10,7 @@ import {
   DropdownTrigger,
 } from './ui/Dropdown';
 import { useUserPartnerOrgs } from '@/features/dashboard/hooks/useUserPartnerOrgs';
-import { usePartnerOrgProjects } from '@/features/partnerorgs/hooks/usePartnerOrgProjects';
+import { usePartnerOrgProjects } from '@/features/partnerorgs/api/usePartnerOrgProjects';
 import { useAuth } from '@/features/auth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
@@ -174,16 +174,27 @@ export const BreadcrumbNavigation: React.FC<BreadcrumbNavigationProps> = ({
                         items={
                           projects
                             ?.filter(
-                              (p, idx, arr) =>
+                              (
+                                p: { project_id: string },
+                                idx: number,
+                                arr: Array<{ project_id: string }>
+                              ) =>
                                 arr.findIndex(
-                                  x => x.project_id === p.project_id
+                                  (x: { project_id: string }) =>
+                                    x.project_id === p.project_id
                                 ) === idx
                             )
-                            .map(p => ({
-                              id: p.project_id,
-                              label: p.language_name || p.project_name,
-                              href: `/partner-org/${encodeURIComponent(params.orgId!)}/project/${encodeURIComponent(p.project_id)}`,
-                            })) ?? []
+                            .map(
+                              (p: {
+                                project_id: string;
+                                language_name?: string | null;
+                                project_name: string;
+                              }) => ({
+                                id: p.project_id,
+                                label: p.language_name || p.project_name,
+                                href: `/partner-org/${encodeURIComponent(params.orgId!)}/project/${encodeURIComponent(p.project_id)}`,
+                              })
+                            ) ?? []
                         }
                         isLoading={projectsLoading}
                         onSelect={href => router.push(href)}
@@ -194,16 +205,27 @@ export const BreadcrumbNavigation: React.FC<BreadcrumbNavigationProps> = ({
                         items={
                           projects
                             ?.filter(
-                              (p, idx, arr) =>
+                              (
+                                p: { project_id: string },
+                                idx: number,
+                                arr: Array<{ project_id: string }>
+                              ) =>
                                 arr.findIndex(
-                                  x => x.project_id === p.project_id
+                                  (x: { project_id: string }) =>
+                                    x.project_id === p.project_id
                                 ) === idx
                             )
-                            .map(p => ({
-                              id: p.project_id,
-                              label: p.language_name || p.project_name,
-                              href: `/partner-org/${encodeURIComponent(params.orgId!)}/project/${encodeURIComponent(p.project_id)}`,
-                            })) ?? []
+                            .map(
+                              (p: {
+                                project_id: string;
+                                language_name?: string | null;
+                                project_name: string;
+                              }) => ({
+                                id: p.project_id,
+                                label: p.language_name || p.project_name,
+                                href: `/partner-org/${encodeURIComponent(params.orgId!)}/project/${encodeURIComponent(p.project_id)}`,
+                              })
+                            ) ?? []
                         }
                         isLoading={projectsLoading}
                         onSelect={href => router.push(href)}

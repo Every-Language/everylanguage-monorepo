@@ -1,5 +1,9 @@
 import { supabase } from '@/shared/services/supabase';
-import type { LanguageEntityWithRegions, LanguageFundingStatus } from '@/types';
+import type {
+  LanguageEntityWithRegions,
+  LanguageFundingStatus,
+  Region,
+} from '@/types';
 
 export const languageAvailabilityApi = {
   /**
@@ -13,6 +17,7 @@ export const languageAvailabilityApi = {
     sortField?: 'name' | 'budget';
     sortDirection?: 'asc' | 'desc';
     externalIdSearch?: string; // Search by external_id in language_entity_sources
+    regionFilters?: string[]; // Array of region IDs to filter by (OR logic)
   }): Promise<{
     data: LanguageEntityWithRegions[];
     count: number;
@@ -71,9 +76,79 @@ export const languageAvailabilityApi = {
       .is('deleted_at', null)
       .is('language_entities.deleted_at', null);
 
+    // Apply region filters if provided
+    let entityIdsFromRegions: string[] | undefined;
+    if (params?.regionFilters && params.regionFilters.length > 0) {
+      if (params.regionFilters.includes('none')) {
+        // Filter for languages with NO regions
+        // Get all language_entity_ids that have regions
+        // If "none" is the only filter, we'll filter in JS after fetching
+        // Otherwise, we need to combine with other region filters
+        if (params.regionFilters.length === 1) {
+          // Only "none" filter - we'll handle this after fetching all data
+          entityIdsFromRegions = [];
+        } else {
+          // "none" plus other regions - get languages with selected regions
+          const otherRegionIds = params.regionFilters.filter(
+            id => id !== 'none'
+          );
+          const { data: regionsData } = await supabase
+            .from('language_entities_regions')
+            .select('language_entity_id')
+            .in('region_id', otherRegionIds)
+            .is('deleted_at', null);
+
+          const languageIdsWithSelectedRegions = new Set(
+            regionsData?.map(r => r.language_entity_id) || []
+          );
+
+          // Languages with selected regions OR languages with no regions
+          // We'll handle this after fetching
+          entityIdsFromRegions = Array.from(languageIdsWithSelectedRegions);
+        }
+      } else {
+        // Filter for languages with ANY of the selected regions (OR logic)
+        const { data: regionsData, error: regionsError } = await supabase
+          .from('language_entities_regions')
+          .select('language_entity_id')
+          .in('region_id', params.regionFilters)
+          .is('deleted_at', null);
+
+        if (regionsError) {
+          console.error('Error fetching languages by regions:', regionsError);
+          throw regionsError;
+        }
+
+        entityIdsFromRegions = [
+          ...new Set(regionsData?.map(r => r.language_entity_id) || []),
+        ];
+
+        // If no matches, return empty result
+        if (entityIdsFromRegions.length === 0) {
+          return {
+            data: [],
+            count: 0,
+            page,
+            pageSize,
+            totalPages: 0,
+          };
+        }
+      }
+    }
+
     // Apply external_id filter
     if (entityIdsFromExternalId && entityIdsFromExternalId.length > 0) {
       query = query.in('language_entity_id', entityIdsFromExternalId);
+    }
+
+    // Apply region filter
+    if (entityIdsFromRegions !== undefined) {
+      if (entityIdsFromRegions.length === 0) {
+        // This means "none" filter only - we'll handle after fetching
+        // For now, fetch all and filter in JS
+      } else {
+        query = query.in('language_entity_id', entityIdsFromRegions);
+      }
     }
 
     // Apply search if provided
@@ -109,7 +184,7 @@ export const languageAvailabilityApi = {
     if (error) throw error;
 
     // Transform data to match LanguageEntityWithRegions
-    const transformedData: LanguageEntityWithRegions[] = (data || []).map(
+    let transformedData: LanguageEntityWithRegions[] = (data || []).map(
       (item: {
         id: string;
         language_entity_id: string;
@@ -135,11 +210,120 @@ export const languageAvailabilityApi = {
       })
     );
 
-    const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
+    // Apply "none" region filter if needed (filter languages with no regions)
+    if (
+      params?.regionFilters &&
+      params.regionFilters.includes('none') &&
+      (!entityIdsFromRegions || entityIdsFromRegions.length === 0)
+    ) {
+      // Get all language_entity_ids that have regions
+      const { data: languagesWithRegions } = await supabase
+        .from('language_entities_regions')
+        .select('language_entity_id')
+        .is('deleted_at', null);
+
+      const languageIdsWithRegions = new Set(
+        languagesWithRegions?.map(r => r.language_entity_id) || []
+      );
+
+      // Filter out languages that have regions
+      transformedData = transformedData.filter(
+        lang => !languageIdsWithRegions.has(lang.id)
+      );
+    } else if (
+      params?.regionFilters &&
+      params.regionFilters.includes('none') &&
+      params.regionFilters.length > 1
+    ) {
+      // "none" plus other regions - include languages with no regions OR with selected regions
+      const { data: languagesWithRegions } = await supabase
+        .from('language_entities_regions')
+        .select('language_entity_id')
+        .is('deleted_at', null);
+
+      const languageIdsWithRegions = new Set(
+        languagesWithRegions?.map(r => r.language_entity_id) || []
+      );
+
+      // Keep languages that either have no regions OR are in the selected regions list
+      transformedData = transformedData.filter(
+        lang =>
+          !languageIdsWithRegions.has(lang.id) ||
+          entityIdsFromRegions?.includes(lang.id)
+      );
+    }
+
+    // Fetch regions and population data for all languages in parallel
+    const enrichedData = await Promise.all(
+      transformedData.map(async language => {
+        // Fetch regions for this language
+        const { data: regionsData, error: regionsError } = await supabase
+          .from('language_entities_regions')
+          .select('regions(*)')
+          .eq('language_entity_id', language.id)
+          .is('deleted_at', null);
+
+        if (regionsError) {
+          console.error(
+            `Error fetching regions for language ${language.id}:`,
+            regionsError
+          );
+        }
+
+        const regions: Region[] =
+          regionsData
+            ?.map(item => item.regions as Region)
+            .filter((r): r is Region => r !== null && r.deleted_at === null) ||
+          [];
+
+        // Fetch population from mv_language_stats
+        const { data: statsData, error: statsError } = await supabase
+          .from('mv_language_stats')
+          .select('population')
+          .eq('language_entity_id', language.id)
+          .maybeSingle();
+
+        if (statsError) {
+          console.error(
+            `Error fetching population for language ${language.id}:`,
+            statsError
+          );
+        }
+
+        const population: number | null =
+          statsData?.population !== undefined ? statsData.population : null;
+
+        return {
+          ...language,
+          regions,
+          population,
+        };
+      })
+    );
+
+    // Adjust count if we filtered in JS
+    let finalCount = totalCount || 0;
+    if (
+      params?.regionFilters &&
+      params.regionFilters.includes('none') &&
+      (!entityIdsFromRegions || entityIdsFromRegions.length === 0)
+    ) {
+      // We filtered in JS, so count is the filtered array length
+      finalCount = enrichedData.length;
+    } else if (
+      params?.regionFilters &&
+      params.regionFilters.includes('none') &&
+      params.regionFilters.length > 1
+    ) {
+      // We filtered in JS, so count is the filtered array length
+      finalCount = enrichedData.length;
+    }
+
+    const totalPages = finalCount ? Math.ceil(finalCount / pageSize) : 1;
 
     return {
-      data: transformedData,
-      count: totalCount || 0,
+      data: enrichedData,
+      count: finalCount,
       page,
       pageSize,
       totalPages,
@@ -570,6 +754,22 @@ export const languageAvailabilityApi = {
       });
 
       if (error) throw error;
+    }
+  },
+
+  /**
+   * Delete language funding record (soft delete)
+   */
+  async deleteLanguageFunding(languageId: string): Promise<void> {
+    const { error } = await supabase
+      .from('language_funding')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('language_entity_id', languageId)
+      .is('deleted_at', null);
+
+    if (error) {
+      console.error('Error deleting language funding:', error);
+      throw error;
     }
   },
 };

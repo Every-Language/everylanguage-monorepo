@@ -3,13 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
-import {
-  useQuery,
-  useQueryClient,
-  keepPreviousData,
-} from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
-import { useAuth } from '@/features/auth';
 
 interface PartnerOrgLayoutProps {
   children: React.ReactNode;
@@ -23,8 +18,6 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
     projectId?: string;
   }>();
   const pathname = usePathname();
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
   const partner = useQuery({
     queryKey: ['partner-org', orgId],
     queryFn: async () => {
@@ -44,164 +37,6 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
     staleTime: 10 * 60 * 1000, // 10 minutes - partner org name doesn't change often
     placeholderData: keepPreviousData,
   });
-
-  // Prefetch handlers for each tab
-  const prefetchTabData = React.useCallback(
-    (tabLabel: string) => {
-      if (!orgId) return;
-
-      switch (tabLabel) {
-        case 'Overview':
-          // Prefetch projects and listening sessions for overview
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-projects', orgId],
-            queryFn: async () => {
-              const { data, error } = await (supabase as any)
-                .from('partner_org_projects_via_donations')
-                .select('*')
-                .eq('partner_org_id', orgId)
-                .order('language_name');
-              if (error) throw error;
-              return data ?? [];
-            },
-          });
-          break;
-        case 'Projects':
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-projects', orgId],
-            queryFn: async () => {
-              const { data, error } = await (supabase as any)
-                .from('partner_org_projects_via_donations')
-                .select('*')
-                .eq('partner_org_id', orgId)
-                .order('language_name');
-              if (error) throw error;
-              return data ?? [];
-            },
-          });
-          queryClient.prefetchQuery({
-            queryKey: ['project-progress', 'all', orgId],
-            queryFn: async () => null,
-          });
-          break;
-        case 'Distribution':
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-projects', orgId],
-            queryFn: async () => {
-              const { data, error } = await (supabase as any)
-                .from('partner_org_projects_via_donations')
-                .select('*')
-                .eq('partner_org_id', orgId)
-                .order('language_name');
-              if (error) throw error;
-              return data ?? [];
-            },
-          });
-          queryClient.prefetchQuery({
-            queryKey: ['project-distribution', 'all', orgId],
-            queryFn: async () => null,
-          });
-          break;
-        case 'Donations':
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-donations', orgId, user?.id ?? null],
-            queryFn: async () => {
-              const { data: donations, error } = await (supabase as any)
-                .from('donations')
-                .select(
-                  `
-                  *,
-                  donation_allocations (
-                    id,
-                    amount_cents,
-                    currency_code,
-                    project_id,
-                    operation_id,
-                    effective_from,
-                    effective_to,
-                    notes,
-                    project:projects!donation_allocations_project_id_fkey (
-                      id,
-                      name,
-                      target_language_entity_id,
-                      language_entity:language_entities!projects_target_language_entity_id_fkey (
-                        id,
-                        name
-                      )
-                    ),
-                    operation:operations!donation_allocations_operation_id_fkey (
-                      id,
-                      name,
-                      category
-                    )
-                  ),
-                  intent_language:language_entities!donations_intent_language_entity_id_fkey (
-                    id,
-                    name
-                  ),
-                  intent_region:regions!donations_intent_region_id_fkey (
-                    id,
-                    name
-                  ),
-                  intent_operation:operations!donations_intent_operation_id_fkey (
-                    id,
-                    name
-                  )
-                `
-                )
-                .eq('partner_org_id', orgId)
-                .is('deleted_at', null)
-                .order('created_at', { ascending: false });
-
-              if (error) throw error;
-
-              return (donations ?? []).map((d: any) => ({
-                ...d,
-                donation_allocations: Array.isArray(d.donation_allocations)
-                  ? d.donation_allocations
-                  : [],
-                intent_language: Array.isArray(d.intent_language)
-                  ? d.intent_language[0]
-                  : d.intent_language,
-                intent_region: Array.isArray(d.intent_region)
-                  ? d.intent_region[0]
-                  : d.intent_region,
-                intent_operation: Array.isArray(d.intent_operation)
-                  ? d.intent_operation[0]
-                  : d.intent_operation,
-                isFromCurrentUser: user?.id !== null && d.user_id === user?.id,
-              }));
-            },
-          });
-          break;
-        case 'Updates':
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-updates', orgId],
-            queryFn: async () => {
-              // Simplified - actual query logic is in usePartnerOrgUpdates
-              return null;
-            },
-          });
-          break;
-        case 'Members':
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-members', orgId],
-            queryFn: async () => {
-              const { data, error } = await (supabase as any).rpc(
-                'get_partner_org_members',
-                {
-                  p_partner_org_id: orgId,
-                }
-              );
-              if (error) throw error;
-              return data ?? [];
-            },
-          });
-          break;
-      }
-    },
-    [orgId, queryClient, user?.id]
-  );
 
   // Define tabs for partner org pages
   const tabs: Array<{ to: string; label: string }> = React.useMemo(() => {
@@ -264,7 +99,6 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
                 <Link
                   key={t.to}
                   href={t.to}
-                  onMouseEnter={() => prefetchTabData(t.label)}
                   className={`whitespace-nowrap px-3 py-2 text-sm border-b-2 ${isActive ? 'border-accent-600 text-neutral-900 dark:text-neutral-100' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}>
                   {t.label}
                 </Link>

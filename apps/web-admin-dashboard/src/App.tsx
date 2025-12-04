@@ -52,6 +52,11 @@ const TextVersionsPage = lazy(() =>
     default: m.TextVersionsPage,
   }))
 );
+const ProjectUpdatesPage = lazy(() =>
+  import('./features/project-updates/pages/ProjectUpdatesPage').then(m => ({
+    default: m.ProjectUpdatesPage,
+  }))
+);
 const OperationsPage = lazy(() =>
   import('./features/operations/pages/OperationsPage').then(m => ({
     default: m.OperationsPage,
@@ -81,14 +86,14 @@ const PartnerOrgsPage = lazy(() =>
     default: m.PartnerOrgsPage,
   }))
 );
-const TeamsPage = lazy(() =>
-  import('./features/users/pages/TeamsPage').then(m => ({
-    default: m.TeamsPage,
-  }))
-);
 const BasesPage = lazy(() =>
   import('./features/users/pages/BasesPage').then(m => ({
     default: m.BasesPage,
+  }))
+);
+const PermissionsPage = lazy(() =>
+  import('./features/users/pages/PermissionsPage').then(m => ({
+    default: m.PermissionsPage,
   }))
 );
 
@@ -149,6 +154,7 @@ function App() {
               path='/projects/text-versions'
               element={<TextVersionsPage />}
             />
+            <Route path='/projects/updates' element={<ProjectUpdatesPage />} />
             <Route path='/budgets/operations' element={<OperationsPage />} />
             <Route
               path='/statistics/bible-translations'
@@ -160,8 +166,8 @@ function App() {
             />
             <Route path='/users' element={<UsersPage />} />
             <Route path='/users/partner-orgs' element={<PartnerOrgsPage />} />
-            <Route path='/users/teams' element={<TeamsPage />} />
             <Route path='/users/bases' element={<BasesPage />} />
+            <Route path='/permissions' element={<PermissionsPage />} />
           </Route>
 
           {/* Default redirect */}

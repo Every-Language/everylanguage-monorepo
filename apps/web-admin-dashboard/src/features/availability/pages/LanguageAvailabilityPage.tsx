@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { languageAvailabilityApi } from '../api/languageAvailabilityApi';
 import { languagesApi } from '@/features/languages/api/languagesApi';
+import { regionsApi } from '@/features/regions/api/regionsApi';
 import type { LanguageFundingStatus, LanguageEntityWithRegions } from '@/types';
 import {
   Search,
@@ -12,6 +13,7 @@ import {
   Edit2,
   Check,
   X as XIcon,
+  Trash2,
 } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
 
@@ -69,8 +71,7 @@ function DraftLanguageRow({
             onCloseModal();
           }}
           disabled={isPending}
-          className='px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-        >
+          className='px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
           Add Language
         </button>
       </td>
@@ -88,8 +89,10 @@ function LanguageAvailabilityRow({
   onBudgetCancel,
   onBudgetStartEdit,
   onStatusChange,
+  onDelete,
   updateBudgetMutation,
   updateStatusMutation,
+  deleteMutation,
 }: {
   language: LanguageEntityWithRegions;
   editingBudget: string | null;
@@ -99,8 +102,10 @@ function LanguageAvailabilityRow({
   onBudgetCancel: () => void;
   onBudgetStartEdit: (id: string, currentBudget: number | null) => void;
   onStatusChange: (id: string, status: LanguageFundingStatus) => void;
+  onDelete: (id: string) => void;
   updateBudgetMutation: { isPending: boolean };
   updateStatusMutation: { isPending: boolean };
+  deleteMutation: { isPending: boolean };
 }) {
   // Fetch language entity sources for external IDs
   const { data: sources } = useQuery({
@@ -142,14 +147,12 @@ function LanguageAvailabilityRow({
             <button
               onClick={() => onBudgetSave(language.id)}
               disabled={updateBudgetMutation.isPending}
-              className='p-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 disabled:opacity-50'
-            >
+              className='p-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 disabled:opacity-50'>
               <Check className='h-4 w-4' />
             </button>
             <button
               onClick={onBudgetCancel}
-              className='p-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300'
-            >
+              className='p-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300'>
               <XIcon className='h-4 w-4' />
             </button>
           </div>
@@ -168,8 +171,7 @@ function LanguageAvailabilityRow({
                 )
               }
               className='p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'
-              title='Edit budget'
-            >
+              title='Edit budget'>
               <Edit2 className='h-3 w-3' />
             </button>
           </div>
@@ -182,8 +184,7 @@ function LanguageAvailabilityRow({
             onValueChange={value =>
               onStatusChange(language.id, value as LanguageFundingStatus)
             }
-            disabled={updateStatusMutation.isPending}
-          >
+            disabled={updateStatusMutation.isPending}>
             <SelectItem value='draft'>Draft</SelectItem>
             <SelectItem value='available'>Available</SelectItem>
             <SelectItem value='in_progress'>In Progress</SelectItem>
@@ -204,6 +205,41 @@ function LanguageAvailabilityRow({
         ) : (
           <span className='text-neutral-400 dark:text-neutral-600'>—</span>
         )}
+      </td>
+      <td className='px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400'>
+        {language.regions && language.regions.length > 0 ? (
+          <div className='flex flex-col gap-1'>
+            {language.regions.map((region, idx) => (
+              <span key={idx} className='text-xs'>
+                {region.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className='text-neutral-400 dark:text-neutral-600'>—</span>
+        )}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
+        {language.population !== null && language.population !== undefined ? (
+          language.population === 0 ? (
+            <span className='text-neutral-400 dark:text-neutral-600'>
+              Unknown
+            </span>
+          ) : (
+            language.population.toLocaleString('en-US')
+          )
+        ) : (
+          <span className='text-neutral-400 dark:text-neutral-600'>—</span>
+        )}
+      </td>
+      <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
+        <button
+          onClick={() => onDelete(language.id)}
+          disabled={deleteMutation.isPending}
+          className='px-3 py-1.5 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-1'
+          title='Delete language funding'>
+          <Trash2 className='h-4 w-4' />
+        </button>
       </td>
     </tr>
   );
@@ -231,6 +267,10 @@ export function LanguageAvailabilityPage() {
   const [externalIdSearch, setExternalIdSearch] = useState('');
   const [debouncedExternalIdSearch, setDebouncedExternalIdSearch] =
     useState('');
+  const [regionFilters, setRegionFilters] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [regionSearchQuery, setRegionSearchQuery] = useState('');
   const queryClient = useQueryClient();
 
   // Debounce search term
@@ -270,7 +310,23 @@ export function LanguageAvailabilityPage() {
     return () => clearTimeout(timer);
   }, [externalIdSearch]);
 
+  // Fetch regions for filter
+  const { data: searchedRegions } = useQuery({
+    queryKey: ['region-search-filter', regionSearchQuery],
+    queryFn: async () => {
+      if (!regionSearchQuery || regionSearchQuery.length < 2) return [];
+      const results = await regionsApi.fetchRegions({
+        searchQuery: regionSearchQuery,
+        page: 1,
+        pageSize: 20,
+      });
+      return results.data;
+    },
+    enabled: regionSearchQuery.length >= 2,
+  });
+
   // Fetch available languages
+  const regionFilterIds = regionFilters.map(r => r.id);
   const { data: response, isLoading } = useQuery({
     queryKey: [
       'available-languages',
@@ -281,6 +337,7 @@ export function LanguageAvailabilityPage() {
       sortField,
       sortDirection,
       debouncedExternalIdSearch,
+      regionFilterIds.join(','),
     ],
     queryFn: () =>
       languageAvailabilityApi.fetchAvailableLanguages({
@@ -297,6 +354,7 @@ export function LanguageAvailabilityPage() {
           debouncedExternalIdSearch.trim().length > 0
             ? debouncedExternalIdSearch.trim()
             : undefined,
+        regionFilters: regionFilterIds.length > 0 ? regionFilterIds : undefined,
       }),
   });
 
@@ -386,6 +444,15 @@ export function LanguageAvailabilityPage() {
     },
   });
 
+  // Delete language funding mutation
+  const deleteMutation = useMutation({
+    mutationFn: (languageId: string) =>
+      languageAvailabilityApi.deleteLanguageFunding(languageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['available-languages'] });
+    },
+  });
+
   const handleStatusChange = (
     languageId: string,
     newStatus: LanguageFundingStatus
@@ -421,6 +488,18 @@ export function LanguageAvailabilityPage() {
     setBudgetValue('');
   };
 
+  const handleDelete = (languageId: string) => {
+    const language = languages.find(l => l.id === languageId);
+    if (language) {
+      const confirmed = window.confirm(
+        `Are you sure you want to delete the funding record for "${language.name}"? This action cannot be undone.`
+      );
+      if (confirmed) {
+        deleteMutation.mutate(languageId);
+      }
+    }
+  };
+
   return (
     <div className='p-8'>
       <div className='mb-8 flex items-center justify-between'>
@@ -439,8 +518,7 @@ export function LanguageAvailabilityPage() {
             setAddModalExternalIdSearch('');
             setAddModalPage(1);
           }}
-          className='inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors'
-        >
+          className='inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors'>
           <Plus className='h-5 w-5 mr-2' />
           Add Language
         </button>
@@ -460,15 +538,14 @@ export function LanguageAvailabilityPage() {
         </div>
       </div>
 
-      <div className='mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4'>
+      <div className='mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4'>
         <Select
           label='Funding Status'
           value={statusFilter}
           onValueChange={value => {
             setStatusFilter(value);
             setPage(1);
-          }}
-        >
+          }}>
           <SelectItem value='all'>All statuses</SelectItem>
           <SelectItem value='draft'>Draft</SelectItem>
           <SelectItem value='available'>Available</SelectItem>
@@ -493,6 +570,84 @@ export function LanguageAvailabilityPage() {
             />
           </div>
         </div>
+
+        {/* Region Filter */}
+        <div>
+          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+            Filter by Regions (OR)
+          </label>
+          <div className='relative'>
+            <input
+              type='text'
+              placeholder='Type to search and add regions...'
+              value={regionSearchQuery}
+              onChange={e => setRegionSearchQuery(e.target.value)}
+              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
+            />
+            {regionSearchQuery && (
+              <div className='absolute z-20 w-full mt-1 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+                <button
+                  onClick={() => {
+                    if (!regionFilters.find(r => r.id === 'none')) {
+                      setRegionFilters(prev => [
+                        ...prev,
+                        { id: 'none', name: 'No Region' },
+                      ]);
+                      setPage(1);
+                    }
+                    setRegionSearchQuery('');
+                  }}
+                  className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 italic border-b border-neutral-200 dark:border-neutral-800'>
+                  No Region
+                </button>
+                {searchedRegions &&
+                  searchedRegions.map(region => (
+                    <button
+                      key={region.id}
+                      onClick={() => {
+                        if (!regionFilters.find(r => r.id === region.id)) {
+                          setRegionFilters(prev => [
+                            ...prev,
+                            { id: region.id, name: region.name },
+                          ]);
+                          setPage(1);
+                        }
+                        setRegionSearchQuery('');
+                      }}
+                      className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100'>
+                      {region.name}{' '}
+                      <span className='text-neutral-500 dark:text-neutral-400'>
+                        ({region.level})
+                      </span>
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          {/* Region filter pills */}
+          {regionFilters.length > 0 && (
+            <div className='flex flex-wrap gap-2 mt-2'>
+              {regionFilters.map(region => (
+                <span
+                  key={region.id}
+                  className='inline-flex items-center gap-1 px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 rounded-full text-sm'>
+                  {region.name}
+                  <button
+                    onClick={() => {
+                      setRegionFilters(prev =>
+                        prev.filter(r => r.id !== region.id)
+                      );
+                      setPage(1);
+                    }}
+                    className='hover:text-primary-900 dark:hover:text-primary-100'>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -514,8 +669,7 @@ export function LanguageAvailabilityPage() {
                       <button
                         type='button'
                         onClick={() => handleSort('name')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Name
                         <span>{getSortIndicator('name')}</span>
                       </button>
@@ -524,8 +678,7 @@ export function LanguageAvailabilityPage() {
                       <button
                         type='button'
                         onClick={() => handleSort('budget')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Budget
                         <span>{getSortIndicator('budget')}</span>
                       </button>
@@ -535,6 +688,15 @@ export function LanguageAvailabilityPage() {
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       External IDs
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                      Regions
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                      Population
+                    </th>
+                    <th className='px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -551,16 +713,17 @@ export function LanguageAvailabilityPage() {
                         onBudgetCancel={handleCancelEditBudget}
                         onBudgetStartEdit={handleStartEditBudget}
                         onStatusChange={handleStatusChange}
+                        onDelete={handleDelete}
                         updateBudgetMutation={updateBudgetMutation}
                         updateStatusMutation={updateStatusMutation}
+                        deleteMutation={deleteMutation}
                       />
                     ))
                   ) : (
                     <tr>
                       <td
-                        colSpan={4}
-                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                      >
+                        colSpan={7}
+                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                         {debouncedSearch
                           ? 'No languages found matching your search'
                           : 'No languages found'}
@@ -582,8 +745,7 @@ export function LanguageAvailabilityPage() {
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronLeft className='h-4 w-4' />
                   </button>
                   <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
@@ -593,8 +755,7 @@ export function LanguageAvailabilityPage() {
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronRight className='h-4 w-4' />
                   </button>
                 </div>
@@ -630,8 +791,7 @@ export function LanguageAvailabilityPage() {
                     setAddModalExternalIdSearch('');
                     setAddModalPage(1);
                   }}
-                  className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-                >
+                  className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'>
                   <X className='h-5 w-5 text-neutral-500 dark:text-neutral-400' />
                 </button>
               </div>
@@ -703,8 +863,7 @@ export function LanguageAvailabilityPage() {
                           <tr>
                             <td
                               colSpan={4}
-                              className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                            >
+                              className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                               {addModalDebouncedSearch ||
                               addModalDebouncedExternalIdSearch
                                 ? 'No languages found matching your search'
@@ -729,8 +888,7 @@ export function LanguageAvailabilityPage() {
                     <button
                       onClick={() => setAddModalPage(p => Math.max(1, p - 1))}
                       disabled={addModalPage === 1}
-                      className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                    >
+                      className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                       <ChevronLeft className='h-4 w-4' />
                     </button>
                     <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
@@ -747,8 +905,7 @@ export function LanguageAvailabilityPage() {
                         )
                       }
                       disabled={addModalPage === allLanguagesTotalPages}
-                      className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                    >
+                      className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                       <ChevronRight className='h-4 w-4' />
                     </button>
                   </div>

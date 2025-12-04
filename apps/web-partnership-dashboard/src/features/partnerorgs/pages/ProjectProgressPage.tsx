@@ -10,28 +10,29 @@ import {
 } from '@/shared/components/ui/Card';
 import { AnimatedProgress } from '../components/AnimatedProgress';
 import { CountUp } from '../components/CountUp';
-import { useProjectProgress } from '../hooks/useProjectProgress';
-import { useBookProgress } from '../hooks/useBookProgress';
+import { useProjectProgress } from '../api/useProjectProgress';
+import { useBookProgress } from '../api/useBookProgress';
 import { Progress } from '@/shared/components/ui/Progress';
+import { normalizeSupabaseRelation } from '@/shared/utils/supabase-helpers';
 
 export const ProjectProgressPage: React.FC = () => {
   const { projectId, orgId } = useParams<{
     projectId: string;
     orgId: string;
   }>();
-  const { data: versions, isLoading } = useProjectProgress(
+  const { data: progressData, isLoading } = useProjectProgress(
     projectId || 'all',
     orgId
   );
 
   // Get audio version IDs for book progress
   const audioVersionIds = React.useMemo(() => {
-    if (!versions || !Array.isArray(versions)) return [];
-    return versions
-      .filter((v: any) => v.version_type === 'audio')
-      .map((v: any) => v.id)
+    if (!progressData?.versions) return [];
+    return progressData.versions
+      .filter(v => v.version_type === 'audio')
+      .map(v => v.id)
       .filter((id): id is string => !!id);
-  }, [versions]);
+  }, [progressData]);
 
   const { data: bookProgress, isLoading: bookProgressLoading } =
     useBookProgress(audioVersionIds);
@@ -42,7 +43,11 @@ export const ProjectProgressPage: React.FC = () => {
     );
   }
 
-  if (!versions || !Array.isArray(versions) || versions.length === 0) {
+  if (
+    !progressData ||
+    !progressData.versions ||
+    progressData.versions.length === 0
+  ) {
     return (
       <Card className='border border-neutral-200 dark:border-neutral-800'>
         <CardContent className='py-12 text-center text-neutral-500'>
@@ -52,49 +57,7 @@ export const ProjectProgressPage: React.FC = () => {
     );
   }
 
-  // Calculate aggregate progress across all versions
-  let totalBooksDone = 0;
-  let totalBooks = 0;
-  let totalChaptersDone = 0;
-  let totalChapters = 0;
-
-  for (const version of versions) {
-    const summary = Array.isArray(version.progress_summary)
-      ? version.progress_summary[0]
-      : null;
-
-    if (summary) {
-      if (version.version_type === 'audio') {
-        totalBooksDone = Math.max(
-          totalBooksDone,
-          (summary as any).books_complete || 0
-        );
-        totalBooks = Math.max(totalBooks, (summary as any).total_books || 66);
-        totalChaptersDone = Math.max(
-          totalChaptersDone,
-          (summary as any).chapters_with_audio || 0
-        );
-        totalChapters = Math.max(
-          totalChapters,
-          (summary as any).total_chapters || 1189
-        );
-      } else if (version.version_type === 'text') {
-        totalBooksDone = Math.max(
-          totalBooksDone,
-          (summary as any).books_complete || 0
-        );
-        totalBooks = Math.max(totalBooks, (summary as any).total_books || 66);
-        totalChaptersDone = Math.max(
-          totalChaptersDone,
-          (summary as any).complete_chapters || 0
-        );
-        totalChapters = Math.max(
-          totalChapters,
-          (summary as any).total_chapters || 1189
-        );
-      }
-    }
-  }
+  const { stats, versions } = progressData;
 
   return (
     <div className='space-y-6'>
@@ -108,12 +71,12 @@ export const ProjectProgressPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className='text-3xl font-bold tracking-tight'>
-              <CountUp value={totalBooksDone} />/{totalBooks}
+              <CountUp value={stats.totalBooksDone} />/{stats.totalBooks}
             </div>
             <div className='mt-3'>
               <AnimatedProgress
-                value={totalBooksDone}
-                max={totalBooks}
+                value={stats.totalBooksDone}
+                max={stats.totalBooks}
                 color='accent'
               />
             </div>
@@ -127,12 +90,12 @@ export const ProjectProgressPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className='text-3xl font-bold tracking-tight'>
-              <CountUp value={totalChaptersDone} />/{totalChapters}
+              <CountUp value={stats.totalChaptersDone} />/{stats.totalChapters}
             </div>
             <div className='mt-3'>
               <AnimatedProgress
-                value={totalChaptersDone}
-                max={totalChapters}
+                value={stats.totalChaptersDone}
+                max={stats.totalChapters}
                 color='accent'
               />
             </div>
@@ -184,30 +147,20 @@ export const ProjectProgressPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
-            {versions.map((version: any) => {
-              const summary = Array.isArray(version.progress_summary)
-                ? version.progress_summary[0]
-                : null;
+            {versions.map(version => {
+              const summary = normalizeSupabaseRelation(
+                version.progress_summary
+              );
 
-              const booksComplete = summary
-                ? (summary as any).books_complete || 0
-                : 0;
-              const totalBooks = summary
-                ? (summary as any).total_books || 66
-                : 66;
+              const booksComplete = summary?.books_complete || 0;
+              const totalBooks = summary?.total_books || 66;
               const chaptersComplete =
                 version.version_type === 'audio'
-                  ? (summary as any)?.chapters_with_audio || 0
-                  : (summary as any)?.complete_chapters || 0;
-              const totalChapters = summary
-                ? (summary as any).total_chapters || 1189
-                : 1189;
-              const versesCovered = summary
-                ? (summary as any).covered_verses || 0
-                : 0;
-              const totalVerses = summary
-                ? (summary as any).total_verses || 0
-                : 0;
+                  ? summary?.chapters_with_audio || 0
+                  : summary?.complete_chapters || 0;
+              const totalChapters = summary?.total_chapters || 1189;
+              const versesCovered = summary?.covered_verses || 0;
+              const totalVerses = summary?.total_verses || 0;
 
               return (
                 <div

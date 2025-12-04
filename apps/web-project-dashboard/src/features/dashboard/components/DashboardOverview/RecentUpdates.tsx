@@ -47,8 +47,7 @@ export const RecentUpdates: React.FC = () => {
             size='sm'
             as={Link}
             to='/project-updates'
-            rightIcon={<ArrowRightIcon className='h-4 w-4' />}
-          >
+            rightIcon={<ArrowRightIcon className='h-4 w-4' />}>
             View All
           </Button>
         </div>
@@ -73,11 +72,14 @@ export const RecentUpdates: React.FC = () => {
               const creator = Array.isArray(update.creator)
                 ? update.creator[0]
                 : update.creator;
+              const creatorName =
+                creator && typeof creator === 'object' && 'full_name' in creator
+                  ? (creator as { full_name: string | null }).full_name
+                  : null;
               return (
                 <div
                   key={update.id}
-                  className='border-b border-neutral-200 dark:border-neutral-800 last:border-0 pb-4 last:pb-0'
-                >
+                  className='border-b border-neutral-200 dark:border-neutral-800 last:border-0 pb-4 last:pb-0'>
                   <div className='flex items-start justify-between mb-1'>
                     <h4 className='font-semibold text-neutral-900 dark:text-neutral-100'>
                       {update.title}
@@ -88,7 +90,7 @@ export const RecentUpdates: React.FC = () => {
                   </p>
                   <div className='text-xs text-neutral-500'>
                     {formatDate(update.created_at)}
-                    {creator && <> • by {creator.full_name}</>}
+                    {creatorName && <> • by {creatorName}</>}
                   </div>
                 </div>
               );

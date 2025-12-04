@@ -16,10 +16,10 @@ import {
   ChevronRight,
   Users,
   Building2,
-  UserCheck,
   MapPin,
   Headphones,
   FileText,
+  Shield,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -114,6 +114,13 @@ const navigationItems: NavItem[] = [
     icon: <FileText className='h-5 w-5' />,
   },
   {
+    id: 'project-updates',
+    label: 'Project Updates',
+    path: '/projects/updates',
+    section: 'Projects',
+    icon: <FileText className='h-5 w-5' />,
+  },
+  {
     id: 'users',
     label: 'Users',
     path: '/users',
@@ -128,18 +135,18 @@ const navigationItems: NavItem[] = [
     icon: <Building2 className='h-5 w-5' />,
   },
   {
-    id: 'teams',
-    label: 'Teams',
-    path: '/users/teams',
-    section: 'USERS',
-    icon: <UserCheck className='h-5 w-5' />,
-  },
-  {
     id: 'bases',
     label: 'Bases',
     path: '/users/bases',
     section: 'USERS',
     icon: <MapPin className='h-5 w-5' />,
+  },
+  {
+    id: 'permissions',
+    label: 'Permissions',
+    path: '/permissions',
+    section: 'USERS',
+    icon: <Shield className='h-5 w-5' />,
   },
 ];
 
@@ -202,13 +209,11 @@ export function AppLayout({ children }: LayoutProps) {
       <aside
         className={`${
           sidebarOpen ? 'w-64' : 'w-20'
-        } h-full bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 transition-[width] duration-300 ease-in-out flex flex-col will-change-[width] overflow-hidden`}
-      >
+        } h-full bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 transition-[width] duration-300 ease-in-out flex flex-col will-change-[width] overflow-hidden`}>
         {/* Header */}
         <div className='h-16 flex items-center justify-between px-4 border-b border-neutral-200 dark:border-neutral-800 flex-shrink-0'>
           <div
-            className={`overflow-hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}
-          >
+            className={`overflow-hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}>
             <h1 className='text-base font-semibold text-neutral-900 dark:text-neutral-100 whitespace-nowrap'>
               Admin Dashboard
             </h1>
@@ -219,8 +224,7 @@ export function AppLayout({ children }: LayoutProps) {
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-          >
+            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}>
             {sidebarOpen ? (
               <X className='h-5 w-5' />
             ) : (
@@ -261,8 +265,7 @@ export function AppLayout({ children }: LayoutProps) {
                           ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border-r-2 border-primary-700 dark:border-primary-500'
                           : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                       }`}
-                      title={!sidebarOpen ? item.label : undefined}
-                    >
+                      title={!sidebarOpen ? item.label : undefined}>
                       {hasChildren && sidebarOpen && (
                         <span className='mr-1'>
                           {isExpanded ? (
@@ -277,13 +280,11 @@ export function AppLayout({ children }: LayoutProps) {
                           isActive || hasActiveChild
                             ? 'text-primary-700 dark:text-primary-400'
                             : 'text-neutral-500 dark:text-neutral-400'
-                        }
-                      >
+                        }>
                         {item.icon}
                       </span>
                       <span
-                        className={`ml-3 text-sm font-medium whitespace-nowrap overflow-hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}
-                      >
+                        className={`ml-3 text-sm font-medium whitespace-nowrap overflow-hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}>
                         {item.label}
                       </span>
                     </button>
@@ -301,15 +302,13 @@ export function AppLayout({ children }: LayoutProps) {
                                 isChildActive
                                   ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
                                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                              }`}
-                            >
+                              }`}>
                               <span
                                 className={
                                   isChildActive
                                     ? 'text-primary-700 dark:text-primary-400'
                                     : 'text-neutral-500 dark:text-neutral-400'
-                                }
-                              >
+                                }>
                                 {child.icon}
                               </span>
                               <span className='ml-3 text-sm font-medium whitespace-nowrap'>
@@ -363,8 +362,7 @@ export function AppLayout({ children }: LayoutProps) {
                           ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border-r-2 border-primary-700 dark:border-primary-500'
                           : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                       }`}
-                      title={!sidebarOpen ? item.label : undefined}
-                    >
+                      title={!sidebarOpen ? item.label : undefined}>
                       {hasChildren && sidebarOpen && (
                         <span className='mr-1'>
                           {isExpanded ? (
@@ -379,13 +377,11 @@ export function AppLayout({ children }: LayoutProps) {
                           isActive || hasActiveChild
                             ? 'text-primary-700 dark:text-primary-400'
                             : 'text-neutral-500 dark:text-neutral-400'
-                        }
-                      >
+                        }>
                         {item.icon}
                       </span>
                       <span
-                        className={`ml-3 text-sm font-medium whitespace-nowrap overflow-hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}
-                      >
+                        className={`ml-3 text-sm font-medium whitespace-nowrap overflow-hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}>
                         {item.label}
                       </span>
                     </button>
@@ -403,15 +399,13 @@ export function AppLayout({ children }: LayoutProps) {
                                 isChildActive
                                   ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
                                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                              }`}
-                            >
+                              }`}>
                               <span
                                 className={
                                   isChildActive
                                     ? 'text-primary-700 dark:text-primary-400'
                                     : 'text-neutral-500 dark:text-neutral-400'
-                                }
-                              >
+                                }>
                                 {child.icon}
                               </span>
                               <span className='ml-3 text-sm font-medium whitespace-nowrap'>

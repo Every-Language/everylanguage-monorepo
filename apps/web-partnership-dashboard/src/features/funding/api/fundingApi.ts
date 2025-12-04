@@ -84,7 +84,7 @@ export async function fetchPartnerOrgsPaginated(
 }
 
 /**
- * Fetch languages available for donation from language_funding_remaining view
+ * Fetch languages available for donation from language_funding_balances view
  * Returns languages with funding_status 'available' or 'in_progress' and remaining_budget_cents > 0
  */
 export async function fetchLanguagesForDonation(): Promise<
@@ -92,7 +92,7 @@ export async function fetchLanguagesForDonation(): Promise<
 > {
   // Use explicit foreign key relationship syntax for PostgREST
   const { data, error } = await (supabase as any)
-    .from('language_funding_remaining')
+    .from('language_funding_balances')
     .select(
       'language_entity_id, remaining_budget_cents, language_entities!language_entity_id(id, name)'
     )
@@ -170,7 +170,7 @@ export async function checkLanguageRemainingBudget(
   name: string;
 } | null> {
   const { data, error } = await (supabase as any)
-    .from('language_funding_remaining')
+    .from('language_funding_balances')
     .select(
       'language_entity_id, remaining_budget_cents, language_entities!language_entity_id(id, name)'
     )
@@ -341,19 +341,21 @@ export async function createDonationCheckout(payload: {
   ) {
     return functionResponse.data as {
       clientSecret: string | null;
-      paymentIntentId: string;
+      paymentIntentId: string | null;
       donationId: string;
       customerId: string;
       partnerOrgId: string | null;
+      subscriptionId?: string | null; // Included if recurring donation
     };
   }
 
   // Fallback: return the response as-is if structure is different
   return functionResponse as {
     clientSecret: string | null;
-    paymentIntentId: string;
+    paymentIntentId: string | null;
     donationId: string;
     customerId: string;
     partnerOrgId: string | null;
+    subscriptionId?: string | null; // Included if recurring donation
   };
 }

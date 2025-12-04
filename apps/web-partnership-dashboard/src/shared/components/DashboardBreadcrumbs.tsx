@@ -10,7 +10,7 @@ import {
   DropdownTrigger,
 } from './ui/Dropdown';
 import { useUserPartnerOrgs } from '@/features/dashboard/hooks/useUserPartnerOrgs';
-import { usePartnerOrgProjects } from '@/features/partnerorgs/hooks/usePartnerOrgProjects';
+import { usePartnerOrgProjects } from '@/features/partnerorgs/api/usePartnerOrgProjects';
 import { useAuth } from '@/features/auth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';

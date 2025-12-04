@@ -109,8 +109,11 @@ export const StepReviewAndPayment: React.FC<{ flow: DonateFlow }> = ({
         flow.setClientSecret(response.clientSecret);
         flow.setDonationId(response.donationId);
         flow.setCustomerId(response.customerId);
-        flow.setPaymentIntentId(response.paymentIntentId);
-        if (response.partnerOrgId) {
+        flow.setPaymentIntentId(response.paymentIntentId ?? undefined);
+        if (
+          response.partnerOrgId !== null &&
+          response.partnerOrgId !== undefined
+        ) {
           flow.setPartnerOrgId(response.partnerOrgId);
         }
       } catch (err) {

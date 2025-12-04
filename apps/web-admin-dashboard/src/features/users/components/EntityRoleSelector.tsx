@@ -5,7 +5,7 @@ import { Input, Select, SelectItem } from '@everylanguage/shared-ui';
 import type { EntitySearchResult, ResourceType } from '../types';
 
 interface EntityRoleSelectorProps {
-  contextType: 'team' | 'base' | 'project' | 'partner';
+  contextType: 'base' | 'project' | 'partner';
   onAssign: (entityId: string, roleId: string) => void;
   onCancel?: () => void;
 }
@@ -39,8 +39,6 @@ export const EntityRoleSelector: React.FC<EntityRoleSelectorProps> = ({
       }
 
       switch (contextType) {
-        case 'team':
-          return usersApi.searchTeams(debouncedQuery, 10);
         case 'base':
           return usersApi.searchBases(debouncedQuery, 10);
         case 'project':
@@ -56,7 +54,6 @@ export const EntityRoleSelector: React.FC<EntityRoleSelectorProps> = ({
 
   // Fetch roles for the selected entity's resource type
   const resourceTypeMap: Record<string, ResourceType> = {
-    team: 'team',
     base: 'base',
     project: 'project',
     partner: 'partner',
@@ -94,8 +91,6 @@ export const EntityRoleSelector: React.FC<EntityRoleSelectorProps> = ({
 
   const getPlaceholder = () => {
     switch (contextType) {
-      case 'team':
-        return 'Search teams...';
       case 'base':
         return 'Search bases...';
       case 'project':
@@ -140,8 +135,7 @@ export const EntityRoleSelector: React.FC<EntityRoleSelectorProps> = ({
                     key={entity.id}
                     type='button'
                     onClick={() => handleSelectEntity(entity)}
-                    className='w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 last:border-0'
-                  >
+                    className='w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 last:border-0'>
                     <div className='font-medium text-sm'>{entity.name}</div>
                     {entity.description && (
                       <div className='text-xs text-neutral-600 dark:text-neutral-400 mt-1'>
@@ -180,8 +174,7 @@ export const EntityRoleSelector: React.FC<EntityRoleSelectorProps> = ({
             <Select
               value={selectedRoleId}
               onValueChange={setSelectedRoleId}
-              placeholder='Select a role...'
-            >
+              placeholder='Select a role...'>
               {roles.map(role => (
                 <SelectItem key={role.id} value={role.id}>
                   {role.name}
@@ -195,16 +188,14 @@ export const EntityRoleSelector: React.FC<EntityRoleSelectorProps> = ({
               type='button'
               onClick={handleAssign}
               disabled={!selectedRoleId}
-              className='px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-            >
+              className='px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
               Assign
             </button>
             {onCancel && (
               <button
                 type='button'
                 onClick={handleCancel}
-                className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors'
-              >
+                className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors'>
                 Cancel
               </button>
             )}

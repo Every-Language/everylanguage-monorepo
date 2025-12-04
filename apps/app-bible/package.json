@@ -148,7 +148,7 @@
     "lint-staged": "^16.1.2",
     "powersync": "^0.7.1",
     "prettier": "^3.5.3",
-    "react-test-renderer": "19.1.2",
+    "react-test-renderer": "19.0.0",
     "typescript": "~5.8.3"
   },
   "lint-staged": {

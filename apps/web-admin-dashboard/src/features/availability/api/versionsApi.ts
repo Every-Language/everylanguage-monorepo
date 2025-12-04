@@ -867,4 +867,105 @@ export const versionsApi = {
       totalPages: Math.ceil((count || 0) / pageSize),
     };
   },
+
+  /**
+   * Create a new text version
+   */
+  async createTextVersion(data: {
+    name: string;
+    project_id: string;
+    language_entity_id: string;
+    bible_version_id: string;
+    publish_status?: Database['public']['Enums']['publish_status'];
+  }): Promise<TextVersionWithProgress> {
+    // Get current authenticated user for created_by field
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('User must be authenticated to create a text version');
+    }
+
+    const { data: textVersion, error } = await supabase
+      .from('text_versions')
+      .insert([
+        {
+          name: data.name,
+          project_id: data.project_id,
+          language_entity_id: data.language_entity_id,
+          bible_version_id: data.bible_version_id,
+          publish_status: data.publish_status || 'pending',
+          created_by: user.id,
+        },
+      ])
+      .select(
+        'id, name, project_id, language_entity_id, created_at, updated_at'
+      )
+      .single();
+
+    if (error) throw error;
+
+    return {
+      ...textVersion,
+      progress: null,
+    };
+  },
+
+  /**
+   * Create a new audio version
+   */
+  async createAudioVersion(data: {
+    name: string;
+    project_id: string;
+    language_entity_id: string;
+    bible_version_id: string;
+    publish_status?: Database['public']['Enums']['publish_status'];
+  }): Promise<AudioVersionWithProgress> {
+    // Get current authenticated user for created_by field
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('User must be authenticated to create an audio version');
+    }
+
+    const { data: audioVersion, error } = await supabase
+      .from('audio_versions')
+      .insert([
+        {
+          name: data.name,
+          project_id: data.project_id,
+          language_entity_id: data.language_entity_id,
+          bible_version_id: data.bible_version_id,
+          publish_status: data.publish_status || 'pending',
+          created_by: user.id,
+        },
+      ])
+      .select(
+        'id, name, project_id, language_entity_id, created_at, updated_at'
+      )
+      .single();
+
+    if (error) throw error;
+
+    return {
+      ...audioVersion,
+      progress: null,
+    };
+  },
+
+  /**
+   * Fetch all bible versions
+   */
+  async fetchBibleVersions(): Promise<Array<{ id: string; name: string }>> {
+    const { data, error } = await supabase
+      .from('bible_versions')
+      .select('id, name')
+      .order('name');
+
+    if (error) throw error;
+    return data || [];
+  },
 };

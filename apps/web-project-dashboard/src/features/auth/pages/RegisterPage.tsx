@@ -109,8 +109,7 @@ export function RegisterPage() {
           className='h-5 w-5 text-neutral-600 dark:text-neutral-300'
           fill='none'
           stroke='currentColor'
-          viewBox='0 0 24 24'
-        >
+          viewBox='0 0 24 24'>
           <path
             strokeLinecap='round'
             strokeLinejoin='round'
@@ -125,8 +124,7 @@ export function RegisterPage() {
           className='h-5 w-5 text-neutral-600 dark:text-neutral-300'
           fill='none'
           stroke='currentColor'
-          viewBox='0 0 24 24'
-        >
+          viewBox='0 0 24 24'>
           <path
             strokeLinecap='round'
             strokeLinejoin='round'
@@ -141,8 +139,7 @@ export function RegisterPage() {
           className='h-5 w-5 text-neutral-600 dark:text-neutral-300'
           fill='none'
           stroke='currentColor'
-          viewBox='0 0 24 24'
-        >
+          viewBox='0 0 24 24'>
           <path
             strokeLinecap='round'
             strokeLinejoin='round'
@@ -174,8 +171,7 @@ export function RegisterPage() {
         <div className='absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-accent-200/20 to-transparent dark:from-accent-800/20 rounded-full animate-float'></div>
         <div
           className='absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-accent-300/20 to-transparent dark:from-accent-700/20 rounded-full animate-float'
-          style={{ animationDelay: '2s' }}
-        ></div>
+          style={{ animationDelay: '2s' }}></div>
       </div>
 
       {/* Main Content */}
@@ -189,8 +185,7 @@ export function RegisterPage() {
             <button
               onClick={cycleTheme}
               className='p-3 rounded-xl bg-white/90 dark:bg-neutral-800/90 backdrop-blur-md hover:bg-white dark:hover:bg-neutral-700 transition-all duration-300 shadow-lg hover:shadow-xl border border-neutral-200/50 dark:border-neutral-700/50'
-              aria-label={`Current: ${getThemeLabel()}. Click to cycle theme`}
-            >
+              aria-label={`Current: ${getThemeLabel()}. Click to cycle theme`}>
               {getThemeIcon()}
             </button>
             {/* Tooltip */}
@@ -210,7 +205,7 @@ export function RegisterPage() {
             <div className='flex items-center justify-center mb-4'>
               <div className='text-left'>
                 <h1 className='text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-accent-600 to-accent-600 dark:from-accent-600 dark:to-accent-600'>
-                  OMT Project Manager
+                  Every Language Project Manager
                 </h1>
               </div>
             </div>
@@ -228,8 +223,7 @@ export function RegisterPage() {
                 signupMethod === 'email'
                   ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
-              }`}
-            >
+              }`}>
               Email
             </button>
             <button
@@ -239,8 +233,7 @@ export function RegisterPage() {
                 signupMethod === 'phone'
                   ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
-              }`}
-            >
+              }`}>
               Phone
             </button>
           </div>
@@ -257,8 +250,7 @@ export function RegisterPage() {
                         className='h-5 w-5 text-error-600 dark:text-error-400'
                         fill='none'
                         stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
+                        viewBox='0 0 24 24'>
                         <path
                           strokeLinecap='round'
                           strokeLinejoin='round'
@@ -287,8 +279,7 @@ export function RegisterPage() {
                         className='h-5 w-5 text-success-600 dark:text-success-400'
                         fill='none'
                         stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
+                        viewBox='0 0 24 24'>
                         <path
                           strokeLinecap='round'
                           strokeLinejoin='round'
@@ -365,8 +356,7 @@ export function RegisterPage() {
                         className='h-5 w-5'
                         fill='none'
                         stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
+                        viewBox='0 0 24 24'>
                         <path
                           strokeLinecap='round'
                           strokeLinejoin='round'
@@ -400,8 +390,7 @@ export function RegisterPage() {
                         className='h-5 w-5'
                         fill='none'
                         stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
+                        viewBox='0 0 24 24'>
                         <path
                           strokeLinecap='round'
                           strokeLinejoin='round'
@@ -440,8 +429,7 @@ export function RegisterPage() {
                         className='h-5 w-5'
                         fill='none'
                         stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
+                        viewBox='0 0 24 24'>
                         <path
                           strokeLinecap='round'
                           strokeLinejoin='round'
@@ -466,8 +454,7 @@ export function RegisterPage() {
                     className='w-full'
                     disabled={isLoading}
                     size='lg'
-                    loading={isLoading}
-                  >
+                    loading={isLoading}>
                     {isLoading ? 'Creating account...' : 'Create account'}
                   </Button>
                 </div>
@@ -480,8 +467,7 @@ export function RegisterPage() {
               Already have an account?{' '}
               <Link
                 to='/login'
-                className='font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 transition-colors'
-              >
+                className='font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 transition-colors'>
                 Sign in
               </Link>
             </p>

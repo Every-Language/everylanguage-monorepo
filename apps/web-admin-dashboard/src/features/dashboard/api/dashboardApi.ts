@@ -23,7 +23,7 @@ export const dashboardApi = {
     // Fetch languages pending funding count
     // Count language_funding with status 'available' and remaining_budget_cents > 0
     const { data: languagesData, error: languagesError } = await supabase
-      .from('language_funding_remaining')
+      .from('language_funding_balances')
       .select('id')
       .eq('funding_status', 'available')
       .gt('remaining_budget_cents', 0)

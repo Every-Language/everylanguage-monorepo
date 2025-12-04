@@ -23,10 +23,7 @@ export function useBookProgressFromView(audioVersionId: string | null) {
       }
 
       // Fetch book progress from view
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: progressData, error: progressError } = await (
-        supabase as any
-      )
+      const { data: progressData, error: progressError } = await supabase
         .from('audio_version_book_progress')
         .select(
           'audio_version_id, book_id, chapters_with_audio, total_chapters'
@@ -56,8 +53,7 @@ export function useBookProgressFromView(audioVersionId: string | null) {
       }
 
       // Fetch book details separately
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: booksData, error: booksError } = await (supabase as any)
+      const { data: booksData, error: booksError } = await supabase
         .from('books')
         .select('id, name, global_order, testament')
         .in('id', bookIds);

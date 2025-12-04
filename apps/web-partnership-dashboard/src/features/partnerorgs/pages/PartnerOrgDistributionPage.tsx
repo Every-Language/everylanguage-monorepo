@@ -8,11 +8,13 @@ import {
   CardTitle,
   CardContent,
 } from '@/shared/components/ui/Card';
-import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
-import { useProjectDistribution } from '../hooks/useProjectDistribution';
+import { usePartnerOrgProjects } from '../api/usePartnerOrgProjects';
+import { useProjectDistribution } from '../api/useProjectDistribution';
 import { MapShell } from '@/features/map/components/MapShell';
 import { ProjectDistributionHeatmapLayers } from '../components/ProjectDistributionHeatmapLayers';
 import { MapSkeleton } from '@/shared/components/ui/Skeletons';
+import { createProjectColorMap } from '../utils/colors';
+import type { PartnerOrgProject } from '../types';
 
 export const PartnerOrgDistributionPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
@@ -30,12 +32,14 @@ export const PartnerOrgDistributionPage: React.FC = () => {
   // Initialize all projects as enabled
   React.useEffect(() => {
     if (projects) {
-      const uniqueProjectIds = [...new Set(projects.map(p => p.project_id))];
+      const uniqueProjectIds: string[] = Array.from(
+        new Set(projects.map((p: PartnerOrgProject) => p.project_id))
+      );
       setEnabledProjects(new Set(uniqueProjectIds));
     }
   }, [projects]);
 
-  // Get unique projects - must be called before early return
+  // Get unique projects
   const uniqueProjects = React.useMemo(() => {
     if (!projects) return [];
     const seen = new Map<string, (typeof projects)[0]>();
@@ -47,24 +51,11 @@ export const PartnerOrgDistributionPage: React.FC = () => {
     return Array.from(seen.values());
   }, [projects]);
 
-  // Generate distinct colors for each project - must be called before early return
-  const projectColors = React.useMemo(() => {
-    const colors = [
-      '#3b82f6', // blue
-      '#ef4444', // red
-      '#10b981', // green
-      '#f59e0b', // amber
-      '#8b5cf6', // purple
-      '#ec4899', // pink
-      '#06b6d4', // cyan
-      '#84cc16', // lime
-    ];
-    const colorMap = new Map<string, string>();
-    uniqueProjects.forEach((project, idx) => {
-      colorMap.set(project.project_id, colors[idx % colors.length]);
-    });
-    return colorMap;
-  }, [uniqueProjects]);
+  // Generate distinct colors for each project
+  const projectColors = React.useMemo(
+    () => createProjectColorMap(uniqueProjects, p => p.project_id),
+    [uniqueProjects]
+  );
 
   // Show skeleton while loading projects
   if (projectsLoading) {
@@ -125,8 +116,7 @@ export const PartnerOrgDistributionPage: React.FC = () => {
                             color: color,
                           }
                         : undefined
-                    }
-                  >
+                    }>
                     <span
                       className='inline-block w-3 h-3 rounded-full mr-2'
                       style={{ backgroundColor: color }}
@@ -155,13 +145,20 @@ export const PartnerOrgDistributionPage: React.FC = () => {
               distributionData.heatmap.length > 0 ? (
                 <MapShell
                   countriesEnabled={false}
-                  padding={{ top: 0, bottom: 0, left: 0, right: 0 }}
-                >
+                  padding={{ top: 0, bottom: 0, left: 0, right: 0 }}>
                   <ProjectDistributionHeatmapLayers
                     enabledProjectIds={enabledProjects}
                     projects={uniqueProjects}
                     projectColors={projectColors}
-                    heatmapData={distributionData.heatmap}
+                    heatmapData={distributionData.heatmap.map(point => ({
+                      language_entity_id: point.language_entity_id,
+                      grid: {
+                        type: 'Point',
+                        coordinates: [point.longitude, point.latitude],
+                      },
+                      event_count: point.listen_count,
+                      last_event_at: null,
+                    }))}
                   />
                 </MapShell>
               ) : (

@@ -174,6 +174,7 @@ export function useR2AudioUpload() {
           languageEntityId: selectedProject.target_language_entity_id,
           languageEntityName,
           audioVersionId,
+          projectId: selectedProject.id, // Include projectId for RLS policy
         };
 
         // Start the upload asynchronously (don't await here)

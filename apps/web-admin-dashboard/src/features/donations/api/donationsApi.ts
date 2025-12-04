@@ -368,23 +368,153 @@ export const donationsApi = {
     effective_from?: string;
     effective_to?: string;
   }): Promise<DonationAllocation> {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:362',
+        message: 'createAllocation called',
+        data: {
+          donation_id: allocation.donation_id,
+          amount_cents: allocation.amount_cents,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'C',
+      }),
+    }).catch(() => {});
+    // #endregion
     const { data: userData } = await supabase.auth.getUser();
     if (!userData?.user) {
       throw new Error('User not authenticated');
     }
 
-    const { data: insertedData, error: insertError } = await supabase
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:375',
+        message: 'User auth check',
+        data: { userId: userData.user.id, email: userData.user.email },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'C',
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    const insertData = {
+      ...allocation,
+      created_by: userData.user.id,
+    };
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:383',
+        message: 'Insert data prepared',
+        data: insertData,
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run3',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    // Test has_permission function directly
+    // #region agent log
+    const { data: permCheck, error: permError } = await supabase.rpc(
+      'has_permission',
+      {
+        p_user_id: userData.user.id,
+        p_action: 'system.admin',
+        p_resource_type: 'global',
+        p_resource_id: '00000000-0000-0000-0000-000000000000', // Dummy UUID for global resources
+      }
+    );
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:390',
+        message: 'has_permission check',
+        data: { hasPermission: permCheck, error: permError?.message },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run3',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    // Try insert without RETURNING first to isolate INSERT vs SELECT policy issue
+    // #region agent log
+    const { error: insertOnlyError } = await supabase
       .from('donation_allocations')
-      .insert({
-        ...allocation,
-        created_by: userData.user.id,
-      })
+      .insert(insertData);
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:397',
+        message: 'Insert without RETURNING',
+        data: {
+          success: !insertOnlyError,
+          error: insertOnlyError?.message,
+          code: insertOnlyError?.code,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run3',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    if (insertOnlyError) {
+      throw insertOnlyError;
+    }
+
+    // If insert succeeded, now try to query it back
+    const { data: insertedData, error: queryError } = await supabase
+      .from('donation_allocations')
       .select('id')
+      .eq('donation_id', allocation.donation_id)
+      .eq('created_by', userData.user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
-    if (insertError) throw insertError;
-    if (!insertedData?.id) {
-      throw new Error('Failed to create allocation');
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:410',
+        message: 'Query after insert',
+        data: {
+          success: !queryError,
+          foundId: insertedData?.id,
+          error: queryError?.message,
+          code: queryError?.code,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run3',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    if (queryError || !insertedData?.id) {
+      throw new Error(queryError?.message || 'Failed to create allocation');
     }
 
     // Fetch the full allocation record

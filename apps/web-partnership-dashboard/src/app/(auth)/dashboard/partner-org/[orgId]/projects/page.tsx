@@ -1,9 +1,9 @@
 'use client';
 
-import { ProjectsPage } from '@/features/projects/pages/ProjectsPage';
+import { PartnerOrgProjectsPage } from '@/features/partnerorgs/pages/PartnerOrgProjectsPage';
 
 export const dynamic = 'force-dynamic';
 
 export default function PartnerOrgProjects() {
-  return <ProjectsPage />;
+  return <PartnerOrgProjectsPage />;
 }

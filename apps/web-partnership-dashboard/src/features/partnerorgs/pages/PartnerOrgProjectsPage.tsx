@@ -11,9 +11,10 @@ import {
 } from '@/shared/components/ui/Card';
 import { Progress } from '@/shared/components/ui/Progress';
 import { CountUp } from '../components/CountUp';
-import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
-import { useProjectProgress } from '../hooks/useProjectProgress';
+import { usePartnerOrgProjects } from '../api/usePartnerOrgProjects';
+import { useProjectProgress } from '../api/useProjectProgress';
 import { ProjectCardSkeleton } from '@/shared/components/ui/Skeletons';
+import { normalizeSupabaseRelation } from '@/shared/utils/supabase-helpers';
 
 export const PartnerOrgProjectsPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
@@ -42,7 +43,7 @@ export const PartnerOrgProjectsPage: React.FC = () => {
   const projectProgress = React.useMemo(() => {
     if (
       !progressData ||
-      !Array.isArray(progressData) ||
+      !progressData.versions ||
       !uniqueProjects ||
       uniqueProjects.length === 0
     )
@@ -50,30 +51,26 @@ export const PartnerOrgProjectsPage: React.FC = () => {
     const progressMap = new Map<string, { completed: number; total: number }>();
 
     for (const project of uniqueProjects) {
-      const versions = progressData.filter(
-        (v: any) => v.project_id === project.project_id
+      const versions = progressData.versions.filter(
+        v => v.project_id === project.project_id
       );
 
-      // Find the best progress across all versions (audio and text)
       let bestChaptersDone = 0;
-      let bestChaptersTotal = 1189; // Default to standard Bible chapter count
+      let bestChaptersTotal = 1189;
 
       if (versions.length > 0) {
-        // Get the maximum progress across all versions (audio and text)
         for (const version of versions) {
-          const summary = (version as any)?.progress_summary?.[0];
+          const summary = normalizeSupabaseRelation(version.progress_summary);
           if (summary) {
             let completed = 0;
             const total = summary.total_chapters || 1189;
 
-            // Handle both audio and text versions
             if (version.version_type === 'audio') {
               completed = summary.chapters_with_audio || 0;
             } else if (version.version_type === 'text') {
               completed = summary.complete_chapters || 0;
             }
 
-            // Take the max completed chapters (best progress)
             if (completed > bestChaptersDone) {
               bestChaptersDone = completed;
               bestChaptersTotal = total;

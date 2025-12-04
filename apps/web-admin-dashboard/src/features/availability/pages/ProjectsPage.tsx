@@ -4,11 +4,12 @@ import { projectsApi } from '../api/projectsApi';
 import { languagesApi } from '../../languages/api/languagesApi';
 import { regionsApi } from '../../regions/api/regionsApi';
 import { ViewProjectModal } from '../components/ViewProjectModal';
+import { CreateProjectModal } from '../components/CreateProjectModal';
 import { LanguageEntityModal } from '../../languages/components/LanguageEntityModal';
 import { RegionModal } from '../../regions/components/RegionModal';
 import { ViewTextVersionModal } from '../components/ViewTextVersionModal';
 import { ViewAudioVersionModal } from '../components/ViewAudioVersionModal';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
 import type { LanguageEntityWithRegions, RegionWithLanguages } from '@/types';
 import type { Database } from '@everylanguage/shared-types';
@@ -35,12 +36,12 @@ export function ProjectsPage() {
   const [targetLanguageSearch, setTargetLanguageSearch] = useState('');
   const [regionSearchTerm, setRegionSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [fundingStatusFilter, setFundingStatusFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<
     'created_at' | 'name' | 'target_language'
   >('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [modalStack, setModalStack] = useState<ModalStackItem[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Debounce search term
   useEffect(() => {
@@ -108,7 +109,6 @@ export function ProjectsPage() {
       targetLanguageIds.join(','),
       regionIds.join(','),
       statusFilter,
-      fundingStatusFilter,
       sortField,
       sortDirection,
     ],
@@ -123,10 +123,6 @@ export function ProjectsPage() {
         statusFilter:
           statusFilter !== 'all'
             ? (statusFilter as Database['public']['Enums']['project_status'])
-            : undefined,
-        fundingStatusFilter:
-          fundingStatusFilter !== 'all'
-            ? (fundingStatusFilter as Database['public']['Enums']['funding_status'])
             : undefined,
         sortField,
         sortDirection,
@@ -156,21 +152,6 @@ export function ProjectsPage() {
       }
     } catch (error) {
       console.error('Failed to fetch language entity:', error);
-    }
-  };
-
-  const handleRegionClick = async (e: React.MouseEvent, regionId: string) => {
-    e.stopPropagation();
-    try {
-      const region = await regionsApi.fetchRegionById(regionId);
-      if (region) {
-        setModalStack(prev => [
-          ...prev,
-          { type: 'region', id: regionId, region },
-        ]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch region:', error);
     }
   };
 
@@ -225,28 +206,23 @@ export function ProjectsPage() {
     }
   };
 
-  const getFundingBadgeColor = (status: string): string => {
-    switch (status) {
-      case 'fully_funded':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'partially_funded':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'unfunded':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      default:
-        return 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-300';
-    }
-  };
-
   return (
     <div className='p-8'>
-      <div className='mb-8'>
-        <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
-          Projects
-        </h1>
-        <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
-          View and manage all projects
-        </p>
+      <div className='mb-8 flex items-center justify-between'>
+        <div>
+          <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
+            Projects
+          </h1>
+          <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
+            View and manage all projects
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className='inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors'>
+          <Plus className='h-5 w-5 mr-2' />
+          Create Project
+        </button>
       </div>
 
       {/* Search */}
@@ -308,8 +284,7 @@ export function ProjectsPage() {
                           }
                           setTargetLanguageSearch('');
                         }}
-                        className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                      >
+                        className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
                         {language.name}{' '}
                         <span className='text-xs text-neutral-500 dark:text-neutral-400'>
                           ({language.level})
@@ -325,8 +300,7 @@ export function ProjectsPage() {
                 {targetLanguageFilters.map(language => (
                   <span
                     key={language.id}
-                    className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-200'
-                  >
+                    className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-200'>
                     {language.name}
                     <button
                       type='button'
@@ -336,8 +310,7 @@ export function ProjectsPage() {
                         );
                         setPage(1);
                       }}
-                      className='text-xs hover:underline'
-                    >
+                      className='text-xs hover:underline'>
                       Remove
                     </button>
                   </span>
@@ -386,8 +359,7 @@ export function ProjectsPage() {
                           }
                           setRegionSearchTerm('');
                         }}
-                        className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                      >
+                        className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
                         {region.name}{' '}
                         <span className='text-xs text-neutral-500 dark:text-neutral-400'>
                           ({region.level})
@@ -403,8 +375,7 @@ export function ProjectsPage() {
                 {regionFilters.map(region => (
                   <span
                     key={region.id}
-                    className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
-                  >
+                    className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200'>
                     {region.name}
                     <button
                       type='button'
@@ -414,8 +385,7 @@ export function ProjectsPage() {
                         );
                         setPage(1);
                       }}
-                      className='text-xs hover:underline'
-                    >
+                      className='text-xs hover:underline'>
                       Remove
                     </button>
                   </span>
@@ -432,26 +402,12 @@ export function ProjectsPage() {
             onValueChange={value => {
               setStatusFilter(value);
               setPage(1);
-            }}
-          >
+            }}>
             <SelectItem value='all'>All statuses</SelectItem>
             <SelectItem value='active'>Active</SelectItem>
             <SelectItem value='completed'>Completed</SelectItem>
             <SelectItem value='cancelled'>Cancelled</SelectItem>
             <SelectItem value='precreated'>Precreated</SelectItem>
-          </Select>
-          <Select
-            label='Funding Status'
-            value={fundingStatusFilter}
-            onValueChange={value => {
-              setFundingStatusFilter(value);
-              setPage(1);
-            }}
-          >
-            <SelectItem value='all'>All statuses</SelectItem>
-            <SelectItem value='unfunded'>Unfunded</SelectItem>
-            <SelectItem value='partially_funded'>Partially Funded</SelectItem>
-            <SelectItem value='fully_funded'>Fully Funded</SelectItem>
           </Select>
         </div>
       </div>
@@ -468,71 +424,38 @@ export function ProjectsPage() {
         ) : (
           <>
             <div className='overflow-x-auto'>
-              <table
-                className='w-full divide-y divide-neutral-200 dark:divide-neutral-800'
-                style={{ tableLayout: 'fixed' }}
-              >
+              <table className='min-w-full divide-y divide-neutral-200 dark:divide-neutral-800'>
                 <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
                   <tr>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '20%' }}
-                    >
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       <button
                         type='button'
                         onClick={() => handleSort('name')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Name
                         <span>{getSortIndicator('name')}</span>
                       </button>
                     </th>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '18%' }}
-                    >
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       <button
                         type='button'
                         onClick={() => handleSort('target_language')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Target Language
                         <span>{getSortIndicator('target_language')}</span>
                       </button>
                     </th>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '15%' }}
-                    >
-                      Region
-                    </th>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '18%' }}
-                    >
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       Progress
                     </th>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '12%' }}
-                    >
-                      Funding
-                    </th>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '12%' }}
-                    >
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       Status
                     </th>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '12%' }}
-                    >
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       <button
                         type='button'
                         onClick={() => handleSort('created_at')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Created
                         <span>{getSortIndicator('created_at')}</span>
                       </button>
@@ -545,8 +468,7 @@ export function ProjectsPage() {
                       <tr
                         key={project.id}
                         onClick={() => handleProjectClick(project.id)}
-                        className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
-                      >
+                        className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'>
                         <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100 overflow-hidden text-ellipsis'>
                           {project.name}
                         </td>
@@ -559,25 +481,8 @@ export function ProjectsPage() {
                                   project.target_language!.id
                                 )
                               }
-                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100'
-                            >
+                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100'>
                               {project.target_language.name}
-                            </button>
-                          ) : (
-                            <span className='text-neutral-400 dark:text-neutral-600'>
-                              —
-                            </span>
-                          )}
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400 overflow-hidden text-ellipsis'>
-                          {project.region ? (
-                            <button
-                              onClick={e =>
-                                handleRegionClick(e, project.region!.id)
-                              }
-                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100'
-                            >
-                              {project.region.name}
                             </button>
                           ) : (
                             <span className='text-neutral-400 dark:text-neutral-600'>
@@ -600,8 +505,7 @@ export function ProjectsPage() {
                                         ...prev,
                                         { type: 'textVersion', id: version.id },
                                       ]);
-                                    }}
-                                  >
+                                    }}>
                                     <div className='flex items-center gap-2 mb-1'>
                                       <span className='text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline cursor-pointer'>
                                         {version.name}
@@ -644,8 +548,7 @@ export function ProjectsPage() {
                                           id: version.id,
                                         },
                                       ]);
-                                    }}
-                                  >
+                                    }}>
                                     <div className='flex items-center gap-2 mb-1'>
                                       <span className='text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline cursor-pointer'>
                                         {version.name}
@@ -686,19 +589,9 @@ export function ProjectsPage() {
                         </td>
                         <td className='px-6 py-4 whitespace-nowrap text-sm'>
                           <span
-                            className={`inline-block px-2 py-1 rounded text-xs font-medium ${getFundingBadgeColor(
-                              project.funding_status
-                            )}`}
-                          >
-                            {project.funding_status.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                          <span
                             className={`inline-block px-2 py-1 rounded text-xs font-medium ${getStatusBadgeColor(
                               project.project_status
-                            )}`}
-                          >
+                            )}`}>
                             {project.project_status}
                           </span>
                         </td>
@@ -719,9 +612,8 @@ export function ProjectsPage() {
                   ) : (
                     <tr>
                       <td
-                        colSpan={7}
-                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                      >
+                        colSpan={5}
+                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                         {debouncedSearch
                           ? 'No projects found matching your search'
                           : 'No projects found'}
@@ -743,8 +635,7 @@ export function ProjectsPage() {
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronLeft className='h-4 w-4' />
                   </button>
                   <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
@@ -754,8 +645,7 @@ export function ProjectsPage() {
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronRight className='h-4 w-4' />
                   </button>
                 </div>
@@ -764,6 +654,17 @@ export function ProjectsPage() {
           </>
         )}
       </div>
+
+      {/* Create Project Modal */}
+      {showCreateModal && (
+        <CreateProjectModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+          }}
+        />
+      )}
 
       {/* Modal Stack */}
       {modalStack.map((item, index) => {

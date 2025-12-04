@@ -1,6 +1,7 @@
-import { useFetchCollection, useFetchById } from './base-hooks';
+import { useFetchCollection, useFetchById, transformError } from './base-hooks';
 import { useQuery } from '@tanstack/react-query';
 import type { TableRow, SupabaseError } from './base-hooks';
+import { supabase } from '../../services/supabase';
 
 export type Project = TableRow<'projects'>;
 
@@ -15,10 +16,17 @@ export function useProject(id: string | null) {
 }
 
 // Hook to fetch projects by user ID
+// Uses user_projects view which returns projects where user has a role (not just created_by)
 export function useProjectsByUser(userId: string | null) {
-  return useFetchCollection('projects', {
-    filters: { created_by: userId },
+  return useQuery({
+    queryKey: ['user-projects', userId],
     enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('user_projects').select('*');
+      if (error) throw transformError(error);
+      return (data || []) as Project[];
+    },
+    staleTime: 300_000, // 5 minutes
   });
 }
 

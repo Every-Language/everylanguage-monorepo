@@ -43,8 +43,11 @@ Common permissions:
 
 - `user_id` - References `public.users.id`
 - `role_id` - References `roles.id`
-- `context_type` - Resource type (`project`, `base`, `partner`)
-- `context_id` - ID of the specific resource
+- `project_id` - References `projects.id` (NULL if not a project-scoped role)
+- `base_id` - References `bases.id` (NULL if not a base-scoped role)
+- `partner_org_id` - References `partner_orgs.id` (NULL if not a partner-scoped role)
+- `is_global` - Boolean flag indicating a global/system-wide role (TRUE for global roles)
+- Exactly one of `project_id`, `base_id`, `partner_org_id`, or `is_global` must be set
 
 **role_permissions**
 
@@ -158,9 +161,57 @@ When a partner organization is linked to a project via `partner_orgs_projects`:
 
 All project child entities (e.g., `audio_versions`, `text_versions`, `media_files`, `verse_feedback`) inherit permissions from their parent project. The `resolve_project_id()` function handles the relationship traversal.
 
+## Query Examples
+
+### Querying user roles with new column structure
+
+```sql
+-- Get all project roles for a user
+SELECT * FROM user_roles
+WHERE user_id = '...' AND project_id IS NOT NULL;
+
+-- Get all base roles for a user
+SELECT * FROM user_roles
+WHERE user_id = '...' AND base_id IS NOT NULL;
+
+-- Get all partner org roles for a user
+SELECT * FROM user_roles
+WHERE user_id = '...' AND partner_org_id IS NOT NULL;
+
+-- Get global roles for a user
+SELECT * FROM user_roles
+WHERE user_id = '...' AND is_global = TRUE;
+```
+
+### Frontend query examples
+
+```typescript
+// Query project roles
+const { data } = await supabase
+  .from('user_roles')
+  .select('*')
+  .eq('project_id', projectId)
+  .not('project_id', 'is', null);
+
+// Query base roles
+const { data } = await supabase
+  .from('user_roles')
+  .select('*')
+  .eq('base_id', baseId)
+  .not('base_id', 'is', null);
+
+// Query partner org roles
+const { data } = await supabase
+  .from('user_roles')
+  .select('*')
+  .eq('partner_org_id', partnerOrgId)
+  .not('partner_org_id', 'is', null);
+```
+
 ## Important Notes
 
 - **Delete permissions**: Only `project_admin` has `project.delete` by default. Base/partner admins don't automatically get delete permissions.
+- **Column structure**: The `user_roles` table uses explicit columns (`project_id`, `base_id`, `partner_org_id`, `is_global`) instead of the polymorphic `context_type`/`context_id` pattern for better type safety and query performance.
 - **Soft history**: Relationship tables use `assigned_at`/`unassigned_at` for history. Current assignments have `unassigned_at IS NULL`.
 - **Type safety**: `resource_type` is stored alongside `permission_key` to enable future migration to generic keys without breaking changes.
 - **No ownership shortcut**: The system no longer grants automatic permissions based on resource ownership. All access must be through explicit roles.

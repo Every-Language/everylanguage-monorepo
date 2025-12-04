@@ -236,8 +236,7 @@ export function TextVersionsPage() {
                           }
                           setProjectSearch('');
                         }}
-                        className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                      >
+                        className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
                         {project.name}
                       </button>
                     ))
@@ -250,8 +249,7 @@ export function TextVersionsPage() {
                 {projectFilters.map(project => (
                   <span
                     key={project.id}
-                    className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-200'
-                  >
+                    className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-200'>
                     {project.name}
                     <button
                       type='button'
@@ -261,8 +259,7 @@ export function TextVersionsPage() {
                         );
                         setPage(1);
                       }}
-                      className='text-xs hover:underline'
-                    >
+                      className='text-xs hover:underline'>
                       Remove
                     </button>
                   </span>
@@ -306,8 +303,7 @@ export function TextVersionsPage() {
                           }
                           setLanguageSearch('');
                         }}
-                        className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                      >
+                        className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
                         {language.name}
                       </button>
                     ))
@@ -320,8 +316,7 @@ export function TextVersionsPage() {
                 {languageFilters.map(language => (
                   <span
                     key={language.id}
-                    className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
-                  >
+                    className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200'>
                     {language.name}
                     <button
                       type='button'
@@ -331,8 +326,7 @@ export function TextVersionsPage() {
                         );
                         setPage(1);
                       }}
-                      className='text-xs hover:underline'
-                    >
+                      className='text-xs hover:underline'>
                       Remove
                     </button>
                   </span>
@@ -355,60 +349,41 @@ export function TextVersionsPage() {
         ) : (
           <>
             <div className='overflow-x-auto'>
-              <table
-                className='w-full divide-y divide-neutral-200 dark:divide-neutral-800'
-                style={{ tableLayout: 'fixed' }}
-              >
+              <table className='min-w-full divide-y divide-neutral-200 dark:divide-neutral-800'>
                 <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
                   <tr>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '25%' }}
-                    >
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       <button
                         type='button'
                         onClick={() => handleSort('name')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Name
                         <span>{getSortIndicator('name')}</span>
                       </button>
                     </th>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '25%' }}
-                    >
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       <button
                         type='button'
                         onClick={() => handleSort('project')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Project
                         <span>{getSortIndicator('project')}</span>
                       </button>
                     </th>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '25%' }}
-                    >
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       <button
                         type='button'
                         onClick={() => handleSort('language')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Language
                         <span>{getSortIndicator('language')}</span>
                       </button>
                     </th>
-                    <th
-                      className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                      style={{ width: '25%' }}
-                    >
+                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                       <button
                         type='button'
                         onClick={() => handleSort('progress')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Progress
                         <span>{getSortIndicator('progress')}</span>
                       </button>
@@ -421,8 +396,7 @@ export function TextVersionsPage() {
                       <tr
                         key={version.id}
                         onClick={() => handleVersionClick(version.id)}
-                        className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
-                      >
+                        className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'>
                         <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100 overflow-hidden text-ellipsis'>
                           {version.name}
                         </td>
@@ -432,8 +406,7 @@ export function TextVersionsPage() {
                               onClick={e =>
                                 handleProjectClick(e, version.project!.id)
                               }
-                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100'
-                            >
+                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100'>
                               {version.project.name}
                             </button>
                           ) : (
@@ -448,8 +421,7 @@ export function TextVersionsPage() {
                               onClick={e =>
                                 handleLanguageClick(e, version.language!.id)
                               }
-                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100'
-                            >
+                              className='text-primary-600 dark:text-primary-400 hover:underline font-medium text-neutral-900 dark:text-neutral-100'>
                               {version.language.name}
                             </button>
                           ) : (
@@ -489,8 +461,7 @@ export function TextVersionsPage() {
                     <tr>
                       <td
                         colSpan={4}
-                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                      >
+                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                         {debouncedSearch
                           ? 'No text versions found matching your search'
                           : 'No text versions found'}
@@ -512,8 +483,7 @@ export function TextVersionsPage() {
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronLeft className='h-4 w-4' />
                   </button>
                   <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
@@ -523,8 +493,7 @@ export function TextVersionsPage() {
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronRight className='h-4 w-4' />
                   </button>
                 </div>

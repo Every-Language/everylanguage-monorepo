@@ -9,9 +9,9 @@ export function isSystemAdmin(userRoles: UserRole[]): boolean {
     return false;
   }
 
-  // Check if user has system_admin role (role_key)
+  // Check if user has system_admin role (role_key) with is_global flag
   return userRoles.some(
-    role => role.role_key === 'system_admin' && role.resource_type === 'global'
+    role => role.role_key === 'system_admin' && role.is_global === true
   );
 }
 

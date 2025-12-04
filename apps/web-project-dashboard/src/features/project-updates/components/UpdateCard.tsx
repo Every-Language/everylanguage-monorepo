@@ -7,10 +7,17 @@ import {
   Button,
 } from '@/shared/design-system';
 import { MediaDisplay } from './MediaDisplay';
-import { useDeleteProjectUpdate } from '../hooks/useProjectUpdateMutations';
+import {
+  useDeleteProjectUpdate,
+  useUpdateProjectUpdate,
+} from '../hooks/useProjectUpdateMutations';
 import { useAuth } from '@/features/auth';
 import type { ProjectUpdateWithRelations } from '../types';
-import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
+import {
+  TrashIcon,
+  PencilIcon,
+  PaperAirplaneIcon,
+} from '@heroicons/react/24/outline';
 
 interface UpdateCardProps {
   update: ProjectUpdateWithRelations;
@@ -39,14 +46,14 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({
 }) => {
   const { user } = useAuth();
   const deleteUpdate = useDeleteProjectUpdate();
+  const updateProjectUpdate = useUpdateProjectUpdate();
 
-  const creator = Array.isArray(update.creator)
-    ? update.creator[0]
-    : update.creator;
   const media = Array.isArray(update.media) ? update.media : [];
 
   const canEdit = user?.id === update.created_by;
   const isDeleting = deleteUpdate.isPending;
+  const isPublishing = updateProjectUpdate.isPending;
+  const isPublished = update.publish_status === 'published';
 
   const handleDelete = async () => {
     if (
@@ -65,6 +72,18 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({
     }
   };
 
+  const handlePublish = async () => {
+    try {
+      await updateProjectUpdate.mutateAsync({
+        id: update.id,
+        updates: { publish_status: 'published' },
+      });
+    } catch (error) {
+      console.error('Error publishing update:', error);
+      alert('Failed to publish update. Please try again.');
+    }
+  };
+
   return (
     <Card className={className}>
       <CardHeader>
@@ -73,18 +92,28 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({
             <CardTitle>{update.title}</CardTitle>
             <div className='text-xs text-neutral-500 mt-1'>
               {formatDate(update.created_at)}
-              {creator && <> • by {creator.full_name}</>}
+              {/* Creator info removed due to RLS recursion - can be added back with separate query if needed */}
             </div>
           </div>
           {canEdit && (
             <div className='flex gap-2'>
+              {!isPublished && (
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={handlePublish}
+                  loading={isPublishing}
+                  disabled={isPublishing || isDeleting}
+                  title='Publish update'>
+                  <PaperAirplaneIcon className='h-4 w-4' />
+                </Button>
+              )}
               {onEdit && (
                 <Button
                   variant='ghost'
                   size='sm'
                   onClick={() => onEdit(update)}
-                  disabled={isDeleting}
-                >
+                  disabled={isDeleting || isPublishing}>
                   <PencilIcon className='h-4 w-4' />
                 </Button>
               )}
@@ -93,8 +122,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({
                 size='sm'
                 onClick={handleDelete}
                 loading={isDeleting}
-                disabled={isDeleting}
-              >
+                disabled={isDeleting || isPublishing}>
                 <TrashIcon className='h-4 w-4' />
               </Button>
             </div>

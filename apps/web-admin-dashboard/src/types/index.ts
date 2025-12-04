@@ -77,6 +77,7 @@ export interface LanguageEntityWithRegions extends LanguageEntity {
   regions?: Region[];
   region_count?: number;
   language_funding?: LanguageFunding | null;
+  population?: number | null; // Population from mv_language_stats
 }
 
 export interface LanguageHierarchyNode {
