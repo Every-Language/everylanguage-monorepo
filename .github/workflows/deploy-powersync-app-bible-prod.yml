@@ -16,7 +16,6 @@ jobs:
   validate:
     name: Validate Sync Rules
     runs-on: ubuntu-latest
-    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,29 +36,6 @@ jobs:
         run: |
           python -c "import yaml; yaml.safe_load(open('apps/app-bible/powersync/sync-rules.yaml'))"
           echo "✅ Sync rules YAML syntax is valid"
-
-      - name: Verify schema is in sync with sync rules
-        working-directory: apps/app-bible
-        env:
-          AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
-          ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
-          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
-          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
-        run: |
-          echo "🔍 Checking if committed schema matches sync rules..."
-          pnpm run powersync:verify-schema
-          echo "✅ Schema verification completed"
-
-      - name: Validate sync rules against prod instance
-        working-directory: apps/app-bible
-        env:
-          AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
-          ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
-          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
-          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
-        run: |
-          npx powersync instance sync-rules validate -f powersync/sync-rules.yaml
-          echo "✅ Sync rules validated against prod instance"
 
   deploy-prod:
     name: Deploy to Production
@@ -85,6 +61,29 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Verify schema is in sync with sync rules
+        working-directory: apps/app-bible
+        env:
+          AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
+          ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+        run: |
+          echo "🔍 Checking if committed schema matches sync rules..."
+          pnpm run powersync:verify-schema
+          echo "✅ Schema verification completed"
+
+      - name: Validate sync rules against prod instance
+        working-directory: apps/app-bible
+        env:
+          AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
+          ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+        run: |
+          npx powersync instance sync-rules validate -f powersync/sync-rules.yaml
+          echo "✅ Sync rules validated against prod instance"
 
       - name: Deploy sync rules to production
         working-directory: apps/app-bible
