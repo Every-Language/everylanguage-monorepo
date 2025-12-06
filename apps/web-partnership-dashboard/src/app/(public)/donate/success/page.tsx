@@ -28,8 +28,7 @@ export default function DonateSuccessPage() {
             className='mx-auto h-16 w-16 text-green-600'
             fill='none'
             stroke='currentColor'
-            viewBox='0 0 24 24'
-          >
+            viewBox='0 0 24 24'>
             <path
               strokeLinecap='round'
               strokeLinejoin='round'
@@ -47,8 +46,7 @@ export default function DonateSuccessPage() {
         </p>
         <Link
           href='/map'
-          className='inline-block px-6 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700'
-        >
+          className='inline-block px-6 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700'>
           Return to Map
         </Link>
       </div>

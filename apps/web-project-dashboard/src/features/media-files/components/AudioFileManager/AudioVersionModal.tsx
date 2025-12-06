@@ -94,8 +94,7 @@ export const AudioVersionModal: React.FC<AudioVersionModalProps> = ({
                 audioVersionForm.updateField('selectedBibleVersion', value)
               }
               placeholder='Select a Bible version...'
-              disabled={createAudioVersionMutation?.isPending}
-            >
+              disabled={createAudioVersionMutation?.isPending}>
               {bibleVersions?.map(version => (
                 <SelectItem key={version.id} value={version.id}>
                   {version.name}
@@ -114,16 +113,14 @@ export const AudioVersionModal: React.FC<AudioVersionModalProps> = ({
           <Button
             variant='outline'
             onClick={handleCancel}
-            disabled={createAudioVersionMutation?.isPending}
-          >
+            disabled={createAudioVersionMutation?.isPending}>
             Cancel
           </Button>
           <Button
             onClick={handleCreateAudioVersion}
             disabled={
               !audioVersionForm.isValid || createAudioVersionMutation?.isPending
-            }
-          >
+            }>
             {createAudioVersionMutation?.isPending ? (
               <>
                 <LoadingSpinner size='sm' className='mr-2' />

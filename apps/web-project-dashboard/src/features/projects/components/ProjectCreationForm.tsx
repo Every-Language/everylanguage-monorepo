@@ -362,8 +362,7 @@ export const ProjectCreationForm: React.FC<ProjectCreationFormProps> = ({
                   : step < currentStep
                     ? 'bg-green-600 text-white'
                     : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400'
-              }`}
-            >
+              }`}>
               {step < currentStep ? '✓' : step}
             </div>
             {step < totalSteps && (
@@ -402,8 +401,7 @@ export const ProjectCreationForm: React.FC<ProjectCreationFormProps> = ({
               type='button'
               variant='outline'
               onClick={handlePrevious}
-              disabled={isSubmitting}
-            >
+              disabled={isSubmitting}>
               <ChevronLeft className='w-4 h-4 mr-2' />
               Previous
             </Button>
@@ -415,8 +413,7 @@ export const ProjectCreationForm: React.FC<ProjectCreationFormProps> = ({
             type='button'
             variant='outline'
             onClick={onCancel}
-            disabled={isSubmitting}
-          >
+            disabled={isSubmitting}>
             Cancel
           </Button>
 
@@ -430,8 +427,7 @@ export const ProjectCreationForm: React.FC<ProjectCreationFormProps> = ({
               type='button'
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className='min-w-32'
-            >
+              className='min-w-32'>
               {isSubmitting ? (
                 <>
                   <LoadingSpinner size='sm' className='mr-2' />

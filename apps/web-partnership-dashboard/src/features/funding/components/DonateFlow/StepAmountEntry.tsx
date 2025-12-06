@@ -109,15 +109,13 @@ export const StepAmountEntry: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
           <Button
             variant={!isRecurring ? 'outline' : 'ghost'}
             onClick={() => setIsRecurring(false)}
-            className='flex-1'
-          >
+            className='flex-1'>
             Give once
           </Button>
           <Button
             variant={isRecurring ? 'primary' : 'ghost'}
             onClick={() => setIsRecurring(true)}
-            className='flex-1'
-          >
+            className='flex-1'>
             <Heart className='h-4 w-4 mr-1' /> Monthly
           </Button>
         </div>
@@ -129,8 +127,7 @@ export const StepAmountEntry: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
               key={v}
               variant={amount === v ? 'primary' : 'outline'}
               onClick={() => setAmount(v)}
-              size='sm'
-            >
+              size='sm'>
               ${(v / 100).toLocaleString()}
             </Button>
           ))}
@@ -166,8 +163,7 @@ export const StepAmountEntry: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
           <Button
             className='w-full'
             onClick={handleContinue}
-            disabled={!!error}
-          >
+            disabled={!!error}>
             Continue
           </Button>
         </div>
@@ -211,15 +207,13 @@ export const StepAmountEntry: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
         <Button
           variant={!isRecurring ? 'outline' : 'ghost'}
           onClick={() => setIsRecurring(false)}
-          className='flex-1'
-        >
+          className='flex-1'>
           Give once
         </Button>
         <Button
           variant={isRecurring ? 'primary' : 'ghost'}
           onClick={() => setIsRecurring(true)}
-          className='flex-1'
-        >
+          className='flex-1'>
           <Heart className='h-4 w-4 mr-1' /> Monthly
         </Button>
       </div>
@@ -231,8 +225,7 @@ export const StepAmountEntry: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
             key={v}
             variant={amount === v ? 'primary' : 'outline'}
             onClick={() => setAmount(v)}
-            size='sm'
-          >
+            size='sm'>
             ${(v / 100).toLocaleString()}
           </Button>
         ))}

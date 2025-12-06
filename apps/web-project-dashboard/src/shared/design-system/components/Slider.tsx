@@ -66,8 +66,9 @@ const sliderThumbVariants = cva(
   }
 );
 
-interface SliderProps
-  extends React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> {
+interface SliderProps extends React.ComponentPropsWithoutRef<
+  typeof SliderPrimitive.Root
+> {
   variant?: 'default' | 'volume';
   size?: 'sm' | 'md' | 'lg';
 }
@@ -79,8 +80,7 @@ const Slider = React.forwardRef<
   <SliderPrimitive.Root
     ref={ref}
     className={cn(sliderVariants({ size, variant }), className)}
-    {...props}
-  >
+    {...props}>
     <SliderPrimitive.Track className={cn(sliderTrackVariants({ variant }))}>
       <SliderPrimitive.Range className={cn(sliderRangeVariants({ variant }))} />
     </SliderPrimitive.Track>

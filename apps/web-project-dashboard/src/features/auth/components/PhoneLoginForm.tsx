@@ -139,8 +139,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({
             loginMethod === 'password'
               ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm'
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
-          }`}
-        >
+          }`}>
           Password
         </button>
         <button
@@ -150,8 +149,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({
             loginMethod === 'otp'
               ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm'
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
-          }`}
-        >
+          }`}>
           SMS Code
         </button>
       </div>
@@ -164,8 +162,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({
                 className='h-5 w-5 text-error-600 dark:text-error-400'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -224,8 +221,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({
                   className='h-5 w-5'
                   fill='none'
                   stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
+                  viewBox='0 0 24 24'>
                   <path
                     strokeLinecap='round'
                     strokeLinejoin='round'
@@ -254,8 +250,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({
             className='flex-1'
             disabled={isLoading || !phoneValue}
             size='lg'
-            loading={isLoading}
-          >
+            loading={isLoading}>
             {isLoading
               ? loginMethod === 'password'
                 ? 'Signing in...'
@@ -270,8 +265,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({
               type='button'
               variant='outline'
               onClick={onCancel}
-              disabled={isLoading}
-            >
+              disabled={isLoading}>
               Cancel
             </Button>
           )}

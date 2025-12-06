@@ -719,8 +719,7 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
             }
           : {
               cluster: false,
-            })}
-      >
+            })}>
         {clustered ? (
           [
             /* Cluster circles */
@@ -969,8 +968,7 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
         <Source
           id='people-groups-pulse-source'
           type='geojson'
-          data={pulseFeatureCollection}
-        >
+          data={pulseFeatureCollection}>
           <Layer
             id='people-groups-pulse-layer'
             type='circle'
@@ -1013,8 +1011,7 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
           closeOnClick={false}
           anchor='bottom'
           offset={[0, -8]}
-          className='people-groups-popup'
-        >
+          className='people-groups-popup'>
           <div className='px-2 py-1.5 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 rounded border border-neutral-200 dark:border-neutral-700 shadow-sm min-w-[180px]'>
             <div className='font-semibold text-sm mb-1 text-neutral-900 dark:text-neutral-100'>
               People Group
@@ -1037,8 +1034,7 @@ export const MapPeopleGroupsLayer: React.FC<MapPeopleGroupsLayerProps> = ({
               </div>
               <div className='flex items-center gap-2'>
                 <span
-                  className={`${getBibleTranslationStatusPillColor(hoveredPeopleGroup.peopleGroup)} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}
-                >
+                  className={`${getBibleTranslationStatusPillColor(hoveredPeopleGroup.peopleGroup)} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}>
                   {getBibleTranslationStatusText(
                     hoveredPeopleGroup.peopleGroup
                   )}

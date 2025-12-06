@@ -139,9 +139,8 @@ export class PermissionsService {
   async requestLocationPermissions(): Promise<PermissionStatus> {
     try {
       // Import location service dynamically to avoid circular dependencies
-      const { locationService } = await import(
-        '@/shared/services/location/LocationService'
-      );
+      const { locationService } =
+        await import('@/shared/services/location/LocationService');
 
       const permissionStatus = await locationService.requestPermissions();
 
@@ -264,9 +263,8 @@ export class PermissionsService {
   async checkLocationPermissions(): Promise<PermissionStatus> {
     try {
       // Import location service dynamically to avoid circular dependencies
-      const { locationService } = await import(
-        '@/shared/services/location/LocationService'
-      );
+      const { locationService } =
+        await import('@/shared/services/location/LocationService');
       const permissionStatus = await locationService.checkPermissionStatus();
 
       const status: PermissionStatus = {

@@ -142,8 +142,7 @@ export const PartnerOrgSelector: React.FC<PartnerOrgSelectorProps> = ({
                       key={org.id}
                       type='button'
                       onClick={() => handleSelectOrg(org.id, org.name)}
-                      className='w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 last:border-0'
-                    >
+                      className='w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 last:border-0'>
                       <div className='font-medium text-sm'>{org.name}</div>
                       {org.description && (
                         <div className='text-xs text-neutral-600 dark:text-neutral-400 mt-1'>
@@ -155,8 +154,7 @@ export const PartnerOrgSelector: React.FC<PartnerOrgSelectorProps> = ({
                   <button
                     type='button'
                     onClick={handleCreateNew}
-                    className='w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-primary-600 dark:text-primary-400 font-medium text-sm'
-                  >
+                    className='w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-primary-600 dark:text-primary-400 font-medium text-sm'>
                     + Create new organization
                   </button>
                 </div>
@@ -173,8 +171,7 @@ export const PartnerOrgSelector: React.FC<PartnerOrgSelectorProps> = ({
                     <button
                       type='button'
                       onClick={handleCreateNew}
-                      className='w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-primary-600 dark:text-primary-400 font-medium text-sm border-t border-neutral-100 dark:border-neutral-700'
-                    >
+                      className='w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-primary-600 dark:text-primary-400 font-medium text-sm border-t border-neutral-100 dark:border-neutral-700'>
                       + Create new organization
                     </button>
                   </div>
@@ -231,8 +228,7 @@ export const PartnerOrgSelector: React.FC<PartnerOrgSelectorProps> = ({
               <button
                 type='button'
                 onClick={() => handleModeChange('existing')}
-                className='text-sm text-primary-600 dark:text-primary-400 hover:underline'
-              >
+                className='text-sm text-primary-600 dark:text-primary-400 hover:underline'>
                 ← Back to search
               </button>
             </div>

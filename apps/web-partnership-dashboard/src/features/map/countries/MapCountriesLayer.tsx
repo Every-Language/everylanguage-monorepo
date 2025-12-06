@@ -416,8 +416,7 @@ export const MapCountriesLayer: React.FC<MapCountriesLayerProps> = ({
           closeOnClick={false}
           anchor='bottom'
           offset={[0, -8]}
-          className='countries-popup'
-        >
+          className='countries-popup'>
           <div className='px-2 py-1.5 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 rounded border border-neutral-200 dark:border-neutral-700 shadow-sm min-w-[200px]'>
             <div className='font-semibold text-sm mb-1 text-neutral-900 dark:text-neutral-100'>
               Country
@@ -432,8 +431,7 @@ export const MapCountriesLayer: React.FC<MapCountriesLayerProps> = ({
               </div>
               <div className='flex items-center gap-2 mb-2'>
                 <span
-                  className={`${getBibleStatusPillColor(hoveredCountry.country)} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}
-                >
+                  className={`${getBibleStatusPillColor(hoveredCountry.country)} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}>
                   {getBibleStatusText(hoveredCountry.country)}
                 </span>
               </div>

@@ -122,8 +122,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   return (
     <ThemeContext.Provider
-      value={{ theme, setTheme: handleSetTheme, resolvedTheme }}
-    >
+      value={{ theme, setTheme: handleSetTheme, resolvedTheme }}>
       {children}
     </ThemeContext.Provider>
   );

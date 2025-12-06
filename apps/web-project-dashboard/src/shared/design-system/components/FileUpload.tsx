@@ -175,8 +175,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={openFileDialog}
-      >
+        onClick={openFileDialog}>
         <div className='text-center'>
           <ArrowUpTrayIcon className='mx-auto h-12 w-12 text-gray-400' />
           <p className='mt-2 text-gray-600 dark:text-gray-400'>{uploadText}</p>
@@ -205,8 +204,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           {files.map((file, index) => (
             <div
               key={index}
-              className='flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded'
-            >
+              className='flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded'>
               <span className='text-sm truncate flex-1'>{file.name}</span>
               <Button
                 variant='ghost'
@@ -214,8 +212,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 onClick={e => {
                   e.stopPropagation();
                   removeFile(index);
-                }}
-              >
+                }}>
                 <XMarkIcon className='h-4 w-4' />
               </Button>
             </div>
@@ -373,8 +370,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({
         onDrop={handleDrop}
         onClick={() =>
           !disabled && document.getElementById('csv-file-input')?.click()
-        }
-      >
+        }>
         <DocumentTextIcon className='mx-auto h-12 w-12 text-gray-400' />
         <p className='mt-2 text-lg font-medium text-gray-900 dark:text-gray-100'>
           {isProcessing ? 'Processing...' : 'Upload CSV File'}

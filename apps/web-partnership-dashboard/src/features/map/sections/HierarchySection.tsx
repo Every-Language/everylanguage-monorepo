@@ -199,8 +199,7 @@ const Tree: React.FC<{
             <button
               className='w-5 h-5 flex items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800'
               onClick={() => toggle(nid)}
-              aria-label={open[nid] ? 'Collapse' : 'Expand'}
-            >
+              aria-label={open[nid] ? 'Collapse' : 'Expand'}>
               {open[nid] ? '▾' : '▸'}
             </button>
           ) : (
@@ -216,13 +215,11 @@ const Tree: React.FC<{
                   ? `/map/language/${encodeURIComponent(nid)}`
                   : `/map/region/${encodeURIComponent(nid)}`
               )
-            }
-          >
+            }>
             {node.name}
           </button>
           <span
-            className={`text-xs ${isSelected ? 'text-accent-600' : 'text-neutral-500'}`}
-          >
+            className={`text-xs ${isSelected ? 'text-accent-600' : 'text-neutral-500'}`}>
             {node.level}
           </span>
         </div>

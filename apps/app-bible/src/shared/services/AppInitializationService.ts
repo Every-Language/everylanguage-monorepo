@@ -68,9 +68,8 @@ class AppInitializationService {
       // 4. Initialize MediaPlayerService
       try {
         logger.info(ENABLE_LOGGING, '🎵 Initializing MediaPlayerService...');
-        const { mediaPlayerService } = await import(
-          '@/features/media/services'
-        );
+        const { mediaPlayerService } =
+          await import('@/features/media/services');
         await mediaPlayerService.initialize();
         logger.info(
           ENABLE_LOGGING,

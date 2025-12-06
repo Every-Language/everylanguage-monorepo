@@ -261,13 +261,11 @@ export const Image = React.forwardRef<HTMLDivElement, ImageProps>(
         ref={ref}
         className={cn(imageVariants({ variant, size, objectFit }), className)}
         style={containerStyles}
-        {...props}
-      >
+        {...props}>
         <div
           ref={containerRef}
           className='w-full h-full relative'
-          style={blurStyles}
-        >
+          style={blurStyles}>
           {/* Blur placeholder */}
           {blurDataURL && state.isLoading && (
             <div
@@ -304,8 +302,7 @@ export const Image = React.forwardRef<HTMLDivElement, ImageProps>(
                   {retryOnError && state.retryCount < maxRetries && (
                     <button
                       onClick={handleRetry}
-                      className='mt-2 px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors'
-                    >
+                      className='mt-2 px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors'>
                       Retry ({state.retryCount + 1}/{maxRetries})
                     </button>
                   )}

@@ -57,8 +57,7 @@ export const DonateModal: React.FC<DonateModalProps> = ({
               variant='ghost'
               size='sm'
               onClick={flow.back}
-              className='gap-2'
-            >
+              className='gap-2'>
               <ArrowLeft className='h-4 w-4' />
               Back
             </Button>

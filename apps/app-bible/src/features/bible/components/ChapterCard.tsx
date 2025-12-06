@@ -148,9 +148,8 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
           onQueue(chapter);
           return;
         }
-        const { getQueueStore } = await import(
-          '@/features/media/store/QueueStore'
-        );
+        const { getQueueStore } =
+          await import('@/features/media/store/QueueStore');
         const { addToQueue } = getQueueStore();
         await addToQueue(chapterId, options);
       },

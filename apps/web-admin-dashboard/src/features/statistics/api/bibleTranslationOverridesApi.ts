@@ -9,8 +9,7 @@ type BibleTranslationOverrideInsert =
 type BibleTranslationOverrideUpdate =
   Database['public']['Tables']['bible_translation_overrides']['Update'];
 
-export interface BibleTranslationOverrideWithLanguage
-  extends BibleTranslationOverrideRow {
+export interface BibleTranslationOverrideWithLanguage extends BibleTranslationOverrideRow {
   language_entity?: LanguageEntity | null;
 }
 

@@ -138,8 +138,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
         key={field.id}
         error={errors[field.name]}
         touched={touched[field.name]}
-        className={`${widthClasses[field.width || 'full']} ${field.className || ''}`}
-      >
+        className={`${widthClasses[field.width || 'full']} ${field.className || ''}`}>
         <FieldBuilder
           field={field}
           value={values[field.name]}
@@ -160,8 +159,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
       return (
         <div
           key={sectionId}
-          className={`grid gap-4 ${layoutClasses[schema.layout || 'auto']}`}
-        >
+          className={`grid gap-4 ${layoutClasses[schema.layout || 'auto']}`}>
           {fields.map(renderField)}
         </div>
       );
@@ -173,8 +171,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
         title={sectionConfig?.title || sectionId}
         description={sectionConfig?.description}
         collapsible={sectionConfig?.collapsible}
-        defaultExpanded={sectionConfig?.defaultExpanded}
-      >
+        defaultExpanded={sectionConfig?.defaultExpanded}>
         <div className={`grid gap-4 ${layoutClasses[schema.layout || 'auto']}`}>
           {fields.map(renderField)}
         </div>
@@ -214,8 +211,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
             type='button'
             variant='outline'
             onClick={onCancel}
-            disabled={isSubmitting}
-          >
+            disabled={isSubmitting}>
             {schema.cancelText || 'Cancel'}
           </Button>
         )}
@@ -223,8 +219,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
         <Button
           type='submit'
           disabled={!isFormValid || isSubmitting || submitDisabled}
-          loading={isSubmitting}
-        >
+          loading={isSubmitting}>
           {schema.submitText || 'Submit'}
         </Button>
       </div>

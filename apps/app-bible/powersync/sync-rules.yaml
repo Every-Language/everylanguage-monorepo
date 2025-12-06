@@ -2,7 +2,7 @@ bucket_definitions:
   # ====================
   # REMOTE TO LOCAL ONLY - Global Bible Content (available to all users)
   # ====================
-  
+
   global_bible_content:
     data:
       # Core bible structure - always available
@@ -14,9 +14,9 @@ bucket_definitions:
   # ====================
   # LOCAL TO REMOTE ONLY - Analytics Data (Upload only, no download)
   # ====================
-  
+
   # These buckets use WHERE FALSE to prevent downloading data back to client
-  
+
   analytics_sessions:
     data:
       - SELECT * FROM sessions WHERE FALSE
@@ -35,26 +35,22 @@ bucket_definitions:
   # Client must pass 'is_authenticated' = 'true' parameter to sync user data
 
   user_current_selections:
-      parameters:
-        SELECT request.user_id() as user_id 
-      data:
-        - SELECT * FROM user_current_selections WHERE user_id = bucket.user_id
+    parameters: SELECT request.user_id() as user_id
+    data:
+      - SELECT * FROM user_current_selections WHERE user_id = bucket.user_id
 
   user_saved_text_versions:
-    parameters: 
-      SELECT request.user_id() as user_id 
+    parameters: SELECT request.user_id() as user_id
     data:
       - SELECT * FROM user_saved_text_versions WHERE user_id = bucket.user_id
 
   user_saved_audio_versions:
-    parameters: 
-      SELECT request.user_id() as user_id 
+    parameters: SELECT request.user_id() as user_id
     data:
       - SELECT * FROM user_saved_audio_versions WHERE user_id = bucket.user_id
 
-  user_audio_versions: 
-    parameters: 
-      SELECT audio_version_id FROM user_saved_audio_versions 
+  user_audio_versions:
+    parameters: SELECT audio_version_id FROM user_saved_audio_versions
       WHERE user_id = request.user_id() AND audio_version_id IS NOT NULL
     data:
       - SELECT * FROM audio_versions WHERE id = bucket.audio_version_id
@@ -62,31 +58,27 @@ bucket_definitions:
       - SELECT * FROM media_files_verses WHERE denormalized_audio_version_id = bucket.audio_version_id
 
   user_text_versions:
-    parameters: 
-      SELECT text_version_id FROM user_saved_text_versions 
+    parameters: SELECT text_version_id FROM user_saved_text_versions
       WHERE user_id = request.user_id() AND text_version_id IS NOT NULL
     data:
       - SELECT * FROM text_versions WHERE id = bucket.text_version_id
       - SELECT * FROM verse_texts WHERE text_version_id = bucket.text_version_id
 
   user_bookmarks:
-    parameters: 
-      SELECT request.user_id() as user_id 
+    parameters: SELECT request.user_id() as user_id
     data:
       - SELECT * FROM user_bookmarks WHERE user_id = bucket.user_id
       - SELECT * FROM user_bookmark_folders WHERE user_id = bucket.user_id
 
   # The list of image sets that the user has saved
   user_saved_image_sets:
-    parameters: 
-      SELECT request.user_id() as user_id 
+    parameters: SELECT request.user_id() as user_id
     data:
       - SELECT * FROM user_saved_image_sets WHERE user_id = bucket.user_id
 
   # The actual images
   images:
-    parameters:
-      SELECT set_id FROM user_saved_image_sets
+    parameters: SELECT set_id FROM user_saved_image_sets
       WHERE user_id = request.user_id()
     data:
       - SELECT * FROM image_sets WHERE id = bucket.set_id
@@ -94,16 +86,14 @@ bucket_definitions:
 
   # The list of playlists that the user has saved
   user_playlists:
-    parameters: 
-      SELECT request.user_id() as user_id 
+    parameters: SELECT request.user_id() as user_id
     data:
       - SELECT * FROM user_playlist_groups WHERE user_id = bucket.user_id
       - SELECT * FROM user_playlists WHERE user_id = bucket.user_id
 
   # The actual playlists
   playlists:
-    parameters: 
-      SELECT playlist_id FROM user_playlists 
+    parameters: SELECT playlist_id FROM user_playlists
       WHERE user_id = request.user_id()
     data:
       - SELECT * FROM playlists WHERE id = bucket.playlist_id

@@ -29,8 +29,7 @@ export const BibleProgressStatsCards: React.FC<
               Complete
             </div>
           </div>
-        }
-      >
+        }>
         <Progress
           value={progressStats?.booksProgress.percentage || 0}
           color='primary'
@@ -54,8 +53,7 @@ export const BibleProgressStatsCards: React.FC<
               Complete
             </div>
           </div>
-        }
-      >
+        }>
         <Progress
           value={progressStats?.chaptersProgress.percentage || 0}
           color='secondary'
@@ -79,8 +77,7 @@ export const BibleProgressStatsCards: React.FC<
               Complete
             </div>
           </div>
-        }
-      >
+        }>
         <Progress
           value={progressStats?.versesProgress.percentage || 0}
           color='success'

@@ -101,8 +101,7 @@ export function RegisterPage() {
         <div className='absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-accent-200/20 to-transparent dark:from-accent-800/20 rounded-full animate-float'></div>
         <div
           className='absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-accent-300/20 to-transparent dark:from-accent-700/20 rounded-full animate-float'
-          style={{ animationDelay: '2s' }}
-        ></div>
+          style={{ animationDelay: '2s' }}></div>
       </div>
 
       {/* Main Content */}
@@ -132,8 +131,7 @@ export function RegisterPage() {
                 signupMethod === 'email'
                   ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
-              }`}
-            >
+              }`}>
               Email
             </button>
             <button
@@ -143,8 +141,7 @@ export function RegisterPage() {
                 signupMethod === 'phone'
                   ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
-              }`}
-            >
+              }`}>
               Phone
             </button>
           </div>
@@ -161,8 +158,7 @@ export function RegisterPage() {
                         className='h-5 w-5 text-error-600 dark:text-error-400'
                         fill='none'
                         stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
+                        viewBox='0 0 24 24'>
                         <path
                           strokeLinecap='round'
                           strokeLinejoin='round'
@@ -191,8 +187,7 @@ export function RegisterPage() {
                         className='h-5 w-5 text-success-600 dark:text-success-400'
                         fill='none'
                         stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
+                        viewBox='0 0 24 24'>
                         <path
                           strokeLinecap='round'
                           strokeLinejoin='round'
@@ -269,8 +264,7 @@ export function RegisterPage() {
                         className='h-5 w-5'
                         fill='none'
                         stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
+                        viewBox='0 0 24 24'>
                         <path
                           strokeLinecap='round'
                           strokeLinejoin='round'
@@ -304,8 +298,7 @@ export function RegisterPage() {
                         className='h-5 w-5'
                         fill='none'
                         stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
+                        viewBox='0 0 24 24'>
                         <path
                           strokeLinecap='round'
                           strokeLinejoin='round'
@@ -344,8 +337,7 @@ export function RegisterPage() {
                         className='h-5 w-5'
                         fill='none'
                         stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
+                        viewBox='0 0 24 24'>
                         <path
                           strokeLinecap='round'
                           strokeLinejoin='round'
@@ -370,8 +362,7 @@ export function RegisterPage() {
                     className='w-full'
                     disabled={isLoading}
                     size='lg'
-                    loading={isLoading}
-                  >
+                    loading={isLoading}>
                     {isLoading ? 'Creating account...' : 'Create account'}
                   </Button>
                 </div>
@@ -384,8 +375,7 @@ export function RegisterPage() {
               Already have an account?{' '}
               <Link
                 href='/login'
-                className='font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 transition-colors'
-              >
+                className='font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 transition-colors'>
                 Sign in
               </Link>
             </p>

@@ -184,8 +184,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = props => {
   return (
     <>
       <div
-        className={`absolute ${positionClasses[config.position]} ${widthClass} flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-xl overflow-hidden z-10`}
-      >
+        className={`absolute ${positionClasses[config.position]} ${widthClass} flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-xl overflow-hidden z-10`}>
         {/* Header */}
         <div className='flex-none px-3 py-2 border-b border-neutral-200 dark:border-neutral-800'>
           <FadeSwitch switchKey={selectionKey}>
@@ -200,8 +199,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = props => {
                   <button
                     onClick={() => router.back()}
                     aria-label='Back'
-                    className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-shrink-0'
-                  >
+                    className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-shrink-0'>
                     ←
                   </button>
                   <div className='min-w-0'>
@@ -216,8 +214,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = props => {
                 <button
                   onClick={() => router.push('/map')}
                   aria-label='Close'
-                  className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-shrink-0 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
-                >
+                  className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-shrink-0 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'>
                   <XMarkIcon className='h-5 w-5' />
                 </button>
               </div>
@@ -237,8 +234,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = props => {
         {/* Body with tabs */}
         <div
           ref={scrollRef}
-          className='flex-1 flex flex-col min-h-0 overflow-hidden'
-        >
+          className='flex-1 flex flex-col min-h-0 overflow-hidden'>
           {isLoading ? (
             <div className='flex-1 p-4'>
               <div className='space-y-4'>
@@ -253,8 +249,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = props => {
           ) : (
             <FadeSwitch
               switchKey={selectionKey}
-              className='flex-1 flex flex-col min-h-0'
-            >
+              className='flex-1 flex flex-col min-h-0'>
               <InspectorTabs
                 selection={selection}
                 layers={layers}
@@ -303,8 +298,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = props => {
                 // Reset initial state when modal closes
                 setInitialDonateState(null);
               }
-            }}
-          >
+            }}>
             {initialDonateState && (
               <DonateModal
                 initialIntent={initialDonateState.intent}

@@ -131,8 +131,7 @@ export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
         <Card
           padding='sm'
           variant='ghost'
-          className={`border border-neutral-200 dark:border-neutral-800 ${className}`}
-        >
+          className={`border border-neutral-200 dark:border-neutral-800 ${className}`}>
           <CardContent>
             <div className='h-12 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse' />
           </CardContent>
@@ -145,13 +144,11 @@ export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
     <button
       type='button'
       onClick={handleClick}
-      className={`w-full text-left ${className}`}
-    >
+      className={`w-full text-left ${className}`}>
       <Card
         padding='sm'
         variant='ghost'
-        className={`border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 ${isSelected ? 'ring-2 ring-accent-600 ring-offset-1 ring-offset-white dark:ring-offset-neutral-900' : ''}`}
-      >
+        className={`border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 ${isSelected ? 'ring-2 ring-accent-600 ring-offset-1 ring-offset-white dark:ring-offset-neutral-900' : ''}`}>
         <CardContent>
           <div className='flex items-start gap-3'>
             {/* Image */}
@@ -177,8 +174,7 @@ export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
               {showName && (
                 <div className='space-y-0.5'>
                   <div
-                    className={`text-sm font-medium ${isSelected ? 'text-accent-600' : 'text-neutral-900 dark:text-neutral-100'}`}
-                  >
+                    className={`text-sm font-medium ${isSelected ? 'text-accent-600' : 'text-neutral-900 dark:text-neutral-100'}`}>
                     {displayName}
                   </div>
                   {showRegionName && regionName && (

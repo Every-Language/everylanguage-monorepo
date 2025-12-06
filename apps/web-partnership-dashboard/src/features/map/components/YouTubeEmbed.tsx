@@ -82,12 +82,10 @@ const YouTubeThumbnailPreview: React.FC<{
         href={watchUrl}
         target='_blank'
         rel='noopener noreferrer'
-        className='block relative group'
-      >
+        className='block relative group'>
         <div
           className='relative w-full rounded-lg overflow-hidden bg-neutral-200 dark:bg-neutral-800'
-          style={{ paddingBottom: '56.25%' }}
-        >
+          style={{ paddingBottom: '56.25%' }}>
           <img
             src={thumbnailUrl}
             alt={title || 'YouTube video thumbnail'}
@@ -163,8 +161,7 @@ export const YouTubeEmbed: React.FC<YouTubeEmbedProps> = ({
           <button
             onClick={() => setShowThumbnail(true)}
             className='text-xs px-2 py-1 bg-black/50 hover:bg-black/70 text-white rounded transition-colors'
-            title="If video doesn't play, click to view thumbnail"
-          >
+            title="If video doesn't play, click to view thumbnail">
             View on YouTube
           </button>
         </div>

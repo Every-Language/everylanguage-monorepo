@@ -57,9 +57,8 @@ export const useResolvedBibleLocation = (
     prevChapterIdRef.current = incomingChapterId;
     (async () => {
       try {
-        const { powerSyncSystem } = await import(
-          '@/shared/services/powersync/PowerSyncSystem'
-        );
+        const { powerSyncSystem } =
+          await import('@/shared/services/powersync/PowerSyncSystem');
         const row = await powerSyncSystem.get(
           'SELECT book_id, chapter_number FROM chapters WHERE id = ? LIMIT 1',
           [incomingChapterId]
@@ -83,9 +82,8 @@ export const useResolvedBibleLocation = (
     prevVerseIdRef.current = incomingVerseId;
     (async () => {
       try {
-        const { powerSyncSystem } = await import(
-          '@/shared/services/powersync/PowerSyncSystem'
-        );
+        const { powerSyncSystem } =
+          await import('@/shared/services/powersync/PowerSyncSystem');
         const row = await powerSyncSystem.get(
           `SELECT v.chapter_id AS chapter_id, c.book_id AS book_id, c.chapter_number AS chapter_number
            FROM verses v

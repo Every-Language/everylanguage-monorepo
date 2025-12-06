@@ -30,8 +30,7 @@ export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
         {/* Language Card */}
         <button
           onClick={() => handleSelect('language')}
-          className='group text-left bg-white dark:bg-neutral-800 rounded-lg p-6 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:-translate-y-0.5'
-        >
+          className='group text-left bg-white dark:bg-neutral-800 rounded-lg p-6 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:-translate-y-0.5'>
           <div className='flex items-start gap-4'>
             <div className='p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg group-hover:bg-primary-200 dark:group-hover:bg-primary-900/40 transition-colors'>
               <Globe className='h-6 w-6 text-primary-600 dark:text-primary-400' />
@@ -54,8 +53,7 @@ export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
         {/* Region Card */}
         <button
           onClick={() => handleSelect('region')}
-          className='group text-left bg-white dark:bg-neutral-800 rounded-lg p-6 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:-translate-y-0.5'
-        >
+          className='group text-left bg-white dark:bg-neutral-800 rounded-lg p-6 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:-translate-y-0.5'>
           <div className='flex items-start gap-4'>
             <div className='p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg group-hover:bg-primary-200 dark:group-hover:bg-primary-900/40 transition-colors'>
               <MapPin className='h-6 w-6 text-primary-600 dark:text-primary-400' />
@@ -77,8 +75,7 @@ export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
         {/* Operation Card */}
         <button
           onClick={() => handleSelect('operation')}
-          className='group text-left bg-white dark:bg-neutral-800 rounded-lg p-6 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:-translate-y-0.5'
-        >
+          className='group text-left bg-white dark:bg-neutral-800 rounded-lg p-6 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:-translate-y-0.5'>
           <div className='flex items-start gap-4'>
             <div className='p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg group-hover:bg-primary-200 dark:group-hover:bg-primary-900/40 transition-colors'>
               <Briefcase className='h-6 w-6 text-primary-600 dark:text-primary-400' />
@@ -100,8 +97,7 @@ export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
         {/* Wherever Needed Most Card */}
         <button
           onClick={() => handleSelect('unrestricted')}
-          className='group text-left bg-white dark:bg-neutral-800 rounded-lg p-6 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:-translate-y-0.5'
-        >
+          className='group text-left bg-white dark:bg-neutral-800 rounded-lg p-6 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:-translate-y-0.5'>
           <div className='flex items-start gap-4'>
             <div className='p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg group-hover:bg-primary-200 dark:group-hover:bg-primary-900/40 transition-colors'>
               <Heart className='h-6 w-6 text-primary-600 dark:text-primary-400' />

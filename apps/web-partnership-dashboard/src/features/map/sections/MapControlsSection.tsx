@@ -82,8 +82,7 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
           return (
             <label
               key={k}
-              className='flex items-center justify-between text-sm py-1 select-none'
-            >
+              className='flex items-center justify-between text-sm py-1 select-none'>
               <span className='capitalize'>
                 {k === 'globalListening'
                   ? 'Global Listening'

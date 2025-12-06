@@ -265,8 +265,7 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
               type='button'
               variant='ghost'
               onClick={handleClose}
-              disabled={isSubmitting}
-            >
+              disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type='submit' disabled={isSubmitting}>

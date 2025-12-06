@@ -16,8 +16,7 @@ export const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
           'shadow-sidebar transition-theme',
           className
         )}
-        {...props}
-      >
+        {...props}>
         {children}
       </div>
     );
@@ -42,8 +41,7 @@ export const SidebarHeader = React.forwardRef<
         'flex items-center h-16 px-6 border-b border-neutral-200 dark:border-neutral-700',
         className
       )}
-      {...props}
-    >
+      {...props}>
       {children}
     </div>
   );
@@ -64,8 +62,7 @@ export const SidebarContent = React.forwardRef<
     <div
       ref={ref}
       className={cn('flex-1 overflow-y-auto px-3 py-4', className)}
-      {...props}
-    >
+      {...props}>
       {children}
     </div>
   );
@@ -157,8 +154,7 @@ export const SidebarFooter = React.forwardRef<
         'border-t border-neutral-200 dark:border-neutral-700 p-4',
         className
       )}
-      {...props}
-    >
+      {...props}>
       {children}
     </div>
   );

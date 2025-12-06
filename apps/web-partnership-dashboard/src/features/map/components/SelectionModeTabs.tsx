@@ -34,8 +34,7 @@ export const SelectionModeTabs: React.FC<SelectionModeTabsProps> = ({
 
   return (
     <div
-      className={`flex items-center gap-1 p-1 bg-white/95 dark:bg-neutral-900/95 backdrop-blur rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-xl ${className || ''}`}
-    >
+      className={`flex items-center gap-1 p-1 bg-white/95 dark:bg-neutral-900/95 backdrop-blur rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-xl ${className || ''}`}>
       {tabs.map(tab => {
         const isActive = mode === tab.id;
         return (
@@ -46,8 +45,7 @@ export const SelectionModeTabs: React.FC<SelectionModeTabsProps> = ({
               isActive
                 ? 'bg-accent-600 text-white shadow-sm'
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-            }`}
-          >
+            }`}>
             {tab.label}
           </button>
         );

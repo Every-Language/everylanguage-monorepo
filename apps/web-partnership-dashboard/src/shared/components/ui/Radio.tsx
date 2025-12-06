@@ -39,7 +39,8 @@ const radioGroupVariants = cva(['grid gap-2'], {
 
 // RadioGroup Root Component
 export interface RadioGroupProps
-  extends React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>,
+  extends
+    React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>,
     VariantProps<typeof radioGroupVariants> {
   label?: string;
   description?: string;
@@ -74,8 +75,7 @@ export const RadioGroup = React.forwardRef<
           <div className='space-y-1'>
             <label
               className='text-sm font-medium leading-none text-neutral-900'
-              id={`${groupId}-label`}
-            >
+              id={`${groupId}-label`}>
               {label}
               {required && <span className='text-error-500 ml-1'>*</span>}
             </label>
@@ -83,8 +83,7 @@ export const RadioGroup = React.forwardRef<
             {description && (
               <p
                 id={`${groupId}-description`}
-                className='text-xs text-neutral-500'
-              >
+                className='text-xs text-neutral-500'>
                 {description}
               </p>
             )}
@@ -103,8 +102,7 @@ export const RadioGroup = React.forwardRef<
                 : undefined
           }
           aria-invalid={hasError}
-          {...props}
-        >
+          {...props}>
           {children}
         </RadioGroupPrimitive.Root>
 
@@ -112,8 +110,7 @@ export const RadioGroup = React.forwardRef<
           <p
             id={`${groupId}-error`}
             className='text-sm text-error-600'
-            role='alert'
-          >
+            role='alert'>
             {error}
           </p>
         )}
@@ -126,7 +123,8 @@ RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
 
 // RadioGroup Item Component
 export interface RadioGroupItemProps
-  extends React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>,
+  extends
+    React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>,
     VariantProps<typeof radioVariants> {
   label?: string;
   description?: string;
@@ -146,8 +144,7 @@ export const RadioGroupItem = React.forwardRef<
         ref={ref}
         id={itemId}
         className={cn(radioVariants({ size }), className)}
-        {...props}
-      >
+        {...props}>
         <RadioGroupPrimitive.Indicator className='flex items-center justify-center'>
           <div className='h-2 w-2 rounded-full bg-current' />
         </RadioGroupPrimitive.Indicator>
@@ -157,8 +154,7 @@ export const RadioGroupItem = React.forwardRef<
         <div className='grid gap-1.5 leading-none'>
           <label
             htmlFor={itemId}
-            className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer'
-          >
+            className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer'>
             {label || children}
           </label>
 

@@ -43,9 +43,9 @@ pnpm install
 # Start local Supabase (requires Docker)
 pnpm db:dev
 
-# Generate TypeScript types from database
-pnpm db:generate-types
-pnpm db:prepare-package
+# Generate TypeScript types from database (optional for initial setup if types are already committed)
+# Required when making database schema changes or if types are out of sync
+pnpm db:generate-types && pnpm db:prepare-package
 
 # Start all apps in development mode
 pnpm dev

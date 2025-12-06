@@ -7,8 +7,10 @@ export type TextVersion = TableRow<'text_versions'>;
 export type VerseText = TableRow<'verse_texts'>;
 
 // Enhanced type for verse texts with relations
-export interface VerseTextWithRelations
-  extends Omit<VerseText, 'publish_status'> {
+export interface VerseTextWithRelations extends Omit<
+  VerseText,
+  'publish_status'
+> {
   publish_status: 'pending' | 'published' | 'archived';
   text_versions?: TextVersion;
   verses?: {

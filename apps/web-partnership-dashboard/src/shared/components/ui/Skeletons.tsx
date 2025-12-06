@@ -19,13 +19,11 @@ export const ProjectCardSkeleton: React.FC<ProjectCardSkeletonProps> = ({
       className={cn(
         'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4',
         className
-      )}
-    >
+      )}>
       {Array.from({ length: count }).map((_, idx) => (
         <Card
           key={`project-skeleton-${idx}`}
-          className='border border-neutral-200 dark:border-neutral-800'
-        >
+          className='border border-neutral-200 dark:border-neutral-800'>
           <CardHeader>
             <div className='h-5 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4 animate-pulse mb-2' />
             <div className='h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-1/2 animate-pulse' />
@@ -75,8 +73,7 @@ export const StatsCardSkeleton: React.FC<StatsCardSkeletonProps> = ({
       {Array.from({ length: count }).map((_, idx) => (
         <Card
           key={`stats-skeleton-${idx}`}
-          className='border border-neutral-200 dark:border-neutral-800'
-        >
+          className='border border-neutral-200 dark:border-neutral-800'>
           <CardHeader>
             <div className='h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-32 animate-pulse' />
           </CardHeader>
@@ -119,8 +116,7 @@ export const TableRowSkeleton: React.FC<TableRowSkeletonProps> = ({
       {Array.from({ length: count }).map((_, rowIdx) => (
         <div
           key={`row-${rowIdx}`}
-          className='grid grid-cols-[1fr_1fr_1fr_2fr] gap-4 px-4 py-4 border-b border-neutral-200 dark:border-neutral-800'
-        >
+          className='grid grid-cols-[1fr_1fr_1fr_2fr] gap-4 px-4 py-4 border-b border-neutral-200 dark:border-neutral-800'>
           <div className='h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-20 animate-pulse' />
           <div className='h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-16 animate-pulse' />
           <div className='h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-16 animate-pulse' />
@@ -153,8 +149,7 @@ export const MapSkeleton: React.FC<MapSkeletonProps> = ({
         'rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center',
         className
       )}
-      style={{ height }}
-    >
+      style={{ height }}>
       <div className='text-center text-neutral-500'>
         <div className='h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-48 animate-pulse mx-auto mb-2' />
         <div className='h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-64 animate-pulse mx-auto' />
@@ -180,8 +175,7 @@ export const FeedItemSkeleton: React.FC<FeedItemSkeletonProps> = ({
       {Array.from({ length: count }).map((_, idx) => (
         <Card
           key={`feed-skeleton-${idx}`}
-          className='border border-neutral-200 dark:border-neutral-800'
-        >
+          className='border border-neutral-200 dark:border-neutral-800'>
           <CardHeader>
             <div className='flex items-start justify-between'>
               <div className='flex-1'>
@@ -204,8 +198,7 @@ export const FeedItemSkeleton: React.FC<FeedItemSkeletonProps> = ({
                   {Array.from({ length: 2 }).map((_, mediaIdx) => (
                     <div
                       key={`media-${mediaIdx}`}
-                      className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-4'
-                    >
+                      className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-4'>
                       <div className='h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-16 animate-pulse mb-2' />
                       <div className='h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-32 animate-pulse' />
                     </div>
@@ -243,8 +236,7 @@ export const MemberCardSkeleton: React.FC<MemberCardSkeletonProps> = ({
             {Array.from({ length: count }).map((_, idx) => (
               <div
                 key={`member-skeleton-${idx}`}
-                className='flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-800 rounded-lg'
-              >
+                className='flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-800 rounded-lg'>
                 <div className='flex-1'>
                   <div className='h-5 bg-neutral-200 dark:bg-neutral-700 rounded w-40 animate-pulse mb-2' />
                   <div className='h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-48 animate-pulse' />

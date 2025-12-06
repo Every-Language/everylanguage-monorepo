@@ -69,7 +69,11 @@ Deno.serve(async (req: Request) => {
 
     // Check if user has a password set
     // In Supabase, encrypted_password is set when user has a password
-    const hasPassword = !!authUser.user.encrypted_password;
+    // Use type assertion to access internal property
+    const userWithPassword = authUser.user as typeof authUser.user & {
+      encrypted_password?: string | null;
+    };
+    const hasPassword = !!userWithPassword.encrypted_password;
 
     return createSuccessResponse({
       hasPassword,

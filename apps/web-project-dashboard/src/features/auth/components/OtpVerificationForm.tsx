@@ -128,8 +128,7 @@ export const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
                 className='h-5 w-5 text-error-600 dark:text-error-400'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -175,8 +174,7 @@ export const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
             type='submit'
             className='flex-1'
             disabled={isLoading || otp.some(digit => !digit)}
-            loading={isLoading}
-          >
+            loading={isLoading}>
             {isLoading ? 'Verifying...' : 'Verify Code'}
           </Button>
 
@@ -185,8 +183,7 @@ export const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
               type='button'
               variant='outline'
               onClick={onCancel}
-              disabled={isLoading}
-            >
+              disabled={isLoading}>
               Cancel
             </Button>
           )}
@@ -202,8 +199,7 @@ export const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
           <button
             type='button'
             className='text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors'
-            disabled={isLoading}
-          >
+            disabled={isLoading}>
             Resend code
           </button>
         )}

@@ -75,8 +75,7 @@ function LanguageTreeNode({
         onClick={handleSelect}
         onKeyDown={handleKeyDown}
         aria-selected={isSelected}
-        aria-expanded={hasChildren ? isExpanded : undefined}
-      >
+        aria-expanded={hasChildren ? isExpanded : undefined}>
         {/* Expand/Collapse Button */}
         {hasChildren ? (
           <Button
@@ -87,8 +86,7 @@ function LanguageTreeNode({
               e.stopPropagation();
               handleToggleExpand();
             }}
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
-          >
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}>
             {isExpanded ? (
               <ChevronDown className='h-4 w-4' />
             ) : (
@@ -237,8 +235,7 @@ export function LanguageTreeView({
             variant='ghost'
             size='sm'
             onClick={handleClearSearch}
-            className='absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300'
-          >
+            className='absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300'>
             ×
           </Button>
         )}

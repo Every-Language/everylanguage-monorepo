@@ -105,8 +105,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             <select
               value={itemsPerPage}
               onChange={e => onPageSizeChange(Number(e.target.value))}
-              className='text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-            >
+              className='text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'>
               {pageSizeOptions.map(size => (
                 <option key={size} value={size}>
                   {size}
@@ -125,8 +124,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               size='sm'
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage <= 1}
-              className='px-2'
-            >
+              className='px-2'>
               <ChevronLeftIcon className='h-4 w-4' />
             </Button>
 
@@ -142,8 +140,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                     variant={currentPage === page ? 'primary' : 'outline'}
                     size='sm'
                     onClick={() => onPageChange(page as number)}
-                    className='px-3'
-                  >
+                    className='px-3'>
                     {page}
                   </Button>
                 )}
@@ -156,8 +153,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               size='sm'
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage >= totalPages}
-              className='px-2'
-            >
+              className='px-2'>
               <ChevronRightIcon className='h-4 w-4' />
             </Button>
           </div>

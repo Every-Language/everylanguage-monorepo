@@ -105,11 +105,13 @@ jobs:
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
+          # Enable OIDC trusted publishing (requires npm >= 11.5.1)
+          # Node 20 includes npm 10.x, so we need to ensure npm is updated
 
       - name: Install dependencies
         run: pnpm install
@@ -225,6 +227,12 @@ jobs:
           echo "tag=latest" >> $GITHUB_OUTPUT
           echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
 
+      - name: Ensure npm supports OIDC (npm >= 11.5.1 required)
+        run: |
+          # Install latest npm to ensure OIDC trusted publishing support
+          npm install -g npm@latest
+          npm --version
+
       - name: Publish to NPM with OIDC
         run: |
           cd packages/shared-types
@@ -235,17 +243,16 @@ jobs:
           echo "🚀 Publishing @everylanguage/shared-types@$VERSION (tag: $TAG) to NPM..."
           
           # Skip if version already exists on NPM (in case of retries)
-          # Use npm view (works fine) but pnpm publish (handles workspace protocol)
           if npm view @everylanguage/shared-types@$VERSION version >/dev/null 2>&1; then
             echo "⚠️ Version $VERSION already exists on NPM, skipping publish"
           else
-            # Use pnpm publish instead of npm publish to handle workspace protocol
-            # pnpm publish uses npm registry and supports OIDC authentication
-            # --no-git-checks: Skip git checks in CI/CD since we have generated files and version bumps
+            # Use npm publish (not pnpm) because pnpm does not support OIDC trusted publishing
+            # npm publish will automatically use OIDC authentication when setup-node@v5 is configured
+            # The package.json already has publishConfig.access: "public" set
             if [ "$TAG" = "latest" ]; then
-              pnpm publish --access public --no-git-checks
+              npm publish --access public
             else
-              pnpm publish --access public --tag $TAG --no-git-checks
+              npm publish --access public --tag $TAG
             fi
             echo "✅ Package published successfully as '$TAG' ($ENV_NAME)"
           fi

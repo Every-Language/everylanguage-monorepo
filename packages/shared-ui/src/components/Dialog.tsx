@@ -69,7 +69,8 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 // Dialog Content
 export interface DialogContentProps
-  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
+  extends
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof dialogContentVariants> {
   showClose?: boolean;
 }

@@ -189,9 +189,8 @@ export const useVersionsStore = create<VersionsStore>()((set, get) => ({
           await trackPlayerMod.default.reset().catch(() => {});
 
           // Clear metadata and audio queues in queue store
-          const { getQueueStore } = await import(
-            '@/features/media/store/QueueStore'
-          );
+          const { getQueueStore } =
+            await import('@/features/media/store/QueueStore');
           const queueStore = getQueueStore();
           queueStore.updateQueue({
             metadataQueue: [],
@@ -202,9 +201,8 @@ export const useVersionsStore = create<VersionsStore>()((set, get) => ({
             isBuildingBackground: false,
           });
           // Clear any existing media error state
-          const { getPlaybackStore } = await import(
-            '@/features/media/store/PlaybackStore'
-          );
+          const { getPlaybackStore } =
+            await import('@/features/media/store/PlaybackStore');
           getPlaybackStore().clearError();
         } catch (err) {
           logger.warn(
@@ -298,9 +296,8 @@ export const useVersionsStore = create<VersionsStore>()((set, get) => ({
       // For audio versions, first disable downloads to clean up downloaded files
       if (type === 'audio') {
         try {
-          const { versionDownloadService } = await import(
-            '../../downloads/services'
-          );
+          const { versionDownloadService } =
+            await import('../../downloads/services');
           await versionDownloadService.disableVersionDownload(versionId);
         } catch (err) {
           logger.warn(

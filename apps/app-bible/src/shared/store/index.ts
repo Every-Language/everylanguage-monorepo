@@ -46,9 +46,8 @@ export const initializeAllStores = async () => {
     const { initializeI18n } = await import('../services/i18n/config');
     const { initializeLocalizationStore } = await import('./localizationStore');
     const { initializeAuthStore } = await import('./authStore');
-    const { useOnboardingStore } = await import(
-      '../../features/onboarding/store/onboardingStore'
-    );
+    const { useOnboardingStore } =
+      await import('../../features/onboarding/store/onboardingStore');
 
     // Prepare store instances
     const onboardingStore = useOnboardingStore.getState();

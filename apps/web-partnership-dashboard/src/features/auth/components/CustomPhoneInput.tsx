@@ -718,8 +718,7 @@ export const CustomPhoneInput: React.FC<CustomPhoneInputProps> = ({
           }
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
           bg-neutral-50 dark:bg-neutral-800
-        `}
-        >
+        `}>
           {/* Country Selector */}
           <button
             type='button'
@@ -735,8 +734,7 @@ export const CustomPhoneInput: React.FC<CustomPhoneInputProps> = ({
               transition-colors duration-200
               ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
               border-r border-neutral-200 dark:border-neutral-600
-            `}
-          >
+            `}>
             <span className='text-lg'>{selectedCountryOption?.flag}</span>
             <span className='text-sm font-medium text-neutral-700 dark:text-neutral-300'>
               +{selectedCountryOption?.callingCode}
@@ -745,8 +743,7 @@ export const CustomPhoneInput: React.FC<CustomPhoneInputProps> = ({
               className={`w-4 h-4 text-neutral-500 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}
               fill='none'
               stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
+              viewBox='0 0 24 24'>
               <path
                 strokeLinecap='round'
                 strokeLinejoin='round'
@@ -814,8 +811,7 @@ export const CustomPhoneInput: React.FC<CustomPhoneInputProps> = ({
                     transition-colors duration-150
                     ${selectedCountry === country.code ? 'bg-primary-50 dark:bg-primary-900/20' : ''}
                     ${index === selectedIndex ? 'bg-neutral-100 dark:bg-neutral-700' : ''}
-                  `}
-                >
+                  `}>
                   <span className='text-lg'>{country.flag}</span>
                   <span className='flex-1 text-sm text-neutral-900 dark:text-neutral-100'>
                     {country.name}

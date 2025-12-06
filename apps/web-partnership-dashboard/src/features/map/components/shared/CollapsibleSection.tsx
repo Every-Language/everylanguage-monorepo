@@ -56,8 +56,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         onClick={toggleExpanded}
         className={buttonClasses}
         aria-expanded={isExpanded}
-        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${title} section`}
-      >
+        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${title} section`}>
         <span className='font-semibold text-sm'>{title}</span>
         {isExpanded ? (
           <ChevronUpIcon className='w-4 h-4 text-neutral-500' />

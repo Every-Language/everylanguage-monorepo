@@ -281,15 +281,13 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
               <Button
                 onClick={handleCreateAccount}
                 loading={accountLoading}
-                className='flex-1'
-              >
+                className='flex-1'>
                 Create account
               </Button>
               <Button
                 variant='ghost'
                 onClick={handleSkipAccount}
-                disabled={accountLoading}
-              >
+                disabled={accountLoading}>
                 Skip
               </Button>
             </div>
@@ -306,8 +304,7 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
                 className='w-6 h-6 text-primary-600 dark:text-primary-400'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -334,8 +331,7 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
                 variant='outline'
                 onClick={handleResendConfirmation}
                 loading={resendLoading}
-                className='w-full'
-              >
+                className='w-full'>
                 Resend confirmation email
               </Button>
               <p className='text-xs text-neutral-500 dark:text-neutral-500'>

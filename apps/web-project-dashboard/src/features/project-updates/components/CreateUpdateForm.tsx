@@ -156,8 +156,7 @@ export const CreateUpdateForm: React.FC<CreateUpdateFormProps> = ({
             type='button'
             variant='secondary'
             onClick={onCancel}
-            disabled={isSubmitting}
-          >
+            disabled={isSubmitting}>
             Cancel
           </Button>
         )}

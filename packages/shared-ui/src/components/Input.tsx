@@ -42,7 +42,8 @@ const inputVariants = cva(
 );
 
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
     VariantProps<typeof inputVariants> {
   label?: string;
   error?: string;
@@ -78,8 +79,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-          >
+            className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
             {label}
           </label>
         )}
@@ -122,8 +122,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {error && (
           <p
             id={`${inputId}-error`}
-            className='text-sm text-error-600 dark:text-error-400'
-          >
+            className='text-sm text-error-600 dark:text-error-400'>
             {error}
           </p>
         )}
@@ -131,8 +130,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {helperText && !error && (
           <p
             id={`${inputId}-helper`}
-            className='text-sm text-neutral-500 dark:text-neutral-400'
-          >
+            className='text-sm text-neutral-500 dark:text-neutral-400'>
             {helperText}
           </p>
         )}

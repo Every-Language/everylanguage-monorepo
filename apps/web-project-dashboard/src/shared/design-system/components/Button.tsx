@@ -124,7 +124,8 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   children?: React.ReactNode;
   loading?: boolean;
@@ -215,8 +216,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           ref={ref}
           to={to || href}
           className={baseClassName}
-          {...props}
-        >
+          {...props}>
           {content}
         </Component>
       );
@@ -230,8 +230,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           target={target}
           rel={rel}
           className={baseClassName}
-          {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
-        >
+          {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}>
           {content}
         </a>
       );
@@ -242,8 +241,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={baseClassName}
         ref={ref}
         disabled={isDisabled}
-        {...props}
-      >
+        {...props}>
         {content}
       </button>
     );
@@ -300,8 +298,7 @@ export const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
           spacingClasses[spacing],
           className
         )}
-        {...props}
-      >
+        {...props}>
         {children}
       </div>
     );

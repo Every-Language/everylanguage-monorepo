@@ -249,8 +249,7 @@ export const MapShell: React.FC<MapShellProps> = ({
             padding={padding}
             minZoom={MIN_ZOOM}
             maxZoom={MAX_ZOOM}
-            dragRotate={false}
-          >
+            dragRotate={false}>
             <NavigationControl position='bottom-right' showCompass={false} />
             {children}
           </Map>

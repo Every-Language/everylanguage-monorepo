@@ -74,8 +74,9 @@ const selectItemVariants = cva([
 ]);
 
 // Main Select component
-export interface SelectProps
-  extends VariantProps<typeof selectTriggerVariants> {
+export interface SelectProps extends VariantProps<
+  typeof selectTriggerVariants
+> {
   value?: string;
   onValueChange?: (value: string) => void;
   placeholder?: string;
@@ -121,8 +122,7 @@ export const Select = React.forwardRef<
         {label && (
           <label
             htmlFor={selectId}
-            className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-          >
+            className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
             {label}
             {required && <span className='text-error-500 ml-1'>*</span>}
           </label>
@@ -132,8 +132,7 @@ export const Select = React.forwardRef<
           value={value}
           onValueChange={onValueChange}
           disabled={disabled}
-          {...props}
-        >
+          {...props}>
           <SelectPrimitive.Trigger
             ref={ref}
             id={selectId}
@@ -149,8 +148,7 @@ export const Select = React.forwardRef<
                 : helperText
                   ? `${selectId}-helper`
                   : undefined
-            }
-          >
+            }>
             <SelectPrimitive.Value placeholder={placeholder} />
             <SelectPrimitive.Icon>
               <svg
@@ -159,8 +157,7 @@ export const Select = React.forwardRef<
                 viewBox='0 0 15 15'
                 fill='none'
                 xmlns='http://www.w3.org/2000/svg'
-                className='h-4 w-4 opacity-50'
-              >
+                className='h-4 w-4 opacity-50'>
                 <path
                   d='M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z'
                   fill='currentColor'
@@ -178,8 +175,7 @@ export const Select = React.forwardRef<
               sideOffset={5}
               style={{
                 width: 'var(--radix-select-trigger-width)',
-              }}
-            >
+              }}>
               <SelectPrimitive.Viewport className='p-1 max-h-[280px] overflow-y-auto'>
                 {children}
               </SelectPrimitive.Viewport>
@@ -191,8 +187,7 @@ export const Select = React.forwardRef<
           <p
             id={`${selectId}-error`}
             className='text-sm text-error-600 dark:text-error-400'
-            role='alert'
-          >
+            role='alert'>
             {error}
           </p>
         )}
@@ -200,8 +195,7 @@ export const Select = React.forwardRef<
         {helperText && !error && (
           <p
             id={`${selectId}-helper`}
-            className='text-sm text-neutral-500 dark:text-neutral-400'
-          >
+            className='text-sm text-neutral-500 dark:text-neutral-400'>
             {helperText}
           </p>
         )}
@@ -213,8 +207,9 @@ export const Select = React.forwardRef<
 Select.displayName = 'Select';
 
 // Select Item component
-export interface SelectItemProps
-  extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> {
+export interface SelectItemProps extends React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Item
+> {
   children: React.ReactNode;
 }
 
@@ -225,8 +220,7 @@ export const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(selectItemVariants(), className)}
-    {...props}
-  >
+    {...props}>
     <span className='absolute left-2 flex h-3.5 w-3.5 items-center justify-center'>
       <SelectPrimitive.ItemIndicator>
         <svg
@@ -235,8 +229,7 @@ export const SelectItem = React.forwardRef<
           viewBox='0 0 15 15'
           fill='none'
           xmlns='http://www.w3.org/2000/svg'
-          className='h-4 w-4'
-        >
+          className='h-4 w-4'>
           <path
             d='M11.4669 3.72684C11.7558 3.91574 11.8369 4.30308 11.648 4.59198L7.39799 11.092C7.29783 11.2452 7.13556 11.3467 6.95402 11.3699C6.77247 11.3931 6.58989 11.3355 6.45446 11.2124L3.70446 8.71241C3.44905 8.48022 3.43023 8.08494 3.66242 7.82953C3.89461 7.57412 4.28989 7.55529 4.5453 7.78749L6.75292 9.79441L10.6018 3.90792C10.7907 3.61902 11.178 3.53795 11.4669 3.72684Z'
             fill='currentColor'
@@ -443,8 +436,7 @@ export const SearchableSelect = React.forwardRef<
         {label && (
           <label
             htmlFor={selectId}
-            className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-          >
+            className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
             {label}
             {required && <span className='text-error-500 ml-1'>*</span>}
           </label>
@@ -455,8 +447,7 @@ export const SearchableSelect = React.forwardRef<
           onValueChange={handleSelect}
           disabled={disabled}
           open={open}
-          onOpenChange={handleOpenChange}
-        >
+          onOpenChange={handleOpenChange}>
           <SelectPrimitive.Trigger
             ref={ref}
             id={selectId}
@@ -472,8 +463,7 @@ export const SearchableSelect = React.forwardRef<
                 : helperText
                   ? `${selectId}-helper`
                   : undefined
-            }
-          >
+            }>
             <SelectPrimitive.Value>
               {selectedOption?.label || placeholder}
             </SelectPrimitive.Value>
@@ -484,8 +474,7 @@ export const SearchableSelect = React.forwardRef<
                 viewBox='0 0 15 15'
                 fill='none'
                 xmlns='http://www.w3.org/2000/svg'
-                className='h-4 w-4 opacity-50'
-              >
+                className='h-4 w-4 opacity-50'>
                 <path
                   d='M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z'
                   fill='currentColor'
@@ -504,8 +493,7 @@ export const SearchableSelect = React.forwardRef<
               onCloseAutoFocus={e => {
                 // Prevent auto-focus behavior that might interfere
                 e.preventDefault();
-              }}
-            >
+              }}>
               <div className='p-2 border-b border-neutral-200 dark:border-neutral-700'>
                 <input
                   ref={searchInputRef}
@@ -540,8 +528,7 @@ export const SearchableSelect = React.forwardRef<
                           e.preventDefault();
                           searchInputRef.current?.focus();
                         }
-                      }}
-                    >
+                      }}>
                       <span className='absolute left-2 flex h-3.5 w-3.5 items-center justify-center'>
                         <SelectPrimitive.ItemIndicator>
                           <svg
@@ -550,8 +537,7 @@ export const SearchableSelect = React.forwardRef<
                             viewBox='0 0 15 15'
                             fill='none'
                             xmlns='http://www.w3.org/2000/svg'
-                            className='h-4 w-4'
-                          >
+                            className='h-4 w-4'>
                             <path
                               d='M11.4669 3.72684C11.7558 3.91574 11.8369 4.30308 11.648 4.59198L7.39799 11.092C7.29783 11.2452 7.13556 11.3467 6.95402 11.3699C6.77247 11.3931 6.58989 11.3355 6.45446 11.2124L3.70446 8.71241C3.44905 8.48022 3.43023 8.08494 3.66242 7.82953C3.89461 7.57412 4.28989 7.55529 4.5453 7.78749L6.75292 9.79441L10.6018 3.90792C10.7907 3.61902 11.178 3.53795 11.4669 3.72684Z'
                               fill='currentColor'
@@ -576,8 +562,7 @@ export const SearchableSelect = React.forwardRef<
           <p
             id={`${selectId}-error`}
             className='text-sm text-error-600 dark:text-error-400'
-            role='alert'
-          >
+            role='alert'>
             {error}
           </p>
         )}
@@ -585,8 +570,7 @@ export const SearchableSelect = React.forwardRef<
         {helperText && !error && (
           <p
             id={`${selectId}-helper`}
-            className='text-sm text-neutral-500 dark:text-neutral-400'
-          >
+            className='text-sm text-neutral-500 dark:text-neutral-400'>
             {helperText}
           </p>
         )}

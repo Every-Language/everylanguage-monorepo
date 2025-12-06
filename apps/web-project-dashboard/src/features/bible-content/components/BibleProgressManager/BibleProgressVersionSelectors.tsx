@@ -44,15 +44,13 @@ export const BibleProgressVersionSelectors: React.FC<
         <Button
           variant={selectedVersionType === 'audio' ? 'primary' : 'outline'}
           size='sm'
-          onClick={() => handleVersionTypeChange('audio')}
-        >
+          onClick={() => handleVersionTypeChange('audio')}>
           Audio
         </Button>
         <Button
           variant={selectedVersionType === 'text' ? 'primary' : 'outline'}
           size='sm'
-          onClick={() => handleVersionTypeChange('text')}
-        >
+          onClick={() => handleVersionTypeChange('text')}>
           Text
         </Button>
       </div>
@@ -63,8 +61,7 @@ export const BibleProgressVersionSelectors: React.FC<
           value={currentVersionId}
           onValueChange={handleVersionChange}
           placeholder={`Select ${selectedVersionType} version`}
-          disabled={availableVersions.length === 0}
-        >
+          disabled={availableVersions.length === 0}>
           {availableVersions.map(version => (
             <SelectItem key={version.id} value={version.id}>
               {version.name}

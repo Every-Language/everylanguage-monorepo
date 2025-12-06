@@ -83,27 +83,23 @@ export const FormModal: React.FC<FormModalProps> = ({
       size={size}
       closeOnOverlayClick={!isSubmitting}
       closeOnEscape={!isSubmitting}
-      contentClassName='flex flex-col'
-    >
+      contentClassName='flex flex-col'>
       <form
         onSubmit={handleSubmit}
-        className={`flex flex-col flex-1 ${formClassName}`}
-      >
+        className={`flex flex-col flex-1 ${formClassName}`}>
         {/* Form Content */}
         <div className='flex-1 space-y-4 mb-6'>{children}</div>
 
         {/* Footer with Action Buttons */}
         {(showSubmitButton || showCancelButton) && (
           <div
-            className={`flex justify-end space-x-3 pt-4 border-t border-neutral-200 dark:border-neutral-700 ${footerClassName}`}
-          >
+            className={`flex justify-end space-x-3 pt-4 border-t border-neutral-200 dark:border-neutral-700 ${footerClassName}`}>
             {showCancelButton && (
               <Button
                 type='button'
                 variant='outline'
                 onClick={handleCancel}
-                disabled={isSubmitting}
-              >
+                disabled={isSubmitting}>
                 {cancelText}
               </Button>
             )}
@@ -113,8 +109,7 @@ export const FormModal: React.FC<FormModalProps> = ({
                 type='submit'
                 variant={submitVariant}
                 disabled={submitDisabled || isSubmitting}
-                loading={isSubmitting}
-              >
+                loading={isSubmitting}>
                 {submitText}
               </Button>
             )}

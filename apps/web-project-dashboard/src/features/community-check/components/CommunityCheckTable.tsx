@@ -222,8 +222,7 @@ export function CommunityCheckTable({
               </label>
               <Select
                 value={selectedAudioVersion}
-                onValueChange={setSelectedAudioVersion}
-              >
+                onValueChange={setSelectedAudioVersion}>
                 <SelectItem value='all'>All Versions</SelectItem>
                 {audioVersions.map(version => (
                   <SelectItem key={version.id} value={version.id}>
@@ -243,8 +242,7 @@ export function CommunityCheckTable({
                 onValueChange={value => {
                   setSelectedBook(value);
                   setSelectedChapter('all'); // Reset chapter when book changes
-                }}
-              >
+                }}>
                 <SelectItem value='all'>All Books</SelectItem>
                 {books.map(book => (
                   <SelectItem key={book.id} value={book.id}>
@@ -262,8 +260,7 @@ export function CommunityCheckTable({
               <Select
                 value={selectedChapter}
                 onValueChange={setSelectedChapter}
-                disabled={selectedBook === 'all'}
-              >
+                disabled={selectedBook === 'all'}>
                 <SelectItem value='all'>All Chapters</SelectItem>
                 {chapters.map(chapter => (
                   <SelectItem key={chapter.id} value={chapter.id}>
@@ -280,8 +277,7 @@ export function CommunityCheckTable({
               </label>
               <Select
                 value={selectedCheckStatus}
-                onValueChange={setSelectedCheckStatus}
-              >
+                onValueChange={setSelectedCheckStatus}>
                 <SelectItem value='all'>All Statuses</SelectItem>
                 <SelectItem value='pending'>Pending</SelectItem>
                 <SelectItem value='approved'>Approved</SelectItem>
@@ -338,16 +334,14 @@ export function CommunityCheckTable({
                       size='sm'
                       onClick={handleBulkPublish}
                       disabled={updateCheckStatusMutation.isPending}
-                      className='flex items-center space-x-1'
-                    >
+                      className='flex items-center space-x-1'>
                       <PlayIcon className='h-4 w-4' />
                       <span>Bulk Approve</span>
                     </Button>
                     <Button
                       variant='outline'
                       size='sm'
-                      onClick={clearSelection}
-                    >
+                      onClick={clearSelection}>
                       Clear Selection
                     </Button>
                   </div>
@@ -405,8 +399,7 @@ export function CommunityCheckTable({
                           isSelected
                             ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-700'
                             : ''
-                        }`}
-                      >
+                        }`}>
                         <td className='p-3'>
                           <Checkbox
                             checked={selectedFiles.includes(file.id)}
@@ -434,8 +427,7 @@ export function CommunityCheckTable({
                         </td>
                         <td className='p-3'>
                           <div
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${checkStatusStyling.bg} ${checkStatusStyling.color}`}
-                          >
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${checkStatusStyling.bg} ${checkStatusStyling.color}`}>
                             <StatusIcon className='h-3 w-3 mr-1' />
                             {checkStatusStyling.label}
                           </div>
@@ -447,8 +439,7 @@ export function CommunityCheckTable({
                               size='sm'
                               onClick={() => onStartChecking(file)}
                               className='flex items-center space-x-1'
-                              title='Play audio'
-                            >
+                              title='Play audio'>
                               <PlayIcon className='h-4 w-4' />
                               <span>Play</span>
                             </Button>

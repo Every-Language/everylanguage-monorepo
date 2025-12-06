@@ -80,8 +80,7 @@ export function ForgotPasswordPage() {
                     className='h-5 w-5 text-error-600'
                     fill='none'
                     stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
+                    viewBox='0 0 24 24'>
                     <path
                       strokeLinecap='round'
                       strokeLinejoin='round'
@@ -108,8 +107,7 @@ export function ForgotPasswordPage() {
                     className='h-5 w-5 text-success-600'
                     fill='none'
                     stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
+                    viewBox='0 0 24 24'>
                     <path
                       strokeLinecap='round'
                       strokeLinejoin='round'
@@ -145,8 +143,7 @@ export function ForgotPasswordPage() {
                       className='h-5 w-5'
                       fill='none'
                       stroke='currentColor'
-                      viewBox='0 0 24 24'
-                    >
+                      viewBox='0 0 24 24'>
                       <path
                         strokeLinecap='round'
                         strokeLinejoin='round'
@@ -173,8 +170,7 @@ export function ForgotPasswordPage() {
                   className='w-full'
                   disabled={isLoading}
                   size='lg'
-                  loading={isLoading}
-                >
+                  loading={isLoading}>
                   {isLoading ? 'Sending...' : 'Send reset instructions'}
                 </Button>
               </div>
@@ -186,8 +182,7 @@ export function ForgotPasswordPage() {
               Remember your password?{' '}
               <Link
                 href='/login'
-                className='font-medium text-primary-600 hover:text-primary-500 transition-colors'
-              >
+                className='font-medium text-primary-600 hover:text-primary-500 transition-colors'>
                 Sign in
               </Link>
             </p>
@@ -195,8 +190,7 @@ export function ForgotPasswordPage() {
               Don't have an account?{' '}
               <Link
                 href='/register'
-                className='font-medium text-primary-600 hover:text-primary-500 transition-colors'
-              >
+                className='font-medium text-primary-600 hover:text-primary-500 transition-colors'>
                 Sign up
               </Link>
             </p>

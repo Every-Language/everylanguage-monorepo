@@ -158,10 +158,11 @@ Deno.serve(async (req: Request) => {
         }
 
         // Get charge ID if available
+        // Stripe deprecated charges property, use latest_charge instead
         const chargeId =
-          Array.isArray(pi.charges?.data) && pi.charges.data[0]?.id
-            ? pi.charges.data[0].id
-            : null;
+          typeof pi.latest_charge === 'string'
+            ? pi.latest_charge
+            : ((pi.latest_charge as any)?.id ?? null);
 
         // Create or update payment_attempt record
         // Note: payment_attempts has unique constraint on stripe_payment_intent_id,
@@ -178,11 +179,15 @@ Deno.serve(async (req: Request) => {
         };
 
         // Set succeeded_at or failed_at based on status
+        // Note: PaymentIntent status doesn't include 'failed', but we handle payment_failed event
         if (pi.status === 'succeeded') {
           paymentAttemptData.succeeded_at = new Date().toISOString();
           paymentAttemptData.amount_received_cents =
             pi.amount_received ?? pi.amount;
-        } else if (pi.status === 'failed') {
+        } else if (
+          event.type === 'payment_intent.payment_failed' ||
+          pi.last_payment_error
+        ) {
           paymentAttemptData.failed_at = new Date().toISOString();
           paymentAttemptData.failure_message =
             pi.last_payment_error?.message ?? null;
@@ -251,9 +256,11 @@ Deno.serve(async (req: Request) => {
           .eq('stripe_customer_id', customerId)
           .limit(1);
 
-        const donation = paymentAttempts?.[0]?.donations as
-          | { user_id: string | null; partner_org_id: string | null }
+        // donations is an array due to the join, so we need to access the first element
+        const donationsArray = paymentAttempts?.[0]?.donations as
+          | Array<{ user_id: string | null; partner_org_id: string | null }>
           | undefined;
+        const donation = donationsArray?.[0];
 
         const userId = donation?.user_id ?? null;
         const partnerOrgId = donation?.partner_org_id ?? null;
@@ -328,9 +335,11 @@ Deno.serve(async (req: Request) => {
             .eq('stripe_customer_id', customerId)
             .limit(1);
 
-          const donation = paymentAttempts?.[0]?.donations as
-            | { user_id: string | null; partner_org_id: string | null }
+          // donations is an array due to the join, so we need to access the first element
+          const donationsArray = paymentAttempts?.[0]?.donations as
+            | Array<{ user_id: string | null; partner_org_id: string | null }>
             | undefined;
+          const donation = donationsArray?.[0];
 
           const userId = donation?.user_id ?? null;
           const partnerOrgId = donation?.partner_org_id ?? null;
@@ -601,8 +610,9 @@ Deno.serve(async (req: Request) => {
         break;
       }
 
-      case 'customer.balance.funded': {
+      case 'customer.balance.funded' as Stripe.WebhookEndpointCreateParams.EnabledEvent: {
         // Bank transfer funds received
+        // Note: This event type may not be in Stripe types, using type assertion
         const balance = event.data.object as any;
         console.log('Customer balance funded:', {
           customer: balance.customer,

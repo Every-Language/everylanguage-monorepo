@@ -33,7 +33,7 @@ function generateSchema() {
 
     // Extract the generated schema (skip the import line and modify it)
     let schemaContent = output;
-    
+
     // Replace the web import with react-native import
     schemaContent = schemaContent.replace(
       "import { column, Schema, Table } from '@powersync/web';",
@@ -56,10 +56,12 @@ function generateSchema() {
     const normalizedSchema = normalizeSchema(schemaContent);
     fs.writeFileSync(SCHEMA_OUTPUT_FILE, normalizedSchema);
 
-    console.log(`✅ Synced schema generated successfully: ${SCHEMA_OUTPUT_FILE}`);
+    console.log(
+      `✅ Synced schema generated successfully: ${SCHEMA_OUTPUT_FILE}`
+    );
     console.log('');
-    console.log('📋 Generated schema includes the following tables:')
-    
+    console.log('📋 Generated schema includes the following tables:');
+
     // Extract table names from the schema for summary
     const tableMatches = normalizedSchema.match(/const (\w+) = new Table/g);
     if (tableMatches) {
@@ -71,8 +73,9 @@ function generateSchema() {
 
     console.log('');
     console.log('💡 You can now import this schema in your PowerSync setup:');
-    console.log(`   import { AppSchema } from './${SCHEMA_OUTPUT_FILE.replace('.ts', '')}';`);
-
+    console.log(
+      `   import { AppSchema } from './${SCHEMA_OUTPUT_FILE.replace('.ts', '')}';`
+    );
   } catch (error) {
     console.error('❌ Error generating PowerSync schema:');
     console.error(error.message);
@@ -85,4 +88,4 @@ if (require.main === module) {
   generateSchema();
 }
 
-module.exports = { generateSchema }; 
+module.exports = { generateSchema };

@@ -205,8 +205,7 @@ export const ProjectSelectionModal: React.FC<ProjectSelectionModalProps> = ({
     return (
       <Dialog
         open={isOpen}
-        onOpenChange={open => !open && setShowCreateForm(false)}
-      >
+        onOpenChange={open => !open && setShowCreateForm(false)}>
         <DialogContent size='5xl' className='max-h-[95vh] flex flex-col'>
           <DialogHeader>
             <DialogTitle>Create New Project</DialogTitle>
@@ -242,8 +241,7 @@ export const ProjectSelectionModal: React.FC<ProjectSelectionModalProps> = ({
           <Button
             onClick={handleCreateProject}
             className='w-full justify-center'
-            variant='outline'
-          >
+            variant='outline'>
             <Plus className='w-4 h-4 mr-2' />
             Create New Project
           </Button>
@@ -298,8 +296,7 @@ export const ProjectSelectionModal: React.FC<ProjectSelectionModalProps> = ({
                         ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 ring-2 ring-blue-500/20'
                         : 'hover:border-neutral-300 dark:hover:border-neutral-600'
                     }`}
-                    onClick={() => handleProjectClick(project)}
-                  >
+                    onClick={() => handleProjectClick(project)}>
                     <div className='p-4'>
                       <div className='flex items-start justify-between'>
                         <div className='flex-1 min-w-0'>
@@ -357,8 +354,7 @@ export const ProjectSelectionModal: React.FC<ProjectSelectionModalProps> = ({
           <Button
             onClick={handleConfirmSelection}
             disabled={!currentlySelected}
-            className='min-w-24'
-          >
+            className='min-w-24'>
             Select
           </Button>
         </div>
