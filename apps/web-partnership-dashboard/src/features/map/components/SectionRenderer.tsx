@@ -95,8 +95,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
       <CollapsibleSection
         title={getSectionTitle(type)}
         sectionId={type}
-        defaultExpanded={true}
-      >
+        defaultExpanded={true}>
         {content}
       </CollapsibleSection>
     );
@@ -109,8 +108,7 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
         <CollapsibleSection
           title={getSectionTitle(type)}
           sectionId={type}
-          defaultExpanded={true}
-        >
+          defaultExpanded={true}>
           <MapControlsSection
             value={layers}
             onChange={onLayersChange}

@@ -340,8 +340,7 @@ export function ViewDonationModal({
     const badge = badges[status] || badges.pending;
     return (
       <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}
-      >
+        className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>
         {badge.label}
       </span>
     );
@@ -387,8 +386,7 @@ export function ViewDonationModal({
       <div
         className={`fixed inset-0 z-50 overflow-y-auto transition-opacity duration-300 ${
           isEntering && !isExiting ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
+        }`}>
         <div className='flex min-h-full items-center justify-center p-4'>
           <div
             className={`relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl dark:shadow-dark-card border border-neutral-200 dark:border-neutral-800 w-full max-w-4xl transform transition-all duration-300 ${
@@ -396,8 +394,7 @@ export function ViewDonationModal({
                 ? 'scale-100 opacity-100'
                 : 'scale-95 opacity-0'
             }`}
-            onClick={e => e.stopPropagation()}
-          >
+            onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className='flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800'>
               <div>
@@ -407,8 +404,7 @@ export function ViewDonationModal({
               </div>
               <button
                 onClick={handleClose}
-                className='text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors'
-              >
+                className='text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors'>
                 <X className='h-6 w-6' />
               </button>
             </div>
@@ -569,8 +565,7 @@ export function ViewDonationModal({
                   {displayDonation.remaining_cents > 0 && (
                     <button
                       onClick={() => setShowAddAllocation(!showAddAllocation)}
-                      className='inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors'
-                    >
+                      className='inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors'>
                       <Plus className='h-4 w-4 mr-1' />
                       Add Allocation
                     </button>
@@ -600,8 +595,7 @@ export function ViewDonationModal({
                             allocationType === 'operation'
                               ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-                          }`}
-                        >
+                          }`}>
                           Operation
                         </button>
                         <button
@@ -618,8 +612,7 @@ export function ViewDonationModal({
                             allocationType === 'project'
                               ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-                          }`}
-                        >
+                          }`}>
                           Project
                         </button>
                       </div>
@@ -634,8 +627,7 @@ export function ViewDonationModal({
                             </label>
                             <div
                               className='relative'
-                              ref={operationDropdownRef}
-                            >
+                              ref={operationDropdownRef}>
                               <input
                                 type='text'
                                 value={operationSearchQuery}
@@ -666,8 +658,7 @@ export function ViewDonationModal({
                                             allocationOperationId === op.id
                                               ? 'bg-primary-100 dark:bg-primary-900/30'
                                               : ''
-                                          }`}
-                                        >
+                                          }`}>
                                           {op.name} ({op.category})
                                         </button>
                                       ))}
@@ -680,8 +671,7 @@ export function ViewDonationModal({
                                             onClick={() => {
                                               setOperationPage(p => p + 1);
                                             }}
-                                            className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'
-                                          >
+                                            className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'>
                                             Load more...
                                           </button>
                                         )}
@@ -743,8 +733,7 @@ export function ViewDonationModal({
                                             allocationProjectId === proj.id
                                               ? 'bg-primary-100 dark:bg-primary-900/30'
                                               : ''
-                                          }`}
-                                        >
+                                          }`}>
                                           {proj.name}
                                           {proj.target_language_name &&
                                             ` (${proj.target_language_name})`}
@@ -759,8 +748,7 @@ export function ViewDonationModal({
                                             onClick={() => {
                                               setProjectPage(p => p + 1);
                                             }}
-                                            className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'
-                                          >
+                                            className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'>
                                             Load more...
                                           </button>
                                         )}
@@ -846,16 +834,14 @@ export function ViewDonationModal({
                         <button
                           onClick={handleAddAllocation}
                           disabled={createAllocationMutation.isPending}
-                          className='px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50'
-                        >
+                          className='px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50'>
                           {createAllocationMutation.isPending
                             ? 'Creating...'
                             : 'Create Allocation'}
                         </button>
                         <button
                           onClick={() => setShowAddAllocation(false)}
-                          className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors'
-                        >
+                          className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors'>
                           Cancel
                         </button>
                       </div>
@@ -932,8 +918,7 @@ export function ViewDonationModal({
             <div className='flex items-center justify-end gap-3 p-6 border-t border-neutral-200 dark:border-neutral-800'>
               <button
                 onClick={handleClose}
-                className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors'
-              >
+                className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors'>
                 Close
               </button>
             </div>

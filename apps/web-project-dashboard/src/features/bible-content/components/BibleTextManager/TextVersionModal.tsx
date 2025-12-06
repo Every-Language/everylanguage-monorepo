@@ -98,8 +98,7 @@ export const TextVersionModal: React.FC<TextVersionModalProps> = ({
                 textVersionForm.updateField('selectedBibleVersion', value)
               }
               placeholder='Select a Bible version...'
-              disabled={createTextVersionMutation?.isPending}
-            >
+              disabled={createTextVersionMutation?.isPending}>
               {bibleVersions?.map(version => (
                 <SelectItem key={version.id} value={version.id}>
                   {version.name}
@@ -118,16 +117,14 @@ export const TextVersionModal: React.FC<TextVersionModalProps> = ({
           <Button
             variant='outline'
             onClick={handleCancel}
-            disabled={createTextVersionMutation?.isPending}
-          >
+            disabled={createTextVersionMutation?.isPending}>
             Cancel
           </Button>
           <Button
             onClick={handleCreateTextVersion}
             disabled={
               !textVersionForm.isValid || createTextVersionMutation?.isPending
-            }
-          >
+            }>
             {createTextVersionMutation?.isPending ? (
               <>
                 <LoadingSpinner size='sm' className='mr-2' />

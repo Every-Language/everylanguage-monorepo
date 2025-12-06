@@ -34,8 +34,7 @@ export function Stepper({
     <nav aria-label='Progress' className={cn('w-full', className)}>
       <ol
         role='list'
-        className='flex items-center justify-between space-x-2 md:space-x-8'
-      >
+        className='flex items-center justify-between space-x-2 md:space-x-8'>
         {steps.map((step, index) => {
           const isCurrent = step.id === currentStep;
           const isPast = step.id < currentStep;
@@ -81,16 +80,14 @@ export function Stepper({
                     }
                   }}
                   aria-label={`Step ${step.id}: ${step.title}${isCurrent ? ' (current)' : ''}${isPast ? ' (completed)' : ''}`}
-                  aria-current={isCurrent ? 'step' : undefined}
-                >
+                  aria-current={isCurrent ? 'step' : undefined}>
                   {isPast && step.isCompleted ? (
                     // Checkmark for completed steps
                     <svg
                       className='w-5 h-5'
                       fill='currentColor'
                       viewBox='0 0 20 20'
-                      aria-hidden='true'
-                    >
+                      aria-hidden='true'>
                       <path
                         fillRule='evenodd'
                         d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
@@ -119,8 +116,7 @@ export function Stepper({
                       isPast && 'text-green-600',
                       isFuture && isAccessible && 'text-gray-500',
                       isFuture && !isAccessible && 'text-gray-300'
-                    )}
-                  >
+                    )}>
                     {step.title}
                   </div>
 
@@ -132,8 +128,7 @@ export function Stepper({
                       isPast && 'text-green-500',
                       isFuture && isAccessible && 'text-gray-400',
                       isFuture && !isAccessible && 'text-gray-300'
-                    )}
-                  >
+                    )}>
                     {step.description}
                   </div>
                 </div>

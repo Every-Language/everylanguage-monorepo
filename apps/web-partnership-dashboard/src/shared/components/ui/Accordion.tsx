@@ -109,20 +109,23 @@ interface AccordionProps {
 type AccordionPropsWithType = AccordionProps &
   (AccordionSingleProps | AccordionMultipleProps);
 
-interface AccordionItemProps
-  extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item> {
+interface AccordionItemProps extends React.ComponentPropsWithoutRef<
+  typeof AccordionPrimitive.Item
+> {
   variant?: 'default' | 'ghost' | 'separated' | 'flat';
 }
 
-interface AccordionTriggerProps
-  extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> {
+interface AccordionTriggerProps extends React.ComponentPropsWithoutRef<
+  typeof AccordionPrimitive.Trigger
+> {
   variant?: 'default' | 'ghost' | 'separated' | 'flat';
   size?: 'sm' | 'md' | 'lg';
   hideIcon?: boolean;
 }
 
-interface AccordionContentProps
-  extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content> {
+interface AccordionContentProps extends React.ComponentPropsWithoutRef<
+  typeof AccordionPrimitive.Content
+> {
   variant?: 'default' | 'ghost' | 'separated' | 'flat';
   size?: 'sm' | 'md' | 'lg';
 }
@@ -175,8 +178,7 @@ const AccordionTrigger = React.forwardRef<
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(accordionTriggerVariants({ variant, size, className }))}
-      {...props}
-    >
+      {...props}>
       {children}
       {!hideIcon && (
         <ChevronDown className='h-4 w-4 shrink-0 transition-transform duration-200' />
@@ -193,8 +195,7 @@ const AccordionContent = React.forwardRef<
   <AccordionPrimitive.Content
     ref={ref}
     className={cn(accordionContentVariants({ variant, size, className }))}
-    {...props}
-  >
+    {...props}>
     <div className='pb-4 pt-0'>{children}</div>
   </AccordionPrimitive.Content>
 ));

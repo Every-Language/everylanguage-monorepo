@@ -298,8 +298,7 @@ export function ViewAudioVersionModal({
             : isEntering
               ? 'translate-x-full'
               : 'translate-x-0'
-        }`}
-      >
+        }`}>
         {/* Header */}
         <div className='px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between'>
           <div>
@@ -312,8 +311,7 @@ export function ViewAudioVersionModal({
           </div>
           <button
             onClick={handleClose}
-            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-          >
+            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'>
             <X className='h-5 w-5 text-neutral-600 dark:text-neutral-400' />
           </button>
         </div>
@@ -329,8 +327,7 @@ export function ViewAudioVersionModal({
               {!editingName && (
                 <button
                   onClick={() => setEditingName(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -348,8 +345,7 @@ export function ViewAudioVersionModal({
                   <button
                     onClick={handleSave}
                     disabled={updateNameMutation.isPending}
-                    className='px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                  >
+                    className='px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                     <Save className='h-4 w-4' />
                     {updateNameMutation.isPending ? 'Saving...' : 'Save'}
                   </button>
@@ -358,8 +354,7 @@ export function ViewAudioVersionModal({
                       setEditingName(false);
                       setName(audioVersion.name);
                     }}
-                    className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                  >
+                    className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                     Cancel
                   </button>
                 </div>
@@ -387,8 +382,7 @@ export function ViewAudioVersionModal({
                 onValueChange={value => {
                   setCheckStatusFilter(value);
                   setPage(1);
-                }}
-              >
+                }}>
                 <SelectItem value='all'>All statuses</SelectItem>
                 <SelectItem value='pending'>Pending</SelectItem>
                 <SelectItem value='approved'>Approved</SelectItem>
@@ -401,8 +395,7 @@ export function ViewAudioVersionModal({
                 onValueChange={value => {
                   setPublishStatusFilter(value);
                   setPage(1);
-                }}
-              >
+                }}>
                 <SelectItem value='all'>All statuses</SelectItem>
                 <SelectItem value='draft'>Draft</SelectItem>
                 <SelectItem value='pending'>Pending</SelectItem>
@@ -439,8 +432,7 @@ export function ViewAudioVersionModal({
                               }
                               setBookSearch('');
                             }}
-                            className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                          >
+                            className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
                             {book.name}
                           </button>
                         ))
@@ -453,8 +445,7 @@ export function ViewAudioVersionModal({
                     {selectedBooks.map(book => (
                       <span
                         key={book.id}
-                        className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
-                      >
+                        className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200'>
                         {book.name}
                         <button
                           type='button'
@@ -464,8 +455,7 @@ export function ViewAudioVersionModal({
                             );
                             setPage(1);
                           }}
-                          className='text-xs hover:underline'
-                        >
+                          className='text-xs hover:underline'>
                           Remove
                         </button>
                       </span>
@@ -489,66 +479,56 @@ export function ViewAudioVersionModal({
                   <div className='overflow-x-auto'>
                     <table
                       className='w-full divide-y divide-neutral-200 dark:divide-neutral-800'
-                      style={{ tableLayout: 'fixed' }}
-                    >
+                      style={{ tableLayout: 'fixed' }}>
                       <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
                         <tr>
                           <th
                             className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                            style={{ width: '25%' }}
-                          >
+                            style={{ width: '25%' }}>
                             <button
                               type='button'
                               onClick={() => handleSort('chapter_id')}
-                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                            >
+                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                               Chapter
                               <span>{getSortIndicator('chapter_id')}</span>
                             </button>
                           </th>
                           <th
                             className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                            style={{ width: '15%' }}
-                          >
+                            style={{ width: '15%' }}>
                             <button
                               type='button'
                               onClick={() => handleSort('version')}
-                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                            >
+                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                               Version
                               <span>{getSortIndicator('version')}</span>
                             </button>
                           </th>
                           <th
                             className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                            style={{ width: '20%' }}
-                          >
+                            style={{ width: '20%' }}>
                             <button
                               type='button'
                               onClick={() => handleSort('check_status')}
-                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                            >
+                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                               Check Status
                               <span>{getSortIndicator('check_status')}</span>
                             </button>
                           </th>
                           <th
                             className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                            style={{ width: '20%' }}
-                          >
+                            style={{ width: '20%' }}>
                             <button
                               type='button'
                               onClick={() => handleSort('publish_status')}
-                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                            >
+                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                               Publish Status
                               <span>{getSortIndicator('publish_status')}</span>
                             </button>
                           </th>
                           <th
                             className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                            style={{ width: '20%' }}
-                          >
+                            style={{ width: '20%' }}>
                             Actions
                           </th>
                         </tr>
@@ -558,8 +538,7 @@ export function ViewAudioVersionModal({
                           mediaFiles.map(mediaFile => (
                             <tr
                               key={mediaFile.id}
-                              className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors'
-                            >
+                              className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors'>
                               <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
                                 {getChapterDisplayName(mediaFile)}
                               </td>
@@ -570,8 +549,7 @@ export function ViewAudioVersionModal({
                                 <span
                                   className={`inline-block px-2 py-1 rounded text-xs font-medium ${getCheckStatusBadgeColor(
                                     mediaFile.check_status
-                                  )}`}
-                                >
+                                  )}`}>
                                   {mediaFile.check_status || '—'}
                                 </span>
                               </td>
@@ -579,8 +557,7 @@ export function ViewAudioVersionModal({
                                 <span
                                   className={`inline-block px-2 py-1 rounded text-xs font-medium ${getPublishStatusBadgeColor(
                                     mediaFile.publish_status
-                                  )}`}
-                                >
+                                  )}`}>
                                   {mediaFile.publish_status}
                                 </span>
                               </td>
@@ -593,8 +570,7 @@ export function ViewAudioVersionModal({
                                     )
                                   }
                                   disabled={downloadingIds.has(mediaFile.id)}
-                                  className='inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                                >
+                                  className='inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
                                   <Download className='h-3 w-3' />
                                   {downloadingIds.has(mediaFile.id)
                                     ? 'Downloading...'
@@ -607,8 +583,7 @@ export function ViewAudioVersionModal({
                           <tr>
                             <td
                               colSpan={5}
-                              className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                            >
+                              className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                               No media files found
                             </td>
                           </tr>
@@ -628,8 +603,7 @@ export function ViewAudioVersionModal({
                         <button
                           onClick={() => setPage(p => Math.max(1, p - 1))}
                           disabled={page === 1}
-                          className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                        >
+                          className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                           <ChevronLeft className='h-4 w-4' />
                         </button>
                         <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
@@ -644,8 +618,7 @@ export function ViewAudioVersionModal({
                             setPage(p => Math.min(totalPages, p + 1))
                           }
                           disabled={page === totalPages}
-                          className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                        >
+                          className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                           <ChevronRight className='h-4 w-4' />
                         </button>
                       </div>

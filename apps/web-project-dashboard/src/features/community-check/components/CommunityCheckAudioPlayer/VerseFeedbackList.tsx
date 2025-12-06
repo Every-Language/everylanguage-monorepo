@@ -104,8 +104,7 @@ export function VerseFeedbackList({
       {verseTimestamps.map(verse => (
         <div
           key={verse.id}
-          ref={currentVerse?.id === verse.id ? currentVerseRef : null}
-        >
+          ref={currentVerse?.id === verse.id ? currentVerseRef : null}>
           <VerseWithFeedback
             verse={verse}
             mediaFileId={file.id}

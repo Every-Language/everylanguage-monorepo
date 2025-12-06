@@ -277,8 +277,7 @@ export const InlineAudioPlayer: React.FC<InlineAudioPlayerProps> = ({
               onClick={togglePlay}
               disabled={isLoading}
               className='flex-shrink-0 p-2 rounded-full bg-accent-600 hover:bg-accent-700 disabled:bg-neutral-400 text-white transition-colors'
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-            >
+              aria-label={isPlaying ? 'Pause' : 'Play'}>
               {isLoading ? (
                 <div className='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin' />
               ) : isPlaying ? (
@@ -318,8 +317,7 @@ export const InlineAudioPlayer: React.FC<InlineAudioPlayerProps> = ({
               <button
                 onClick={toggleMute}
                 className='p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-                aria-label={isMuted ? 'Unmute' : 'Mute'}
-              >
+                aria-label={isMuted ? 'Unmute' : 'Mute'}>
                 {isMuted ? (
                   <SpeakerXMarkIcon className='w-4 h-4 text-neutral-600 dark:text-neutral-400' />
                 ) : (

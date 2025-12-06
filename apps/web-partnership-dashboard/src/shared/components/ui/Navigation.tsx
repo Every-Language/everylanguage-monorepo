@@ -125,8 +125,7 @@ const Navigation = React.forwardRef<HTMLElement, NavigationProps>(
         navigationVariants({ variant, size, orientation, className })
       )}
       aria-label={ariaLabel}
-      role='navigation'
-    >
+      role='navigation'>
       {children}
     </nav>
   )
@@ -141,8 +140,7 @@ const NavigationItem = React.forwardRef<HTMLButtonElement, NavigationItemProps>(
       data-active={active}
       disabled={disabled}
       onClick={onClick}
-      type='button'
-    >
+      type='button'>
       {children}
     </button>
   )
@@ -162,8 +160,7 @@ const NavigationLink = React.forwardRef<HTMLAnchorElement, NavigationLinkProps>(
       aria-disabled={disabled}
       target={target}
       rel={rel}
-      tabIndex={disabled ? -1 : 0}
-    >
+      tabIndex={disabled ? -1 : 0}>
       {children}
     </a>
   )

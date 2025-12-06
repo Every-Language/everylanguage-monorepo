@@ -71,8 +71,7 @@ const ProgramGroup: React.FC<{
     <div className='border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden'>
       <button
         onClick={() => setExpandedType(!expandedType)}
-        className='w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors'
-      >
+        className='w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors'>
         <span className='font-medium text-sm'>
           {getProgramTypeName(programType)} ({safePrograms.length})
         </span>
@@ -114,8 +113,7 @@ const ProgramItem: React.FC<{
     <div className='border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden'>
       <button
         onClick={onToggle}
-        className='w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left'
-      >
+        className='w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left'>
         <div className='flex-1 min-w-0'>
           <div className='font-medium text-sm text-neutral-700 dark:text-neutral-300'>
             {program.vernacular_title || program.title}
@@ -320,8 +318,7 @@ export const GRNGospelResourcesSection: React.FC<
           href='https://globalrecordings.net'
           target='_blank'
           rel='noopener noreferrer'
-          className='underline hover:text-neutral-600'
-        >
+          className='underline hover:text-neutral-600'>
           Global Recordings Network
         </a>{' '}
         •{' '}
@@ -329,8 +326,7 @@ export const GRNGospelResourcesSection: React.FC<
           href={`https://globalrecordings.net/en/language/${languageFeed.id}`}
           target='_blank'
           rel='noopener noreferrer'
-          className='underline hover:text-neutral-600'
-        >
+          className='underline hover:text-neutral-600'>
           Download all resources
         </a>
       </div>

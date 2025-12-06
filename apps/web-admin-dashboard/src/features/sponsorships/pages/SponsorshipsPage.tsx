@@ -59,8 +59,7 @@ export function SponsorshipsPage() {
         <Select
           value={statusFilter}
           onValueChange={value => setStatusFilter(value)}
-          placeholder='All Status'
-        >
+          placeholder='All Status'>
           <SelectItem value=''>All Status</SelectItem>
           <SelectItem value='interest'>Interest</SelectItem>
           <SelectItem value='pledged'>Pledged</SelectItem>
@@ -110,8 +109,7 @@ export function SponsorshipsPage() {
                   filteredSponsorships.map(sponsorship => (
                     <tr
                       key={sponsorship.id}
-                      className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors'
-                    >
+                      className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors'>
                       <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
                         {sponsorship.partner_org?.name || 'Unknown'}
                       </td>
@@ -125,8 +123,7 @@ export function SponsorshipsPage() {
                                 : sponsorship.status === 'cancelled'
                                   ? 'bg-error-100 dark:bg-error-900/30 text-error-800 dark:text-error-300'
                                   : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300'
-                          }`}
-                        >
+                          }`}>
                           {sponsorship.status}
                         </span>
                       </td>
@@ -155,8 +152,7 @@ export function SponsorshipsPage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                    >
+                      className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                       {searchTerm || statusFilter
                         ? 'No sponsorships found matching your filters'
                         : 'No sponsorships found'}

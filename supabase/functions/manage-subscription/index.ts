@@ -142,9 +142,11 @@ Deno.serve(async (req: Request) => {
         .limit(1)
         .single();
 
-      const donation = paymentAttempt?.donations as
-        | { user_id: string | null; partner_org_id: string | null }
+      // donations is an array due to the join, so we need to access the first element
+      const donationsArray = paymentAttempt?.donations as
+        | Array<{ user_id: string | null; partner_org_id: string | null }>
         | undefined;
+      const donation = donationsArray?.[0];
 
       const isOwner =
         subscription ||

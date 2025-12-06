@@ -199,8 +199,7 @@ export const BibleTextEditModal: React.FC<BibleTextEditModalProps> = ({
               value={editForm.data.publishStatus}
               onValueChange={value =>
                 handleEditFormChange('publishStatus', value)
-              }
-            >
+              }>
               <SelectItem value='pending'>Pending</SelectItem>
               <SelectItem value='published'>Published</SelectItem>
               <SelectItem value='archived'>Archived</SelectItem>
@@ -214,8 +213,7 @@ export const BibleTextEditModal: React.FC<BibleTextEditModalProps> = ({
           </Button>
           <Button
             onClick={handleSaveEdit}
-            disabled={editVerseTextMutation.isPending}
-          >
+            disabled={editVerseTextMutation.isPending}>
             {editVerseTextMutation.isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogFooter>

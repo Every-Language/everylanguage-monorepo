@@ -36,8 +36,7 @@ function RegionRow({
   return (
     <tr
       className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
-      onClick={() => onRegionClick(region)}
-    >
+      onClick={() => onRegionClick(region)}>
       <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
         {region.name}
       </td>
@@ -230,8 +229,7 @@ export function RegionsPage() {
           onValueChange={value => {
             setLevelFilter(value);
             setPage(1);
-          }}
-        >
+          }}>
           <SelectItem value='all'>All Levels</SelectItem>
           <SelectItem value='continent'>Continent</SelectItem>
           <SelectItem value='world_region'>World Region</SelectItem>
@@ -286,8 +284,7 @@ export function RegionsPage() {
                     }
                     setLanguageSearchQuery('');
                   }}
-                  className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 italic border-b border-neutral-200 dark:border-neutral-800'
-                >
+                  className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 italic border-b border-neutral-200 dark:border-neutral-800'>
                   No Languages
                 </button>
                 {searchedLanguages &&
@@ -304,8 +301,7 @@ export function RegionsPage() {
                         }
                         setLanguageSearchQuery('');
                       }}
-                      className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100'
-                    >
+                      className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100'>
                       {language.name}{' '}
                       <span className='text-neutral-500 dark:text-neutral-400'>
                         ({language.level})
@@ -322,8 +318,7 @@ export function RegionsPage() {
               {languageFilters.map(language => (
                 <span
                   key={language.id}
-                  className='inline-flex items-center gap-1 px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-300 rounded-full text-sm'
-                >
+                  className='inline-flex items-center gap-1 px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-300 rounded-full text-sm'>
                   {language.name}
                   <button
                     onClick={() => {
@@ -332,8 +327,7 @@ export function RegionsPage() {
                       );
                       setPage(1);
                     }}
-                    className='hover:text-secondary-900 dark:hover:text-secondary-100'
-                  >
+                    className='hover:text-secondary-900 dark:hover:text-secondary-100'>
                     ×
                   </button>
                 </span>
@@ -385,8 +379,7 @@ export function RegionsPage() {
                     <tr>
                       <td
                         colSpan={4}
-                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                      >
+                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                         {searchTerm
                           ? 'No regions found matching your search'
                           : 'No regions found'}
@@ -409,8 +402,7 @@ export function RegionsPage() {
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className='px-3 py-1 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronLeft className='h-4 w-4 text-neutral-600 dark:text-neutral-400' />
                   </button>
                   <span className='text-sm text-neutral-600 dark:text-neutral-400'>
@@ -419,8 +411,7 @@ export function RegionsPage() {
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className='px-3 py-1 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronRight className='h-4 w-4 text-neutral-600 dark:text-neutral-400' />
                   </button>
                 </div>

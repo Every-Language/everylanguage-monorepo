@@ -175,8 +175,7 @@ export const JPCountryStatsSection: React.FC<JPCountryStatsSectionProps> = ({
             <svg
               viewBox='0 0 100 100'
               className='w-32 h-32'
-              style={{ transform: 'rotate(-90deg)' }}
-            >
+              style={{ transform: 'rotate(-90deg)' }}>
               {pieChartData.map((segment, index) => (
                 <path
                   key={index}
@@ -217,8 +216,7 @@ export const JPCountryStatsSection: React.FC<JPCountryStatsSectionProps> = ({
           href='https://joshuaproject.net'
           target='_blank'
           rel='noopener noreferrer'
-          className='underline hover:text-neutral-600'
-        >
+          className='underline hover:text-neutral-600'>
           Joshua Project
         </a>
       </div>

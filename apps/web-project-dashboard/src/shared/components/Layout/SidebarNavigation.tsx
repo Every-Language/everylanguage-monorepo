@@ -21,8 +21,7 @@ const navigationItems: NavigationItem[] = [
         className='h-5 w-5'
         fill='none'
         stroke='currentColor'
-        viewBox='0 0 24 24'
-      >
+        viewBox='0 0 24 24'>
         <path
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -48,8 +47,7 @@ const navigationItems: NavigationItem[] = [
         className='h-5 w-5'
         fill='none'
         stroke='currentColor'
-        viewBox='0 0 24 24'
-      >
+        viewBox='0 0 24 24'>
         <path
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -70,8 +68,7 @@ const navigationItems: NavigationItem[] = [
         className='h-5 w-5'
         fill='none'
         stroke='currentColor'
-        viewBox='0 0 24 24'
-      >
+        viewBox='0 0 24 24'>
         <path
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -92,8 +89,7 @@ const navigationItems: NavigationItem[] = [
         className='h-5 w-5'
         fill='none'
         stroke='currentColor'
-        viewBox='0 0 24 24'
-      >
+        viewBox='0 0 24 24'>
         <path
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -114,8 +110,7 @@ const navigationItems: NavigationItem[] = [
         className='h-5 w-5'
         fill='none'
         stroke='currentColor'
-        viewBox='0 0 24 24'
-      >
+        viewBox='0 0 24 24'>
         <path
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -136,8 +131,7 @@ const navigationItems: NavigationItem[] = [
         className='h-5 w-5'
         fill='none'
         stroke='currentColor'
-        viewBox='0 0 24 24'
-      >
+        viewBox='0 0 24 24'>
         <path
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -157,8 +151,7 @@ const navigationItems: NavigationItem[] = [
         className='h-5 w-5'
         fill='none'
         stroke='currentColor'
-        viewBox='0 0 24 24'
-      >
+        viewBox='0 0 24 24'>
         <path
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -179,8 +172,7 @@ const navigationItems: NavigationItem[] = [
         className='h-5 w-5'
         fill='none'
         stroke='currentColor'
-        viewBox='0 0 24 24'
-      >
+        viewBox='0 0 24 24'>
         <path
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -209,8 +201,7 @@ export const SidebarNavigation: React.FC = () => {
           key={item.id}
           icon={item.icon}
           active={location.pathname === item.path}
-          onClick={() => handleNavigate(item.path)}
-        >
+          onClick={() => handleNavigate(item.path)}>
           {item.label}
         </SidebarNavItem>
       ))}

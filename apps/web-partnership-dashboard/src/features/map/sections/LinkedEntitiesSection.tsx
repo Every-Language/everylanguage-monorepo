@@ -255,8 +255,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
           style={{
             height: rowVirtualizer.getTotalSize(),
             position: 'relative',
-          }}
-        >
+          }}>
           {rowVirtualizer.getVirtualItems().map(v => {
             const item = filtered[v.index];
             const isLast = v.index === filtered.length - 1;
@@ -267,8 +266,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
                 style={{
                   transform: `translateY(${v.start - scrollMargin}px)`,
                   paddingBottom: isLast ? 0 : `${gapSize}px`,
-                }}
-              >
+                }}>
                 {type === 'languages' ? (
                   <LanguageCard
                     languageEntityId={item.id}

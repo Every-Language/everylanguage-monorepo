@@ -181,7 +181,7 @@ Deno.serve(async (req: Request) => {
         ? Object.keys(linkData.properties)
         : [],
       hasActionLink: !!linkData?.properties?.action_link,
-      hasDirectActionLink: !!linkData?.action_link,
+      hasDirectActionLink: !!(linkData as any)?.action_link,
     });
 
     if (linkError) {
@@ -200,11 +200,13 @@ Deno.serve(async (req: Request) => {
 
     // Check multiple possible response structures for the action link
     // Recovery links may have different structure than invite links
+    const linkDataAny = linkData as any;
+    const propertiesAny = linkData?.properties as any;
     const actionLink =
       linkData?.properties?.action_link ||
-      linkData?.action_link ||
-      (linkData?.properties && typeof linkData.properties === 'string'
-        ? linkData.properties
+      linkDataAny?.action_link ||
+      (propertiesAny && typeof propertiesAny === 'string'
+        ? propertiesAny
         : null);
 
     if (!actionLink) {

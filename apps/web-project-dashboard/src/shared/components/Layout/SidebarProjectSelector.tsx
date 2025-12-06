@@ -60,8 +60,7 @@ export const SidebarProjectSelector: React.FC = () => {
         <Button
           variant='ghost'
           onClick={() => setIsModalOpen(true)}
-          className='w-full justify-start h-auto p-3 text-left border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
-        >
+          className='w-full justify-start h-auto p-3 text-left border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'>
           {selectedProject ? (
             <div className='min-w-0 flex-1'>
               <div className='font-medium text-neutral-900 dark:text-neutral-100 text-sm mb-1'>

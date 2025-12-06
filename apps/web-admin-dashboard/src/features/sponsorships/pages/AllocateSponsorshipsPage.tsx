@@ -108,15 +108,13 @@ export function AllocateSponsorshipsPage() {
         <div
           className={`flex items-center ${
             step === 'language' ? 'text-primary-600' : 'text-neutral-400'
-          }`}
-        >
+          }`}>
           <div
             className={`rounded-full h-8 w-8 flex items-center justify-center ${
               step === 'language'
                 ? 'bg-primary-600 text-white'
                 : 'bg-neutral-200'
-            }`}
-          >
+            }`}>
             1
           </div>
           <span className='ml-2 font-medium'>Select Language</span>
@@ -125,15 +123,13 @@ export function AllocateSponsorshipsPage() {
         <div
           className={`flex items-center ${
             step === 'sponsorship' ? 'text-primary-600' : 'text-neutral-400'
-          }`}
-        >
+          }`}>
           <div
             className={`rounded-full h-8 w-8 flex items-center justify-center ${
               step === 'sponsorship'
                 ? 'bg-primary-600 text-white'
                 : 'bg-neutral-200'
-            }`}
-          >
+            }`}>
             2
           </div>
           <span className='ml-2 font-medium'>Select Sponsorship</span>
@@ -142,15 +138,13 @@ export function AllocateSponsorshipsPage() {
         <div
           className={`flex items-center ${
             step === 'project' ? 'text-primary-600' : 'text-neutral-400'
-          }`}
-        >
+          }`}>
           <div
             className={`rounded-full h-8 w-8 flex items-center justify-center ${
               step === 'project'
                 ? 'bg-primary-600 text-white'
                 : 'bg-neutral-200'
-            }`}
-          >
+            }`}>
             3
           </div>
           <span className='ml-2 font-medium'>Allocate to Project</span>
@@ -181,8 +175,7 @@ export function AllocateSponsorshipsPage() {
                 <button
                   key={language.id}
                   onClick={() => handleLanguageSelect(language.id)}
-                  className='w-full text-left p-4 border border-neutral-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors'
-                >
+                  className='w-full text-left p-4 border border-neutral-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors'>
                   <div className='font-medium text-neutral-900'>
                     {language.name}
                   </div>
@@ -203,8 +196,7 @@ export function AllocateSponsorshipsPage() {
               </h2>
               <button
                 onClick={() => setStep('language')}
-                className='text-sm text-primary-600 hover:text-primary-700'
-              >
+                className='text-sm text-primary-600 hover:text-primary-700'>
                 Back to Languages
               </button>
             </div>
@@ -214,8 +206,7 @@ export function AllocateSponsorshipsPage() {
                   <button
                     key={sponsorship.id}
                     onClick={() => handleSponsorshipSelect(sponsorship.id)}
-                    className='w-full text-left p-4 border border-neutral-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors'
-                  >
+                    className='w-full text-left p-4 border border-neutral-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors'>
                     <div className='flex items-center justify-between'>
                       <div>
                         <div className='font-medium text-neutral-900'>
@@ -253,8 +244,7 @@ export function AllocateSponsorshipsPage() {
               </h2>
               <button
                 onClick={() => setStep('sponsorship')}
-                className='text-sm text-primary-600 hover:text-primary-700'
-              >
+                className='text-sm text-primary-600 hover:text-primary-700'>
                 Back to Sponsorships
               </button>
             </div>
@@ -266,8 +256,7 @@ export function AllocateSponsorshipsPage() {
                     label='Select Project'
                     value={selectedProjectId || ''}
                     onValueChange={value => setSelectedProjectId(value)}
-                    placeholder='Choose a project...'
-                  >
+                    placeholder='Choose a project...'>
                     <SelectItem value=''>Choose a project...</SelectItem>
                     {projects.map(project => (
                       <SelectItem key={project.id} value={project.id}>
@@ -307,8 +296,7 @@ export function AllocateSponsorshipsPage() {
                 <button
                   onClick={handleAllocate}
                   disabled={!selectedProjectId || allocateMutation.isPending}
-                  className='w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center'
-                >
+                  className='w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center'>
                   <DollarSign className='h-5 w-5 mr-2' />
                   {allocateMutation.isPending
                     ? 'Creating Allocation...'

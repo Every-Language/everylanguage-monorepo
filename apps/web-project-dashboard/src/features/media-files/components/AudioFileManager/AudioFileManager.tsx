@@ -39,12 +39,10 @@ export const AudioFileManager: React.FC<AudioFileManagerProps> = ({
       }
       versions={audioFileState.audioVersions}
       versionsLoading={audioFileState.isLoading}
-      allowAllVersions={false}
-    >
+      allowAllVersions={false}>
       <Button
         variant='outline'
-        onClick={() => audioFileState.openModal('audioVersion')}
-      >
+        onClick={() => audioFileState.openModal('audioVersion')}>
         <PlusIcon className='h-4 w-4 mr-2' />
         New Audio Version
       </Button>
@@ -59,8 +57,7 @@ export const AudioFileManager: React.FC<AudioFileManagerProps> = ({
       </Button>
       <Button
         variant='outline'
-        onClick={() => audioFileState.openModal('verseTimestampImport')}
-      >
+        onClick={() => audioFileState.openModal('verseTimestampImport')}>
         <ClockIcon className='h-4 w-4 mr-2' />
         Import Verse Timestamps
       </Button>
@@ -221,8 +218,7 @@ export const AudioFileManager: React.FC<AudioFileManagerProps> = ({
             <Button
               variant='outline'
               size='sm'
-              onClick={audioFileState.clearDownloadError}
-            >
+              onClick={audioFileState.clearDownloadError}>
               Dismiss
             </Button>
           </div>

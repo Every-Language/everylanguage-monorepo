@@ -46,8 +46,7 @@ export const Sidebar: React.FC = () => {
               className='h-5 w-5 text-white'
               fill='none'
               stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
+              viewBox='0 0 24 24'>
               <path
                 strokeLinecap='round'
                 strokeLinejoin='round'
@@ -85,8 +84,7 @@ export const Sidebar: React.FC = () => {
       <SidebarFooter>
         <button
           onClick={handleProfileClick}
-          className='flex items-center space-x-3 mb-3 w-full text-left p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors group cursor-pointer'
-        >
+          className='flex items-center space-x-3 mb-3 w-full text-left p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors group cursor-pointer'>
           <div className='h-8 w-8 bg-gradient-to-br from-accent-600 to-accent-700 rounded-full flex items-center justify-center'>
             <span className='text-white text-sm font-medium'>
               {user?.email?.charAt(0).toUpperCase()}
@@ -105,8 +103,7 @@ export const Sidebar: React.FC = () => {
               className='h-4 w-4'
               fill='none'
               stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
+              viewBox='0 0 24 24'>
               <path
                 strokeLinecap='round'
                 strokeLinejoin='round'
@@ -123,15 +120,13 @@ export const Sidebar: React.FC = () => {
             variant='ghost'
             onClick={handleThemeToggle}
             className='text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
-            title={`Current theme: ${theme}. Click to cycle through themes.`}
-          >
+            title={`Current theme: ${theme}. Click to cycle through themes.`}>
             {theme === 'system' ? (
               <svg
                 className='h-4 w-4'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -144,8 +139,7 @@ export const Sidebar: React.FC = () => {
                 className='h-4 w-4'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -158,8 +152,7 @@ export const Sidebar: React.FC = () => {
                 className='h-4 w-4'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -175,14 +168,12 @@ export const Sidebar: React.FC = () => {
             variant='ghost'
             onClick={handleSignOut}
             className='text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
-            title='Sign out'
-          >
+            title='Sign out'>
             <svg
               className='h-4 w-4'
               fill='none'
               stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
+              viewBox='0 0 24 24'>
               <path
                 strokeLinecap='round'
                 strokeLinejoin='round'

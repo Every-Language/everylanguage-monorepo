@@ -166,8 +166,7 @@ export function ViewAllocationModal({
       <div
         className={`fixed inset-0 z-50 overflow-y-auto transition-opacity duration-300 ${
           isEntering && !isExiting ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
+        }`}>
         <div className='flex min-h-full items-center justify-center p-4'>
           <div
             className={`relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl dark:shadow-dark-card border border-neutral-200 dark:border-neutral-800 w-full max-w-3xl transform transition-all duration-300 ${
@@ -175,8 +174,7 @@ export function ViewAllocationModal({
                 ? 'scale-100 opacity-100'
                 : 'scale-95 opacity-0'
             }`}
-            onClick={e => e.stopPropagation()}
-          >
+            onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className='flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800'>
               <div>
@@ -189,8 +187,7 @@ export function ViewAllocationModal({
               </div>
               <button
                 onClick={handleClose}
-                className='text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors'
-              >
+                className='text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors'>
                 <X className='h-6 w-6' />
               </button>
             </div>
@@ -389,8 +386,7 @@ export function ViewAllocationModal({
                       <select
                         value={editOperationId}
                         onChange={e => setEditOperationId(e.target.value)}
-                        className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
-                      >
+                        className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'>
                         <option value=''>None</option>
                         {operations?.map(op => (
                           <option key={op.id} value={op.id}>
@@ -406,8 +402,7 @@ export function ViewAllocationModal({
                       <select
                         value={editProjectId}
                         onChange={e => setEditProjectId(e.target.value)}
-                        className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
-                      >
+                        className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'>
                         <option value=''>None</option>
                         {projects?.map(proj => (
                           <option key={proj.id} value={proj.id}>
@@ -479,8 +474,7 @@ export function ViewAllocationModal({
                   <button
                     onClick={handleDelete}
                     disabled={deleteAllocationMutation.isPending}
-                    className='px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50 inline-flex items-center'
-                  >
+                    className='px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50 inline-flex items-center'>
                     <Trash2 className='h-4 w-4 mr-1' />
                     {deleteAllocationMutation.isPending
                       ? 'Deleting...'
@@ -493,14 +487,12 @@ export function ViewAllocationModal({
                   <>
                     <button
                       onClick={handleClose}
-                      className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors'
-                    >
+                      className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors'>
                       Close
                     </button>
                     <button
                       onClick={() => setIsEditing(true)}
-                      className='px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors inline-flex items-center'
-                    >
+                      className='px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors inline-flex items-center'>
                       <Edit className='h-4 w-4 mr-1' />
                       Edit
                     </button>
@@ -509,15 +501,13 @@ export function ViewAllocationModal({
                   <>
                     <button
                       onClick={() => setIsEditing(false)}
-                      className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors'
-                    >
+                      className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors'>
                       Cancel
                     </button>
                     <button
                       onClick={handleSave}
                       disabled={updateAllocationMutation.isPending}
-                      className='px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50 inline-flex items-center'
-                    >
+                      className='px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50 inline-flex items-center'>
                       <Save className='h-4 w-4 mr-1' />
                       {updateAllocationMutation.isPending
                         ? 'Saving...'

@@ -102,8 +102,7 @@ const Disclosure = React.forwardRef<HTMLDivElement, DisclosureProps>(
       as='div'
       ref={ref}
       className={cn(disclosureVariants({ variant, size, className }))}
-      defaultOpen={defaultOpen}
-    >
+      defaultOpen={defaultOpen}>
       {children}
     </HeadlessDisclosure>
   )
@@ -116,8 +115,7 @@ const DisclosureButton = React.forwardRef<
 >(({ children, className, variant, size, hideIcon, icon }, ref) => (
   <HeadlessDisclosure.Button
     ref={ref}
-    className={cn(disclosureButtonVariants({ variant, size, className }))}
-  >
+    className={cn(disclosureButtonVariants({ variant, size, className }))}>
     {({ open }) => (
       <>
         {icon && <span className='mr-2'>{icon}</span>}
@@ -144,13 +142,11 @@ const DisclosurePanel = React.forwardRef<HTMLDivElement, DisclosurePanelProps>(
       enterTo='transform scale-100 opacity-100'
       leave='transition duration-75 ease-out'
       leaveFrom='transform scale-100 opacity-100'
-      leaveTo='transform scale-95 opacity-0'
-    >
+      leaveTo='transform scale-95 opacity-0'>
       <HeadlessDisclosure.Panel
         ref={ref}
         className={cn(disclosurePanelVariants({ variant, size, className }))}
-        unmount={unmount}
-      >
+        unmount={unmount}>
         {children}
       </HeadlessDisclosure.Panel>
     </Transition>

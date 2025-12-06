@@ -77,8 +77,7 @@ export const EveryLanguageProjectStats: React.FC<Props> = ({
             {Array.from({ length: 4 }).map((_, idx) => (
               <div
                 key={`project-skeleton-${idx}`}
-                className='rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 p-4 animate-pulse'
-              >
+                className='rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 p-4 animate-pulse'>
                 <div className='h-4 w-1/3 rounded bg-neutral-200 dark:bg-neutral-800' />
                 <div className='mt-3 h-2 w-full rounded bg-neutral-200 dark:bg-neutral-800' />
               </div>
@@ -93,8 +92,7 @@ export const EveryLanguageProjectStats: React.FC<Props> = ({
             {projects.map(project => (
               <article
                 key={project.project_id}
-                className='rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 p-4'
-              >
+                className='rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 p-4'>
                 <div className='flex flex-wrap items-center justify-between gap-2'>
                   <div>
                     <p className='font-semibold text-neutral-900 dark:text-neutral-50'>

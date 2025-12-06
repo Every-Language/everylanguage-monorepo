@@ -32,8 +32,7 @@ export function Navigation({ className }: NavigationProps) {
       className={cn(
         'flex items-center space-x-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg',
         className
-      )}
-    >
+      )}>
       {navItems.map(item => {
         const isActive = location.pathname === item.path;
 
@@ -46,8 +45,7 @@ export function Navigation({ className }: NavigationProps) {
               isActive
                 ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                 : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-neutral-200 hover:bg-gray-50 dark:hover:bg-gray-700'
-            )}
-          >
+            )}>
             <span className='mr-2'>{item.icon}</span>
             {item.label}
           </Link>

@@ -376,8 +376,7 @@ export function LanguageEntityModal({
             <button
               className='w-5 h-5 flex items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
               onClick={() => toggleNode(nodeId)}
-              aria-label={openNodes[nodeId] ? 'Collapse' : 'Expand'}
-            >
+              aria-label={openNodes[nodeId] ? 'Collapse' : 'Expand'}>
               {openNodes[nodeId] ? '▾' : '▸'}
             </button>
           ) : (
@@ -393,8 +392,7 @@ export function LanguageEntityModal({
               if (!isCurrentEntity && onNavigateToLanguage) {
                 onNavigateToLanguage(nodeId);
               }
-            }}
-          >
+            }}>
             {node.name}
           </button>
           <span
@@ -402,8 +400,7 @@ export function LanguageEntityModal({
               isCurrentEntity
                 ? 'text-primary-600 dark:text-primary-500'
                 : 'text-neutral-500 dark:text-neutral-400'
-            }`}
-          >
+            }`}>
             {node.level}
           </span>
         </div>
@@ -434,8 +431,7 @@ export function LanguageEntityModal({
             : isEntering
               ? 'translate-x-full'
               : 'translate-x-0'
-        }`}
-      >
+        }`}>
         {/* Header */}
         <div className='px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between'>
           <div>
@@ -448,8 +444,7 @@ export function LanguageEntityModal({
           </div>
           <button
             onClick={handleClose}
-            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-          >
+            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'>
             <X className='h-5 w-5 text-neutral-600 dark:text-neutral-400' />
           </button>
         </div>
@@ -465,8 +460,7 @@ export function LanguageEntityModal({
               {!editingInfo && (
                 <button
                   onClick={() => setEditingInfo(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -495,8 +489,7 @@ export function LanguageEntityModal({
                   <Select
                     label='Level'
                     value={level}
-                    onValueChange={value => setLevel(value as typeof level)}
-                  >
+                    onValueChange={value => setLevel(value as typeof level)}>
                     <SelectItem value='family'>Family</SelectItem>
                     <SelectItem value='language'>Language</SelectItem>
                     <SelectItem value='dialect'>Dialect</SelectItem>
@@ -521,15 +514,13 @@ export function LanguageEntityModal({
                       setName(entity.name);
                       setLevel(entity.level);
                     }}
-                    className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                  >
+                    className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                     Cancel
                   </button>
                   <button
                     onClick={() => updateInfoMutation.mutate()}
                     disabled={updateInfoMutation.isPending}
-                    className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                  >
+                    className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                     <Save className='h-4 w-4' />
                     {updateInfoMutation.isPending ? 'Saving...' : 'Save'}
                   </button>
@@ -567,8 +558,7 @@ export function LanguageEntityModal({
               {!editingProperties && (
                 <button
                   onClick={() => setEditingProperties(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -603,16 +593,14 @@ export function LanguageEntityModal({
                       />
                       <button
                         onClick={() => handleRemoveProperty(index)}
-                        className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'
-                      >
+                        className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'>
                         <Trash2 className='h-4 w-4' />
                       </button>
                     </div>
                   ))}
                   <button
                     onClick={handleAddProperty}
-                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'
-                  >
+                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'>
                     <Plus className='h-4 w-4' />
                     Add Property
                   </button>
@@ -629,15 +617,13 @@ export function LanguageEntityModal({
                           );
                         }
                       }}
-                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updatePropertiesMutation.mutate()}
                       disabled={updatePropertiesMutation.isPending}
-                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                    >
+                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                       <Save className='h-4 w-4' />
                       {updatePropertiesMutation.isPending
                         ? 'Saving...'
@@ -649,8 +635,7 @@ export function LanguageEntityModal({
                 properties.map(prop => (
                   <div
                     key={prop.id}
-                    className='flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0'
-                  >
+                    className='flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0'>
                     <span className='font-medium text-neutral-700 dark:text-neutral-300'>
                       {prop.key}
                     </span>
@@ -676,8 +661,7 @@ export function LanguageEntityModal({
               {!editingExternalIds && (
                 <button
                   onClick={() => setEditingExternalIds(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -689,8 +673,7 @@ export function LanguageEntityModal({
                   {localSources.map((source, index) => (
                     <div
                       key={index}
-                      className='border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 space-y-2'
-                    >
+                      className='border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 space-y-2'>
                       <div className='flex gap-2'>
                         <input
                           type='text'
@@ -716,8 +699,7 @@ export function LanguageEntityModal({
                         />
                         <button
                           onClick={() => handleRemoveSource(index)}
-                          className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'
-                        >
+                          className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'>
                           <Trash2 className='h-4 w-4' />
                         </button>
                       </div>
@@ -766,8 +748,7 @@ export function LanguageEntityModal({
                   ))}
                   <button
                     onClick={handleAddSource}
-                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'
-                  >
+                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'>
                     <Plus className='h-4 w-4' />
                     Add Source
                   </button>
@@ -788,15 +769,13 @@ export function LanguageEntityModal({
                           );
                         }
                       }}
-                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updateExternalIdsMutation.mutate()}
                       disabled={updateExternalIdsMutation.isPending}
-                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                    >
+                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                       <Save className='h-4 w-4' />
                       {updateExternalIdsMutation.isPending
                         ? 'Saving...'
@@ -811,8 +790,7 @@ export function LanguageEntityModal({
                     .map(source => (
                       <div
                         key={source.id}
-                        className='flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0'
-                      >
+                        className='flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0'>
                         <span className='font-mono text-sm text-neutral-700 dark:text-neutral-300'>
                           {source.external_id_type}:{source.external_id}
                         </span>
@@ -839,8 +817,7 @@ export function LanguageEntityModal({
               {!editingAliases && (
                 <button
                   onClick={() => setEditingAliases(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -864,16 +841,14 @@ export function LanguageEntityModal({
                       />
                       <button
                         onClick={() => handleRemoveAlias(index)}
-                        className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'
-                      >
+                        className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'>
                         <Trash2 className='h-4 w-4' />
                       </button>
                     </div>
                   ))}
                   <button
                     onClick={handleAddAlias}
-                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'
-                  >
+                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'>
                     <Plus className='h-4 w-4' />
                     Add Alias
                   </button>
@@ -889,15 +864,13 @@ export function LanguageEntityModal({
                           );
                         }
                       }}
-                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updateAliasesMutation.mutate()}
                       disabled={updateAliasesMutation.isPending}
-                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                    >
+                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                       <Save className='h-4 w-4' />
                       {updateAliasesMutation.isPending ? 'Saving...' : 'Save'}
                     </button>
@@ -908,8 +881,7 @@ export function LanguageEntityModal({
                   {aliases.map(alias => (
                     <span
                       key={alias.id}
-                      className='px-3 py-1 bg-neutral-200 dark:bg-neutral-700 rounded-full text-sm text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-3 py-1 bg-neutral-200 dark:bg-neutral-700 rounded-full text-sm text-neutral-700 dark:text-neutral-300'>
                       {alias.alias_name}
                     </span>
                   ))}
@@ -931,8 +903,7 @@ export function LanguageEntityModal({
               {!editingRegions && (
                 <button
                   onClick={() => setEditingRegions(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -966,8 +937,7 @@ export function LanguageEntityModal({
                               selectedRegionIds.includes(region.id)
                                 ? 'bg-primary-50 dark:bg-primary-900/20'
                                 : ''
-                            }`}
-                          >
+                            }`}>
                             <span className='text-sm text-neutral-900 dark:text-neutral-100'>
                               {region.name}
                               <span className='text-xs text-neutral-500 dark:text-neutral-400 ml-2'>
@@ -995,8 +965,7 @@ export function LanguageEntityModal({
                         .map(region => (
                           <div
                             key={region.id}
-                            className='flex items-center justify-between p-2 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700'
-                          >
+                            className='flex items-center justify-between p-2 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700'>
                             <span className='text-sm text-neutral-900 dark:text-neutral-100'>
                               {region.name}
                               <span className='text-xs text-neutral-500 dark:text-neutral-400 ml-2'>
@@ -1005,8 +974,7 @@ export function LanguageEntityModal({
                             </span>
                             <button
                               onClick={() => handleToggleRegion(region.id)}
-                              className='p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors'
-                            >
+                              className='p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors'>
                               <X className='h-4 w-4' />
                             </button>
                           </div>
@@ -1025,15 +993,13 @@ export function LanguageEntityModal({
                           );
                         }
                       }}
-                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updateRegionsMutation.mutate()}
                       disabled={updateRegionsMutation.isPending}
-                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                    >
+                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                       <Save className='h-4 w-4' />
                       {updateRegionsMutation.isPending ? 'Saving...' : 'Save'}
                     </button>
@@ -1049,8 +1015,7 @@ export function LanguageEntityModal({
                           onNavigateToRegion(region.id);
                         }
                       }}
-                      className='p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors text-left'
-                    >
+                      className='p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors text-left'>
                       <p className='font-medium text-neutral-900 dark:text-neutral-100'>
                         {region.name}
                       </p>

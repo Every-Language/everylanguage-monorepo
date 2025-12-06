@@ -696,8 +696,7 @@ export function BibleTextUploadModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         size='6xl'
-        className='max-h-[90vh] overflow-hidden flex flex-col'
-      >
+        className='max-h-[90vh] overflow-hidden flex flex-col'>
         <DialogHeader>
           <DialogTitle className='flex items-center space-x-2'>
             <DocumentTextIcon className='h-6 w-6' />
@@ -747,8 +746,7 @@ export function BibleTextUploadModal({
                   <div>
                     <label
                       htmlFor='textVersionName'
-                      className='block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2'
-                    >
+                      className='block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2'>
                       Text Version Name
                     </label>
                     <Input
@@ -764,14 +762,12 @@ export function BibleTextUploadModal({
                   <div>
                     <label
                       htmlFor='bibleVersion'
-                      className='block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2'
-                    >
+                      className='block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2'>
                       Bible Version
                     </label>
                     <Select
                       value={selectedBibleVersion}
-                      onValueChange={setSelectedBibleVersion}
-                    >
+                      onValueChange={setSelectedBibleVersion}>
                       <option value=''>Select a Bible version...</option>
                       {bibleVersions?.map(version => (
                         <SelectItem key={version.id} value={version.id}>
@@ -789,8 +785,7 @@ export function BibleTextUploadModal({
                         !selectedBibleVersion ||
                         isCreatingTextVersion
                       }
-                      className='flex items-center space-x-2'
-                    >
+                      className='flex items-center space-x-2'>
                       {isCreatingTextVersion && (
                         <LoadingSpinner className='h-4 w-4' />
                       )}
@@ -805,8 +800,7 @@ export function BibleTextUploadModal({
                       <Button
                         variant='outline'
                         onClick={() => setShowCreateTextVersion(false)}
-                        disabled={isCreatingTextVersion}
-                      >
+                        disabled={isCreatingTextVersion}>
                         Cancel
                       </Button>
                     )}
@@ -864,8 +858,7 @@ export function BibleTextUploadModal({
                       variant='outline'
                       size='sm'
                       onClick={() => setShowCreateTextVersion(true)}
-                      className='flex items-center space-x-1'
-                    >
+                      className='flex items-center space-x-1'>
                       <PlusIcon className='h-4 w-4' />
                       <span>Create New</span>
                     </Button>
@@ -884,8 +877,7 @@ export function BibleTextUploadModal({
                         variant='outline'
                         size='sm'
                         onClick={() => setShowCreateTextVersion(false)}
-                        className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                      >
+                        className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'>
                         Cancel
                       </Button>
                     </div>
@@ -910,8 +902,7 @@ export function BibleTextUploadModal({
                         </label>
                         <Select
                           value={selectedBibleVersion}
-                          onValueChange={setSelectedBibleVersion}
-                        >
+                          onValueChange={setSelectedBibleVersion}>
                           <SelectItem value=''>
                             Select a Bible version...
                           </SelectItem>
@@ -930,8 +921,7 @@ export function BibleTextUploadModal({
                           !newTextVersionName.trim() ||
                           !selectedBibleVersion
                         }
-                        className='w-full'
-                      >
+                        className='w-full'>
                         {isCreatingTextVersion ? (
                           <>
                             <LoadingSpinner size='sm' className='mr-2' />
@@ -971,8 +961,7 @@ export function BibleTextUploadModal({
                       {uploadResults.errors.map((row, index) => (
                         <div
                           key={index}
-                          className='text-sm text-red-700 dark:text-red-300 mb-1'
-                        >
+                          className='text-sm text-red-700 dark:text-red-300 mb-1'>
                           {row.error}
                         </div>
                       ))}
@@ -991,8 +980,7 @@ export function BibleTextUploadModal({
                       <Button
                         variant='outline'
                         onClick={downloadSampleCSV}
-                        className='mb-4'
-                      >
+                        className='mb-4'>
                         Download Sample CSV
                       </Button>
                     </div>
@@ -1048,8 +1036,7 @@ export function BibleTextUploadModal({
                         {validRows.slice(0, 5).map((row, index) => (
                           <div
                             key={index}
-                            className='mb-3 text-sm border-b border-green-200 dark:border-green-700 pb-2 last:border-b-0'
-                          >
+                            className='mb-3 text-sm border-b border-green-200 dark:border-green-700 pb-2 last:border-b-0'>
                             <div className='font-medium text-green-900 dark:text-green-100'>
                               {row.book_name || `Book #${row.book_number}`}{' '}
                               {row.chapter_number}:{row.verse_number}
@@ -1073,8 +1060,7 @@ export function BibleTextUploadModal({
                         {errorRows.map((row, index) => (
                           <div
                             key={index}
-                            className='text-sm text-red-700 dark:text-red-300 mb-1'
-                          >
+                            className='text-sm text-red-700 dark:text-red-300 mb-1'>
                             {row.error}
                           </div>
                         ))}
@@ -1121,8 +1107,7 @@ export function BibleTextUploadModal({
             <Button
               variant='outline'
               onClick={clearAllData}
-              disabled={isUploading}
-            >
+              disabled={isUploading}>
               Clear Data
             </Button>
           )}
@@ -1135,8 +1120,7 @@ export function BibleTextUploadModal({
             <Button
               onClick={handleUpload}
               disabled={!canUpload}
-              className='flex items-center space-x-2'
-            >
+              className='flex items-center space-x-2'>
               {isUploading && <LoadingSpinner className='h-4 w-4' />}
               <span>
                 {isUploading

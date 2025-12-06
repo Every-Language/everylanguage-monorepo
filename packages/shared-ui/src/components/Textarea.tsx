@@ -42,7 +42,8 @@ const textareaVariants = cva(
 );
 
 export interface TextareaProps
-  extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'>,
+  extends
+    Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'>,
     VariantProps<typeof textareaVariants> {
   label?: string;
   error?: string;
@@ -74,8 +75,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-          >
+            className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
             {label}
           </label>
         )}
@@ -98,8 +98,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {error && (
           <p
             id={`${textareaId}-error`}
-            className='text-sm text-error-600 dark:text-error-400'
-          >
+            className='text-sm text-error-600 dark:text-error-400'>
             {error}
           </p>
         )}
@@ -107,8 +106,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {helperText && !error && (
           <p
             id={`${textareaId}-helper`}
-            className='text-sm text-neutral-500 dark:text-neutral-400'
-          >
+            className='text-sm text-neutral-500 dark:text-neutral-400'>
             {helperText}
           </p>
         )}

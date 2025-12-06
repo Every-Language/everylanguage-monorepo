@@ -98,8 +98,7 @@ export function UploadProgressDisplay({
 
   return (
     <div
-      className={`${className} w-full bg-secondary-50 dark:bg-secondary-900/20 border-b border-secondary-200 dark:border-secondary-700`}
-    >
+      className={`${className} w-full bg-secondary-50 dark:bg-secondary-900/20 border-b border-secondary-200 dark:border-secondary-700`}>
       <div className='w-full px-4 py-3'>
         <div className='flex items-center justify-between mb-3'>
           {/* Progress info */}
@@ -131,8 +130,7 @@ export function UploadProgressDisplay({
             variant='ghost'
             size='sm'
             onClick={handleDismiss}
-            className='text-secondary-500 hover:text-secondary-700 dark:text-secondary-400 dark:hover:text-secondary-300'
-          >
+            className='text-secondary-500 hover:text-secondary-700 dark:text-secondary-400 dark:hover:text-secondary-300'>
             <XMarkIcon className='h-4 w-4' />
           </Button>
         </div>
@@ -180,8 +178,7 @@ export function UploadProgressDisplay({
             {progressData.files.map(file => (
               <div
                 key={file.mediaFileId}
-                className='flex items-center justify-between p-2 bg-secondary-50 dark:bg-secondary-700 rounded'
-              >
+                className='flex items-center justify-between p-2 bg-secondary-50 dark:bg-secondary-700 rounded'>
                 <div className='flex-1 min-w-0'>
                   <p className='text-sm font-medium text-secondary-900 dark:text-secondary-100 truncate'>
                     {file.fileName}
@@ -202,8 +199,7 @@ export function UploadProgressDisplay({
                           : file.status === 'uploading'
                             ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                             : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                    }`}
-                  >
+                    }`}>
                     {file.status}
                   </span>
                   {file.status === 'uploading' && <LoadingSpinner size='sm' />}
@@ -227,8 +223,7 @@ export function UploadProgressDisplay({
             {storeProgress.map((progress: UploadFileProgress) => (
               <div
                 key={progress.fileName}
-                className='flex items-center justify-between p-2 bg-secondary-50 dark:bg-secondary-700 rounded'
-              >
+                className='flex items-center justify-between p-2 bg-secondary-50 dark:bg-secondary-700 rounded'>
                 <span className='text-sm font-medium text-secondary-900 dark:text-secondary-100 truncate flex-1'>
                   {progress.fileName}
                 </span>
@@ -242,8 +237,7 @@ export function UploadProgressDisplay({
                           : progress.status === 'uploading'
                             ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                             : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                    }`}
-                  >
+                    }`}>
                     {progress.status}
                   </span>
                   {progress.status === 'uploading' && (

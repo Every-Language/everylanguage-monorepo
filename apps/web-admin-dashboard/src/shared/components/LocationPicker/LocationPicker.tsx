@@ -74,24 +74,21 @@ export function LocationPicker({
     <div className='relative'>
       <div
         className='rounded-lg overflow-hidden border border-neutral-300 dark:border-neutral-700'
-        style={{ height }}
-      >
+        style={{ height }}>
         <Map
           mapLib={maplibregl}
           initialViewState={initialViewState}
           mapStyle={mapStyle}
           onClick={handleMapClick}
           style={{ width: '100%', height: '100%' }}
-          cursor='crosshair'
-        >
+          cursor='crosshair'>
           {location && (
             <Marker
               longitude={location.lng}
               latitude={location.lat}
               draggable
               onDrag={handleMarkerDrag}
-              anchor='center'
-            >
+              anchor='center'>
               <div className='relative'>
                 <div className='w-6 h-6 bg-primary-600 dark:bg-primary-500 rounded-full border-2 border-white dark:border-neutral-900 shadow-lg' />
                 <div className='absolute inset-0 w-6 h-6 bg-primary-600 dark:bg-primary-500 rounded-full animate-ping opacity-20' />
@@ -110,8 +107,7 @@ export function LocationPicker({
           <button
             onClick={handleRemoveLocation}
             className='flex items-center gap-1 px-2 py-1 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors'
-            type='button'
-          >
+            type='button'>
             <X className='h-4 w-4' />
             Remove Location
           </button>

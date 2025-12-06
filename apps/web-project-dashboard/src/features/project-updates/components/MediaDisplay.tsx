@@ -87,8 +87,7 @@ export const MediaDisplay: React.FC<MediaDisplayProps> = ({
           return (
             <div
               key={m.id}
-              className='border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden'
-            >
+              className='border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden'>
               {m.media_type === 'image' ? (
                 <img
                   src={url}
@@ -100,8 +99,7 @@ export const MediaDisplay: React.FC<MediaDisplayProps> = ({
                   src={url}
                   controls
                   className='w-full h-auto'
-                  preload='metadata'
-                >
+                  preload='metadata'>
                   Your browser does not support the video tag.
                 </video>
               )}

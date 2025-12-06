@@ -146,15 +146,13 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                     hasWholeBible
                       ? 'bg-success-50 dark:bg-success-900 border-success-200 dark:border-success-800'
                       : 'bg-error-50 dark:bg-error-900 border-error-200 dark:border-error-800'
-                  }`}
-                >
+                  }`}>
                   <div
                     className={`text-xs font-medium mb-1 ${
                       hasWholeBible
                         ? 'text-success-600 dark:text-success-300'
                         : 'text-error-600 dark:text-error-300'
-                    }`}
-                  >
+                    }`}>
                     Whole Bible
                   </div>
                   <div
@@ -162,8 +160,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                       hasWholeBible
                         ? 'text-success-700 dark:text-success-200'
                         : 'text-error-700 dark:text-error-200'
-                    }`}
-                  >
+                    }`}>
                     {hasWholeBible ? 'Yes' : 'No'}
                   </div>
                   {languageStats.BibleYear && (
@@ -187,15 +184,13 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                     hasNewTestament
                       ? 'bg-success-50 dark:bg-success-900 border-success-200 dark:border-success-800'
                       : 'bg-error-50 dark:bg-error-900 border-error-200 dark:border-error-800'
-                  }`}
-                >
+                  }`}>
                   <div
                     className={`text-xs font-medium mb-1 ${
                       hasNewTestament
                         ? 'text-success-600 dark:text-success-300'
                         : 'text-error-600 dark:text-error-300'
-                    }`}
-                  >
+                    }`}>
                     New Testament
                   </div>
                   <div
@@ -203,8 +198,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                       hasNewTestament
                         ? 'text-success-700 dark:text-success-200'
                         : 'text-error-700 dark:text-error-200'
-                    }`}
-                  >
+                    }`}>
                     {hasNewTestament ? 'Yes' : 'No'}
                   </div>
                   {languageStats.NTYear && (
@@ -228,15 +222,13 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                     hasPortions
                       ? 'bg-success-50 dark:bg-success-900 border-success-200 dark:border-success-800'
                       : 'bg-error-50 dark:bg-error-900 border-error-200 dark:border-error-800'
-                  }`}
-                >
+                  }`}>
                   <div
                     className={`text-xs font-medium mb-1 ${
                       hasPortions
                         ? 'text-success-600 dark:text-success-300'
                         : 'text-error-600 dark:text-error-300'
-                    }`}
-                  >
+                    }`}>
                     Portions
                   </div>
                   <div
@@ -244,8 +236,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                       hasPortions
                         ? 'text-success-700 dark:text-success-200'
                         : 'text-error-700 dark:text-error-200'
-                    }`}
-                  >
+                    }`}>
                     {hasPortions ? 'Yes' : 'No'}
                   </div>
                   {languageStats.PortionsYear && (
@@ -266,8 +257,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                 languageStats.HasJesusFilm === 'Y' || languageStats.JF === 'Y'
                   ? 'bg-primary-50 dark:bg-primary-950/30 border-primary-200 dark:border-primary-800'
                   : 'bg-neutral-50 dark:bg-neutral-800/30 border-neutral-200 dark:border-neutral-800'
-              }`}
-            >
+              }`}>
               <FilmIcon
                 className={`w-4 h-4 ${
                   languageStats.HasJesusFilm === 'Y' || languageStats.JF === 'Y'
@@ -282,8 +272,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                     languageStats.JF === 'Y'
                       ? 'text-primary-600 dark:text-primary-400'
                       : 'text-neutral-500'
-                  }`}
-                >
+                  }`}>
                   Jesus Film
                 </div>
                 <div
@@ -292,8 +281,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                     languageStats.JF === 'Y'
                       ? 'text-primary-700 dark:text-primary-300'
                       : 'text-neutral-400'
-                  }`}
-                >
+                  }`}>
                   {languageStats.HasJesusFilm === 'Y' ||
                   languageStats.JF === 'Y'
                     ? 'Available'
@@ -309,8 +297,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                 languageStats.AudioRecordings === 'Y'
                   ? 'bg-secondary-50 dark:bg-secondary-950/30 border-secondary-200 dark:border-secondary-800'
                   : 'bg-neutral-50 dark:bg-neutral-800/30 border-neutral-200 dark:border-neutral-800'
-              }`}
-            >
+              }`}>
               <SpeakerWaveIcon
                 className={`w-4 h-4 ${
                   languageStats.HasAudioRecordings === 'Y' ||
@@ -326,8 +313,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                     languageStats.AudioRecordings === 'Y'
                       ? 'text-secondary-600 dark:text-secondary-400'
                       : 'text-neutral-500'
-                  }`}
-                >
+                  }`}>
                   Audio Recordings
                 </div>
                 <div
@@ -336,8 +322,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
                     languageStats.AudioRecordings === 'Y'
                       ? 'text-secondary-700 dark:text-secondary-300'
                       : 'text-neutral-400'
-                  }`}
-                >
+                  }`}>
                   {languageStats.HasAudioRecordings === 'Y' ||
                   languageStats.AudioRecordings === 'Y'
                     ? 'Available'
@@ -356,8 +341,7 @@ export const JPLanguageStatsSection: React.FC<JPLanguageStatsSectionProps> = ({
           href='https://joshuaproject.net'
           target='_blank'
           rel='noopener noreferrer'
-          className='underline hover:text-neutral-600'
-        >
+          className='underline hover:text-neutral-600'>
           Joshua Project
         </a>
       </div>

@@ -38,8 +38,7 @@ export const LayerToggles: React.FC<LayerTogglesProps> = ({
       ).map(k => (
         <label
           key={k}
-          className='flex items-center justify-between text-sm py-1 select-none'
-        >
+          className='flex items-center justify-between text-sm py-1 select-none'>
           <span className='capitalize'>{k}</span>
           <span className='relative inline-flex items-center'>
             <input
@@ -61,8 +60,7 @@ export const LayerToggles: React.FC<LayerTogglesProps> = ({
     inner
   ) : (
     <div
-      className={`rounded-xl bg-white/90 dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-700 shadow p-3 ${className ?? ''}`}
-    >
+      className={`rounded-xl bg-white/90 dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-700 shadow p-3 ${className ?? ''}`}>
       {inner}
     </div>
   );

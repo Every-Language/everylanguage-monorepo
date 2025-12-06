@@ -785,8 +785,7 @@ export function VerseTimestampImportModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         size='6xl'
-        className='max-h-[90vh] overflow-hidden flex flex-col'
-      >
+        className='max-h-[90vh] overflow-hidden flex flex-col'>
         <DialogHeader>
           <DialogTitle className='flex items-center space-x-2'>
             <ClockIcon className='h-6 w-6' />
@@ -892,8 +891,7 @@ export function VerseTimestampImportModal({
                   {uploadResults.errors.map((row, index) => (
                     <div
                       key={index}
-                      className='text-sm text-red-700 dark:text-red-300 mb-1'
-                    >
+                      className='text-sm text-red-700 dark:text-red-300 mb-1'>
                       {row.error}
                     </div>
                   ))}
@@ -909,8 +907,7 @@ export function VerseTimestampImportModal({
                 <Button
                   variant='outline'
                   onClick={downloadSampleCSV}
-                  className='mb-4'
-                >
+                  className='mb-4'>
                   Download Sample CSV
                 </Button>
               </div>
@@ -957,8 +954,7 @@ export function VerseTimestampImportModal({
                     {validRows.slice(0, 5).map((row, index) => (
                       <div
                         key={index}
-                        className='text-sm text-green-700 dark:text-green-300 mb-2'
-                      >
+                        className='text-sm text-green-700 dark:text-green-300 mb-2'>
                         <div className='font-medium'>
                           {row.book_name || `Book #${row.book_number}`} Chapter{' '}
                           {row.chapter_number}
@@ -988,8 +984,7 @@ export function VerseTimestampImportModal({
                     {errorRows.map((row, index) => (
                       <div
                         key={index}
-                        className='text-sm text-red-700 dark:text-red-300 mb-1'
-                      >
+                        className='text-sm text-red-700 dark:text-red-300 mb-1'>
                         {row.error}
                       </div>
                     ))}
@@ -1048,8 +1043,7 @@ export function VerseTimestampImportModal({
             <Button
               variant='outline'
               onClick={clearAllData}
-              disabled={isUploading}
-            >
+              disabled={isUploading}>
               Clear Data
             </Button>
           )}
@@ -1062,8 +1056,7 @@ export function VerseTimestampImportModal({
             <Button
               onClick={handleUpload}
               disabled={!canUpload}
-              className='flex items-center space-x-2'
-            >
+              className='flex items-center space-x-2'>
               {isUploading && <LoadingSpinner className='h-4 w-4' />}
               <span>
                 {isUploading

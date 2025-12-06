@@ -77,8 +77,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 className='h-5 w-5 text-error-600 dark:text-error-400'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -113,8 +112,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 className='h-5 w-5'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -148,8 +146,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 className='h-5 w-5'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -176,8 +173,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               type='button'
               onClick={onForgotPassword}
               className='font-medium text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 transition-colors'
-              disabled={isLoading}
-            >
+              disabled={isLoading}>
               Forgot your password?
             </button>
           </div>
@@ -189,8 +185,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             className='w-full bg-accent-600 hover:bg-accent-600 text-white shadow-lg'
             disabled={isLoading}
             size='lg'
-            loading={isLoading}
-          >
+            loading={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign in'}
           </Button>
         </div>

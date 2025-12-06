@@ -138,8 +138,7 @@ const getScaleBadge = (scale: number | null) => {
 
   return (
     <span
-      className={`${scaleColors[scale] || 'bg-neutral-500'} text-white text-xs font-bold px-2 py-0.5 rounded`}
-    >
+      className={`${scaleColors[scale] || 'bg-neutral-500'} text-white text-xs font-bold px-2 py-0.5 rounded`}>
       {scale}
     </span>
   );
@@ -278,8 +277,7 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1 || peopleGroupsLoading}
-              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'
-            >
+              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'>
               <ChevronLeftIcon className='w-5 h-5' />
             </button>
             <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[80px] text-center'>
@@ -290,8 +288,7 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage >= totalPages || peopleGroupsLoading}
-              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'
-            >
+              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'>
               <ChevronRightIcon className='w-5 h-5' />
             </button>
           </div>
@@ -302,29 +299,25 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
       <div className='grid grid-cols-12 gap-2 text-xs font-medium text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 pb-1'>
         <button
           onClick={() => handleSort('name')}
-          className='col-span-5 text-left flex items-center gap-1 hover:text-neutral-700'
-        >
+          className='col-span-5 text-left flex items-center gap-1 hover:text-neutral-700'>
           Name
           <SortIndicator field='name' />
         </button>
         <button
           onClick={() => handleSort('population')}
-          className='col-span-3 text-right flex items-center justify-end gap-1 hover:text-neutral-700'
-        >
+          className='col-span-3 text-right flex items-center justify-end gap-1 hover:text-neutral-700'>
           Population
           <SortIndicator field='population' />
         </button>
         <button
           onClick={() => handleSort('scale')}
-          className='col-span-2 text-center flex items-center justify-center gap-1 hover:text-neutral-700'
-        >
+          className='col-span-2 text-center flex items-center justify-center gap-1 hover:text-neutral-700'>
           Scale
           <SortIndicator field='scale' />
         </button>
         <button
           onClick={() => handleSort('evangelical')}
-          className='col-span-2 text-right flex items-center justify-end gap-1 hover:text-neutral-700'
-        >
+          className='col-span-2 text-right flex items-center justify-end gap-1 hover:text-neutral-700'>
           % Evan.
           <SortIndicator field='evangelical' />
         </button>
@@ -349,8 +342,7 @@ export const JPPeopleGroupsSection: React.FC<JPPeopleGroupsSectionProps> = ({
           href='https://joshuaproject.net'
           target='_blank'
           rel='noopener noreferrer'
-          className='underline hover:text-neutral-600'
-        >
+          className='underline hover:text-neutral-600'>
           Joshua Project
         </a>
       </div>

@@ -90,8 +90,7 @@ export function AudioFileRow({
                 size='sm'
                 onClick={isPlaying ? onPause : onPlay}
                 disabled={!file.isValid || file.uploadStatus === 'uploading'}
-                className='flex items-center space-x-1'
-              >
+                className='flex items-center space-x-1'>
                 {isPlaying ? (
                   <>
                     <PauseIcon className='h-4 w-4' />
@@ -111,8 +110,7 @@ export function AudioFileRow({
                 size='sm'
                 onClick={onDelete}
                 disabled={file.uploadStatus === 'uploading'}
-                className='flex items-center space-x-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:border-red-300'
-              >
+                className='flex items-center space-x-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:border-red-300'>
                 <TrashIcon className='h-4 w-4' />
                 <span className='hidden sm:inline'>Delete</span>
               </Button>
@@ -190,8 +188,7 @@ export function AudioFileRow({
           {file.validationErrors.map((error, index) => (
             <div
               key={index}
-              className='flex items-start space-x-2 text-xs text-red-600 dark:text-red-400'
-            >
+              className='flex items-start space-x-2 text-xs text-red-600 dark:text-red-400'>
               <span className='text-red-500 mt-0.5'>⚠</span>
               <span>{error}</span>
             </div>

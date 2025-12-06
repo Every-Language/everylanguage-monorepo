@@ -83,8 +83,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
         ref={ref}
         role='alert'
         className={cn(alertVariants({ variant, size }), className)}
-        {...props}
-      >
+        {...props}>
         <div className='flex items-start space-x-3'>
           {getIcon()}
           <div className='flex-1'>{children}</div>
@@ -93,8 +92,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
               type='button'
               className='ml-auto rounded-md p-1 text-foreground/50 opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring'
               onClick={onDismiss}
-              aria-label='Close alert'
-            >
+              aria-label='Close alert'>
               <X className='h-4 w-4' />
             </button>
           )}

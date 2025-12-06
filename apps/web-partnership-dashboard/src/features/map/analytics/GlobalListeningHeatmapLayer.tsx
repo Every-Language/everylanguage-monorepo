@@ -392,8 +392,7 @@ export const GlobalListeningHeatmapLayer: React.FC<
       <Source
         id='global-listening-heatmap'
         type='geojson'
-        data={featureCollection}
-      >
+        data={featureCollection}>
         <Layer
           id='global-listening-heatmap-layer'
           type='heatmap'
@@ -557,8 +556,7 @@ export const GlobalListeningHeatmapLayer: React.FC<
             left: `${hoveredPoint.x + 10}px`,
             top: `${hoveredPoint.y + 10}px`,
             transform: 'translate(0, 0)',
-          }}
-        >
+          }}>
           <div className='text-sm font-medium mb-2'>
             {hoveredPoint.point.sessionCount} session
             {hoveredPoint.point.sessionCount !== 1 ? 's' : ''}

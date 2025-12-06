@@ -21,16 +21,24 @@ function readFileOrExit(filePath) {
 }
 
 function extractSyncedTablesMap(generatedContent) {
-  const schemaMatch = generatedContent.match(/export const AppSchema = new Schema\((\{[\s\S]*?\})\);/);
+  const schemaMatch = generatedContent.match(
+    /export const AppSchema = new Schema\((\{[\s\S]*?\})\);/
+  );
   if (!schemaMatch) {
     exitWithError('Could not locate AppSchema object in generated schema');
   }
   const schemaObjectLiteral = schemaMatch[1];
 
-  const keyed = Array.from(schemaObjectLiteral.matchAll(/\b([a-zA-Z0-9_]+)\b\s*:/g)).map(m => m[1]);
-  const shorthand = Array.from(schemaObjectLiteral.matchAll(/\b([a-zA-Z0-9_]+)\b\s*,/g)).map(m => m[1]);
+  const keyed = Array.from(
+    schemaObjectLiteral.matchAll(/\b([a-zA-Z0-9_]+)\b\s*:/g)
+  ).map(m => m[1]);
+  const shorthand = Array.from(
+    schemaObjectLiteral.matchAll(/\b([a-zA-Z0-9_]+)\b\s*,/g)
+  ).map(m => m[1]);
   const candidateNames = Array.from(new Set([...keyed, ...shorthand]));
-  const declaredTables = candidateNames.filter(name => new RegExp(`const\\s+${name}\\s*=\\s*new\\s+Table`).test(generatedContent));
+  const declaredTables = candidateNames.filter(name =>
+    new RegExp(`const\\s+${name}\\s*=\\s*new\\s+Table`).test(generatedContent)
+  );
   const entries = declaredTables.map(name => `  ${name}`).join(',\n');
   return { entries, declaredTables };
 }
@@ -63,72 +71,97 @@ function loadIndexConfig() {
   const src = readFileOrExit(INDEXES_FILE);
   const assignIdx = src.indexOf('export const tableIndexes');
   if (assignIdx === -1) {
-    console.warn('⚠️ No tableIndexes found in powersync/schema-indexes.ts, skipping index patching');
+    console.warn(
+      '⚠️ No tableIndexes found in powersync/schema-indexes.ts, skipping index patching'
+    );
     return {};
   }
 
   const eqIdx = src.indexOf('=', assignIdx);
   if (eqIdx === -1) {
-    console.warn('⚠️ Could not find assignment for tableIndexes; skipping index patching');
+    console.warn(
+      '⚠️ Could not find assignment for tableIndexes; skipping index patching'
+    );
     return {};
   }
   const objLiteral = extractObjectLiteralByBraces(src, eqIdx);
   if (!objLiteral) {
-    console.warn('⚠️ Could not parse tableIndexes object; skipping index patching');
+    console.warn(
+      '⚠️ Could not parse tableIndexes object; skipping index patching'
+    );
     return {};
   }
 
   try {
     let jsonish = stripCommentsAndTrailingCommas(objLiteral);
     jsonish = jsonish.replace(/'/g, '"');
-    jsonish = jsonish.replace(/([,{]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g, '$1"$2":');
+    jsonish = jsonish.replace(
+      /([,{]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g,
+      '$1"$2":'
+    );
     const parsed = JSON.parse(jsonish);
     const keys = Object.keys(parsed);
-    console.log(`🔎 Loaded tableIndexes for ${keys.length} tables: ${keys.join(', ')}`);
+    console.log(
+      `🔎 Loaded tableIndexes for ${keys.length} tables: ${keys.join(', ')}`
+    );
     return parsed;
   } catch (e) {
-    console.warn('⚠️ Failed to parse tableIndexes; skipping index patching. Error:', e.message);
+    console.warn(
+      '⚠️ Failed to parse tableIndexes; skipping index patching. Error:',
+      e.message
+    );
     return {};
   }
 }
 
 function buildIndexObjectLiteral(indexes) {
   if (!Array.isArray(indexes) || indexes.length === 0) return '{}';
-  const entries = indexes.map((cols, i) => `idx_${i}: [${cols.map(c => `'${c}'`).join(', ')}]`).join(', ');
+  const entries = indexes
+    .map((cols, i) => `idx_${i}: [${cols.map(c => `'${c}'`).join(', ')}]`)
+    .join(', ');
   return `{ ${entries} }`;
 }
 
 function patchIndexesIntoGenerated(generatedContent, tableIndexes) {
   let patchedCount = 0;
-  const result = generatedContent.replace(/const\s+(\w+)\s*=\s*new\s+Table\(([\s\S]*?)\)\s*;/g, (full, tableName, args) => {
-    const idx = tableIndexes[tableName];
-    if (!idx) return full;
+  const result = generatedContent.replace(
+    /const\s+(\w+)\s*=\s*new\s+Table\(([\s\S]*?)\)\s*;/g,
+    (full, tableName, args) => {
+      const idx = tableIndexes[tableName];
+      if (!idx) return full;
 
-    const twoArgMatch = args.match(/^([\s\S]*?),\s*\{([\s\S]*)\}\s*$/);
-    let columnsPart = args;
-    let optionsPart = null;
-    if (twoArgMatch) {
-      columnsPart = twoArgMatch[1];
-      optionsPart = `{${twoArgMatch[2]}}`;
-    }
+      const twoArgMatch = args.match(/^([\s\S]*?),\s*\{([\s\S]*)\}\s*$/);
+      let columnsPart = args;
+      let optionsPart = null;
+      if (twoArgMatch) {
+        columnsPart = twoArgMatch[1];
+        optionsPart = `{${twoArgMatch[2]}}`;
+      }
 
-    const indexesLiteral = buildIndexObjectLiteral(idx);
+      const indexesLiteral = buildIndexObjectLiteral(idx);
 
-    if (!optionsPart) {
+      if (!optionsPart) {
+        patchedCount++;
+        console.log(`🧩 Injecting indexes for table: ${tableName}`);
+        return `const ${tableName} = new Table(${columnsPart}, { indexes: ${indexesLiteral} });`;
+      }
+
+      if (/indexes:\s*\{[\s\S]*?\}/.test(optionsPart)) {
+        optionsPart = optionsPart.replace(
+          /indexes:\s*\{[\s\S]*?\}/,
+          `indexes: ${indexesLiteral}`
+        );
+      } else {
+        optionsPart = optionsPart.replace(
+          /^\{/,
+          `{ indexes: ${indexesLiteral}, `
+        );
+      }
       patchedCount++;
-      console.log(`🧩 Injecting indexes for table: ${tableName}`);
-      return `const ${tableName} = new Table(${columnsPart}, { indexes: ${indexesLiteral} });`;
+      console.log(`🧩 Replacing indexes for table: ${tableName}`);
+      return `const ${tableName} = new Table(${columnsPart}, ${optionsPart});`;
     }
-
-    if (/indexes:\s*\{[\s\S]*?\}/.test(optionsPart)) {
-      optionsPart = optionsPart.replace(/indexes:\s*\{[\s\S]*?\}/, `indexes: ${indexesLiteral}`);
-    } else {
-      optionsPart = optionsPart.replace(/^\{/, `{ indexes: ${indexesLiteral}, `);
-    }
-    patchedCount++;
-    console.log(`🧩 Replacing indexes for table: ${tableName}`);
-    return `const ${tableName} = new Table(${columnsPart}, ${optionsPart});`;
-  });
+  );
   console.log(`✅ Index patching complete. Tables patched: ${patchedCount}`);
   return result;
 }
@@ -141,7 +174,8 @@ function buildCombinedSchema(generatedContent) {
 
   const rewritten = indexedGenerated.replace(
     /export const AppSchema = new Schema\([\s\S]*?\);/,
-    (match) => match.replace('export const AppSchema', 'export const SyncedSchema')
+    match =>
+      match.replace('export const AppSchema', 'export const SyncedSchema')
   );
 
   const footer = `
@@ -179,4 +213,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { main }; 
+module.exports = { main };

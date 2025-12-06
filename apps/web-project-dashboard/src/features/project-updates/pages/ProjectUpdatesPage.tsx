@@ -44,8 +44,7 @@ export const ProjectUpdatesPage: React.FC = () => {
         </div>
         <Button
           onClick={() => setIsCreateModalOpen(true)}
-          leftIcon={<PlusIcon className='h-5 w-5' />}
-        >
+          leftIcon={<PlusIcon className='h-5 w-5' />}>
           Post Update
         </Button>
       </div>

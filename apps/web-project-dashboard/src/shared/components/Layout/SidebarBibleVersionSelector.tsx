@@ -49,8 +49,7 @@ export const SidebarBibleVersionSelector: React.FC = () => {
         <Select
           value={selectedBibleVersionId || ''}
           onValueChange={handleVersionChange}
-          disabled={bibleVersions.length === 0}
-        >
+          disabled={bibleVersions.length === 0}>
           {bibleVersions.map(version => (
             <SelectItem key={version.id} value={version.id}>
               {version.name}

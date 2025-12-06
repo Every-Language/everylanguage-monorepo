@@ -12,8 +12,7 @@ export function FundingStatusBadge({
   if (!status) {
     return (
       <span
-        className={`px-2 py-1 text-xs font-medium rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 ${className}`}
-      >
+        className={`px-2 py-1 text-xs font-medium rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 ${className}`}>
         —
       </span>
     );
@@ -59,8 +58,7 @@ export function FundingStatusBadge({
 
   return (
     <span
-      className={`px-2 py-1 text-xs font-medium rounded-full ${config.bgColor} ${config.textColor} ${className}`}
-    >
+      className={`px-2 py-1 text-xs font-medium rounded-full ${config.bgColor} ${config.textColor} ${className}`}>
       {config.label}
     </span>
   );

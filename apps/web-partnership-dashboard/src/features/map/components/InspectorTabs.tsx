@@ -552,8 +552,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
                 isActive
                   ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-sm'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-              }`}
-            >
+              }`}>
               {getTabLabel(tab)}
             </button>
           );
@@ -563,8 +562,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
       {/* Tab Content */}
       <div
         ref={tabContentScrollRef}
-        className='flex-1 overflow-y-auto p-4 min-h-0'
-      >
+        className='flex-1 overflow-y-auto p-4 min-h-0'>
         {activeTab === 'map-controls' && layers && onLayersChange && (
           <MapControlsSection
             value={layers}
@@ -586,8 +584,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
               title='Bible Translation Progress'
               sectionId='bible-translation-progress'
               defaultExpanded={true}
-              variant='card'
-            >
+              variant='card'>
               <BibleTranslationStats
                 data={bibleStatsQuery.data?.data}
                 isLoading={bibleStatsQuery.isLoading}
@@ -599,8 +596,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
                 title='Every Language Projects'
                 sectionId='every-language-projects'
                 defaultExpanded={true}
-                variant='card'
-              >
+                variant='card'>
                 <EveryLanguageProjectStats
                   summary={projectStatusQuery.data?.summary}
                   projects={projectStatusQuery.data?.projects}
@@ -614,8 +610,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
                 title='Recent Activity'
                 sectionId='recent-activity'
                 defaultExpanded={true}
-                variant='card'
-              >
+                variant='card'>
                 <RecentActivityFeed
                   items={activityFeedQuery.data?.items}
                   isLoading={activityFeedQuery.isLoading}
@@ -636,8 +631,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
                   title='Hierarchy'
                   sectionId='language-hierarchy'
                   defaultExpanded={true}
-                  variant='card'
-                >
+                  variant='card'>
                   <HierarchySection
                     type='language'
                     entityId={selection.id}
@@ -648,24 +642,21 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
                   title='Language Statistics'
                   sectionId='language-stats'
                   defaultExpanded={true}
-                  variant='card'
-                >
+                  variant='card'>
                   <JPLanguageStatsSection entityId={selection.id} />
                 </CollapsibleSection>
                 <CollapsibleSection
                   title='Language Sample'
                   sectionId='language-sample'
                   defaultExpanded={true}
-                  variant='card'
-                >
+                  variant='card'>
                   <GRNLanguageSampleSection entityId={selection.id} />
                 </CollapsibleSection>
                 <CollapsibleSection
                   title='Gospel Resources'
                   sectionId='gospel-resources'
                   defaultExpanded={true}
-                  variant='card'
-                >
+                  variant='card'>
                   <GRNGospelResourcesSection entityId={selection.id} />
                 </CollapsibleSection>
               </>
@@ -694,8 +685,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
                   title='Hierarchy'
                   sectionId='region-hierarchy'
                   defaultExpanded={true}
-                  variant='card'
-                >
+                  variant='card'>
                   <HierarchySection
                     type='region'
                     entityId={selection.id}
@@ -706,8 +696,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
                   title='Region Statistics'
                   sectionId='region-stats'
                   defaultExpanded={true}
-                  variant='card'
-                >
+                  variant='card'>
                   <JPCountryStatsSection entityId={selection.id} />
                 </CollapsibleSection>
               </>
@@ -736,8 +725,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
                   title='People Group Statistics'
                   sectionId='people-group-stats'
                   defaultExpanded={true}
-                  variant='card'
-                >
+                  variant='card'>
                   <PeopleGroupStatsSection entityId={selection.id} />
                 </CollapsibleSection>
               </>

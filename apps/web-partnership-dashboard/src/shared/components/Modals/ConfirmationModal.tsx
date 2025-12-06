@@ -93,12 +93,10 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       size='sm'
       closeOnOverlayClick={!isLoading}
       closeOnEscape={!isLoading}
-      showCloseButton={false}
-    >
+      showCloseButton={false}>
       <div className='flex items-start space-x-4'>
         <div
-          className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${config.iconBg}`}
-        >
+          className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${config.iconBg}`}>
           <Icon className={`h-6 w-6 ${config.iconColor}`} />
         </div>
 
@@ -114,8 +112,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             <Button
               variant='outline'
               onClick={handleCancel}
-              disabled={isLoading}
-            >
+              disabled={isLoading}>
               {cancelText}
             </Button>
 
@@ -123,8 +120,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               onClick={handleConfirm}
               disabled={disabled || isLoading}
               loading={isLoading}
-              className={config.confirmButton}
-            >
+              className={config.confirmButton}>
               {finalConfirmText}
             </Button>
           </div>

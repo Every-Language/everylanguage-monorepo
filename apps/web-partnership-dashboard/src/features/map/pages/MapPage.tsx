@@ -197,8 +197,7 @@ export const MapPage: React.FC = () => {
         style={{
           left: selectorLeftOffset,
           transform: 'translateX(-50%)',
-        }}
-      >
+        }}>
         <div className='w-[400px] md:w-[400px]'>
           <SelectionModeTabs />
         </div>
@@ -207,8 +206,7 @@ export const MapPage: React.FC = () => {
       <MobileSheetProvider
         height={mobileSheetHeight ?? 80}
         snapPoints={mobileSnapPoints ?? [80, 360, 744]}
-        isDragging={mobileSheetDragging}
-      >
+        isDragging={mobileSheetDragging}>
         <MapShell countriesEnabled={layers.countries} padding={mapPadding}>
           <RouteSync />
           <MapFocusHandler />

@@ -53,8 +53,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
         y='50%'
         dominantBaseline='middle'
         textAnchor='middle'
-        className='text-sm fill-current'
-      >
+        className='text-sm fill-current'>
         {Math.round(clamped)}%
       </text>
     </svg>

@@ -47,8 +47,7 @@ const ActionButtons: React.FC<{
           onUpload();
         }}
         className='h-6 w-6 p-0 hover:bg-secondary-100 dark:hover:bg-secondary-900'
-        aria-label={`Upload audio for ${variant}`}
-      >
+        aria-label={`Upload audio for ${variant}`}>
         <Upload className='h-3 w-3 text-secondary-600 dark:text-secondary-400' />
       </Button>
       <Button
@@ -59,8 +58,7 @@ const ActionButtons: React.FC<{
           onEdit();
         }}
         className='h-6 w-6 p-0 hover:bg-primary-100 dark:hover:bg-primary-900'
-        aria-label={`Edit ${variant} details`}
-      >
+        aria-label={`Edit ${variant} details`}>
         <Edit3 className='h-3 w-3 text-primary-600 dark:text-primary-400' />
       </Button>
     </div>
@@ -98,8 +96,7 @@ const ChapterItem: React.FC<ChapterItemProps> = ({
       className={cn(
         'group flex items-center justify-between py-2 px-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all duration-200',
         isHighlighted && 'bg-yellow-50 dark:bg-yellow-900/30 animate-pulse'
-      )}
-    >
+      )}>
       <div className='flex items-center space-x-3'>
         {/* Status Indicator */}
         <div
@@ -134,8 +131,7 @@ const ChapterItem: React.FC<ChapterItemProps> = ({
             chapter.versesCovered > 0
               ? `${formatProgress(chapter.progress)} of verses have been recorded`
               : 'No verses recorded yet'
-          }`}
-        >
+          }`}>
           {chapter.versesCovered}/{chapter.total_verses} verses
         </div>
 
@@ -145,8 +141,7 @@ const ChapterItem: React.FC<ChapterItemProps> = ({
             statusColors.bg,
             statusColors.text
           )}
-          aria-label={`${formatProgress(chapter.progress)} complete`}
-        >
+          aria-label={`${formatProgress(chapter.progress)} complete`}>
           {formatProgress(chapter.progress)}
         </span>
 
@@ -180,8 +175,7 @@ const BookEntry: React.FC<BookEntryProps> = ({
       {/* Book Header - Clickable */}
       <CardHeader
         className='cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors'
-        onClick={onToggle}
-      >
+        onClick={onToggle}>
         <div className='flex items-center justify-between'>
           <div className='flex items-center space-x-3'>
             {/* Expand/Collapse Icon */}
@@ -195,8 +189,7 @@ const BookEntry: React.FC<BookEntryProps> = ({
               }}
               aria-label={
                 isExpanded ? `Collapse ${book.name}` : `Expand ${book.name}`
-              }
-            >
+              }>
               {isExpanded ? (
                 <ChevronDown className='h-4 w-4 transition-transform duration-200' />
               ) : (
@@ -237,8 +230,7 @@ const BookEntry: React.FC<BookEntryProps> = ({
                 'px-3 py-1 rounded-full text-xs font-medium',
                 statusColors.bg,
                 statusColors.text
-              )}
-            >
+              )}>
               {formatStatus(bookStatus)}
             </span>
           </div>
@@ -261,8 +253,7 @@ const BookEntry: React.FC<BookEntryProps> = ({
                 <div
                   key={chapter.id}
                   className='animate-in fade-in slide-in-from-left-1 duration-300'
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
+                  style={{ animationDelay: `${index * 50}ms` }}>
                   <ChapterItem
                     chapter={chapter}
                     onUpload={() => {}} // Placeholder for actual upload handler
@@ -275,8 +266,9 @@ const BookEntry: React.FC<BookEntryProps> = ({
             {/* Book Actions */}
             <div
               className='flex items-center justify-end space-x-2 p-4 bg-neutral-50 dark:bg-neutral-800 mt-2 rounded-b-lg animate-in fade-in duration-300'
-              style={{ animationDelay: `${book.chapters.length * 50 + 100}ms` }}
-            >
+              style={{
+                animationDelay: `${book.chapters.length * 50 + 100}ms`,
+              }}>
               <Button variant='outline' size='sm'>
                 Upload Audio
               </Button>
@@ -448,8 +440,7 @@ export const BibleBooksList: React.FC<BibleBooksListProps> = ({
               variant='outline'
               size='sm'
               onClick={() => setShowLegend(!showLegend)}
-              className='gap-2'
-            >
+              className='gap-2'>
               <Info className='h-4 w-4' />
               Legend
             </Button>
@@ -521,8 +512,7 @@ export const BibleBooksList: React.FC<BibleBooksListProps> = ({
               onChange={e =>
                 setStatusFilter(e.target.value as typeof statusFilter)
               }
-              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-            >
+              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>
               <option value='all'>All Books</option>
               <option value='complete'>Complete</option>
               <option value='in_progress'>In Progress</option>
@@ -539,8 +529,7 @@ export const BibleBooksList: React.FC<BibleBooksListProps> = ({
                   e.target.value as typeof chapterStatusFilter
                 )
               }
-              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-            >
+              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>
               <option value='all'>All Chapters</option>
               <option value='complete'>Complete</option>
               <option value='in_progress'>In Progress</option>

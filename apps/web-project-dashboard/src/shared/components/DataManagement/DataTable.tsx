@@ -165,8 +165,7 @@ export function DataTable<T extends Record<string, unknown>>({
                     : ''
                 } ${column.className || ''}`}
                 style={{ width: column.width }}
-                onClick={() => handleSort(column)}
-              >
+                onClick={() => handleSort(column)}>
                 <div
                   className={`flex items-center gap-1 ${
                     column.align === 'center'
@@ -174,8 +173,7 @@ export function DataTable<T extends Record<string, unknown>>({
                       : column.align === 'right'
                         ? 'justify-end'
                         : 'justify-start'
-                  }`}
-                >
+                  }`}>
                   <span>{column.header}</span>
                   {column.sortable && (
                     <div className='flex flex-col'>
@@ -204,8 +202,7 @@ export function DataTable<T extends Record<string, unknown>>({
           {data.map((item, index) => (
             <tr
               key={getItemId(item)}
-              className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors'
-            >
+              className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors'>
               {selectable && (
                 <td className='w-12 px-4 py-4'>
                   <Checkbox
@@ -226,8 +223,7 @@ export function DataTable<T extends Record<string, unknown>>({
                       : column.align === 'right'
                         ? 'text-right'
                         : 'text-left'
-                  } ${column.className || ''}`}
-                >
+                  } ${column.className || ''}`}>
                   {renderCell(column, item, index)}
                 </td>
               ))}
@@ -278,8 +274,7 @@ export function DataTable<T extends Record<string, unknown>>({
                       className='absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400'
                       fill='none'
                       stroke='currentColor'
-                      viewBox='0 0 24 24'
-                    >
+                      viewBox='0 0 24 24'>
                       <path
                         strokeLinecap='round'
                         strokeLinejoin='round'

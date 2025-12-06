@@ -63,8 +63,7 @@ export const LanguageCart: React.FC<LanguageCartProps> = ({
             {selectedLanguages.map(lang => (
               <div
                 key={lang.id}
-                className='flex items-start justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700'
-              >
+                className='flex items-start justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700'>
                 <div className='flex-1 min-w-0'>
                   <div className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
                     {lang.language_name ?? lang.language_entity_id ?? 'Unknown'}
@@ -79,8 +78,7 @@ export const LanguageCart: React.FC<LanguageCartProps> = ({
                   <button
                     onClick={() => onRemove(lang.id)}
                     className='ml-2 p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded transition-colors'
-                    aria-label='Remove language'
-                  >
+                    aria-label='Remove language'>
                     <X className='h-4 w-4 text-neutral-500' />
                   </button>
                 )}
@@ -161,8 +159,7 @@ export const LanguageCart: React.FC<LanguageCartProps> = ({
             onClick={onContinue}
             className='w-full'
             size='lg'
-            disabled={loading}
-          >
+            disabled={loading}>
             {buttonText}
           </Button>
         </>

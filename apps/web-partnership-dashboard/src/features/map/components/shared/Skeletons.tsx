@@ -30,8 +30,7 @@ export const HeaderSkeleton: React.FC<HeaderSkeletonProps> = ({
       <button
         onClick={onBack}
         aria-label='Back'
-        className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800'
-      >
+        className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800'>
         ←
       </button>
     )}

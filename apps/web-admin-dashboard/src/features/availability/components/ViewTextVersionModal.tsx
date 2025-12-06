@@ -189,8 +189,7 @@ export function ViewTextVersionModal({
             : isEntering
               ? 'translate-x-full'
               : 'translate-x-0'
-        }`}
-      >
+        }`}>
         {/* Header */}
         <div className='px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between'>
           <div>
@@ -203,8 +202,7 @@ export function ViewTextVersionModal({
           </div>
           <button
             onClick={handleClose}
-            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-          >
+            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'>
             <X className='h-5 w-5 text-neutral-600 dark:text-neutral-400' />
           </button>
         </div>
@@ -220,8 +218,7 @@ export function ViewTextVersionModal({
               {!editingName && (
                 <button
                   onClick={() => setEditingName(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -239,8 +236,7 @@ export function ViewTextVersionModal({
                   <button
                     onClick={handleSave}
                     disabled={updateNameMutation.isPending}
-                    className='px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                  >
+                    className='px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                     <Save className='h-4 w-4' />
                     {updateNameMutation.isPending ? 'Saving...' : 'Save'}
                   </button>
@@ -249,8 +245,7 @@ export function ViewTextVersionModal({
                       setEditingName(false);
                       setName(textVersion.name);
                     }}
-                    className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                  >
+                    className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                     Cancel
                   </button>
                 </div>
@@ -278,8 +273,7 @@ export function ViewTextVersionModal({
                 onValueChange={value => {
                   setPublishStatusFilter(value);
                   setPage(1);
-                }}
-              >
+                }}>
                 <SelectItem value='all'>All statuses</SelectItem>
                 <SelectItem value='draft'>Draft</SelectItem>
                 <SelectItem value='pending'>Pending</SelectItem>
@@ -301,51 +295,43 @@ export function ViewTextVersionModal({
                   <div className='overflow-x-auto'>
                     <table
                       className='w-full divide-y divide-neutral-200 dark:divide-neutral-800'
-                      style={{ tableLayout: 'fixed' }}
-                    >
+                      style={{ tableLayout: 'fixed' }}>
                       <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
                         <tr>
                           <th
                             className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                            style={{ width: '15%' }}
-                          >
+                            style={{ width: '15%' }}>
                             <button
                               type='button'
                               onClick={() => handleSort('verse_id')}
-                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                            >
+                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                               Verse ID
                               <span>{getSortIndicator('verse_id')}</span>
                             </button>
                           </th>
                           <th
                             className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                            style={{ width: '50%' }}
-                          >
+                            style={{ width: '50%' }}>
                             Verse Text
                           </th>
                           <th
                             className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                            style={{ width: '15%' }}
-                          >
+                            style={{ width: '15%' }}>
                             <button
                               type='button'
                               onClick={() => handleSort('version')}
-                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                            >
+                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                               Version
                               <span>{getSortIndicator('version')}</span>
                             </button>
                           </th>
                           <th
                             className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'
-                            style={{ width: '20%' }}
-                          >
+                            style={{ width: '20%' }}>
                             <button
                               type='button'
                               onClick={() => handleSort('publish_status')}
-                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                            >
+                              className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                               Publish Status
                               <span>{getSortIndicator('publish_status')}</span>
                             </button>
@@ -357,8 +343,7 @@ export function ViewTextVersionModal({
                           verseTexts.map(verseText => (
                             <tr
                               key={verseText.id}
-                              className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors'
-                            >
+                              className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors'>
                               <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
                                 {verseText.verse_id}
                               </td>
@@ -372,8 +357,7 @@ export function ViewTextVersionModal({
                                 <span
                                   className={`inline-block px-2 py-1 rounded text-xs font-medium ${getPublishStatusBadgeColor(
                                     verseText.publish_status
-                                  )}`}
-                                >
+                                  )}`}>
                                   {verseText.publish_status}
                                 </span>
                               </td>
@@ -383,8 +367,7 @@ export function ViewTextVersionModal({
                           <tr>
                             <td
                               colSpan={4}
-                              className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                            >
+                              className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                               No verse texts found
                             </td>
                           </tr>
@@ -404,8 +387,7 @@ export function ViewTextVersionModal({
                         <button
                           onClick={() => setPage(p => Math.max(1, p - 1))}
                           disabled={page === 1}
-                          className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                        >
+                          className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                           <ChevronLeft className='h-4 w-4' />
                         </button>
                         <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
@@ -420,8 +402,7 @@ export function ViewTextVersionModal({
                             setPage(p => Math.min(totalPages, p + 1))
                           }
                           disabled={page === totalPages}
-                          className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                        >
+                          className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                           <ChevronRight className='h-4 w-4' />
                         </button>
                       </div>

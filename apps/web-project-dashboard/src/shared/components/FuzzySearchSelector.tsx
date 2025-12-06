@@ -169,8 +169,7 @@ export function FuzzySearchSelector({
           <div
             className={`flex items-center justify-between p-4 border rounded-lg bg-blue-50/50 dark:bg-blue-900/20 ${
               error ? 'border-red-500' : 'border-blue-200 dark:border-blue-700'
-            }`}
-          >
+            }`}>
             <div className='flex items-center space-x-3'>
               <div>
                 <div className='font-medium text-neutral-900 dark:text-neutral-100'>
@@ -192,8 +191,7 @@ export function FuzzySearchSelector({
               size='sm'
               onClick={handleClear}
               disabled={disabled}
-              className='text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
-            >
+              className='text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'>
               ✕
             </Button>
           </div>
@@ -217,8 +215,7 @@ export function FuzzySearchSelector({
                 onClick={handleSearch}
                 disabled={query.length < 2 || disabled}
                 size='sm'
-                className='ml-2 px-4'
-              >
+                className='ml-2 px-4'>
                 Search
               </Button>
             </div>
@@ -299,8 +296,7 @@ export function FuzzySearchSelector({
                       <tr
                         key={item.id}
                         className='border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer'
-                        onClick={() => handleItemSelect(item)}
-                      >
+                        onClick={() => handleItemSelect(item)}>
                         <td className='p-3'>
                           <div className='flex items-center space-x-3'>
                             <div>
@@ -332,8 +328,7 @@ export function FuzzySearchSelector({
                                 {item.regions.slice(0, 3).map(region => (
                                   <span
                                     key={region.id}
-                                    className='inline-flex items-center px-2 py-1 rounded text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                  >
+                                    className='inline-flex items-center px-2 py-1 rounded text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'>
                                     <MapPin className='w-3 h-3 mr-1' />
                                     {region.name}
                                   </span>
@@ -356,8 +351,7 @@ export function FuzzySearchSelector({
                             type='button'
                             variant='ghost'
                             size='sm'
-                            className='text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'
-                          >
+                            className='text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'>
                             Select
                           </Button>
                         </td>
