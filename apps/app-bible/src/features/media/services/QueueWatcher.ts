@@ -357,9 +357,8 @@ export class QueueWatcher {
 
       // 1. Finalize previous track progress
       if (prevTrackId) {
-        const { progressTrackingService } = await import(
-          './ProgressTrackingService'
-        );
+        const { progressTrackingService } =
+          await import('./ProgressTrackingService');
         await progressTrackingService.finalizeTrackProgress(prevTrackId);
       }
 
@@ -379,9 +378,8 @@ export class QueueWatcher {
             const track = queue[currentIndex] as BibleTrack;
 
             // Get languageEntityId from current audio version (already in memory)
-            const { useVersionsStore } = await import(
-              '@/features/languages/store/versionsStore'
-            );
+            const { useVersionsStore } =
+              await import('@/features/languages/store/versionsStore');
             const { currentAudioVersion } = useVersionsStore.getState();
             const languageEntityId =
               currentAudioVersion?.languageEntityId || '';

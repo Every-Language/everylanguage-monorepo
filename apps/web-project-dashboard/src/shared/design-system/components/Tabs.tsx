@@ -89,27 +89,31 @@ const tabsContentVariants = cva(
   }
 );
 
-interface TabsProps
-  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root> {
+interface TabsProps extends React.ComponentPropsWithoutRef<
+  typeof TabsPrimitive.Root
+> {
   variant?: 'default' | 'underline' | 'pills';
   size?: 'sm' | 'md' | 'lg';
 }
 
-interface TabsListProps
-  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> {
+interface TabsListProps extends React.ComponentPropsWithoutRef<
+  typeof TabsPrimitive.List
+> {
   variant?: 'default' | 'underline' | 'pills';
   orientation?: 'horizontal' | 'vertical';
   size?: 'sm' | 'md' | 'lg';
 }
 
-interface TabsTriggerProps
-  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> {
+interface TabsTriggerProps extends React.ComponentPropsWithoutRef<
+  typeof TabsPrimitive.Trigger
+> {
   variant?: 'default' | 'underline' | 'pills';
   size?: 'sm' | 'md' | 'lg';
 }
 
-interface TabsContentProps
-  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content> {
+interface TabsContentProps extends React.ComponentPropsWithoutRef<
+  typeof TabsPrimitive.Content
+> {
   size?: 'sm' | 'md' | 'lg';
 }
 

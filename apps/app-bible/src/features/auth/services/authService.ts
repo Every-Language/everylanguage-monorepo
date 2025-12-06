@@ -1020,9 +1020,8 @@ export const authService = {
       );
 
       // Import sync screen store to update progress
-      const { useSyncScreenStore } = await import(
-        '@/features/auth/store/syncScreenStore'
-      );
+      const { useSyncScreenStore } =
+        await import('@/features/auth/store/syncScreenStore');
       const syncStore = useSyncScreenStore.getState();
 
       // Phase 1: Clear all user data
@@ -1141,9 +1140,8 @@ export const authService = {
 
       // Set error in sync store if available
       try {
-        const { useSyncScreenStore } = await import(
-          '@/features/auth/store/syncScreenStore'
-        );
+        const { useSyncScreenStore } =
+          await import('@/features/auth/store/syncScreenStore');
         useSyncScreenStore.getState().setError(errorMessage);
       } catch {
         // Ignore if sync store not available

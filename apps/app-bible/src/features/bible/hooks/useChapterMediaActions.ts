@@ -83,12 +83,10 @@ export const useChapterMediaActions = (chapter: ChapterWithMetadata | null) => {
   const handleAvailabilityPress = useCallback(async () => {
     if (!chapter) return;
     try {
-      const { queueManager } = await import(
-        '@/features/downloads/services/QueueManager'
-      );
-      const { downloadManager } = await import(
-        '@/features/downloads/services/DownloadManager'
-      );
+      const { queueManager } =
+        await import('@/features/downloads/services/QueueManager');
+      const { downloadManager } =
+        await import('@/features/downloads/services/DownloadManager');
       await queueManager.prioritizeChapterDownloads(chapter.id);
       await downloadManager.kick();
     } catch (e) {

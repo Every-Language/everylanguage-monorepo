@@ -28,7 +28,7 @@ export function useProjectDistribution(
                 ?.map((l: any) => l.project?.target_language_entity_id)
                 .filter(Boolean) || []
             : langData?.map((l: any) => l.language_entity_id).filter(Boolean) ||
-              []
+                []
         ),
       ];
 

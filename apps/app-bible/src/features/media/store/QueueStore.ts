@@ -135,9 +135,8 @@ export const useQueueStore = create<QueueStore>()(
           options?: ChapterMediaOptions
         ) => {
           try {
-            const { mediaPlayerService } = await import(
-              '../services/MediaPlayerService'
-            );
+            const { mediaPlayerService } =
+              await import('../services/MediaPlayerService');
             await mediaPlayerService.addToQueue(chapterId, options);
             logger.info(
               ENABLE_LOGGING,
@@ -321,9 +320,8 @@ export const useQueueStore = create<QueueStore>()(
 
         playTrackFromQueue: async (targetIndex: number) => {
           try {
-            const { mediaPlayerService } = await import(
-              '../services/MediaPlayerService'
-            );
+            const { mediaPlayerService } =
+              await import('../services/MediaPlayerService');
             await mediaPlayerService.playTrackFromQueue(targetIndex);
             logger.info(
               ENABLE_LOGGING,

@@ -157,9 +157,8 @@ class DataClearingService {
       logger.info(ENABLE_LOGGING, '🎵 Clearing play history...');
 
       // Import and use HistoryManager service
-      const { historyManager } = await import(
-        '@/features/media/services/HistoryManager'
-      );
+      const { historyManager } =
+        await import('@/features/media/services/HistoryManager');
       await historyManager.clearHistory();
 
       logger.info(ENABLE_LOGGING, '✅ Cleared play history');

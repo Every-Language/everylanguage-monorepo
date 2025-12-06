@@ -635,9 +635,8 @@ class DownloadManager {
 
     // 🚀 PERFORMANCE: Invalidate chapter media cache when download completes
     try {
-      const { chapterMediaResolver } = await import(
-        '@/features/media/services/ChapterMediaResolver'
-      );
+      const { chapterMediaResolver } =
+        await import('@/features/media/services/ChapterMediaResolver');
       // Get chapter ID from media file to invalidate cache
       const mediaFileResults = await powerSyncSystem.getAll(
         'SELECT chapter_id FROM media_files WHERE id = ?',

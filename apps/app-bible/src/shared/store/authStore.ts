@@ -239,9 +239,8 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true, error: null });
 
           // Start sync screen
-          const { useSyncScreenStore } = await import(
-            '@/features/auth/store/syncScreenStore'
-          );
+          const { useSyncScreenStore } =
+            await import('@/features/auth/store/syncScreenStore');
           useSyncScreenStore.getState().startSync();
 
           const result = await authService.signInWithFreshStart({
@@ -284,9 +283,8 @@ export const useAuthStore = create<AuthStore>()(
 
           // Set error in sync store if available
           try {
-            const { useSyncScreenStore } = await import(
-              '@/features/auth/store/syncScreenStore'
-            );
+            const { useSyncScreenStore } =
+              await import('@/features/auth/store/syncScreenStore');
             useSyncScreenStore.getState().setError(errorMessage);
           } catch {
             // Ignore if sync store not available
