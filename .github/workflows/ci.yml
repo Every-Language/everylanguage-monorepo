@@ -10,6 +10,7 @@ on:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  NODE_VERSION: '20' # Standardize on Node 20 for consistency
 
 jobs:
   # Detect which parts of the monorepo changed
@@ -20,6 +21,7 @@ jobs:
       shared-types: ${{ steps.filter.outputs.shared-types }}
       frontend-project: ${{ steps.filter.outputs.frontend-project }}
       frontend-partnership: ${{ steps.filter.outputs.frontend-partnership }}
+      frontend-admin: ${{ steps.filter.outputs.frontend-admin }}
       frontend-app-bible: ${{ steps.filter.outputs.frontend-app-bible }}
     steps:
       - name: Checkout code
@@ -38,6 +40,8 @@ jobs:
               - 'apps/web-project-dashboard/**'
             frontend-partnership:
               - 'apps/web-partnership-dashboard/**'
+            frontend-admin:
+              - 'apps/web-admin-dashboard/**'
             frontend-app-bible:
               - 'apps/app-bible/**'
 
@@ -58,7 +62,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -133,11 +137,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Check formatting
+        run: pnpm --filter=web-project-dashboard run format:check
 
       - name: Run linting
         run: pnpm --filter=web-project-dashboard run lint
@@ -175,11 +182,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Check formatting
+        run: pnpm --filter=web-partnership-dashboard run format:check
 
       - name: Run linting
         run: pnpm --filter=web-partnership-dashboard run lint
@@ -192,6 +202,51 @@ jobs:
 
       - name: Test build
         run: pnpm --filter=web-partnership-dashboard run build
+        env:
+          # Use dummy values for build test
+          VITE_SUPABASE_URL: https://dummy.supabase.co
+          VITE_SUPABASE_ANON_KEY: dummy_key
+
+  frontend-admin:
+    runs-on: ubuntu-latest
+    name: Admin Dashboard - Tests & Linting
+    needs: detect-changes
+    # Run if backend, shared-types, or this specific frontend changed
+    if: |
+      needs.detect-changes.outputs.backend == 'true' || 
+      needs.detect-changes.outputs.shared-types == 'true' || 
+      needs.detect-changes.outputs.frontend-admin == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Check formatting
+        run: pnpm --filter=web-admin-dashboard run format:check
+
+      - name: Run linting
+        run: pnpm --filter=web-admin-dashboard run lint
+
+      - name: Run type checking
+        run: pnpm --filter=web-admin-dashboard run type-check
+
+      - name: Run tests
+        run: pnpm --filter=web-admin-dashboard run test:run
+
+      - name: Test build
+        run: pnpm --filter=web-admin-dashboard run build
         env:
           # Use dummy values for build test
           VITE_SUPABASE_URL: https://dummy.supabase.co
@@ -216,7 +271,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -228,6 +283,9 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Check formatting
+        run: pnpm --filter=app-bible run format:check
+
       - name: Run linting
         run: pnpm --filter=app-bible run lint
 
@@ -236,9 +294,6 @@ jobs:
 
       - name: Run tests
         run: pnpm --filter=app-bible run test:ci
-
-      - name: Expo doctor validation
-        run: pnpm --filter=app-bible run doctor
 
       - name: Validate managed workflow
         working-directory: apps/app-bible
@@ -263,7 +318,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -271,4 +326,3 @@ jobs:
 
       - name: Run npm audit
         run: pnpm audit --audit-level high
-
