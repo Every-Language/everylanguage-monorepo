@@ -36,6 +36,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:run": "jest --watchAll=false --coverage=false",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "prepare": "husky",
     "powersync:generate-schema": "node scripts/generate-powersync-schema.cjs",

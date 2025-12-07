@@ -336,7 +336,7 @@ jobs:
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             pnpm --filter=app-bible run test:ci
           else
-            pnpm --filter=app-bible run test -- --watchAll=false --coverage=false
+            pnpm --filter=app-bible run test:run
           fi
 
       - name: Validate managed workflow
