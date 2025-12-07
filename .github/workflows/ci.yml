@@ -1,9 +1,10 @@
 name: CI
 
 on:
-  # Run CI on feature branches and PRs
+  # Push: Light checks (format, lint, type-check, unit tests only)
   push:
     branches-ignore: [main, develop]
+  # PR: Full validation (format, lint, type-check, full test suite with coverage, build)
   pull_request:
     branches: [develop, main]
 
@@ -23,9 +24,14 @@ jobs:
       frontend-partnership: ${{ steps.filter.outputs.frontend-partnership }}
       frontend-admin: ${{ steps.filter.outputs.frontend-admin }}
       frontend-app-bible: ${{ steps.filter.outputs.frontend-app-bible }}
+      powersync-rules: ${{ steps.filter.outputs.powersync-rules }}
+      is-pr: ${{ github.event_name == 'pull_request' }}
+      is-push: ${{ github.event_name == 'push' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for PR comparison
         
       - name: Detect changed paths
         uses: dorny/paths-filter@v3
@@ -44,6 +50,8 @@ jobs:
               - 'apps/web-admin-dashboard/**'
             frontend-app-bible:
               - 'apps/app-bible/**'
+            powersync-rules:
+              - 'apps/app-bible/powersync/sync-rules.yaml'
 
   backend:
     runs-on: ubuntu-latest
@@ -112,6 +120,8 @@ jobs:
         env:
           NODE_ENV: test
           SUPABASE_URL: http://127.0.0.1:54321
+        # On push: run tests without coverage (faster)
+        # On PR: run full test suite (coverage handled by test script)
 
       - name: Stop Supabase
         if: always()
@@ -153,9 +163,18 @@ jobs:
         run: pnpm --filter=web-project-dashboard run type-check
 
       - name: Run tests
-        run: pnpm --filter=web-project-dashboard run test:run
+        # On push: unit tests only (no coverage)
+        # On PR: full test suite with coverage
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            pnpm --filter=web-project-dashboard run test:coverage
+          else
+            pnpm --filter=web-project-dashboard run test:run
+          fi
 
       - name: Test build
+        # Only run build on PRs (full validation)
+        if: github.event_name == 'pull_request'
         run: pnpm --filter=web-project-dashboard run build
         env:
           # Use dummy values for build test
@@ -198,9 +217,18 @@ jobs:
         run: pnpm --filter=web-partnership-dashboard run type-check
 
       - name: Run tests
-        run: pnpm --filter=web-partnership-dashboard run test:run
+        # On push: unit tests only (no coverage)
+        # On PR: full test suite with coverage
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            pnpm --filter=web-partnership-dashboard run test:coverage
+          else
+            pnpm --filter=web-partnership-dashboard run test:run
+          fi
 
       - name: Test build
+        # Only run build on PRs (full validation)
+        if: github.event_name == 'pull_request'
         run: pnpm --filter=web-partnership-dashboard run build
         env:
           # Use dummy values for build test
@@ -243,9 +271,18 @@ jobs:
         run: pnpm --filter=web-admin-dashboard run type-check
 
       - name: Run tests
-        run: pnpm --filter=web-admin-dashboard run test:run
+        # On push: unit tests only (no coverage)
+        # On PR: full test suite with coverage
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            pnpm --filter=web-admin-dashboard run test:coverage
+          else
+            pnpm --filter=web-admin-dashboard run test:run
+          fi
 
       - name: Test build
+        # Only run build on PRs (full validation)
+        if: github.event_name == 'pull_request'
         run: pnpm --filter=web-admin-dashboard run build
         env:
           # Use dummy values for build test
@@ -293,7 +330,14 @@ jobs:
         run: pnpm --filter=app-bible run type-check
 
       - name: Run tests
-        run: pnpm --filter=app-bible run test:ci
+        # On push: unit tests only (no coverage)
+        # On PR: full test suite with coverage
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            pnpm --filter=app-bible run test:ci
+          else
+            pnpm --filter=app-bible run test -- --watchAll=false --coverage=false
+          fi
 
       - name: Validate managed workflow
         working-directory: apps/app-bible
@@ -304,9 +348,53 @@ jobs:
           fi
           echo "✅ Managed workflow validated"
 
+  powersync-validation:
+    runs-on: ubuntu-latest
+    name: PowerSync Schema Validation
+    needs: detect-changes
+    # Only run on PRs and only if sync-rules.yaml changed
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.detect-changes.outputs.powersync-rules == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Validate sync rules syntax
+        run: |
+          python3 -c "import yaml; yaml.safe_load(open('apps/app-bible/powersync/sync-rules.yaml'))"
+          echo "✅ Sync rules YAML syntax is valid"
+
+      - name: Verify schema is in sync with sync rules
+        working-directory: apps/app-bible
+        env:
+          AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
+          ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+        run: |
+          echo "🔍 Checking if committed schema matches sync rules..."
+          pnpm run powersync:verify-schema
+          echo "✅ Schema verification completed"
+
   security:
     runs-on: ubuntu-latest
     name: Security Scan
+    # Only run security scan on PRs (full validation)
+    if: github.event_name == 'pull_request'
 
     steps:
       - name: Checkout code
