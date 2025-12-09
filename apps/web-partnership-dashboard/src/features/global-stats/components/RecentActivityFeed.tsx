@@ -70,25 +70,28 @@ export const RecentActivityFeed: React.FC<Props> = ({
             <li
               key={`${item.type}-${item.id}`}
               className='rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 p-4'>
-              <div className='flex items-center justify-between text-sm text-neutral-500'>
-                <span className='inline-flex items-center gap-2'>
-                  <span className='text-xs font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-300'>
-                    {typeLabels[item.type]}
-                  </span>
-                  <span className='text-neutral-400'>•</span>
-                  <span>
-                    {item.type === 'bible_audio'
-                      ? item.language_name
-                      : `${item.project_name} · ${item.language_name}`}
-                  </span>
+              <div className='flex items-center justify-between text-sm text-neutral-500 mb-1'>
+                <span className='text-xs font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-300'>
+                  {typeLabels[item.type]}
                 </span>
                 <time dateTime={item.timestamp}>
                   {dateFormatter.format(new Date(item.timestamp))}
                 </time>
               </div>
 
+              {item.type === 'project_update' && (
+                <div className='mb-2'>
+                  <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+                    {item.language_name}
+                  </p>
+                </div>
+              )}
+
               {item.type === 'bible_audio' ? (
                 <div className='mt-2 space-y-1'>
+                  <div className='flex items-center justify-between text-sm text-neutral-500'>
+                    <span>{item.language_name}</span>
+                  </div>
                   <p className='text-base font-semibold text-neutral-900 dark:text-neutral-50'>
                     {item.book_name}
                     {item.chapter_number

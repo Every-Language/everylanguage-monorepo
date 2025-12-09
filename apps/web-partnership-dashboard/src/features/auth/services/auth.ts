@@ -549,6 +549,61 @@ export class AuthService {
   }
 
   /**
+   * Promote anonymous user to authenticated user
+   * Updates the anonymous user with email, password, and user data to convert to authenticated user
+   */
+  async promoteAnonymousUser(
+    email: string,
+    password: string,
+    userData?: Partial<DbUser>
+  ) {
+    try {
+      const supabase = getSupabaseClient();
+
+      // Get the current origin for email redirect
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/api/auth/confirm`
+          : undefined;
+
+      // Update anonymous user with email and password to promote to authenticated
+      const { data, error } = await supabase.auth.updateUser({
+        email,
+        password,
+        data: userData,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // If email confirmation is required, send confirmation email
+      if (data.user && !data.user.email_confirmed_at) {
+        const { error: emailError } = await supabase.auth.resend({
+          type: 'signup',
+          email,
+          options: {
+            emailRedirectTo,
+          },
+        });
+
+        if (emailError) {
+          // Log error but don't fail - user account is created, just email send failed
+          console.error('Error sending confirmation email:', emailError);
+          throw new Error(
+            `Account created but failed to send confirmation email: ${emailError.message}`
+          );
+        }
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error promoting anonymous user:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Listen to auth state changes
    */
   onAuthStateChange(

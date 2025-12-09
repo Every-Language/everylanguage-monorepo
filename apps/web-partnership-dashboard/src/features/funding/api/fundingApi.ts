@@ -283,6 +283,49 @@ export async function fetchOperationsForDonation(): Promise<
   }));
 }
 
+/**
+ * Find existing anonymous or authenticated user by email or phone
+ * This prevents data fragmentation from multiple anonymous users with the same contact info
+ */
+export async function findAnonymousUserByContact(
+  email?: string,
+  phone?: string
+): Promise<{
+  user_id: string | null;
+  is_anonymous: boolean | null;
+  email: string | null;
+  phone: string | null;
+} | null> {
+  if (!email && !phone) {
+    return null;
+  }
+
+  const { data, error } = await (supabase as any).rpc(
+    'find_anonymous_user_by_contact',
+    {
+      p_email: email || null,
+      p_phone: phone || null,
+    }
+  );
+
+  if (error) {
+    console.error('Error finding anonymous user by contact:', error);
+    return null;
+  }
+
+  // RPC returns array, get first result
+  if (data && data.length > 0) {
+    return data[0] as {
+      user_id: string;
+      is_anonymous: boolean;
+      email: string | null;
+      phone: string | null;
+    };
+  }
+
+  return null;
+}
+
 export async function createDonationCheckout(payload: {
   donor: { firstName: string; lastName: string; email: string; phone?: string };
   donorType: 'individual' | 'partner_org';

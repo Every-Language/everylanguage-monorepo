@@ -860,26 +860,41 @@ export const languagesApi = {
       }
     }
 
-    // Create aliases
-    if (data.aliases && data.aliases.length > 0) {
-      const aliasesToInsert = data.aliases
-        .filter(a => a.alias_name.trim())
-        .map(alias => ({
-          language_entity_id: entityId,
-          alias_name: alias.alias_name.trim(),
-        }));
+    // Create aliases - always include the primary name as an alias for searchability
+    const primaryNameAlias = {
+      language_entity_id: entityId,
+      alias_name: data.name.trim(),
+    };
 
-      if (aliasesToInsert.length > 0) {
-        const { error: aliasesError } = await supabase
-          .from('language_aliases')
-          .insert(aliasesToInsert);
+    // Collect user-provided aliases (excluding duplicates of the primary name)
+    const userAliases =
+      data.aliases && data.aliases.length > 0
+        ? data.aliases
+            .filter(
+              a =>
+                a.alias_name.trim() &&
+                a.alias_name.trim().toLowerCase() !==
+                  data.name.trim().toLowerCase()
+            )
+            .map(alias => ({
+              language_entity_id: entityId,
+              alias_name: alias.alias_name.trim(),
+            }))
+        : [];
 
-        if (aliasesError) {
-          console.error('Error creating aliases:', aliasesError);
-          throw new Error(
-            `Failed to create language aliases: ${aliasesError.message}`
-          );
-        }
+    // Combine primary name with user-provided aliases
+    const aliasesToInsert = [primaryNameAlias, ...userAliases];
+
+    if (aliasesToInsert.length > 0) {
+      const { error: aliasesError } = await supabase
+        .from('language_aliases')
+        .insert(aliasesToInsert);
+
+      if (aliasesError) {
+        console.error('Error creating aliases:', aliasesError);
+        throw new Error(
+          `Failed to create language aliases: ${aliasesError.message}`
+        );
       }
     }
 
