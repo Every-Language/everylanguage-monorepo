@@ -172,7 +172,6 @@ Deno.serve(async (req: Request) => {
     }
 
     const userId = authResult.publicUserId;
-    const isAnonymous = authResult.isAnonymous;
 
     // Helper function to get or create Stripe customer with retry
     const getOrCreateStripeCustomer = async (): Promise<Stripe.Customer> => {
