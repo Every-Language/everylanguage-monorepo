@@ -7,6 +7,11 @@ import {
   createCorsResponse,
 } from '../_shared/response-utils.ts';
 import { retryWithBackoff } from '../_shared/retry-utils.ts';
+import {
+  authenticateRequest,
+  isAuthError,
+  createAuthErrorResponse,
+} from '../_shared/auth-middleware.ts';
 
 interface RequestBody {
   donor: {
@@ -147,6 +152,28 @@ Deno.serve(async (req: Request) => {
       apiVersion: '2023-10-16',
     });
 
+    // Authenticate request (required auth - we always create session before calling)
+    const authResult = await authenticateRequest(req);
+
+    // Handle auth errors
+    if (isAuthError(authResult)) {
+      // If missing header, return 400 (session expired) instead of 401
+      if (
+        authResult.status === 401 &&
+        authResult.details?.includes('Missing Authorization header')
+      ) {
+        return createErrorResponse(
+          'Session expired. Please refresh the page and try again.',
+          400
+        );
+      }
+      // Otherwise return the auth error (401 for invalid token, 500 for other errors)
+      return createAuthErrorResponse(authResult);
+    }
+
+    const userId = authResult.publicUserId;
+    const isAnonymous = authResult.isAnonymous;
+
     // Helper function to get or create Stripe customer with retry
     const getOrCreateStripeCustomer = async (): Promise<Stripe.Customer> => {
       // Try to find existing customer first
@@ -158,16 +185,35 @@ Deno.serve(async (req: Request) => {
       )) as Stripe.ApiList<Stripe.Customer>;
 
       if (customers.data.length > 0) {
-        return customers.data[0];
+        const existingCustomer = customers.data[0];
+
+        // Link existing customer to user account if metadata doesn't already have user_id
+        // or if it has a different user_id
+        const currentUserId = existingCustomer.metadata?.user_id;
+        if (currentUserId !== userId) {
+          await retryWithBackoff(() =>
+            stripe.customers.update(existingCustomer.id, {
+              metadata: {
+                ...existingCustomer.metadata,
+                user_id: userId,
+                source: 'everylanguage',
+                purpose: 'donation',
+              },
+            })
+          );
+        }
+
+        return existingCustomer;
       }
 
-      // Create new customer with retry
+      // Create new customer with retry, linking to user account
       return await retryWithBackoff(() =>
         stripe.customers.create({
           email: donor.email,
           name: `${donor.firstName} ${donor.lastName}`.trim(),
           phone: donor.phone,
           metadata: {
+            user_id: userId,
             source: 'everylanguage',
             purpose: 'donation',
           },
@@ -177,9 +223,6 @@ Deno.serve(async (req: Request) => {
 
     // Helper function to create partner org
     const createPartnerOrg = async (): Promise<string> => {
-      let userId: string | null = null;
-      // TODO: In future, check for auth.uid() from JWT to link to existing user
-
       if (donorType === 'individual') {
         // For individual donations, create a partner org with is_individual=true
         const { data: individualOrg, error: orgErr } = await supabase
@@ -189,7 +232,7 @@ Deno.serve(async (req: Request) => {
             description: `Individual donor: ${donor.email}`,
             is_individual: true,
             is_public: false,
-            created_by: userId,
+            created_by: userId, // Always set since we require Authorization header
           })
           .select('id')
           .single();
@@ -218,7 +261,7 @@ Deno.serve(async (req: Request) => {
               description: newPartnerOrg.description ?? '',
               is_individual: false,
               is_public: newPartnerOrg.isPublic,
-              created_by: userId,
+              created_by: userId, // Always set since we require Authorization header
             })
             .select('id')
             .single();
@@ -237,7 +280,6 @@ Deno.serve(async (req: Request) => {
 
     // OPTIMIZATION: Parallelize Stripe customer lookup and partner org creation
     // These operations are independent and can run concurrently
-    let userId: string | null = null;
     let finalPartnerOrgId: string | null = null;
     let customer: Stripe.Customer;
 
@@ -259,6 +301,41 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Auto-assign partner_member role when user donates on behalf of existing partner org
+    if (donorType === 'partner_org' && partnerOrgId && userId) {
+      try {
+        // Get partner_member role_id
+        const { data: partnerMemberRole, error: roleError } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('role_key', 'partner_member')
+          .eq('resource_type', 'partner')
+          .single();
+
+        if (!roleError && partnerMemberRole) {
+          // Check if user already has a role for this partner org
+          const { data: existingRole } = await supabase
+            .from('user_roles')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('partner_org_id', partnerOrgId)
+            .maybeSingle();
+
+          if (!existingRole) {
+            // Insert partner_member role
+            await supabase.from('user_roles').insert({
+              user_id: userId,
+              partner_org_id: partnerOrgId,
+              role_id: partnerMemberRole.id,
+            });
+          }
+        }
+      } catch (error) {
+        // Log error but don't fail the donation
+        console.error('Failed to assign partner_member role:', error);
+      }
+    }
+
     // 4. Create donation record (business logic layer)
     // Map frontend payment method to database enum value
     // Frontend uses 'bank_transfer' but database enum uses 'us_bank_account'
@@ -266,8 +343,9 @@ Deno.serve(async (req: Request) => {
       paymentMethod === 'bank_transfer' ? 'us_bank_account' : paymentMethod;
 
     // Create single donation with user-entered amount (business logic layer only)
+    // user_id is never null - we require Authorization header
     const donationInsert = {
-      user_id: userId,
+      user_id: userId, // Always set since we require Authorization header
       partner_org_id: finalPartnerOrgId,
       intent_type: intent.type,
       intent_language_entity_id:
@@ -281,7 +359,7 @@ Deno.serve(async (req: Request) => {
       status: 'draft' as const, // Will move to pending when payment is initiated
       payment_method: dbPaymentMethod, // Business logic: donor's payment preference
       is_recurring: isRecurring, // Business logic: donor's intent for recurring
-      created_by: userId,
+      created_by: userId, // Always set since we require Authorization header
     };
 
     const { data: donations, error: donationErr } = await supabase
@@ -409,7 +487,7 @@ Deno.serve(async (req: Request) => {
               intent.type === 'region' ? (intent.regionId ?? null) : null,
             intent_operation_id:
               intent.type === 'operation' ? (intent.operationId ?? null) : null,
-            user_id: userId,
+            user_id: userId, // Always set since we require Authorization header
             partner_org_id: finalPartnerOrgId,
           })
           .select('id')
@@ -441,7 +519,7 @@ Deno.serve(async (req: Request) => {
             currency_code: 'USD',
             status: paymentIntent.status as any,
             stripe_event_id: null, // Will be populated by webhook
-            created_by: userId,
+            created_by: userId, // Always set since we require Authorization header
           });
         }
       } catch (error) {
@@ -517,7 +595,7 @@ Deno.serve(async (req: Request) => {
         currency_code: 'USD',
         status: paymentIntent.status as any, // Cast to match enum
         stripe_event_id: null, // Will be populated by webhook
-        created_by: userId,
+        created_by: userId, // Always set since we require Authorization header
       }));
 
       const { error: attemptErr } = await supabase

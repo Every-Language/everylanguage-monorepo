@@ -5,6 +5,7 @@ export interface AuthenticatedContext {
   supabaseClient: any;
   user: any;
   publicUserId: string;
+  isAnonymous: boolean;
 }
 
 export interface AuthError {
@@ -17,6 +18,7 @@ export interface AuthError {
  * Authentication middleware for Edge Functions
  * Handles CORS, user authentication, and public user ID retrieval
  * Optimized: Uses fast user ID getter since auth.users.id now equals public.users.id
+ * Supports both anonymous and authenticated users
  */
 export async function authenticateRequest(
   req: Request
@@ -78,6 +80,7 @@ export async function authenticateRequest(
       supabaseClient,
       user,
       publicUserId,
+      isAnonymous: user.is_anonymous ?? false,
     };
   } catch (error: unknown) {
     return {
