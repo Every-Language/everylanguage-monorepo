@@ -149,13 +149,11 @@ export const basesApi = {
       }),
     }).catch(() => {});
     // #endregion
-    // Convert location to PostGIS GeoJSON point format if provided
-    let locationValue: unknown = null;
+    // Convert location to PostgreSQL point format (x,y) if provided
+    let locationValue: string | null = null;
     if (data.location) {
-      locationValue = {
-        type: 'Point',
-        coordinates: [data.location.lng, data.location.lat],
-      };
+      // PostgreSQL point type expects format: (x,y) as a string
+      locationValue = `(${data.location.lng},${data.location.lat})`;
     }
 
     // #region agent log
@@ -237,7 +235,7 @@ export const basesApi = {
       updated_at: string;
       name?: string;
       region_id?: string | null;
-      location?: { type: string; coordinates: number[] } | null;
+      location?: string | null;
       is_public?: boolean;
     } = {
       updated_at: new Date().toISOString(),
@@ -251,10 +249,8 @@ export const basesApi = {
     }
     if (data.location !== undefined) {
       if (data.location) {
-        updateData.location = {
-          type: 'Point',
-          coordinates: [data.location.lng, data.location.lat],
-        };
+        // PostgreSQL point type expects format: (x,y) as a string
+        updateData.location = `(${data.location.lng},${data.location.lat})`;
       } else {
         updateData.location = null;
       }
