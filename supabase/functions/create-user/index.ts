@@ -15,6 +15,7 @@ interface CreateUserRequest {
   email: string;
   first_name?: string;
   last_name?: string;
+  password?: string; // Optional - if provided, sets the user's password
 }
 
 Deno.serve(async (req: Request) => {
@@ -76,7 +77,7 @@ Deno.serve(async (req: Request) => {
       return createErrorResponse('Invalid JSON', 400);
     }
 
-    const { email, first_name, last_name } = body;
+    const { email, first_name, last_name, password } = body;
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
@@ -145,15 +146,28 @@ Deno.serve(async (req: Request) => {
       hasServiceRoleKey: !!serviceRoleKey,
     });
 
+    // Prepare create user options
+    const createUserOptions: {
+      email: string;
+      email_confirm: boolean;
+      user_metadata?: Record<string, unknown>;
+      password?: string;
+    } = {
+      email: email.trim(),
+      email_confirm: true, // Skip email confirmation since admin-invited
+      user_metadata: {
+        first_name: first_name?.trim() || null,
+        last_name: last_name?.trim() || null,
+      },
+    };
+
+    // If password is provided, set it
+    if (password && typeof password === 'string' && password.trim()) {
+      createUserOptions.password = password.trim();
+    }
+
     const { data: authUser, error: createError } =
-      await supabaseAdmin.auth.admin.createUser({
-        email: email.trim(),
-        email_confirm: true, // Skip email confirmation since admin-invited
-        user_metadata: {
-          first_name: first_name?.trim() || null,
-          last_name: last_name?.trim() || null,
-        },
-      });
+      await supabaseAdmin.auth.admin.createUser(createUserOptions);
 
     // #region agent log
     console.error('DEBUG: Admin API createUser result:', {

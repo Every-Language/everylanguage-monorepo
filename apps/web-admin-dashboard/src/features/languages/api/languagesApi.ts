@@ -8,6 +8,7 @@ import type {
   Region,
 } from '@/types';
 import type { Database } from '@everylanguage/shared-types';
+import { locationToPostGIS } from '@/shared/utils/locationUtils';
 
 type LanguageEntityLevel = Database['public']['Enums']['language_entity_level'];
 
@@ -787,5 +788,147 @@ export const languagesApi = {
       .eq('id', linkId);
 
     if (error) throw error;
+  },
+
+  /**
+   * Create a new language entity with all related data
+   */
+  async createLanguageEntity(data: {
+    name: string;
+    level: 'family' | 'language' | 'dialect' | 'mother_tongue';
+    parent_id?: string | null;
+    sources?: Array<{
+      source: string;
+      version?: string | null;
+      is_external: boolean;
+      external_id?: string | null;
+      external_id_type?: string | null;
+    }>;
+    aliases?: Array<{ alias_name: string }>;
+    properties?: Array<{ key: string; value: string }>;
+    regions?: Array<{
+      region_id: string;
+      dominance_level?: number | null;
+      location?: { lat: number; lng: number } | null;
+      location_source?: string | null;
+    }>;
+  }): Promise<LanguageEntity> {
+    // Create the main language entity
+    const { data: entity, error: entityError } = await supabase
+      .from('language_entities')
+      .insert({
+        name: data.name,
+        level: data.level,
+        parent_id: data.parent_id || null,
+      })
+      .select()
+      .single();
+
+    if (entityError) throw entityError;
+    if (!entity) throw new Error('Failed to create language entity');
+
+    const entityId = entity.id;
+
+    // Create sources
+    if (data.sources && data.sources.length > 0) {
+      const sourcesToInsert = data.sources
+        .filter(s => s.source.trim())
+        .map(source => ({
+          language_entity_id: entityId,
+          source: source.source.trim(),
+          version: source.version?.trim() || null,
+          is_external: source.is_external,
+          external_id: source.is_external
+            ? source.external_id?.trim() || null
+            : null,
+          external_id_type: source.is_external
+            ? source.external_id_type?.trim() || null
+            : null,
+        }));
+
+      if (sourcesToInsert.length > 0) {
+        const { error: sourcesError } = await supabase
+          .from('language_entity_sources')
+          .insert(sourcesToInsert);
+
+        if (sourcesError) {
+          console.error('Error creating sources:', sourcesError);
+          throw new Error(
+            `Failed to create language sources: ${sourcesError.message}`
+          );
+        }
+      }
+    }
+
+    // Create aliases
+    if (data.aliases && data.aliases.length > 0) {
+      const aliasesToInsert = data.aliases
+        .filter(a => a.alias_name.trim())
+        .map(alias => ({
+          language_entity_id: entityId,
+          alias_name: alias.alias_name.trim(),
+        }));
+
+      if (aliasesToInsert.length > 0) {
+        const { error: aliasesError } = await supabase
+          .from('language_aliases')
+          .insert(aliasesToInsert);
+
+        if (aliasesError) {
+          console.error('Error creating aliases:', aliasesError);
+          throw new Error(
+            `Failed to create language aliases: ${aliasesError.message}`
+          );
+        }
+      }
+    }
+
+    // Create properties
+    if (data.properties && data.properties.length > 0) {
+      const propertiesToInsert = data.properties
+        .filter(p => p.key.trim() && p.value.trim())
+        .map(property => ({
+          language_entity_id: entityId,
+          key: property.key.trim(),
+          value: property.value.trim(),
+        }));
+
+      if (propertiesToInsert.length > 0) {
+        const { error: propertiesError } = await supabase
+          .from('language_properties')
+          .insert(propertiesToInsert);
+
+        if (propertiesError) {
+          console.error('Error creating properties:', propertiesError);
+          throw new Error(
+            `Failed to create language properties: ${propertiesError.message}`
+          );
+        }
+      }
+    }
+
+    // Create region links
+    if (data.regions && data.regions.length > 0) {
+      const regionsToInsert = data.regions.map(region => ({
+        language_entity_id: entityId,
+        region_id: region.region_id,
+        dominance_level: region.dominance_level ?? null,
+        location: region.location ? locationToPostGIS(region.location) : null,
+        location_source: region.location_source?.trim() || null,
+      }));
+
+      const { error: regionsError } = await supabase
+        .from('language_entities_regions')
+        .insert(regionsToInsert);
+
+      if (regionsError) {
+        console.error('Error creating region links:', regionsError);
+        throw new Error(
+          `Failed to create language region links: ${regionsError.message}`
+        );
+      }
+    }
+
+    return entity;
   },
 };

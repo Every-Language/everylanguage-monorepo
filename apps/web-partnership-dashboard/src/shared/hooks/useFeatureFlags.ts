@@ -17,3 +17,11 @@ export function useDonateEnabled(): boolean {
 export function useProjectsEnabled(): boolean {
   return env.NEXT_PUBLIC_ENABLE_PROJECTS;
 }
+
+/**
+ * Hook to check if operations feature is enabled
+ * @returns true if operations feature is enabled, false otherwise
+ */
+export function useOperationsEnabled(): boolean {
+  return env.NEXT_PUBLIC_ENABLE_OPERATIONS;
+}

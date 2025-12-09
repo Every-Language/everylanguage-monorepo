@@ -2,8 +2,11 @@ import React from 'react';
 import { ArrowRight, Globe, MapPin, Briefcase, Heart } from 'lucide-react';
 import type { DonateFlow } from '../../hooks/useDonateFlow';
 import type { DonationIntentType } from '../../state/types';
+import { useOperationsEnabled } from '@/shared/hooks/useFeatureFlags';
 
 export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
+  const operationsEnabled = useOperationsEnabled();
+
   const handleSelect = (intentType: DonationIntentType) => {
     // Set intent
     flow.setIntent({ type: intentType });
@@ -73,26 +76,28 @@ export const StepIntent: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
         </button>
 
         {/* Operation Card */}
-        <button
-          onClick={() => handleSelect('operation')}
-          className='group text-left bg-white dark:bg-neutral-800 rounded-lg p-6 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:-translate-y-0.5'>
-          <div className='flex items-start gap-4'>
-            <div className='p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg group-hover:bg-primary-200 dark:group-hover:bg-primary-900/40 transition-colors'>
-              <Briefcase className='h-6 w-6 text-primary-600 dark:text-primary-400' />
-            </div>
-            <div className='flex-1'>
-              <div className='flex items-start justify-between mb-2'>
-                <h3 className='font-semibold text-lg text-neutral-900 dark:text-neutral-100'>
-                  Operational costs
-                </h3>
-                <ArrowRight className='h-5 w-5 text-neutral-400 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors' />
+        {operationsEnabled && (
+          <button
+            onClick={() => handleSelect('operation')}
+            className='group text-left bg-white dark:bg-neutral-800 rounded-lg p-6 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:-translate-y-0.5'>
+            <div className='flex items-start gap-4'>
+              <div className='p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg group-hover:bg-primary-200 dark:group-hover:bg-primary-900/40 transition-colors'>
+                <Briefcase className='h-6 w-6 text-primary-600 dark:text-primary-400' />
               </div>
-              <p className='text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed'>
-                Support the background operations of Every Language.
-              </p>
+              <div className='flex-1'>
+                <div className='flex items-start justify-between mb-2'>
+                  <h3 className='font-semibold text-lg text-neutral-900 dark:text-neutral-100'>
+                    Operational costs
+                  </h3>
+                  <ArrowRight className='h-5 w-5 text-neutral-400 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors' />
+                </div>
+                <p className='text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed'>
+                  Support the background operations of Every Language.
+                </p>
+              </div>
             </div>
-          </div>
-        </button>
+          </button>
+        )}
 
         {/* Wherever Needed Most Card */}
         <button

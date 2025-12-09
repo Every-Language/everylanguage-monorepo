@@ -133,6 +133,7 @@ export interface CreateUserData {
   email: string;
   first_name?: string;
   last_name?: string;
+  password?: string; // Optional - if provided, sets the user's password
 }
 
 export interface AuthStatus {

@@ -4,9 +4,10 @@ import { queryKeys } from '@/shared/query/query-client';
 import { languagesApi } from '../api/languagesApi';
 import { regionsApi } from '@/features/regions/api/regionsApi';
 import { LanguageEntityModal } from '../components/LanguageEntityModal';
+import { CreateLanguageModal } from '../components/CreateLanguageModal';
 import { RegionModal } from '@/features/regions/components/RegionModal';
 import type { LanguageEntityWithRegions, RegionWithLanguages } from '@/types';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
 
 type ModalStackItem =
@@ -81,6 +82,7 @@ export function LanguagesPage() {
 
   // Modal stack for layered modals
   const [modalStack, setModalStack] = useState<ModalStackItem[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const queryClient = useQueryClient();
 
   // Debounce search term
@@ -192,13 +194,21 @@ export function LanguagesPage() {
 
   return (
     <div className='p-8'>
-      <div className='mb-8'>
-        <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
-          Language Entities
-        </h1>
-        <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
-          Manage language entities and their properties
-        </p>
+      <div className='mb-8 flex items-start justify-between'>
+        <div>
+          <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
+            Language Entities
+          </h1>
+          <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
+            Manage language entities and their properties
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className='inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors'>
+          <Plus className='h-5 w-5 mr-2' />
+          Create Language
+        </button>
       </div>
 
       {/* Search */}
@@ -450,6 +460,18 @@ export function LanguagesPage() {
           );
         }
       })}
+
+      {/* Create Language Modal */}
+      {showCreateModal && (
+        <CreateLanguageModal
+          open={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            queryClient.invalidateQueries({ queryKey: ['language-entities'] });
+          }}
+        />
+      )}
     </div>
   );
 }
