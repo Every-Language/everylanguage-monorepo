@@ -202,7 +202,7 @@ otp_expiry = 3600
 # Note: In production, SMTP is enabled via Supabase dashboard/environment variables
 # Resend API key is already configured in production
 [auth.email.smtp]
-enabled = false  # Set to true in production (or enable via Supabase dashboard)
+enabled = false  # Set to true in production
 host = "smtp.resend.com"
 port = 587
 user = "resend"
