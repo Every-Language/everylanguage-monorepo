@@ -57,31 +57,29 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 py-12 px-4 sm:px-6 lg:px-8'>
-      <div className='max-w-md w-full space-y-8'>
-        {/* Header */}
-        <div className='text-center'>
-          <h2 className='mt-6 text-3xl font-bold text-neutral-900'>
-            Reset your password
-          </h2>
-          <p className='mt-2 text-sm text-neutral-600'>
-            Enter your email address and we'll send you instructions to reset
-            your password
-          </p>
-        </div>
-
+    <div className='min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 py-12 px-4 sm:px-6 lg:px-8 transition-theme'>
+      <div className='max-w-md w-full'>
         {/* Forgot Password Form */}
-        <div className='bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10'>
+        <div className='bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10'>
+          {/* Header */}
+          <div className='text-center mb-8'>
+            <h2 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
+              Reset your password
+            </h2>
+            <p className='mt-2 text-sm text-neutral-600 dark:text-neutral-400'>
+              Enter your email address and we'll send you instructions to reset
+              your password
+            </p>
+          </div>
           {generalError && (
-            <div className='mb-4 rounded-xl bg-error-50 border border-error-200 p-4'>
+            <div className='mb-4 rounded-xl bg-error-50 dark:bg-error-950 border border-error-200 dark:border-error-800 p-4'>
               <div className='flex items-center'>
                 <div className='flex-shrink-0'>
                   <svg
-                    className='h-5 w-5 text-error-600'
+                    className='h-5 w-5 text-error-600 dark:text-error-400'
                     fill='none'
                     stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
+                    viewBox='0 0 24 24'>
                     <path
                       strokeLinecap='round'
                       strokeLinejoin='round'
@@ -91,8 +89,10 @@ export function ForgotPasswordPage() {
                   </svg>
                 </div>
                 <div className='ml-3'>
-                  <h3 className='text-sm font-medium text-error-800'>Error</h3>
-                  <div className='mt-1 text-sm text-error-700'>
+                  <h3 className='text-sm font-medium text-error-800 dark:text-error-200'>
+                    Error
+                  </h3>
+                  <div className='mt-1 text-sm text-error-700 dark:text-error-300'>
                     <p>{generalError}</p>
                   </div>
                 </div>
@@ -101,15 +101,14 @@ export function ForgotPasswordPage() {
           )}
 
           {successMessage && (
-            <div className='mb-4 rounded-xl bg-success-50 border border-success-200 p-4'>
+            <div className='mb-4 rounded-xl bg-success-50 dark:bg-success-900/30 border border-success-200 dark:border-success-700 p-4'>
               <div className='flex items-center'>
                 <div className='flex-shrink-0'>
                   <svg
-                    className='h-5 w-5 text-success-600'
+                    className='h-5 w-5 text-success-600 dark:text-success-400'
                     fill='none'
                     stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
+                    viewBox='0 0 24 24'>
                     <path
                       strokeLinecap='round'
                       strokeLinejoin='round'
@@ -119,10 +118,10 @@ export function ForgotPasswordPage() {
                   </svg>
                 </div>
                 <div className='ml-3'>
-                  <h3 className='text-sm font-medium text-success-800'>
+                  <h3 className='text-sm font-medium text-success-800 dark:text-success-100'>
                     Email Sent!
                   </h3>
-                  <div className='mt-1 text-sm text-success-700'>
+                  <div className='mt-1 text-sm text-success-700 dark:text-success-100'>
                     <p>{successMessage}</p>
                   </div>
                 </div>
@@ -145,8 +144,7 @@ export function ForgotPasswordPage() {
                       className='h-5 w-5'
                       fill='none'
                       stroke='currentColor'
-                      viewBox='0 0 24 24'
-                    >
+                      viewBox='0 0 24 24'>
                       <path
                         strokeLinecap='round'
                         strokeLinejoin='round'
@@ -173,8 +171,7 @@ export function ForgotPasswordPage() {
                   className='w-full'
                   disabled={isLoading}
                   size='lg'
-                  loading={isLoading}
-                >
+                  loading={isLoading}>
                   {isLoading ? 'Sending...' : 'Send reset instructions'}
                 </Button>
               </div>
@@ -182,21 +179,19 @@ export function ForgotPasswordPage() {
           )}
 
           <div className='mt-6 text-center space-y-2'>
-            <p className='text-sm text-neutral-600'>
+            <p className='text-sm text-neutral-600 dark:text-neutral-400'>
               Remember your password?{' '}
               <Link
                 href='/login'
-                className='font-medium text-primary-600 hover:text-primary-500 transition-colors'
-              >
+                className='font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 transition-colors'>
                 Sign in
               </Link>
             </p>
-            <p className='text-sm text-neutral-600'>
+            <p className='text-sm text-neutral-600 dark:text-neutral-400'>
               Don't have an account?{' '}
               <Link
                 href='/register'
-                className='font-medium text-primary-600 hover:text-primary-500 transition-colors'
-              >
+                className='font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 transition-colors'>
                 Sign up
               </Link>
             </p>

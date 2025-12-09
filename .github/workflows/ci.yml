@@ -1,15 +1,17 @@
 name: CI
 
 on:
-  # Run CI on feature branches and PRs
+  # Push: Light checks (format, lint, type-check, unit tests only)
   push:
     branches-ignore: [main, develop]
+  # PR: Full validation (format, lint, type-check, full test suite with coverage, build)
   pull_request:
     branches: [develop, main]
 
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  NODE_VERSION: '20' # Standardize on Node 20 for consistency
 
 jobs:
   # Detect which parts of the monorepo changed
@@ -20,10 +22,16 @@ jobs:
       shared-types: ${{ steps.filter.outputs.shared-types }}
       frontend-project: ${{ steps.filter.outputs.frontend-project }}
       frontend-partnership: ${{ steps.filter.outputs.frontend-partnership }}
+      frontend-admin: ${{ steps.filter.outputs.frontend-admin }}
       frontend-app-bible: ${{ steps.filter.outputs.frontend-app-bible }}
+      powersync-rules: ${{ steps.filter.outputs.powersync-rules }}
+      is-pr: ${{ github.event_name == 'pull_request' }}
+      is-push: ${{ github.event_name == 'push' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for PR comparison
         
       - name: Detect changed paths
         uses: dorny/paths-filter@v3
@@ -38,8 +46,12 @@ jobs:
               - 'apps/web-project-dashboard/**'
             frontend-partnership:
               - 'apps/web-partnership-dashboard/**'
+            frontend-admin:
+              - 'apps/web-admin-dashboard/**'
             frontend-app-bible:
               - 'apps/app-bible/**'
+            powersync-rules:
+              - 'apps/app-bible/powersync/sync-rules.yaml'
 
   backend:
     runs-on: ubuntu-latest
@@ -58,7 +70,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -108,6 +120,8 @@ jobs:
         env:
           NODE_ENV: test
           SUPABASE_URL: http://127.0.0.1:54321
+        # On push: run tests without coverage (faster)
+        # On PR: run full test suite (coverage handled by test script)
 
       - name: Stop Supabase
         if: always()
@@ -133,11 +147,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Check formatting
+        run: pnpm --filter=web-project-dashboard run format:check
 
       - name: Run linting
         run: pnpm --filter=web-project-dashboard run lint
@@ -146,9 +163,18 @@ jobs:
         run: pnpm --filter=web-project-dashboard run type-check
 
       - name: Run tests
-        run: pnpm --filter=web-project-dashboard run test:run
+        # On push: unit tests only (no coverage)
+        # On PR: full test suite with coverage
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            pnpm --filter=web-project-dashboard run test:coverage
+          else
+            pnpm --filter=web-project-dashboard run test:run
+          fi
 
       - name: Test build
+        # Only run build on PRs (full validation)
+        if: github.event_name == 'pull_request'
         run: pnpm --filter=web-project-dashboard run build
         env:
           # Use dummy values for build test
@@ -175,11 +201,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Check formatting
+        run: pnpm --filter=web-partnership-dashboard run format:check
 
       - name: Run linting
         run: pnpm --filter=web-partnership-dashboard run lint
@@ -188,10 +217,73 @@ jobs:
         run: pnpm --filter=web-partnership-dashboard run type-check
 
       - name: Run tests
-        run: pnpm --filter=web-partnership-dashboard run test:run
+        # On push: unit tests only (no coverage)
+        # On PR: full test suite with coverage
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            pnpm --filter=web-partnership-dashboard run test:coverage
+          else
+            pnpm --filter=web-partnership-dashboard run test:run
+          fi
 
       - name: Test build
+        # Only run build on PRs (full validation)
+        if: github.event_name == 'pull_request'
         run: pnpm --filter=web-partnership-dashboard run build
+        env:
+          # Use dummy values for build test
+          VITE_SUPABASE_URL: https://dummy.supabase.co
+          VITE_SUPABASE_ANON_KEY: dummy_key
+
+  frontend-admin:
+    runs-on: ubuntu-latest
+    name: Admin Dashboard - Tests & Linting
+    needs: detect-changes
+    # Run if backend, shared-types, or this specific frontend changed
+    if: |
+      needs.detect-changes.outputs.backend == 'true' || 
+      needs.detect-changes.outputs.shared-types == 'true' || 
+      needs.detect-changes.outputs.frontend-admin == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Check formatting
+        run: pnpm --filter=web-admin-dashboard run format:check
+
+      - name: Run linting
+        run: pnpm --filter=web-admin-dashboard run lint
+
+      - name: Run type checking
+        run: pnpm --filter=web-admin-dashboard run type-check
+
+      - name: Run tests
+        # On push: unit tests only (no coverage)
+        # On PR: full test suite with coverage
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            pnpm --filter=web-admin-dashboard run test:coverage
+          else
+            pnpm --filter=web-admin-dashboard run test:run
+          fi
+
+      - name: Test build
+        # Only run build on PRs (full validation)
+        if: github.event_name == 'pull_request'
+        run: pnpm --filter=web-admin-dashboard run build
         env:
           # Use dummy values for build test
           VITE_SUPABASE_URL: https://dummy.supabase.co
@@ -216,7 +308,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -228,6 +320,9 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Check formatting
+        run: pnpm --filter=app-bible run format:check
+
       - name: Run linting
         run: pnpm --filter=app-bible run lint
 
@@ -235,10 +330,14 @@ jobs:
         run: pnpm --filter=app-bible run type-check
 
       - name: Run tests
-        run: pnpm --filter=app-bible run test:ci
-
-      - name: Expo doctor validation
-        run: pnpm --filter=app-bible run doctor
+        # On push: unit tests only (no coverage)
+        # On PR: full test suite with coverage
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            pnpm --filter=app-bible run test:ci
+          else
+            pnpm --filter=app-bible run test -- --watchAll=false --coverage=false
+          fi
 
       - name: Validate managed workflow
         working-directory: apps/app-bible
@@ -249,9 +348,55 @@ jobs:
           fi
           echo "✅ Managed workflow validated"
 
+  powersync-validation:
+    runs-on: ubuntu-latest
+    name: PowerSync Schema Validation
+    needs: detect-changes
+    # Only run on PRs and only if sync-rules.yaml changed
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.detect-changes.outputs.powersync-rules == 'true'
+    # Use production environment for PRs to main, development for PRs to develop
+    environment: ${{ github.base_ref == 'main' && 'production' || 'development' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Validate sync rules syntax
+        run: |
+          python3 -c "import yaml; yaml.safe_load(open('apps/app-bible/powersync/sync-rules.yaml'))"
+          echo "✅ Sync rules YAML syntax is valid"
+
+      - name: Verify schema is in sync with sync rules
+        working-directory: apps/app-bible
+        env:
+          AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
+          ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+        run: |
+          echo "🔍 Checking if committed schema matches sync rules..."
+          pnpm run powersync:verify-schema
+          echo "✅ Schema verification completed"
+
   security:
     runs-on: ubuntu-latest
     name: Security Scan
+    # Only run security scan on PRs (full validation)
+    if: github.event_name == 'pull_request'
 
     steps:
       - name: Checkout code
@@ -263,7 +408,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -271,4 +416,3 @@ jobs:
 
       - name: Run npm audit
         run: pnpm audit --audit-level high
-

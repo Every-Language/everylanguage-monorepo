@@ -147,8 +147,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({
                             );
                           }
                         }}
-                        disabled={batchUpdatePending}
-                      >
+                        disabled={batchUpdatePending}>
                         <SelectItem value='bulk-action'>
                           Change Status
                         </SelectItem>
@@ -164,8 +163,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({
                       <Button
                         variant='outline'
                         size='sm'
-                        onClick={onClearSelection}
-                      >
+                        onClick={onClearSelection}>
                         Clear Selection
                       </Button>
                     </div>
@@ -215,8 +213,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({
                   {images.map((image: Image) => (
                     <tr
                       key={image.id}
-                      className='border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                    >
+                      className='border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'>
                       <td className='p-3'>
                         <Checkbox
                           checked={selectedImages.includes(image.id)}
@@ -265,8 +262,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({
                               value as Image['publish_status']
                             )
                           }
-                          disabled={updatePublishStatusPending}
-                        >
+                          disabled={updatePublishStatusPending}>
                           <SelectItem value='pending'>Pending</SelectItem>
                           <SelectItem value='published'>Published</SelectItem>
                           <SelectItem value='archived'>Archived</SelectItem>
@@ -279,8 +275,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({
                             size='sm'
                             onClick={() => onEditClick(image)}
                             className='text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200'
-                            title='Edit'
-                          >
+                            title='Edit'>
                             <PencilIcon className='h-4 w-4' />
                           </Button>
                         </div>

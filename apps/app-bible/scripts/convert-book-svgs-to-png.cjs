@@ -33,7 +33,10 @@ async function main() {
     try {
       const svgBuffer = fs.readFileSync(inPath);
       await sharp(svgBuffer)
-        .resize(SIZE, SIZE, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .resize(SIZE, SIZE, {
+          fit: 'contain',
+          background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
         .png({ compressionLevel: 9 })
         .toFile(outPath);
       converted++;
@@ -46,5 +49,3 @@ async function main() {
 }
 
 main();
-
-

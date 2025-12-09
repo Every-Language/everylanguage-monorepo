@@ -412,14 +412,12 @@ export function GlobalAudioPlayer() {
       <div
         className='fixed inset-y-0 right-0 z-50 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl flex'
         style={{ width: `${playerWidth}px` }}
-        ref={playerRef}
-      >
+        ref={playerRef}>
         {/* Resize Handle */}
         <div
           ref={resizeHandleRef}
           className='w-1 bg-gray-300 dark:bg-gray-600 hover:bg-primary-500 cursor-col-resize flex-shrink-0 group'
-          onMouseDown={handleMouseDown}
-        >
+          onMouseDown={handleMouseDown}>
           <div className='w-full h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
             <div className='w-0.5 h-8 bg-white dark:bg-gray-300 rounded'></div>
           </div>
@@ -436,8 +434,7 @@ export function GlobalAudioPlayer() {
               variant='ghost'
               size='sm'
               onClick={closePlayer}
-              className='h-8 w-8 p-0'
-            >
+              className='h-8 w-8 p-0'>
               <XMarkIcon className='h-4 w-4' />
             </Button>
           </div>
@@ -507,8 +504,7 @@ export function GlobalAudioPlayer() {
                     variant='outline'
                     size='sm'
                     onClick={skipToPreviousVerse}
-                    disabled={!verseTimestamps.length}
-                  >
+                    disabled={!verseTimestamps.length}>
                     <BackwardIcon className='h-4 w-4' />
                   </Button>
 
@@ -517,8 +513,7 @@ export function GlobalAudioPlayer() {
                     size='lg'
                     onClick={togglePlay}
                     disabled={isLoading}
-                    className='h-12 w-12 rounded-full p-0'
-                  >
+                    className='h-12 w-12 rounded-full p-0'>
                     {isLoading ? (
                       <LoadingSpinner size='sm' />
                     ) : isPlaying ? (
@@ -532,8 +527,7 @@ export function GlobalAudioPlayer() {
                     variant='outline'
                     size='sm'
                     onClick={skipToNextVerse}
-                    disabled={!verseTimestamps.length}
-                  >
+                    disabled={!verseTimestamps.length}>
                     <ForwardIcon className='h-4 w-4' />
                   </Button>
                 </div>
@@ -550,8 +544,7 @@ export function GlobalAudioPlayer() {
                         variant='ghost'
                         size='sm'
                         onClick={toggleMute}
-                        className='h-8 w-8 p-0'
-                      >
+                        className='h-8 w-8 p-0'>
                         {isMuted ? (
                           <SpeakerXMarkIcon className='h-4 w-4' />
                         ) : (
@@ -578,8 +571,7 @@ export function GlobalAudioPlayer() {
                       value={playbackSpeed.toString()}
                       onValueChange={value =>
                         setPlaybackSpeed(parseFloat(value))
-                      }
-                    >
+                      }>
                       <SelectItem value='0.5'>0.5x</SelectItem>
                       <SelectItem value='0.75'>0.75x</SelectItem>
                       <SelectItem value='1'>1x</SelectItem>
@@ -616,8 +608,7 @@ export function GlobalAudioPlayer() {
                         }
                         size='sm'
                         onClick={() => jumpToVerse(verse.start_time_seconds)}
-                        className='h-8 text-xs'
-                      >
+                        className='h-8 text-xs'>
                         {verse.verse_number}
                       </Button>
                     ))}
@@ -636,8 +627,7 @@ export function GlobalAudioPlayer() {
                   <Button
                     variant='outline'
                     size='sm'
-                    onClick={() => setShowFeedbackForm(!showFeedbackForm)}
-                  >
+                    onClick={() => setShowFeedbackForm(!showFeedbackForm)}>
                     <PlusIcon className='h-4 w-4 mr-1' />
                     Add Feedback
                   </Button>
@@ -654,13 +644,11 @@ export function GlobalAudioPlayer() {
                       <Select
                         value={feedbackVerseNumber}
                         onValueChange={setFeedbackVerseNumber}
-                        placeholder='Select verse'
-                      >
+                        placeholder='Select verse'>
                         {verseTimestamps.map(verse => (
                           <SelectItem
                             key={verse.id}
-                            value={verse.verse_number.toString()}
-                          >
+                            value={verse.verse_number.toString()}>
                             Verse {verse.verse_number}
                           </SelectItem>
                         ))}
@@ -684,8 +672,7 @@ export function GlobalAudioPlayer() {
                       <Button
                         variant='outline'
                         size='sm'
-                        onClick={() => setShowFeedbackForm(false)}
-                      >
+                        onClick={() => setShowFeedbackForm(false)}>
                         Cancel
                       </Button>
                     </div>
@@ -704,8 +691,7 @@ export function GlobalAudioPlayer() {
                         setFeedbackFilter(
                           value as 'all' | 'approved' | 'change_required'
                         )
-                      }
-                    >
+                      }>
                       <SelectItem value='all'>All Types</SelectItem>
                       <SelectItem value='approved'>Approved</SelectItem>
                       <SelectItem value='change_required'>
@@ -723,8 +709,7 @@ export function GlobalAudioPlayer() {
                         setActionedFilter(
                           value as 'all' | 'pending' | 'actioned' | 'rejected'
                         )
-                      }
-                    >
+                      }>
                       <SelectItem value='all'>All Status</SelectItem>
                       <SelectItem value='pending'>Pending</SelectItem>
                       <SelectItem value='actioned'>Actioned</SelectItem>
@@ -743,8 +728,7 @@ export function GlobalAudioPlayer() {
                     filteredFeedback.map((feedback: VerseFeedback) => (
                       <div
                         key={feedback.id}
-                        className='p-3 bg-gray-50 dark:bg-gray-800 rounded border'
-                      >
+                        className='p-3 bg-gray-50 dark:bg-gray-800 rounded border'>
                         <div className='flex items-start justify-between mb-2'>
                           <div className='flex items-center space-x-2'>
                             <span className='text-sm font-medium text-gray-900 dark:text-gray-100'>
@@ -756,8 +740,7 @@ export function GlobalAudioPlayer() {
                                 feedback.feedback_type === 'approved'
                                   ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
                                   : 'bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
-                              )}
-                            >
+                              )}>
                               {feedback.feedback_type === 'approved'
                                 ? 'Approved'
                                 : 'Change Required'}
@@ -770,8 +753,7 @@ export function GlobalAudioPlayer() {
                                   : feedback.actioned === 'actioned'
                                     ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
                                     : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                              )}
-                            >
+                              )}>
                               {feedback.actioned}
                             </span>
                           </div>
@@ -779,8 +761,7 @@ export function GlobalAudioPlayer() {
                             variant='ghost'
                             size='sm'
                             onClick={() => handleDeleteFeedback(feedback.id)}
-                            className='h-6 w-6 p-0 text-red-600 hover:text-red-700'
-                          >
+                            className='h-6 w-6 p-0 text-red-600 hover:text-red-700'>
                             <TrashIcon className='h-3 w-3' />
                           </Button>
                         </div>
@@ -824,8 +805,7 @@ export function GlobalAudioPlayer() {
                           status: 'approved',
                         })
                       }
-                      className='text-green-600 hover:text-green-700 border-green-300 hover:border-green-400'
-                    >
+                      className='text-green-600 hover:text-green-700 border-green-300 hover:border-green-400'>
                       <CheckIcon className='h-4 w-4 mr-1' />
                       Approve
                     </Button>
@@ -838,8 +818,7 @@ export function GlobalAudioPlayer() {
                           status: 'requires_review',
                         })
                       }
-                      className='text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400'
-                    >
+                      className='text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400'>
                       <ExclamationTriangleIcon className='h-4 w-4 mr-1' />
                       Requires Review
                     </Button>
@@ -867,8 +846,7 @@ export function GlobalAudioPlayer() {
                           status: 'pending',
                         })
                       }
-                      disabled={currentFile.check_status !== 'approved'}
-                    >
+                      disabled={currentFile.check_status !== 'approved'}>
                       Set Pending
                     </Button>
                     <Button
@@ -881,8 +859,7 @@ export function GlobalAudioPlayer() {
                         })
                       }
                       disabled={currentFile.check_status !== 'approved'}
-                      className='text-green-600 hover:text-green-700 border-green-300 hover:border-green-400 dark:text-green-400 dark:border-green-600 dark:hover:text-green-300 dark:hover:border-green-500'
-                    >
+                      className='text-green-600 hover:text-green-700 border-green-300 hover:border-green-400 dark:text-green-400 dark:border-green-600 dark:hover:text-green-300 dark:hover:border-green-500'>
                       Publish
                     </Button>
                     <Button
@@ -894,8 +871,7 @@ export function GlobalAudioPlayer() {
                           status: 'archived',
                         })
                       }
-                      className='text-gray-600 hover:text-gray-700 border-gray-300 hover:border-gray-400'
-                    >
+                      className='text-gray-600 hover:text-gray-700 border-gray-300 hover:border-gray-400'>
                       Archive
                     </Button>
                   </div>

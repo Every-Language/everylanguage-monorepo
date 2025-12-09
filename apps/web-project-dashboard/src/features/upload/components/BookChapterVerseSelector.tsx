@@ -201,8 +201,7 @@ export function BookChapterVerseSelector({
         onValueChange={handleBookChange}
         disabled={disabled || isLoading}
         placeholder={loadingBooks ? 'Loading books...' : 'Select book'}
-        required
-      >
+        required>
         {books.map(book => (
           <SelectItem key={book.id} value={book.id}>
             {book.name}
@@ -217,8 +216,7 @@ export function BookChapterVerseSelector({
         onValueChange={handleChapterChange}
         disabled={disabled || !selectedBookId || loadingChapters}
         placeholder={loadingChapters ? 'Loading chapters...' : 'Select chapter'}
-        required
-      >
+        required>
         {chapters.map(chapter => (
           <SelectItem key={chapter.id} value={chapter.id}>
             Chapter {chapter.chapter_number}
@@ -233,8 +231,7 @@ export function BookChapterVerseSelector({
         onValueChange={handleStartVerseChange}
         disabled={disabled || !selectedChapterId || loadingVerses}
         placeholder={loadingVerses ? 'Loading verses...' : 'Select start verse'}
-        required
-      >
+        required>
         {verses.map(verse => (
           <SelectItem key={verse.id} value={verse.id}>
             Verse {verse.verse_number}
@@ -249,8 +246,7 @@ export function BookChapterVerseSelector({
         onValueChange={handleEndVerseChange}
         disabled={disabled || !selectedStartVerseId || loadingVerses}
         placeholder={loadingVerses ? 'Loading verses...' : 'Select end verse'}
-        required
-      >
+        required>
         {availableEndVerses.map(verse => (
           <SelectItem key={verse.id} value={verse.id}>
             Verse {verse.verse_number}

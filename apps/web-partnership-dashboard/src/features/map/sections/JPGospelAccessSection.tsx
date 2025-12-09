@@ -122,8 +122,7 @@ export const JPGospelAccessSection: React.FC<JPGospelAccessSectionProps> = ({
           <div className='font-semibold text-sm mb-2'>Gospel Progress</div>
           <div className='flex items-center gap-3'>
             <div
-              className={`${jpScaleInfo.color} text-white font-bold rounded-full w-10 h-10 flex items-center justify-center text-lg`}
-            >
+              className={`${jpScaleInfo.color} text-white font-bold rounded-full w-10 h-10 flex items-center justify-center text-lg`}>
               {jpScaleInfo.scale}
             </div>
             <div className='text-sm flex-1'>
@@ -304,8 +303,7 @@ export const JPGospelAccessSection: React.FC<JPGospelAccessSectionProps> = ({
           href='https://joshuaproject.net'
           target='_blank'
           rel='noopener noreferrer'
-          className='underline hover:text-neutral-600'
-        >
+          className='underline hover:text-neutral-600'>
           Joshua Project
         </a>
       </div>

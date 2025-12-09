@@ -35,8 +35,7 @@ export const DonateFlow: React.FC<DonateFlowProps> = ({
       {/* Step content with animation */}
       <div
         key={state.step}
-        className='animate-in fade-in slide-in-from-right-4 duration-300'
-      >
+        className='animate-in fade-in slide-in-from-right-4 duration-300'>
         {/* Step 0: Intent selection */}
         {state.step === 0 && <StepIntent flow={flow} />}
 

@@ -8,9 +8,10 @@ import {
   ArrowRight,
   X,
 } from 'lucide-react';
-import { useProjects } from '@/shared/hooks/query/projects';
+import { useProjectsByUser } from '@/shared/hooks/query/projects';
 import { useLanguageEntitiesByIds } from '@/shared/hooks/query/language-entities';
 import { useBibleProjectDashboard } from '@/shared/hooks/query/bible-structure';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Button } from '@/shared/design-system/components/Button';
 import { Input } from '@/shared/design-system/components/Input';
 import { Card } from '@/shared/design-system/components/Card';
@@ -43,8 +44,13 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [recentProjects, setRecentProjects] = useState<string[]>([]);
 
-  // Fetch projects and language entities
-  const { data: projects = [], isLoading, error } = useProjects();
+  // Get current user and fetch their projects (or all projects if system admin)
+  const { user } = useAuth();
+  const {
+    data: projects = [],
+    isLoading,
+    error,
+  } = useProjectsByUser(user?.id || null);
 
   // Extract unique language entity IDs from all projects
   const languageIds = useMemo(() => {
@@ -198,8 +204,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className='w-full justify-between h-auto p-4 text-left'
         aria-expanded={isOpen}
-        aria-haspopup='true'
-      >
+        aria-haspopup='true'>
         {selectedProject ? (
           <div className='flex items-center space-x-3 min-w-0'>
             <div className='flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold'>
@@ -259,8 +264,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
                     variant='ghost'
                     size='sm'
                     onClick={() => setSearchTerm('')}
-                    className='absolute right-2 top-1/2 transform -translate-y-1/2 p-1 h-6 w-6'
-                  >
+                    className='absolute right-2 top-1/2 transform -translate-y-1/2 p-1 h-6 w-6'>
                     <X className='w-4 h-4' />
                   </Button>
                 )}
@@ -304,8 +308,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
                           isSelected
                             ? 'bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-200 dark:ring-blue-800'
                             : ''
-                        }`}
-                      >
+                        }`}>
                         <div className='flex items-center space-x-3'>
                           <div className='flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold'>
                             {project.name.charAt(0).toUpperCase()}

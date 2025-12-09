@@ -78,14 +78,12 @@ export const UserManager: React.FC<UserManagerProps> = ({
         userManagement.permissions.canManageUsers ? (
           <button
             onClick={userManagement.modals.openAddUser}
-            className='flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700'
-          >
+            className='flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700'>
             <svg
               className='h-4 w-4'
               fill='none'
               stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
+              viewBox='0 0 24 24'>
               <path
                 strokeLinecap='round'
                 strokeLinejoin='round'
@@ -99,8 +97,7 @@ export const UserManager: React.FC<UserManagerProps> = ({
       }
       filters={filtersSection}
       table={tableSection}
-      modals={modalsSection}
-    >
+      modals={modalsSection}>
       {statsSection}
     </DataManagementLayout>
   );

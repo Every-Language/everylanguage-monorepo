@@ -65,8 +65,7 @@ export const JPResourcesSection: React.FC<JPResourcesSectionProps> = ({
       <div className='border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden'>
         <button
           onClick={() => toggleCategory(categoryId)}
-          className='w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors'
-        >
+          className='w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors'>
           <span className='font-medium text-sm'>{title}</span>
           {isExpanded ? (
             <ChevronUpIcon className='w-4 h-4 text-neutral-500' />
@@ -93,8 +92,7 @@ export const JPResourcesSection: React.FC<JPResourcesSectionProps> = ({
       href={href}
       target='_blank'
       rel='noopener noreferrer'
-      className='flex items-center justify-between py-2 px-3 bg-neutral-50 dark:bg-neutral-800/50 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group'
-    >
+      className='flex items-center justify-between py-2 px-3 bg-neutral-50 dark:bg-neutral-800/50 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group'>
       <div className='flex-1'>
         <div className='text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-secondary-600 dark:group-hover:text-secondary-400'>
           {label}
@@ -268,8 +266,7 @@ export const JPResourcesSection: React.FC<JPResourcesSectionProps> = ({
           href='https://joshuaproject.net'
           target='_blank'
           rel='noopener noreferrer'
-          className='underline hover:text-neutral-600'
-        >
+          className='underline hover:text-neutral-600'>
           Joshua Project
         </a>{' '}
         and partner organizations

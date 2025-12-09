@@ -173,8 +173,7 @@ export function DataTable<T extends Record<string, unknown>>({
                     onValueChange={value =>
                       handleFilterChange(column.key, value)
                     }
-                    placeholder={`Filter ${column.header}`}
-                  >
+                    placeholder={`Filter ${column.header}`}>
                     <SelectItem value=''>All {column.header}</SelectItem>
                     {column.filterOptions.map(option => (
                       <SelectItem key={option.value} value={option.value}>
@@ -199,8 +198,7 @@ export function DataTable<T extends Record<string, unknown>>({
               variant='outline'
               size='sm'
               onClick={clearFilters}
-              className='whitespace-nowrap'
-            >
+              className='whitespace-nowrap'>
               Clear ({activeFiltersCount})
             </Button>
           )}
@@ -222,8 +220,7 @@ export function DataTable<T extends Record<string, unknown>>({
                         'cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-700',
                       column.width && `w-${column.width}`
                     )}
-                    onClick={() => column.sortable && handleSort(column.key)}
-                  >
+                    onClick={() => column.sortable && handleSort(column.key)}>
                     <div className='flex items-center space-x-1'>
                       <span>{column.header}</span>
                       {column.sortable && (
@@ -256,8 +253,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className='px-4 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                  >
+                    className='px-4 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                     {emptyMessage}
                   </td>
                 </tr>
@@ -270,13 +266,11 @@ export function DataTable<T extends Record<string, unknown>>({
                       onRowClick && 'cursor-pointer',
                       rowClassName && rowClassName(row)
                     )}
-                    onClick={() => onRowClick && onRowClick(row)}
-                  >
+                    onClick={() => onRowClick && onRowClick(row)}>
                     {columns.map(column => (
                       <td
                         key={column.key}
-                        className='px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100'
-                      >
+                        className='px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100'>
                         {column.render
                           ? column.render(row[column.key] as T[keyof T], row)
                           : (row[column.key] as React.ReactNode)}

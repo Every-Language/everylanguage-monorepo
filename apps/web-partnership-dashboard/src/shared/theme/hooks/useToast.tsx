@@ -118,8 +118,7 @@ export const ToastManager: React.FC<ToastManagerProps> = ({ children }) => {
                   removeToast(toastItem.id);
                 }
               }}
-              duration={toastItem.duration}
-            >
+              duration={toastItem.duration}>
               <ToastContent
                 variant={toastItem.variant}
                 title={toastItem.title}
@@ -136,8 +135,7 @@ export const ToastManager: React.FC<ToastManagerProps> = ({ children }) => {
                       | 'info'
                   }
                   altText={toastItem.action.label}
-                  onClick={toastItem.action.onClick}
-                >
+                  onClick={toastItem.action.onClick}>
                   {toastItem.action.label}
                 </ToastAction>
               )}

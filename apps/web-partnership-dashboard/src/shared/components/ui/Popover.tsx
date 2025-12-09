@@ -160,8 +160,7 @@ const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(
       open={open}
       defaultOpen={defaultOpen}
       onOpenChange={onOpenChange}
-      modal={modal}
-    >
+      modal={modal}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
         ref={ref}
@@ -169,8 +168,7 @@ const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(
         size={size}
         side={side}
         align={align}
-        className={className}
-      >
+        className={className}>
         {content}
         {showArrow && <PopoverArrow />}
       </PopoverContent>

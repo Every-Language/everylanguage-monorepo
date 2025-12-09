@@ -104,9 +104,8 @@ class AppResetService {
       logger.info(ENABLE_LOGGING, '🎵 Resetting media player...');
 
       // Import media player service dynamically
-      const { mediaPlayerService } = await import(
-        '@/features/media/services/MediaPlayerService'
-      );
+      const { mediaPlayerService } =
+        await import('@/features/media/services/MediaPlayerService');
 
       // Stop media player
       await mediaPlayerService.stop();

@@ -160,9 +160,8 @@ export const useVerseStore = create<VerseStore>()(
 
         seekToVerse: async (verseId: string) => {
           try {
-            const { mediaPlayerService } = await import(
-              '../services/MediaPlayerService'
-            );
+            const { mediaPlayerService } =
+              await import('../services/MediaPlayerService');
             await mediaPlayerService.seekToVerse(verseId);
             logger.info(
               ENABLE_LOGGING,
@@ -179,9 +178,8 @@ export const useVerseStore = create<VerseStore>()(
 
         nextVerse: async () => {
           try {
-            const { mediaPlayerService } = await import(
-              '../services/MediaPlayerService'
-            );
+            const { mediaPlayerService } =
+              await import('../services/MediaPlayerService');
             await mediaPlayerService.nextVerse();
           } catch (error) {
             logger.error(
@@ -194,9 +192,8 @@ export const useVerseStore = create<VerseStore>()(
 
         previousVerse: async () => {
           try {
-            const { mediaPlayerService } = await import(
-              '../services/MediaPlayerService'
-            );
+            const { mediaPlayerService } =
+              await import('../services/MediaPlayerService');
             await mediaPlayerService.previousVerse();
           } catch (error) {
             logger.error(

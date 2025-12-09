@@ -31,18 +31,16 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = React.memo(
 
     // Get navigation actions from MediaPlayerService
     const skipToNext = async () => {
-      const { mediaPlayerService } = await import(
-        '../../services/MediaPlayerService'
-      );
+      const { mediaPlayerService } =
+        await import('../../services/MediaPlayerService');
       return mediaPlayerService.skipToNext();
     };
 
     const skipToPrevious = async () => {
       const { getPlaybackStore } = await import('../../store/PlaybackStore');
       const position = getPlaybackStore().position;
-      const { mediaPlayerService } = await import(
-        '../../services/MediaPlayerService'
-      );
+      const { mediaPlayerService } =
+        await import('../../services/MediaPlayerService');
       return mediaPlayerService.skipToPrevious(position);
     };
     const { nextVerse, previousVerse } = useVerseStore();

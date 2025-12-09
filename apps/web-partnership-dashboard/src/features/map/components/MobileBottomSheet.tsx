@@ -430,14 +430,12 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           transition: isTransitioning
             ? 'height 300ms cubic-bezier(0.32, 0.72, 0, 1)'
             : 'none',
-        }}
-      >
+        }}>
         {/* Drag handle */}
         <div
           ref={handleRef}
           className='flex items-center justify-center py-2 cursor-grab active:cursor-grabbing flex-shrink-0'
-          onClick={handleHeaderTap}
-        >
+          onClick={handleHeaderTap}>
           <div className='h-1 w-10 rounded-full bg-neutral-300 dark:bg-neutral-700' />
         </div>
 
@@ -445,8 +443,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         <div
           ref={headerRef}
           className='px-4 pb-3 border-b border-neutral-200 dark:border-neutral-800 flex-shrink-0 cursor-grab active:cursor-grabbing'
-          onClick={handleHeaderTap}
-        >
+          onClick={handleHeaderTap}>
           <FadeSwitch switchKey={selectionKey}>
             {isLoading ? (
               <HeaderSkeleton
@@ -461,8 +458,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                     router.back();
                   }}
                   aria-label='Back'
-                  className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                >
+                  className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800'>
                   ←
                 </button>
                 <div>
@@ -490,8 +486,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         {/* Content */}
         <div
           ref={contentRef}
-          className='flex-1 flex flex-col min-h-0 overflow-hidden'
-        >
+          className='flex-1 flex flex-col min-h-0 overflow-hidden'>
           {isLoading ? (
             <div className='flex-1 p-4 overflow-y-auto'>
               <div className='space-y-4'>
@@ -506,8 +501,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           ) : (
             <FadeSwitch
               switchKey={selectionKey}
-              className='flex-1 flex flex-col min-h-0'
-            >
+              className='flex-1 flex flex-col min-h-0'>
               <InspectorTabs
                 selection={selection}
                 layers={layers}
@@ -555,8 +549,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
               // Reset initial state when modal closes
               setInitialDonateState(null);
             }
-          }}
-        >
+          }}>
           {initialDonateState && (
             <DonateModal
               initialIntent={initialDonateState.intent}

@@ -59,8 +59,7 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
                 setFilters(prev => ({ ...prev, roleId: value }))
               }
               placeholder='All roles'
-              disabled={rolesLoading}
-            >
+              disabled={rolesLoading}>
               {availableRoles.map(role => (
                 <SelectItem key={role.id} value={role.id}>
                   {role.name}
@@ -80,8 +79,7 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
                   ...prev,
                   status: value as UserFilters['status'],
                 }))
-              }
-            >
+              }>
               <SelectItem value='all'>All Status</SelectItem>
               <SelectItem value='active'>Active</SelectItem>
               <SelectItem value='inactive'>Inactive</SelectItem>
@@ -113,24 +111,21 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
             <Button
               size='sm'
               onClick={() => onBulkAction('activate')}
-              disabled={bulkOperationsPending}
-            >
+              disabled={bulkOperationsPending}>
               Activate
             </Button>
             <Button
               size='sm'
               variant='outline'
               onClick={() => onBulkAction('deactivate')}
-              disabled={bulkOperationsPending}
-            >
+              disabled={bulkOperationsPending}>
               Deactivate
             </Button>
             <Button
               size='sm'
               variant='outline'
               onClick={() => onBulkAction('remove')}
-              disabled={bulkOperationsPending}
-            >
+              disabled={bulkOperationsPending}>
               {bulkOperationsPending ? 'Removing...' : 'Remove'}
             </Button>
             <Button size='sm' variant='outline' onClick={onClearSelection}>

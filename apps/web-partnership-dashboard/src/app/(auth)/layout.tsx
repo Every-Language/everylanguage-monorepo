@@ -13,6 +13,7 @@ export default function AuthLayout({
 }) {
   const pathname = usePathname();
   const requiresAuth = pathname !== '/dashboard';
+  const isProfileRoute = pathname?.startsWith('/profile') ?? false;
 
   return (
     <ProtectedRoute requireAuth={requiresAuth}>
@@ -30,7 +31,10 @@ export default function AuthLayout({
         </Suspense>
       </div>
 
-      <main className='relative h-[calc(100dvh-56px)] overflow-y-auto'>
+      <main
+        className={`relative h-[calc(100dvh-56px)] ${
+          isProfileRoute ? '' : 'overflow-y-auto'
+        }`}>
         {children}
       </main>
     </ProtectedRoute>

@@ -96,9 +96,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = React.memo(
               ? normalizedSeekPosition + currentTrack.verseRangeStartTime
               : normalizedSeekPosition;
 
-          const { getPlaybackStore } = await import(
-            '../../store/PlaybackStore'
-          );
+          const { getPlaybackStore } =
+            await import('../../store/PlaybackStore');
           await getPlaybackStore().seekTo(absoluteSeekTime);
         } catch (error) {
           logger.error(ENABLE_LOGGING, 'Error seeking to position:', error);

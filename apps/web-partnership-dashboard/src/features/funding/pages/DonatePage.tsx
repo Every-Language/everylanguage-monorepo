@@ -68,8 +68,7 @@ export const DonatePage: React.FC = () => {
             <div className='flex gap-3 justify-end'>
               <Button
                 variant='ghost'
-                onClick={() => setShowConfirmDialog(false)}
-              >
+                onClick={() => setShowConfirmDialog(false)}>
                 Stay
               </Button>
               <Button variant='primary' onClick={confirmLeave}>

@@ -174,6 +174,7 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "coverageProvider": "v8",
     "testPathIgnorePatterns": [
       "/node_modules/",
       "/.expo/",
@@ -200,7 +201,7 @@
       "^@/shared/(.*)$": "<rootDir>/src/shared/$1"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|isows|@supabase|@powersync)"
+      "node_modules/(?!(?:\\.pnpm/)?(@react-native|react-native|jest-react-native|@react-native-community|@react-native/js-polyfills|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|isows|@supabase|@powersync))"
     ],
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.cjs"

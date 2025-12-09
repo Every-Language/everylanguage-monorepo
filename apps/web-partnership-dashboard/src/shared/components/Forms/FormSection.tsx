@@ -28,8 +28,7 @@ export const FormSection: React.FC<FormSectionProps> = ({
 
   return (
     <div
-      className={`border border-neutral-200 dark:border-neutral-700 rounded-lg ${className}`}
-    >
+      className={`border border-neutral-200 dark:border-neutral-700 rounded-lg ${className}`}>
       {/* Section Header */}
       <div
         className={`px-4 py-3 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 ${
@@ -49,8 +48,7 @@ export const FormSection: React.FC<FormSectionProps> = ({
                 }
               }
             : undefined
-        }
-      >
+        }>
         <div className='flex items-center justify-between'>
           <div>
             <h3 className='text-lg font-medium text-neutral-900 dark:text-neutral-100'>

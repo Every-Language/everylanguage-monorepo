@@ -33,8 +33,7 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({
               variant='outline'
               size='sm'
               onClick={() => setIsEditModalOpen(true)}
-              disabled={!selectedProject}
-            >
+              disabled={!selectedProject}>
               Edit
             </Button>
           </div>
@@ -93,8 +92,7 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({
                       {projectMetadata.users.map((userRole, index) => (
                         <div
                           key={index}
-                          className='flex items-center justify-between'
-                        >
+                          className='flex items-center justify-between'>
                           <span className='text-neutral-900 dark:text-neutral-100'>
                             {userRole.user.first_name} {userRole.user.last_name}
                           </span>

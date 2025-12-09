@@ -128,8 +128,7 @@ export const JPLanguageView: React.FC<JPLanguageViewProps> = ({ entityId }) => {
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'
-              >
+                className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'>
                 <ChevronLeftIcon className='w-5 h-5' />
               </button>
               <span className='text-sm text-neutral-600 dark:text-neutral-400'>
@@ -138,8 +137,7 @@ export const JPLanguageView: React.FC<JPLanguageViewProps> = ({ entityId }) => {
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage >= totalPages}
-                className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'
-              >
+                className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed'>
                 <ChevronRightIcon className='w-5 h-5' />
               </button>
             </div>

@@ -229,8 +229,7 @@ export function ExternalProjectOverrideModal({
             : isEntering
               ? 'translate-x-full'
               : 'translate-x-0'
-        }`}
-      >
+        }`}>
         {/* Header */}
         <div className='px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between'>
           <div>
@@ -247,8 +246,7 @@ export function ExternalProjectOverrideModal({
           </div>
           <button
             onClick={handleClose}
-            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-          >
+            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'>
             <X className='h-5 w-5 text-neutral-600 dark:text-neutral-400' />
           </button>
         </div>
@@ -256,8 +254,7 @@ export function ExternalProjectOverrideModal({
         {/* Content */}
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className='flex-1 overflow-y-auto p-6'
-        >
+          className='flex-1 overflow-y-auto p-6'>
           <div className='space-y-6'>
             {/* Language */}
             <div>
@@ -276,8 +273,7 @@ export function ExternalProjectOverrideModal({
                         setValue('language_entity_id', '');
                         setShowLanguageDropdown(true);
                       }}
-                      className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700'
-                    >
+                      className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700'>
                       Change
                     </button>
                   </div>
@@ -308,8 +304,7 @@ export function ExternalProjectOverrideModal({
                                 onClick={() =>
                                   handleLanguageSelect(language.id)
                                 }
-                                className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100'
-                              >
+                                className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100'>
                                 {language.name}{' '}
                                 <span className='text-neutral-500 dark:text-neutral-400'>
                                   ({language.level})
@@ -509,8 +504,7 @@ export function ExternalProjectOverrideModal({
                 type='button'
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
-                className='px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 flex items-center gap-2'
-              >
+                className='px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 flex items-center gap-2'>
                 <Trash2 className='h-4 w-4' />
                 {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
               </button>
@@ -519,8 +513,7 @@ export function ExternalProjectOverrideModal({
               <button
                 type='button'
                 onClick={handleClose}
-                className='px-4 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-              >
+                className='px-4 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                 Cancel
               </button>
               <button
@@ -530,8 +523,7 @@ export function ExternalProjectOverrideModal({
                   createMutation.isPending ||
                   updateMutation.isPending
                 }
-                className='px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-2'
-              >
+                className='px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-2'>
                 <Save className='h-4 w-4' />
                 {isSubmitting ||
                 createMutation.isPending ||

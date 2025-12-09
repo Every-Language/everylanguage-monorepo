@@ -126,15 +126,13 @@ export function VerseWithFeedback({
       rounded-lg border p-4 transition-all duration-200
       ${isCurrentVerse ? 'ring-2 ring-primary-500 ring-opacity-50' : ''}
       ${statusStyling.bg} ${statusStyling.border}
-    `}
-    >
+    `}>
       {/* Verse Header */}
       <div className='flex items-center justify-between mb-3'>
         <div className='flex items-center space-x-3'>
           <button
             onClick={() => onJumpToVerse?.(verse.start_time_seconds)}
-            className='flex items-center space-x-2 hover:text-primary-600 dark:hover:text-primary-400 transition-colors'
-          >
+            className='flex items-center space-x-2 hover:text-primary-600 dark:hover:text-primary-400 transition-colors'>
             <span className='font-semibold text-lg'>
               Verse {verse.verse_number}
             </span>
@@ -153,8 +151,7 @@ export function VerseWithFeedback({
         <div className='flex items-center space-x-2'>
           <StatusIcon className={`h-5 w-5 ${statusStyling.text}`} />
           <span
-            className={`text-sm font-medium capitalize ${statusStyling.text}`}
-          >
+            className={`text-sm font-medium capitalize ${statusStyling.text}`}>
             {feedbackStatus === 'change_required'
               ? 'Changes Required'
               : feedbackStatus}
@@ -169,8 +166,7 @@ export function VerseWithFeedback({
           size='sm'
           onClick={() => handleSubmitFeedback('approved')}
           disabled={isLoading}
-          className='flex items-center space-x-1'
-        >
+          className='flex items-center space-x-1'>
           <CheckCircleIcon className='h-4 w-4' />
           <span>Approve</span>
         </Button>
@@ -180,8 +176,7 @@ export function VerseWithFeedback({
           size='sm'
           onClick={() => handleSubmitFeedback('change_required')}
           disabled={isLoading}
-          className='flex items-center space-x-1'
-        >
+          className='flex items-center space-x-1'>
           <ExclamationTriangleIcon className='h-4 w-4' />
           <span>Suggest Change</span>
         </Button>
@@ -191,8 +186,7 @@ export function VerseWithFeedback({
             variant='ghost'
             size='sm'
             onClick={() => setIsExpanded(!isExpanded)}
-            className='flex items-center space-x-1'
-          >
+            className='flex items-center space-x-1'>
             <ChatBubbleLeftIcon className='h-4 w-4' />
             <span>History ({existingFeedback.length})</span>
           </Button>
@@ -220,8 +214,7 @@ export function VerseWithFeedback({
                 }
               }}
               disabled={isLoading || !latestFeedback}
-              className='text-xs'
-            >
+              className='text-xs'>
               Update Note
             </Button>
           </div>
@@ -252,16 +245,14 @@ export function VerseWithFeedback({
             {existingFeedback.slice(1).map(feedback => (
               <div
                 key={feedback.id}
-                className='p-2 bg-gray-100 dark:bg-gray-700 rounded text-sm'
-              >
+                className='p-2 bg-gray-100 dark:bg-gray-700 rounded text-sm'>
                 <div className='flex items-center justify-between mb-1'>
                   <span
                     className={`text-xs font-medium capitalize ${
                       feedback.feedback_type === 'approved'
                         ? 'text-green-600 dark:text-green-400'
                         : 'text-orange-600 dark:text-orange-400'
-                    }`}
-                  >
+                    }`}>
                     {feedback.feedback_type === 'change_required'
                       ? 'Changes Required'
                       : feedback.feedback_type}

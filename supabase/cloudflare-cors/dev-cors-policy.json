@@ -11,7 +11,9 @@
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
         "http://127.0.0.1:5175",
-        "https://dev.everylanguage.com"
+        "https://everylanguage-project-dashboard.vercel.app",
+        "https://everylanguage-partnership-dashboard.vercel.app",
+        "https://everylanguage-admin-dashboard.vercel.app"
       ],
       "ExposeHeaders": [
         "ETag",

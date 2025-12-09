@@ -34,8 +34,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         className
       )}
       role='status'
-      aria-label='Loading'
-    >
+      aria-label='Loading'>
       <span className='sr-only'>Loading...</span>
     </div>
   );
@@ -68,8 +67,7 @@ export const LoadingDots: React.FC<LoadingDotsProps> = ({
     <div
       className={cn('flex space-x-1', className)}
       role='status'
-      aria-label='Loading'
-    >
+      aria-label='Loading'>
       {[0, 1, 2].map(i => (
         <div
           key={i}
@@ -117,8 +115,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
       className={cn('animate-pulse', variantClasses[variant], className)}
       style={style}
       role='status'
-      aria-label='Loading content'
-    >
+      aria-label='Loading content'>
       <span className='sr-only'>Loading content...</span>
     </div>
   );

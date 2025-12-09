@@ -19,9 +19,8 @@ export async function migrateLocalUserOwnedData(
   newUserId: string | null | undefined
 ): Promise<void> {
   // Import download manager to pause downloads during migration
-  const { downloadManager } = await import(
-    '@/features/downloads/services/DownloadManager'
-  );
+  const { downloadManager } =
+    await import('@/features/downloads/services/DownloadManager');
 
   try {
     ensureDbReady();

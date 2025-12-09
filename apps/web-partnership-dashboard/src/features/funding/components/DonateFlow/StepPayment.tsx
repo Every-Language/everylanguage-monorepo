@@ -166,8 +166,7 @@ const Inner: React.FC<{ flow: DonateFlow; clientSecret: string | null }> = ({
             cardNumberFocused || !cardNumberEmpty
               ? 'top-1 text-xs text-primary-600 dark:text-primary-400'
               : 'top-4 text-base text-neutral-500 dark:text-neutral-400'
-          }`}
-        >
+          }`}>
           Card number
         </label>
         <div className='mt-1 px-3 py-4 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus-within:ring-2 focus-within:ring-primary-500 dark:focus-within:ring-primary-400'>
@@ -191,8 +190,7 @@ const Inner: React.FC<{ flow: DonateFlow; clientSecret: string | null }> = ({
               expiryFocused || !expiryEmpty
                 ? 'top-1 text-xs text-primary-600 dark:text-primary-400'
                 : 'top-4 text-base text-neutral-500 dark:text-neutral-400'
-            }`}
-          >
+            }`}>
             Expiry
           </label>
           <div className='mt-1 px-3 py-4 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus-within:ring-2 focus-within:ring-primary-500 dark:focus-within:ring-primary-400'>
@@ -211,8 +209,7 @@ const Inner: React.FC<{ flow: DonateFlow; clientSecret: string | null }> = ({
               cvcFocused || !cvcEmpty
                 ? 'top-1 text-xs text-primary-600 dark:text-primary-400'
                 : 'top-4 text-base text-neutral-500 dark:text-neutral-400'
-            }`}
-          >
+            }`}>
             CVC
           </label>
           <div className='mt-1 px-3 py-4 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 focus-within:ring-2 focus-within:ring-primary-500 dark:focus-within:ring-primary-400'>

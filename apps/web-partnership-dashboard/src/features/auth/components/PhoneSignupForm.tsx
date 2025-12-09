@@ -120,8 +120,7 @@ export const PhoneSignupForm: React.FC<PhoneSignupFormProps> = ({
                   className='h-5 w-5 text-success-600 dark:text-success-400'
                   fill='none'
                   stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
+                  viewBox='0 0 24 24'>
                   <path
                     strokeLinecap='round'
                     strokeLinejoin='round'
@@ -162,8 +161,7 @@ export const PhoneSignupForm: React.FC<PhoneSignupFormProps> = ({
                 className='h-5 w-5 text-error-600 dark:text-error-400'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -263,8 +261,7 @@ export const PhoneSignupForm: React.FC<PhoneSignupFormProps> = ({
                 className='h-5 w-5'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -303,8 +300,7 @@ export const PhoneSignupForm: React.FC<PhoneSignupFormProps> = ({
                 className='h-5 w-5'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -328,8 +324,7 @@ export const PhoneSignupForm: React.FC<PhoneSignupFormProps> = ({
             className='flex-1'
             disabled={isLoading}
             size='lg'
-            loading={isLoading}
-          >
+            loading={isLoading}>
             {isLoading ? 'Creating account...' : 'Create account'}
           </Button>
 
@@ -338,8 +333,7 @@ export const PhoneSignupForm: React.FC<PhoneSignupFormProps> = ({
               type='button'
               variant='outline'
               onClick={onCancel}
-              disabled={isLoading}
-            >
+              disabled={isLoading}>
               Cancel
             </Button>
           )}

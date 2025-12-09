@@ -61,8 +61,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
               <Select
                 value={roleId}
                 onValueChange={onRoleChange}
-                placeholder='Select a role'
-              >
+                placeholder='Select a role'>
                 {availableRoles.map(role => (
                   <SelectItem key={role.id} value={role.id}>
                     {role.name}

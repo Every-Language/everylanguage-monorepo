@@ -83,8 +83,7 @@ export function AddOperationModal({
             </h2>
             <button
               onClick={onClose}
-              className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-            >
+              className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'>
               <X className='h-5 w-5 text-neutral-500 dark:text-neutral-400' />
             </button>
           </div>
@@ -95,8 +94,7 @@ export function AddOperationModal({
             <div>
               <label
                 htmlFor='name'
-                className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'
-              >
+                className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
                 Name <span className='text-red-500'>*</span>
               </label>
               <input
@@ -114,8 +112,7 @@ export function AddOperationModal({
             <div>
               <label
                 htmlFor='description'
-                className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'
-              >
+                className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
                 Description
               </label>
               <textarea
@@ -133,8 +130,7 @@ export function AddOperationModal({
               label='Category'
               value={category}
               onValueChange={value => setCategory(value as OperationCategory)}
-              required
-            >
+              required>
               {OPERATION_CATEGORIES.map(cat => (
                 <SelectItem key={cat} value={cat}>
                   {formatCategory(cat)}
@@ -147,8 +143,7 @@ export function AddOperationModal({
               label='Status'
               value={status}
               onValueChange={value => setStatus(value as EntityStatus)}
-              required
-            >
+              required>
               {STATUS_OPTIONS.map(stat => (
                 <SelectItem key={stat} value={stat}>
                   {stat.charAt(0).toUpperCase() + stat.slice(1)}
@@ -167,8 +162,7 @@ export function AddOperationModal({
               />
               <label
                 htmlFor='isPublic'
-                className='ml-2 block text-sm text-neutral-700 dark:text-neutral-300'
-              >
+                className='ml-2 block text-sm text-neutral-700 dark:text-neutral-300'>
                 Public (visible to donors)
               </label>
             </div>
@@ -178,15 +172,13 @@ export function AddOperationModal({
               <button
                 type='button'
                 onClick={onClose}
-                className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors'
-              >
+                className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors'>
                 Cancel
               </button>
               <button
                 type='submit'
                 disabled={createMutation.isPending || !name.trim()}
-                className='px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              >
+                className='px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                 {createMutation.isPending ? 'Creating...' : 'Create Operation'}
               </button>
             </div>

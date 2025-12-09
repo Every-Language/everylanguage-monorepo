@@ -39,8 +39,7 @@ export default function PublicLayout({
       <main
         className={`relative ${isDonateRoute ? 'min-h-screen' : 'h-[calc(100dvh-56px)]'} ${
           isMapRoute ? 'overflow-hidden' : 'overflow-y-auto'
-        }`}
-      >
+        }`}>
         {children}
       </main>
     </>

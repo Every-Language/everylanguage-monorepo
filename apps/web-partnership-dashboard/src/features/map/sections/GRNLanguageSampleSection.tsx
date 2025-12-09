@@ -159,8 +159,7 @@ export const GRNLanguageSampleSection: React.FC<
           href='https://globalrecordings.net'
           target='_blank'
           rel='noopener noreferrer'
-          className='underline hover:text-neutral-600'
-        >
+          className='underline hover:text-neutral-600'>
           Global Recordings Network
         </a>
       </div>

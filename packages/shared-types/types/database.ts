@@ -655,13 +655,14 @@ export type Database = {
           intent_operation_id: string | null
           intent_region_id: string | null
           intent_type: Database["public"]["Enums"]["donation_intent_type"]
+          is_manual: boolean
           is_recurring: boolean
-          partner_org_id: string | null
+          partner_org_id: string
           payment_method: Database["public"]["Enums"]["payment_method_type"]
           status: Database["public"]["Enums"]["donation_status"]
           subscription_id: string | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           amount_cents: number
@@ -676,13 +677,14 @@ export type Database = {
           intent_operation_id?: string | null
           intent_region_id?: string | null
           intent_type: Database["public"]["Enums"]["donation_intent_type"]
+          is_manual?: boolean
           is_recurring?: boolean
-          partner_org_id?: string | null
+          partner_org_id: string
           payment_method: Database["public"]["Enums"]["payment_method_type"]
           status?: Database["public"]["Enums"]["donation_status"]
           subscription_id?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           amount_cents?: number
@@ -697,13 +699,14 @@ export type Database = {
           intent_operation_id?: string | null
           intent_region_id?: string | null
           intent_type?: Database["public"]["Enums"]["donation_intent_type"]
+          is_manual?: boolean
           is_recurring?: boolean
-          partner_org_id?: string | null
+          partner_org_id?: string
           payment_method?: Database["public"]["Enums"]["payment_method_type"]
           status?: Database["public"]["Enums"]["donation_status"]
           subscription_id?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -4213,12 +4216,12 @@ export type Database = {
           intent_type: Database["public"]["Enums"]["donation_intent_type"]
           interval_type: string
           original_donation_id: string | null
-          partner_org_id: string | null
+          partner_org_id: string
           status: Database["public"]["Enums"]["subscription_status"]
           stripe_customer_id: string
           stripe_subscription_id: string
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           amount_cents: number
@@ -4234,12 +4237,12 @@ export type Database = {
           intent_type: Database["public"]["Enums"]["donation_intent_type"]
           interval_type: string
           original_donation_id?: string | null
-          partner_org_id?: string | null
+          partner_org_id: string
           status?: Database["public"]["Enums"]["subscription_status"]
           stripe_customer_id: string
           stripe_subscription_id: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           amount_cents?: number
@@ -4255,12 +4258,12 @@ export type Database = {
           intent_type?: Database["public"]["Enums"]["donation_intent_type"]
           interval_type?: string
           original_donation_id?: string | null
-          partner_org_id?: string | null
+          partner_org_id?: string
           status?: Database["public"]["Enums"]["subscription_status"]
           stripe_customer_id?: string
           stripe_subscription_id?: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -6498,7 +6501,7 @@ export type Database = {
           }
       calculate_language_funding_status: {
         Args: { language_id: string }
-        Returns: string
+        Returns: Database["public"]["Enums"]["funding_status"]
       }
       check_language_project_allocations: {
         Args: { language_id: string }
@@ -6581,6 +6584,15 @@ export type Database = {
         Returns: undefined
       }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      find_anonymous_user_by_contact: {
+        Args: { p_email?: string; p_phone?: string }
+        Returns: {
+          email: string
+          is_anonymous: boolean
+          phone: string
+          user_id: string
+        }[]
+      }
       geometry: { Args: { "": string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }

@@ -15,11 +15,19 @@ let Database;
 try {
   Database = require('better-sqlite3');
 } catch (e) {
-  console.error('better-sqlite3 is not installed. Install with: npm i -D better-sqlite3');
+  console.error(
+    'better-sqlite3 is not installed. Install with: npm i -D better-sqlite3'
+  );
   process.exit(1);
 }
 
-const STRUCTURE_JSON = path.join(__dirname, '..', 'assets', 'data', 'bible-structure.json');
+const STRUCTURE_JSON = path.join(
+  __dirname,
+  '..',
+  'assets',
+  'data',
+  'bible-structure.json'
+);
 const OUT_DIR = path.join(__dirname, '..', 'assets', 'seed');
 const OUT_DB = path.join(OUT_DIR, 'bible-seed.db');
 
@@ -29,7 +37,9 @@ function ensureDir(dir) {
 
 function main() {
   if (!fs.existsSync(STRUCTURE_JSON)) {
-    console.error('Missing bible-structure.json. Generate it first with: npm run assets:generate-bible-structure');
+    console.error(
+      'Missing bible-structure.json. Generate it first with: npm run assets:generate-bible-structure'
+    );
     process.exit(1);
   }
 
@@ -84,7 +94,14 @@ function main() {
       );
       for (const r of payload.books) {
         const bookOrder = r.book_number; // direct mapping
-        insertBook.run(r.id, r.name, r.book_number, r.testament, r.bible_version_id, bookOrder);
+        insertBook.run(
+          r.id,
+          r.name,
+          r.book_number,
+          r.testament,
+          r.bible_version_id,
+          bookOrder
+        );
       }
 
       const insertChapter = db.prepare(
@@ -94,8 +111,14 @@ function main() {
         // (book_number * 1000) + chapter_number
         const book = payload.books.find(b => b.id === r.book_id);
         const bookNumber = book ? book.book_number : 0;
-        const chapterOrder = (bookNumber * 1000) + r.chapter_number;
-        insertChapter.run(r.id, r.book_id, r.chapter_number, r.total_verses, chapterOrder);
+        const chapterOrder = bookNumber * 1000 + r.chapter_number;
+        insertChapter.run(
+          r.id,
+          r.book_id,
+          r.chapter_number,
+          r.total_verses,
+          chapterOrder
+        );
       }
 
       const insertVerse = db.prepare(
@@ -108,10 +131,13 @@ function main() {
           for (const r of slice) {
             // (book_number * 1_000_000) + (chapter_number * 1000) + verse_number
             const chapter = payload.chapters.find(c => c.id === r.chapter_id);
-            const book = chapter ? payload.books.find(b => b.id === chapter.book_id) : null;
+            const book = chapter
+              ? payload.books.find(b => b.id === chapter.book_id)
+              : null;
             const bookNumber = book ? book.book_number : 0;
             const chapterNumber = chapter ? chapter.chapter_number : 0;
-            const verseOrder = (bookNumber * 1000000) + (chapterNumber * 1000) + r.verse_number;
+            const verseOrder =
+              bookNumber * 1000000 + chapterNumber * 1000 + r.verse_number;
             insertVerse.run(r.id, r.chapter_id, r.verse_number, verseOrder);
           }
         })();
@@ -136,5 +162,3 @@ if (require.main === module) {
 }
 
 module.exports = { main };
-
-

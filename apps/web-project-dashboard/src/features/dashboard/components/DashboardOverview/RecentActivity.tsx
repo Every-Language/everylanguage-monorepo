@@ -37,8 +37,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
             item.type === 'audio'
               ? 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300'
               : 'bg-secondary-100 text-secondary-800 dark:bg-secondary-900 dark:text-secondary-300'
-          }`}
-        >
+          }`}>
           {item.type === 'audio' ? 'Audio' : 'Text'}
         </span>
       ),
@@ -67,8 +66,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
       render: (_value: unknown, item: ActivityItem) => (
         <div
           className='text-sm text-neutral-900 dark:text-neutral-100 max-w-[200px] truncate'
-          title={item.filename}
-        >
+          title={item.filename}>
           {item.filename}
         </div>
       ),

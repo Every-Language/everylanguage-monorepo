@@ -220,8 +220,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
-          onClick={openFileDialog}
-        >
+          onClick={openFileDialog}>
           <div className='text-center'>
             <ArrowUpTrayIcon className='mx-auto h-12 w-12 text-neutral-400' />
             <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
@@ -255,8 +254,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
             {files.map((fileWithPreview, index) => (
               <div
                 key={index}
-                className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-4 space-y-2'
-              >
+                className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-4 space-y-2'>
                 {/* Preview */}
                 <div className='relative aspect-video bg-neutral-100 dark:bg-neutral-800 rounded overflow-hidden'>
                   {fileWithPreview.preview ? (
@@ -272,8 +270,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                           className='mx-auto h-12 w-12 text-neutral-400'
                           fill='none'
                           stroke='currentColor'
-                          viewBox='0 0 24 24'
-                        >
+                          viewBox='0 0 24 24'>
                           <path
                             strokeLinecap='round'
                             strokeLinejoin='round'
@@ -289,8 +286,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     type='button'
                     onClick={() => removeFile(index)}
                     className='absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600'
-                    disabled={disabled}
-                  >
+                    disabled={disabled}>
                     <XMarkIcon className='h-4 w-4' />
                   </button>
                 </div>
@@ -330,8 +326,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                         variant='ghost'
                         size='sm'
                         onClick={() => moveFile(index, index - 1)}
-                        disabled={disabled}
-                      >
+                        disabled={disabled}>
                         ↑
                       </Button>
                     )}
@@ -341,8 +336,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                         variant='ghost'
                         size='sm'
                         onClick={() => moveFile(index, index + 1)}
-                        disabled={disabled}
-                      >
+                        disabled={disabled}>
                         ↓
                       </Button>
                     )}

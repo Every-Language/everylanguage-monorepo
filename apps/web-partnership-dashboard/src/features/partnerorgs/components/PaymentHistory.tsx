@@ -83,8 +83,7 @@ const getStatusBadge = (status: string) => {
     <span
       className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
         colors[status as keyof typeof colors] || colors.cancelled
-      }`}
-    >
+      }`}>
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
@@ -114,8 +113,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({
               {subscriptions.map(sub => (
                 <div
                   key={sub.id}
-                  className='flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg'
-                >
+                  className='flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg'>
                   <div>
                     <div className='font-medium'>
                       {formatCurrency(sub.amount_cents, sub.currency_code)}

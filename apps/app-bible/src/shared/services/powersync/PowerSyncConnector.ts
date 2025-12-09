@@ -427,8 +427,7 @@ export class PowerSyncConnector implements PowerSyncBackendConnector {
                 responseStructure: {
                   hasResults: Boolean(
                     (fnData as { results?: unknown })?.results ||
-                      (fnData as { data?: { results?: unknown } })?.data
-                        ?.results
+                    (fnData as { data?: { results?: unknown } })?.data?.results
                   ),
                   resultsLength: Array.isArray(
                     (fnData as { results?: unknown })?.results

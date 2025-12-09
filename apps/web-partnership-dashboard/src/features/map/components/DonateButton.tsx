@@ -132,8 +132,7 @@ export const DonateButton: React.FC<DonateButtonProps> = ({
         variant='primary'
         className='w-full'
         onClick={handleClick}
-        disabled={isLoading}
-      >
+        disabled={isLoading}>
         Donate to {budgetData.name}
       </Button>
     </div>

@@ -150,9 +150,8 @@ export const usePlaybackStore = create<PlaybackStore>()(
 
         seekTo: async (positionSeconds: number) => {
           try {
-            const { mediaPlayerService } = await import(
-              '../services/MediaPlayerService'
-            );
+            const { mediaPlayerService } =
+              await import('../services/MediaPlayerService');
             await mediaPlayerService.seekTo(positionSeconds);
             logger.info(ENABLE_LOGGING, '[PlaybackStore] ⏩ Seek command sent');
           } catch (error) {
@@ -193,9 +192,8 @@ export const usePlaybackStore = create<PlaybackStore>()(
 
         setPlaybackRate: async (rate: PlaybackRate) => {
           try {
-            const { mediaPlayerService } = await import(
-              '../services/MediaPlayerService'
-            );
+            const { mediaPlayerService } =
+              await import('../services/MediaPlayerService');
             await mediaPlayerService.setPlaybackRate(rate);
             set({ playbackRate: rate }, undefined, 'playback/setPlaybackRate');
           } catch (error) {

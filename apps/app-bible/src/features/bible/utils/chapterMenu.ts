@@ -196,9 +196,8 @@ export const handleChapterMenuAction = async (
         await addToQueue(chapter.id, opts);
       } else {
         // Fallback to queue store if handler not supplied
-        const { getQueueStore } = await import(
-          '@/features/media/store/QueueStore'
-        );
+        const { getQueueStore } =
+          await import('@/features/media/store/QueueStore');
         const { addToQueue: add } = getQueueStore();
         const opts = {
           preferOffline: true,
@@ -219,9 +218,8 @@ export const handleChapterMenuAction = async (
 
   if (actionId === 'download_chapter') {
     try {
-      const { chapterDownloadService } = await import(
-        '@/features/downloads/services/ChapterDownloadService'
-      );
+      const { chapterDownloadService } =
+        await import('@/features/downloads/services/ChapterDownloadService');
       await chapterDownloadService.prioritizeChapterDownloads(chapter.id);
     } catch {
       // swallow; UI can show toast elsewhere
@@ -231,9 +229,8 @@ export const handleChapterMenuAction = async (
 
   if (actionId === 'remove_download_chapter') {
     try {
-      const { chapterDownloadService } = await import(
-        '@/features/downloads/services/ChapterDownloadService'
-      );
+      const { chapterDownloadService } =
+        await import('@/features/downloads/services/ChapterDownloadService');
       await chapterDownloadService.removeChapterDownloads(chapter.id);
     } catch {
       // swallow

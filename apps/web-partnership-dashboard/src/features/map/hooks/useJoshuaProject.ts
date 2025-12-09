@@ -115,9 +115,8 @@ export function useJPCountryStats(
       // Fallback to ISO3 if FIPS not available (shouldn't happen after seed is run)
       if (iso3) {
         // Import fetchCountryStats for fallback
-        const { fetchCountryStats } = await import(
-          '../services/joshuaProjectApi'
-        );
+        const { fetchCountryStats } =
+          await import('../services/joshuaProjectApi');
         return await fetchCountryStats(iso3);
       }
 

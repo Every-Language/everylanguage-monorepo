@@ -153,8 +153,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
     <Menu
       as='div'
       ref={ref}
-      className={cn(dropdownVariants({ size, className }))}
-    >
+      className={cn(dropdownVariants({ size, className }))}>
       {children}
     </Menu>
   )
@@ -172,8 +171,7 @@ const DropdownTrigger = React.forwardRef<
     <Menu.Button
       ref={ref}
       className={cn(dropdownTriggerVariants({ variant, size, className }))}
-      disabled={disabled}
-    >
+      disabled={disabled}>
       {children}
       {showChevron && <ChevronDown className='ml-1 h-4 w-4' />}
     </Menu.Button>
@@ -190,14 +188,12 @@ const DropdownContent = React.forwardRef<HTMLDivElement, DropdownContentProps>(
       enterTo='transform opacity-100 scale-100'
       leave='transition ease-in duration-75'
       leaveFrom='transform opacity-100 scale-100'
-      leaveTo='transform opacity-0 scale-95'
-    >
+      leaveTo='transform opacity-0 scale-95'>
       <Menu.Items
         ref={ref}
         className={cn(
           dropdownContentVariants({ align, side, size, className })
-        )}
-      >
+        )}>
         {children}
       </Menu.Items>
     </Transition>
@@ -220,8 +216,7 @@ const DropdownItem = React.forwardRef<HTMLDivElement, DropdownItemProps>(
             itemDisabled && 'pointer-events-none opacity-50',
             className
           )}
-          onClick={onClick}
-        >
+          onClick={onClick}>
           {icon && <span className='mr-2'>{icon}</span>}
           <span className='flex-1'>{children}</span>
         </div>
@@ -251,8 +246,7 @@ const DropdownLabel = React.forwardRef<HTMLDivElement, DropdownLabelProps>(
         size === 'sm' && 'px-1.5 py-1 text-xs',
         size === 'lg' && 'px-3 py-2 text-base',
         className
-      )}
-    >
+      )}>
       {children}
     </div>
   )

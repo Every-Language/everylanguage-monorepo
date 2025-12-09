@@ -162,9 +162,8 @@ export const BookChaptersScreen: React.FC = () => {
     // Pre-warm cache in background (non-blocking, lightweight)
     const preWarmCache = async () => {
       try {
-        const { chapterMediaResolver } = await import(
-          '@/features/media/services/ChapterMediaResolver'
-        );
+        const { chapterMediaResolver } =
+          await import('@/features/media/services/ChapterMediaResolver');
         // Only pre-warm first 2 chapters to be less aggressive
         await chapterMediaResolver.preWarmBookCache(
           resolvedBook.id,
@@ -199,9 +198,8 @@ export const BookChaptersScreen: React.FC = () => {
       try {
         // Ensure media store/services are initialized before attempting playback
         try {
-          const { getPlaybackStore } = await import(
-            '@/features/media/store/PlaybackStore'
-          );
+          const { getPlaybackStore } =
+            await import('@/features/media/store/PlaybackStore');
           await getPlaybackStore().initialize();
         } catch (e) {
           logger.warn(

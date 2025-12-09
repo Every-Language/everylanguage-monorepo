@@ -11,6 +11,7 @@ import {
   LoginPage,
   RegisterPage,
   ForgotPasswordPage,
+  ResetPasswordPage,
   UnauthorizedPage,
 } from './features/auth/pages';
 import { DashboardPage } from './app/pages/DashboardPage';
@@ -99,6 +100,7 @@ function App() {
                   path='/forgot-password'
                   element={<ForgotPasswordPage />}
                 />
+                <Route path='/reset-password' element={<ResetPasswordPage />} />
                 <Route path='/unauthorized' element={<UnauthorizedPage />} />
 
                 {/* Protected routes with layout */}

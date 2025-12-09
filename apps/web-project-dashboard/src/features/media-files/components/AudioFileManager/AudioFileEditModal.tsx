@@ -175,8 +175,7 @@ export const AudioFileEditModal: React.FC<AudioFileEditModalProps> = ({
               value={editForm.data.publishStatus}
               onValueChange={value =>
                 editForm.updateField('publishStatus', value)
-              }
-            >
+              }>
               <SelectItem value='pending'>Pending</SelectItem>
               <SelectItem value='published'>Published</SelectItem>
               <SelectItem value='archived'>Archived</SelectItem>
@@ -195,8 +194,7 @@ export const AudioFileEditModal: React.FC<AudioFileEditModalProps> = ({
           </Button>
           <Button
             onClick={handleSaveEdit}
-            disabled={updateMediaFile?.isPending || !editForm.isValid}
-          >
+            disabled={updateMediaFile?.isPending || !editForm.isValid}>
             {updateMediaFile?.isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogFooter>

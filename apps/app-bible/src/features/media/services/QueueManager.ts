@@ -192,9 +192,8 @@ export class QueueManager {
       throw new Error('PowerSync not initialized');
     }
 
-    const { useVersionsStore } = await import(
-      '@/features/languages/store/versionsStore'
-    );
+    const { useVersionsStore } =
+      await import('@/features/languages/store/versionsStore');
     const { currentAudioVersion, currentTextVersion } =
       useVersionsStore.getState();
 
@@ -287,9 +286,8 @@ export class QueueManager {
    */
   private async buildFirstTrackDirect(chapterId: string): Promise<void> {
     // Resolve current versions
-    const { useVersionsStore } = await import(
-      '@/features/languages/store/versionsStore'
-    );
+    const { useVersionsStore } =
+      await import('@/features/languages/store/versionsStore');
     const { currentAudioVersion, currentTextVersion } =
       useVersionsStore.getState();
 

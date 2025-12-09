@@ -89,9 +89,8 @@ export function useImageManagement() {
       }
 
       try {
-        const { DownloadService } = await import(
-          '../../../shared/services/downloadService'
-        );
+        const { DownloadService } =
+          await import('../../../shared/services/downloadService');
         const service = new DownloadService();
         const result = await service.getDownloadUrlsById({ imageIds });
         if (result.success && result.images) {

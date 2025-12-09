@@ -159,8 +159,7 @@ export const StepThankYou: React.FC<StepThankYouProps> = ({
           <Button
             variant='primary'
             onClick={handleGoToDashboard}
-            className='w-full'
-          >
+            className='w-full'>
             Go to Dashboard
           </Button>
         </div>

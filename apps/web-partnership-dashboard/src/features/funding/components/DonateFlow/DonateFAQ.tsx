@@ -81,8 +81,7 @@ export const DonateFAQ: React.FC<DonateFAQProps> = ({ className = '' }) => {
   return (
     <TooltipProvider delayDuration={200}>
       <div
-        className={`flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-neutral-500 ${className}`}
-      >
+        className={`flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-neutral-500 ${className}`}>
         {faqItems.map((item, index) => {
           const isOpen = openStates[index] ?? false;
           return (
@@ -94,13 +93,11 @@ export const DonateFAQ: React.FC<DonateFAQProps> = ({ className = '' }) => {
                   // If it's closing and was click-opened, assume it's hover-out (click-outside handled separately)
                   const isHover = !open && clickOpened[index];
                   handleOpenChange(index, open, isHover);
-                }}
-              >
+                }}>
                 <TooltipTrigger asChild>
                   <button
                     onClick={e => handleClick(index, isOpen, e)}
-                    className='hover:text-neutral-700 dark:hover:text-neutral-300 underline decoration-dotted cursor-help transition-colors'
-                  >
+                    className='hover:text-neutral-700 dark:hover:text-neutral-300 underline decoration-dotted cursor-help transition-colors'>
                     {item.question}
                   </button>
                 </TooltipTrigger>
@@ -124,8 +121,7 @@ export const DonateFAQ: React.FC<DonateFAQProps> = ({ className = '' }) => {
                       return next;
                     });
                     handleOpenChange(index, false, false);
-                  }}
-                >
+                  }}>
                   <p className='text-sm leading-relaxed'>{item.answer}</p>
                 </TooltipContent>
               </TooltipRoot>

@@ -128,9 +128,8 @@ const AppContent: React.FC = () => {
                       if (name.toLowerCase().endsWith('.elpkg')) {
                         const pkgUri = `${importDir}${name}`;
                         try {
-                          const { ImportService } = await import(
-                            '@/features/sharing/services/ImportService'
-                          );
+                          const { ImportService } =
+                            await import('@/features/sharing/services/ImportService');
                           await ImportService.importPackage(pkgUri);
                         } catch (e) {
                           logger.warn(

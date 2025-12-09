@@ -78,6 +78,11 @@ export interface PartnerOrgDonation {
     status: string;
     stripe_subscription_id: string;
   } | null;
+  partner_org?: {
+    id: string;
+    name: string;
+    is_individual: boolean;
+  } | null;
   donation_allocations: DonationAllocation[];
   isFromCurrentUser: boolean;
 }

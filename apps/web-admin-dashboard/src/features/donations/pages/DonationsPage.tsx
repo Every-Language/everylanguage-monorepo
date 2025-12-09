@@ -4,8 +4,9 @@ import { donationsApi } from '../api/donationsApi';
 import { allocationsApi } from '../api/allocationsApi';
 import { ViewDonationModal } from '../components/ViewDonationModal';
 import { ViewAllocationModal } from '../components/ViewAllocationModal';
+import { AddDonationModal } from '../components/AddDonationModal';
 import type { DonationWithAllocations, AllocationWithDetails } from '@/types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
 import { languagesApi } from '../../languages/api/languagesApi';
 
@@ -65,6 +66,7 @@ export function DonationsPage() {
     useState<DonationWithAllocations | null>(null);
   const [selectedAllocation, setSelectedAllocation] =
     useState<AllocationWithDetails | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -309,8 +311,7 @@ export function DonationsPage() {
     const badge = badges[status] || badges.pending;
     return (
       <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}
-      >
+        className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>
         {badge.label}
       </span>
     );
@@ -333,13 +334,21 @@ export function DonationsPage() {
 
   return (
     <div className='p-8'>
-      <div className='mb-8'>
-        <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
-          Donations
-        </h1>
-        <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
-          Manage donations and allocations
-        </p>
+      <div className='mb-8 flex items-start justify-between'>
+        <div>
+          <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
+            Donations
+          </h1>
+          <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
+            Manage donations and allocations
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>
+          <Plus className='h-4 w-4' />
+          Add Donation
+        </button>
       </div>
 
       {/* Filters */}
@@ -352,8 +361,7 @@ export function DonationsPage() {
             onValueChange={value => {
               setStatusFilter(value);
               setPage(1);
-            }}
-          >
+            }}>
             <SelectItem value='all'>All Statuses</SelectItem>
             <SelectItem value='pending'>Pending</SelectItem>
             <SelectItem value='processing'>Processing</SelectItem>
@@ -369,8 +377,7 @@ export function DonationsPage() {
             onValueChange={value => {
               setIntentTypeFilter(value);
               setPage(1);
-            }}
-          >
+            }}>
             <SelectItem value='all'>All Intent Types</SelectItem>
             <SelectItem value='language'>Language</SelectItem>
             <SelectItem value='region'>Region</SelectItem>
@@ -399,8 +406,7 @@ export function DonationsPage() {
                     setLanguageFilter(null);
                     setPage(1);
                   }}
-                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'
-                >
+                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'>
                   Clear
                 </button>
               </div>
@@ -434,8 +440,7 @@ export function DonationsPage() {
                             setIntentTypeFilter('language');
                             setPage(1);
                           }}
-                          className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                        >
+                          className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
                           {language.name}{' '}
                           <span className='text-xs text-neutral-500 dark:text-neutral-400'>
                             ({language.level})
@@ -470,8 +475,7 @@ export function DonationsPage() {
                     setOperationFilter(null);
                     setPage(1);
                   }}
-                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'
-                >
+                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'>
                   Clear
                 </button>
               </div>
@@ -508,8 +512,7 @@ export function DonationsPage() {
                               setIntentTypeFilter('operation');
                               setPage(1);
                             }}
-                            className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                          >
+                            className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
                             {operation.name}{' '}
                             <span className='text-xs text-neutral-500 dark:text-neutral-400'>
                               ({operation.category || 'operation'})
@@ -525,8 +528,7 @@ export function DonationsPage() {
                               onClick={() => {
                                 setOperationPage(p => p + 1);
                               }}
-                              className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'
-                            >
+                              className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'>
                               Load more...
                             </button>
                           )}
@@ -581,8 +583,7 @@ export function DonationsPage() {
                     <button
                       type='button'
                       onClick={() => handleSort('date')}
-                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                    >
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                       Date
                       <span>{getSortIndicator('date')}</span>
                     </button>
@@ -591,11 +592,13 @@ export function DonationsPage() {
                     Status
                   </th>
                   <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    Source
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
                     <button
                       type='button'
                       onClick={() => handleSort('donor')}
-                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                    >
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                       Donor
                       <span>{getSortIndicator('donor')}</span>
                     </button>
@@ -604,8 +607,7 @@ export function DonationsPage() {
                     <button
                       type='button'
                       onClick={() => handleSort('amount')}
-                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                    >
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                       Amount
                       <span>{getSortIndicator('amount')}</span>
                     </button>
@@ -620,8 +622,7 @@ export function DonationsPage() {
                     <button
                       type='button'
                       onClick={() => handleSort('remaining')}
-                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                    >
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                       Remaining
                       <span>{getSortIndicator('remaining')}</span>
                     </button>
@@ -634,13 +635,23 @@ export function DonationsPage() {
                     <tr
                       key={donation.id}
                       className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
-                      onClick={() => handleDonationClick(donation)}
-                    >
+                      onClick={() => handleDonationClick(donation)}>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
                         {formatDate(donation.created_at)}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm'>
                         {getStatusBadge(donation.status)}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm'>
+                        {donation.is_manual ? (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'>
+                            Manual
+                          </span>
+                        ) : (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'>
+                            Stripe
+                          </span>
+                        )}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
                         {donation.user ? (
@@ -699,8 +710,7 @@ export function DonationsPage() {
                                 onClick={e =>
                                   handleAllocationClick(e, allocation.id)
                                 }
-                                className='block text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'
-                              >
+                                className='block text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'>
                                 {formatCurrency(
                                   allocation.amount_cents,
                                   allocation.currency_code ||
@@ -735,8 +745,7 @@ export function DonationsPage() {
                             donation.remaining_cents > 0
                               ? 'font-medium text-green-600 dark:text-green-400'
                               : 'text-neutral-500 dark:text-neutral-400'
-                          }
-                        >
+                          }>
                           {formatCurrency(
                             donation.remaining_cents,
                             donation.currency_code
@@ -748,9 +757,8 @@ export function DonationsPage() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={7}
-                      className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                    >
+                      colSpan={8}
+                      className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                       {emptyMessage}
                     </td>
                   </tr>
@@ -770,8 +778,7 @@ export function DonationsPage() {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              >
+                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                 <ChevronLeft className='h-4 w-4' />
               </button>
               <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
@@ -781,8 +788,7 @@ export function DonationsPage() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              >
+                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                 <ChevronRight className='h-4 w-4' />
               </button>
             </div>
@@ -805,6 +811,17 @@ export function DonationsPage() {
           allocation={selectedAllocation}
           onClose={handleCloseAllocationModal}
           onUpdate={handleAllocationUpdated}
+        />
+      )}
+
+      {/* Add Donation Modal */}
+      {showAddModal && (
+        <AddDonationModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['donations'] });
+            setShowAddModal(false);
+          }}
         />
       )}
     </div>

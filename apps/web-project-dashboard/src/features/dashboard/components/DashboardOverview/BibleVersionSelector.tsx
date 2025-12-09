@@ -25,8 +25,7 @@ export const BibleVersionSelector: React.FC<BibleVersionSelectorProps> = ({
       <Select
         value={selectedVersion}
         onValueChange={onVersionChange}
-        placeholder='Select Bible version'
-      >
+        placeholder='Select Bible version'>
         {versions.map(version => (
           <SelectItem key={version.id} value={version.id}>
             {version.name}

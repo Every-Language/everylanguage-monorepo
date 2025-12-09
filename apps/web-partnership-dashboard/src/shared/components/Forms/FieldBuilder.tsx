@@ -65,8 +65,7 @@ export const FieldBuilder: React.FC<FieldBuilderProps> = ({
           <div className='space-y-2'>
             <label
               htmlFor={field.id}
-              className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-            >
+              className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
               {field.label}
               {field.required && <span className='text-red-500 ml-1'>*</span>}
             </label>
@@ -103,8 +102,7 @@ export const FieldBuilder: React.FC<FieldBuilderProps> = ({
           <div className='space-y-2'>
             <label
               htmlFor={field.id}
-              className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-            >
+              className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
               {field.label}
               {field.required && <span className='text-red-500 ml-1'>*</span>}
             </label>
@@ -113,8 +111,7 @@ export const FieldBuilder: React.FC<FieldBuilderProps> = ({
               onValueChange={onChange}
               placeholder={field.placeholder || `Select ${field.label}`}
               disabled={disabled}
-              error={hasError ? error : undefined}
-            >
+              error={hasError ? error : undefined}>
               {field.options?.map(option => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -160,8 +157,7 @@ export const FieldBuilder: React.FC<FieldBuilderProps> = ({
                 {field.options?.map(option => (
                   <label
                     key={option.value}
-                    className='flex items-center space-x-2'
-                  >
+                    className='flex items-center space-x-2'>
                     <input
                       type='radio'
                       name={field.name}
@@ -196,8 +192,7 @@ export const FieldBuilder: React.FC<FieldBuilderProps> = ({
           <div className='space-y-2'>
             <label
               htmlFor={field.id}
-              className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-            >
+              className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'>
               {field.label}
               {field.required && <span className='text-red-500 ml-1'>*</span>}
             </label>

@@ -159,9 +159,8 @@ export class SessionService {
     chapterId: string
   ): Promise<BibleTrack | undefined> {
     // Build by chapterId using current versions
-    const { useVersionsStore } = await import(
-      '@/features/languages/store/versionsStore'
-    );
+    const { useVersionsStore } =
+      await import('@/features/languages/store/versionsStore');
     const { currentAudioVersion, currentTextVersion } =
       useVersionsStore.getState();
 

@@ -93,8 +93,7 @@ export function UploadProgressToast({
                 variant='ghost'
                 size='sm'
                 onClick={() => setIsExpanded(!isExpanded)}
-                className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              >
+                className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'>
                 {isExpanded ? (
                   <ChevronDownIcon className='h-4 w-4' />
                 ) : (
@@ -105,8 +104,7 @@ export function UploadProgressToast({
                 variant='ghost'
                 size='sm'
                 onClick={onClose}
-                className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              >
+                className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'>
                 <XMarkIcon className='h-4 w-4' />
               </Button>
             </div>
@@ -149,8 +147,7 @@ export function UploadProgressToast({
                     variant='outline'
                     size='sm'
                     onClick={onCancel}
-                    className='text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
-                  >
+                    className='text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'>
                     Cancel Upload
                   </Button>
                 )}
@@ -160,8 +157,7 @@ export function UploadProgressToast({
                     variant='outline'
                     size='sm'
                     onClick={onClose}
-                    className='text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                  >
+                    className='text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'>
                     Dismiss
                   </Button>
                 )}

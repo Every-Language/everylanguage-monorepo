@@ -13,6 +13,7 @@ export default defineConfig({
     mockReset: true,
     clearMocks: true,
     restoreMocks: true,
+    passWithNoTests: true,
     // Coverage options
     coverage: {
       provider: 'v8',

@@ -51,8 +51,7 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
       className={cn(
         'relative inline-flex items-center justify-center',
         className
-      )}
-    >
+      )}>
       <svg width={size} height={size} className='transform -rotate-90'>
         {/* Background circle */}
         <circle

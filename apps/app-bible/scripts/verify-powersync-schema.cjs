@@ -9,10 +9,7 @@ const SYNC_RULES_FILE = 'powersync/sync-rules.yaml';
 const GENERATED_SCHEMA_FILE = 'powersync/AppSchema.generated.ts';
 
 function normalizeSchema(content) {
-  return content
-    .replace(/\r\n/g, '\n')
-    .replace(/\s+$/gm, '')
-    .trim();
+  return content.replace(/\r\n/g, '\n').replace(/\s+$/gm, '').trim();
 }
 
 function generateTempSchema() {
@@ -54,12 +51,16 @@ function verifySchema() {
 
   try {
     if (!fs.existsSync(GENERATED_SCHEMA_FILE)) {
-      console.error(`❌ Generated schema file not found: ${GENERATED_SCHEMA_FILE}`);
+      console.error(
+        `❌ Generated schema file not found: ${GENERATED_SCHEMA_FILE}`
+      );
       console.error('💡 Run: npm run powersync:generate-schema');
       process.exit(1);
     }
 
-    const committedGenerated = normalizeSchema(fs.readFileSync(GENERATED_SCHEMA_FILE, 'utf8'));
+    const committedGenerated = normalizeSchema(
+      fs.readFileSync(GENERATED_SCHEMA_FILE, 'utf8')
+    );
     const expectedGenerated = generateTempSchema();
 
     if (committedGenerated === expectedGenerated) {
@@ -68,7 +69,9 @@ function verifySchema() {
     }
 
     console.error('❌ Generated schema is NOT in sync with sync rules');
-    console.error('💡 Run: npm run powersync:generate-schema && commit the changes');
+    console.error(
+      '💡 Run: npm run powersync:generate-schema && commit the changes'
+    );
 
     const tempFile = path.join(os.tmpdir(), 'expected-generated-schema.ts');
     fs.writeFileSync(tempFile, expectedGenerated);
@@ -88,4 +91,4 @@ if (require.main === module) {
   verifySchema();
 }
 
-module.exports = { verifySchema }; 
+module.exports = { verifySchema };

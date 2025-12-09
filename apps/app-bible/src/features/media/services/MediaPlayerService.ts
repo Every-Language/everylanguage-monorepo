@@ -1495,9 +1495,8 @@ export class MediaPlayerService {
    */
   private async triggerAutoOpenOnPlaybackStart(): Promise<void> {
     try {
-      const { triggerAutoOpenOnPlaybackStart } = await import(
-        '../utils/autoOpenHelper'
-      );
+      const { triggerAutoOpenOnPlaybackStart } =
+        await import('../utils/autoOpenHelper');
       await triggerAutoOpenOnPlaybackStart();
     } catch (error) {
       logger.warn(

@@ -74,9 +74,8 @@ export const useChapterDeepLinkHandler = ({
 
         // Ensure media store/services are initialized before attempting playback
         try {
-          const { getPlaybackStore } = await import(
-            '@/features/media/store/PlaybackStore'
-          );
+          const { getPlaybackStore } =
+            await import('@/features/media/store/PlaybackStore');
           await getPlaybackStore().initialize();
         } catch (e) {
           logger.warn(

@@ -85,8 +85,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
     <div className={`relative ${sizeStyle.ring} ${className}`}>
       <svg
         className={`${sizeStyle.ring} transform -rotate-90`}
-        viewBox='0 0 36 36'
-      >
+        viewBox='0 0 36 36'>
         {/* Background circle */}
         <path
           d='m18,2.0845 a 15.9155,15.9155 0 0,1 0,31.831 a 15.9155,15.9155 0 0,1 0,-31.831'
