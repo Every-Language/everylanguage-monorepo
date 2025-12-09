@@ -3,19 +3,15 @@ import { supabase } from '@/shared/services/supabase';
 
 export type PeopleGroupStatsContextual = {
   people_group_id: string;
-  people_group_name: string;
-  peop_name_in_country: string | null;
-  instance_population: number | null;
-  population: number | null; // Total population from MV
+  population: number | null;
   language_count: number | null;
-  country_count: number | null;
-  primary_language_bible_status: number | null;
-  image_url: string | null;
+  name: string | null;
+  primary_language_id: string | null;
 };
 
 /**
  * Hook to fetch contextual people group stats in a region
- * Queries vw_people_groups_in_region view for instance-level stats
+ * Queries people_groups_regions_stats view for contextual stats
  */
 export function usePeopleGroupStatsContextual(
   peopleGroupId: string | null,
@@ -27,9 +23,9 @@ export function usePeopleGroupStatsContextual(
       if (!peopleGroupId || !regionId) return null;
 
       const { data, error } = await supabase
-        .from('vw_people_groups_in_region')
+        .from('people_groups_regions_stats')
         .select(
-          'people_group_id, people_group_name, peop_name_in_country, instance_population, population, language_count, country_count, primary_language_bible_status, image_url'
+          'people_group_id, population, language_count, name, primary_language_id'
         )
         .eq('region_id', regionId)
         .eq('people_group_id', peopleGroupId)

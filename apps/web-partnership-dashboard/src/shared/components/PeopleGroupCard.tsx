@@ -30,7 +30,7 @@ export type PeopleGroupCardProps = {
 import type { PeopleGroupStats } from '@/features/map/types/databaseViews';
 
 /**
- * Hook to fetch total people group stats from mv_people_group_stats
+ * Hook to fetch total people group stats from people_groups_stats
  */
 function usePeopleGroupStats(peopleGroupId: string | null) {
   return useQuery({
@@ -39,7 +39,7 @@ function usePeopleGroupStats(peopleGroupId: string | null) {
       if (!peopleGroupId) return null;
 
       const { data, error } = await supabase
-        .from('mv_people_group_stats')
+        .from('people_groups_stats')
         .select(
           'people_group_id, name, population, language_count, country_count, primary_language_bible_status, image_url'
         )

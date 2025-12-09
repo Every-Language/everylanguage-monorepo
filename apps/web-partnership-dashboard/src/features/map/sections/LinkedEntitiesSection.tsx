@@ -109,10 +109,10 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
       } else {
         // type === 'regions'
         if (inferredParentType === 'people_group') {
-          // Fetch regions for a people group using vw_people_groups_in_region
+          // Fetch regions for a people group using people_groups_regions_stats
           const { data, error } = await supabase
-            .from('vw_people_groups_in_region')
-            .select('region_id, region_name')
+            .from('people_groups_regions_stats')
+            .select('region_id')
             .eq('people_group_id', parentId);
           if (error) throw error;
           // Get region level from regions table

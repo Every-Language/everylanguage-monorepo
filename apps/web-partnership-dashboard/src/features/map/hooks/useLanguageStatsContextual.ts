@@ -3,18 +3,13 @@ import { supabase } from '@/shared/services/supabase';
 
 export type LanguageStatsContextual = {
   language_entity_id: string;
-  language_name: string;
   population: number | null;
   people_group_count: number | null;
-  country_count: number | null;
-  bible_status: number | null;
-  has_audio_recordings: boolean | null;
-  has_jesus_film: boolean | null;
 };
 
 /**
  * Hook to fetch contextual language stats in a region
- * Queries vw_languages_in_region view for instance-level stats
+ * Queries languages_regions_stats view for contextual stats
  */
 export function useLanguageStatsContextual(
   languageEntityId: string | null,
@@ -26,10 +21,8 @@ export function useLanguageStatsContextual(
       if (!languageEntityId || !regionId) return null;
 
       const { data, error } = await supabase
-        .from('vw_languages_in_region')
-        .select(
-          'language_entity_id, language_name, population, people_group_count, country_count, bible_status, has_audio_recordings, has_jesus_film'
-        )
+        .from('languages_regions_stats')
+        .select('language_entity_id, population, people_group_count')
         .eq('region_id', regionId)
         .eq('language_entity_id', languageEntityId)
         .single();

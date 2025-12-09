@@ -1,7 +1,7 @@
 /**
  * Cache-first hook for Joshua Project country data
  *
- * Fetches country statistics from mv_region_stats materialized view.
+ * Fetches country statistics from region_stats materialized view.
  * Returns the same structure as useJPCountryData for drop-in replacement.
  */
 
@@ -50,7 +50,7 @@ const CACHE_CONFIG = {
 } as const;
 
 /**
- * Fetches country statistics from mv_region_stats cache
+ * Fetches country statistics from region_stats cache
  *
  * Returns data in JPCountry format for compatibility with existing components
  */
@@ -71,9 +71,9 @@ export function useJPCountryStatsCache(
           console.log(
             `[useJPCountryStatsCache] Attempting cache lookup for region: ${regionId}`
           );
-          // Fetch from mv_region_stats
+          // Fetch from region_stats
           const { data: cacheDataRaw, error: cacheError } = await supabase
-            .from('mv_region_stats')
+            .from('region_stats')
             .select('*')
             .eq('region_id', regionId)
             .single();

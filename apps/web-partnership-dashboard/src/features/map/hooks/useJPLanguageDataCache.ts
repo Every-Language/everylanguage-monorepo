@@ -1,7 +1,7 @@
 /**
  * Cache-first hook for Joshua Project language data
  *
- * Fetches language statistics from mv_language_stats materialized view.
+ * Fetches language statistics from language_stats materialized view.
  * Returns the same structure as useJPLanguageData for drop-in replacement.
  */
 
@@ -47,7 +47,7 @@ const CACHE_CONFIG = {
 } as const;
 
 /**
- * Fetches language statistics from mv_language_stats cache
+ * Fetches language statistics from language_stats cache
  *
  * Returns data in JPLanguage format for compatibility with existing components
  */
@@ -64,9 +64,9 @@ function useJPLanguageStatsCache(
       // Try cache first
       if (languageEntityId) {
         try {
-          // Fetch from mv_language_stats
+          // Fetch from language_stats
           const { data: cacheDataRaw, error: cacheError } = await supabase
-            .from('mv_language_stats')
+            .from('language_stats')
             .select('*')
             .eq('language_entity_id', languageEntityId)
             .single();

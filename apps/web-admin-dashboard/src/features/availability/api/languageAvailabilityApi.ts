@@ -276,9 +276,9 @@ export const languageAvailabilityApi = {
             .filter((r): r is Region => r !== null && r.deleted_at === null) ||
           [];
 
-        // Fetch population from mv_language_stats
+        // Fetch population from language_stats
         const { data: statsData, error: statsError } = await supabase
-          .from('mv_language_stats')
+          .from('language_stats')
           .select('population')
           .eq('language_entity_id', language.id)
           .maybeSingle();

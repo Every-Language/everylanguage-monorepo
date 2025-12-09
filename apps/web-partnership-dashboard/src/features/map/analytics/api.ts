@@ -254,11 +254,10 @@ export async function fetchGlobalSessionsHeatmap(params: {
   // Note: grid size is fixed at 0.5° in the view to prevent points from jumping on zoom
   const pointLimit = getPointLimitForZoom(zoom);
 
-  // Call optimized RPC function that queries the view with PostGIS spatial filtering
-  // When filters are provided, queries sessions table directly and filters before aggregation
+  // Call optimized RPC function that queries the language_heatmap MV with PostGIS spatial filtering
   // Function uses SECURITY DEFINER to bypass RLS policies for analytics aggregation
   const { data: rpcData, error: rpcError } = await (supabase as any).rpc(
-    'get_global_sessions_heatmap_from_view',
+    'get_language_heatmap',
     {
       p_min_lng: minLng,
       p_min_lat: minLat,

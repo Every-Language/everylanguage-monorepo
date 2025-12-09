@@ -1,8 +1,14 @@
 /**
  * Cache-first hooks for Joshua Project people groups data
  *
- * Fetches people groups from relationship views (vw_people_groups_in_region, vw_people_groups_by_language).
+ * Fetches people groups from contextual views (people_groups_regions_stats, languages_people_groups_stats)
+ * and merges with full stats from people_groups_stats materialized view.
  * Returns data in JPPeopleGroup format for compatibility with existing components.
+ *
+ * Architecture:
+ * - Contextual views provide relationship-specific data (e.g., contextual population, name per region)
+ * - people_groups_stats provides total/aggregated stats for the people group entity
+ * - This hook merges both to provide complete data for secondary tabs
  */
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
@@ -75,99 +81,101 @@ const CACHE_CONFIG = {
  * Map sort field from API format to database column name
  */
 function mapSortFieldToColumn(sortField: string): string {
+  // Map API sort fields to contextual view columns
+  // Note: Sorting happens on contextual view, then we fetch full stats
   const fieldMap: Record<string, string> = {
-    PeopNameInCountry: 'peop_name_in_country',
-    Population: 'instance_population',
-    JPScale: 'jpscale',
-    PercentEvangelical: 'percent_evangelical',
+    PeopNameInCountry: 'name', // Contextual name from people_groups_regions_stats
+    Population: 'population', // Contextual population
+    JPScale: 'jpscale', // Will need to sort after fetching from people_groups_stats
+    PercentEvangelical: 'percent_evangelical', // Will need to sort after fetching from people_groups_stats
   };
-  return fieldMap[sortField] || 'instance_population';
+  return fieldMap[sortField] || 'population';
 }
 
 /**
  * Transform cache data to JPPeopleGroup format
  */
 function transformPeopleGroupFromCache(data: any): JPPeopleGroup {
+  // Transform from people_groups_stats (with optional contextual overrides) to JPPeopleGroup format
   return {
     PeopleID3: data.people_id3?.toString() || '',
-    PeopNameInCountry:
-      data.peop_name_in_country || data.people_group_name || '',
-    ROG3: '', // Not available in view
-    ISO3: '', // Not available in view
-    Ctry: data.region_name || '',
+    PeopNameInCountry: data.peop_name_in_country || data.name || '',
+    ROG3: '', // Not available in stats
+    ISO3: '', // Not available in stats
+    Ctry: '', // Not available in stats
     PrimaryLanguageName: data.primary_language_name || '',
-    PrimaryLanguageDialect: null, // Not available in view
+    PrimaryLanguageDialect: null, // Not available in stats
     ROL3: data.primary_language_rol3 || '',
     PrimaryReligion: data.primary_religion || '',
-    RLG3: '', // Not available in view
+    RLG3: data.rlg3 || '',
     PercentEvangelical: data.percent_evangelical || 0,
     PercentChristianPC: data.percent_christian_pc || 0,
-    PercentChristianPD: 0, // Not available in view
+    PercentChristianPD: data.percent_christian_pd || 0,
     JPScale: data.jpscale,
-    JPScaleText: null, // Not available in view
-    JPScalePCtxt: null, // Not available in view
-    JPScalePCimg: null, // Not available in view
+    JPScaleText: null, // Not available in stats
+    JPScalePCtxt: null, // Not available in stats
+    JPScalePCimg: null, // Not available in stats
     LeastReached: data.least_reached ? 'Y' : 'N',
-    LeastReachedBasis: '', // Not available in view
-    Unengaged: null, // Not available in view
+    LeastReachedBasis: '', // Not available in stats
+    Unengaged: null, // Not available in stats
     FrontierPeopleGroup: data.frontier ? 'Y' : 'N',
-    MapID: '', // Not available in view
-    RaceCode: null, // Not available in view
-    RaceName: null, // Not available in view
-    AffinityBloc: '', // Not available in view
-    PeopleCluster: '', // Not available in view
-    PeopNameAcrossCountries: data.people_group_name || '',
-    Population: data.instance_population || data.population || 0,
-    PopulationPercentUN: 0, // Not available in view
-    ROG2: '', // Not available in view
-    ROP3: '', // Not available in view
-    ROP2: '', // Not available in view
-    ROP25: '', // Not available in view
-    RegionCode: '', // Not available in view
-    RegionName: data.region_name || '',
-    ContinentCode: '', // Not available in view
-    ContinentName: '', // Not available in view
-    WindowStatus: '', // Not available in view
-    Longitude: data.longitude || 0,
-    Latitude: data.latitude || 0,
-    SecurityLevel: 0, // Not available in view
+    MapID: '', // Not available in stats
+    RaceCode: null, // Not available in stats
+    RaceName: null, // Not available in stats
+    AffinityBloc: data.affinity_bloc || '',
+    PeopleCluster: data.people_cluster || '',
+    PeopNameAcrossCountries: data.peop_name_across_countries || data.name || '',
+    Population: data.population || 0,
+    PopulationPercentUN: 0, // Not available in stats
+    ROG2: '', // Not available in stats
+    ROP3: '', // Not available in stats
+    ROP2: '', // Not available in stats
+    ROP25: '', // Not available in stats
+    RegionCode: '', // Not available in stats
+    RegionName: '', // Not available in stats
+    ContinentCode: '', // Not available in stats
+    ContinentName: '', // Not available in stats
+    WindowStatus: '', // Not available in stats
+    Longitude: 0, // Not available in stats
+    Latitude: 0, // Not available in stats
+    SecurityLevel: 0, // Not available in stats
     BibleStatus:
       data.bible_status || data.primary_language_bible_status || null,
-    BibleYear: null, // Not available in view
-    NTYear: null, // Not available in view
-    PortionsYear: null, // Not available in view
-    TranslationNeedYear: null, // Not available in view
-    TranslationNeedQuestionable: null, // Not available in view
-    BibleTranslationNeed: '', // Not available in view
-    JF: data.has_jesus_film ? 'Y' : 'N',
-    HasJesusFilm: data.has_jesus_film ? 'Y' : null,
-    JFLang: '', // Not available in view
-    JFPrimaryText: '', // Not available in view
-    AudioScripture: '', // Not available in view
+    BibleYear: data.bible_year || null,
+    NTYear: data.nt_year || null,
+    PortionsYear: data.portions_year || null,
+    TranslationNeedYear: null, // Not available in stats
+    TranslationNeedQuestionable: null, // Not available in stats
+    BibleTranslationNeed: '', // Not available in stats
+    JF: data.has_jesus_film || data.jf ? 'Y' : 'N',
+    HasJesusFilm: data.has_jesus_film || data.jf ? 'Y' : null,
+    JFLang: '', // Not available in stats
+    JFPrimaryText: '', // Not available in stats
+    AudioScripture: '', // Not available in stats
     HasAudioRecordings: data.has_audio_recordings ? 'Y' : null,
     AudioRecordings: data.has_audio_recordings ? 'Y' : null,
-    GRN: '', // Not available in view
-    GRNLang: '', // Not available in view
-    FourLaws: '', // Not available in view
-    GodStory: '', // Not available in view
-    IndigenousLanguage: null, // Not available in view
-    SomeMediumLanguage: null, // Not available in view
-    PrimaryMediumLanguage: null, // Not available in view
-    GospelRadio: '', // Not available in view
+    GRN: data.grn ? 'Y' : '',
+    GRNLang: '', // Not available in stats
+    FourLaws: '', // Not available in stats
+    GodStory: '', // Not available in stats
+    IndigenousLanguage: null, // Not available in stats
+    SomeMediumLanguage: null, // Not available in stats
+    PrimaryMediumLanguage: null, // Not available in stats
+    GospelRadio: '', // Not available in stats
     ImageURL: data.image_url || null,
-    PhotoAddress: null, // Not available in view
-    PhotoCredits: null, // Not available in view
-    ProfileTextExists: 0, // Not available in view
-    PeopleGroupURL: '', // Not available in view
-    PeopleGroupPhotoURL: '', // Not available in view
-    CountryURL: '', // Not available in view
-    JPScaleImageURL: null, // Not available in view
-    Summary: null, // Not available in view
-    Resources: null, // Not available in view
-    NTOnline: null, // Not available in view
+    PhotoAddress: null, // Not available in stats
+    PhotoCredits: null, // Not available in stats
+    ProfileTextExists: 0, // Not available in stats
+    PeopleGroupURL: '', // Not available in stats
+    PeopleGroupPhotoURL: '', // Not available in stats
+    CountryURL: '', // Not available in stats
+    JPScaleImageURL: null, // Not available in stats
+    Summary: null, // Not available in stats
+    Resources: null, // Not available in stats
+    NTOnline: null, // Not available in stats
     NumberLanguagesSpoken: data.language_count || null,
-    OfficialLang: null, // Not available in view
-    SpeakNationalLang: null, // Not available in view
+    OfficialLang: null, // Not available in stats
+    SpeakNationalLang: null, // Not available in stats
   };
 }
 
@@ -209,31 +217,86 @@ export function useJPPeopleGroupsByCountryCache(
         console.log(
           `[useJPPeopleGroupsByCountryCache] Attempting cache lookup for region: ${regionId} (page: ${page}, limit: ${limit})`
         );
-        // Query vw_people_groups_in_region with pagination and optional sorting
-        let query = supabase
-          .from('vw_people_groups_in_region')
-          .select('*')
+        // Step 1: Query contextual view to get people_group_ids and contextual fields
+        let contextualQuery = supabase
+          .from('people_groups_regions_stats')
+          .select(
+            'people_group_id, population as contextual_population, name as contextual_name, language_count as contextual_language_count'
+          )
           .eq('region_id', regionId);
 
-        if (sortColumn) {
-          query = query.order(sortColumn, {
+        // Apply sorting on contextual fields if possible
+        if (sortColumn && ['name', 'population'].includes(sortColumn)) {
+          contextualQuery = contextualQuery.order(sortColumn, {
             ascending: sortDirection === 'asc',
           });
         }
 
-        query = query.range(offset, offset + limit - 1);
+        contextualQuery = contextualQuery.range(offset, offset + limit - 1);
 
-        const { data, error } = await query;
+        const { data: contextualData, error: contextualError } =
+          await contextualQuery;
 
-        if (error) {
-          throw error;
+        if (contextualError) {
+          throw contextualError;
         }
 
-        if (data && data.length > 0) {
+        if (!contextualData || contextualData.length === 0) {
           console.log(
-            `[useJPPeopleGroupsByCountryCache] ✅ CACHE HIT for region: ${regionId} - Found ${data.length} people groups`
+            `[useJPPeopleGroupsByCountryCache] ⚠️ CACHE MISS for region: ${regionId} - No contextual data found`
           );
-          return data.map(transformPeopleGroupFromCache);
+          // Fall through to API fallback
+        } else {
+          console.log(
+            `[useJPPeopleGroupsByCountryCache] ✅ Contextual data found for region: ${regionId} - Found ${contextualData.length} people groups`
+          );
+
+          // Step 2: Query people_groups_stats for full stats
+          const peopleGroupIds = contextualData.map(
+            (row: any) => row.people_group_id
+          );
+          const { data: statsData, error: statsError } = await supabase
+            .from('people_groups_stats')
+            .select('*')
+            .in('people_group_id', peopleGroupIds);
+
+          if (statsError) {
+            throw statsError;
+          }
+
+          // Step 3: Merge contextual data with full stats
+          const statsMap = new Map(
+            (statsData || []).map((stat: any) => [stat.people_group_id, stat])
+          );
+
+          const mergedData = contextualData.map((contextual: any) => {
+            const stats = statsMap.get(contextual.people_group_id);
+            return {
+              ...stats, // Full stats from people_groups_stats
+              // Override with contextual fields where available
+              population: contextual.contextual_population ?? stats?.population,
+              peop_name_in_country:
+                contextual.contextual_name ?? stats?.peop_name_in_country,
+              language_count:
+                contextual.contextual_language_count ?? stats?.language_count,
+            };
+          });
+
+          // Step 4: Apply client-side sorting if needed (for fields not in contextual view)
+          let sortedData = mergedData;
+          if (sortColumn && !['name', 'population'].includes(sortColumn)) {
+            sortedData = [...mergedData].sort((a, b) => {
+              const aVal = a[sortColumn];
+              const bVal = b[sortColumn];
+              if (aVal == null && bVal == null) return 0;
+              if (aVal == null) return 1;
+              if (bVal == null) return -1;
+              const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+              return sortDirection === 'asc' ? comparison : -comparison;
+            });
+          }
+
+          return sortedData.map(transformPeopleGroupFromCache);
         }
 
         // Fallback to API if cache miss
@@ -338,31 +401,82 @@ export function useJPPeopleGroupsByLanguageCache(
         console.log(
           `[useJPPeopleGroupsByLanguageCache] Attempting cache lookup for language: ${languageEntityId} (page: ${page}, limit: ${limit})`
         );
-        // Query vw_people_groups_by_language with pagination and optional sorting
-        let query = supabase
-          .from('vw_people_groups_by_language')
-          .select('*')
+        // Step 1: Query contextual view to get people_group_ids and contextual fields
+        let contextualQuery = supabase
+          .from('languages_people_groups_stats')
+          .select(
+            'people_group_id, population as contextual_population, region_count, is_primary'
+          )
           .eq('language_entity_id', languageEntityId);
 
-        if (sortColumn) {
-          query = query.order(sortColumn, {
+        // Apply sorting on contextual fields if possible
+        if (sortColumn && sortColumn === 'population') {
+          contextualQuery = contextualQuery.order('population', {
             ascending: sortDirection === 'asc',
           });
         }
 
-        query = query.range(offset, offset + limit - 1);
+        contextualQuery = contextualQuery.range(offset, offset + limit - 1);
 
-        const { data, error } = await query;
+        const { data: contextualData, error: contextualError } =
+          await contextualQuery;
 
-        if (error) {
-          throw error;
+        if (contextualError) {
+          throw contextualError;
         }
 
-        if (data && data.length > 0) {
+        if (!contextualData || contextualData.length === 0) {
           console.log(
-            `[useJPPeopleGroupsByLanguageCache] ✅ CACHE HIT for language: ${languageEntityId} - Found ${data.length} people groups`
+            `[useJPPeopleGroupsByLanguageCache] ⚠️ CACHE MISS for language: ${languageEntityId} - No contextual data found`
           );
-          return data.map(transformPeopleGroupFromCache);
+          // Fall through to API fallback
+        } else {
+          console.log(
+            `[useJPPeopleGroupsByLanguageCache] ✅ Contextual data found for language: ${languageEntityId} - Found ${contextualData.length} people groups`
+          );
+
+          // Step 2: Query people_groups_stats for full stats
+          const peopleGroupIds = contextualData.map(
+            (row: any) => row.people_group_id
+          );
+          const { data: statsData, error: statsError } = await supabase
+            .from('people_groups_stats')
+            .select('*')
+            .in('people_group_id', peopleGroupIds);
+
+          if (statsError) {
+            throw statsError;
+          }
+
+          // Step 3: Merge contextual data with full stats
+          const statsMap = new Map(
+            (statsData || []).map((stat: any) => [stat.people_group_id, stat])
+          );
+
+          const mergedData = contextualData.map((contextual: any) => {
+            const stats = statsMap.get(contextual.people_group_id);
+            return {
+              ...stats, // Full stats from people_groups_stats
+              // Override with contextual fields where available
+              population: contextual.contextual_population ?? stats?.population,
+            };
+          });
+
+          // Step 4: Apply client-side sorting if needed (for fields not in contextual view)
+          let sortedData = mergedData;
+          if (sortColumn && sortColumn !== 'population') {
+            sortedData = [...mergedData].sort((a, b) => {
+              const aVal = a[sortColumn];
+              const bVal = b[sortColumn];
+              if (aVal == null && bVal == null) return 0;
+              if (aVal == null) return 1;
+              if (bVal == null) return -1;
+              const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+              return sortDirection === 'asc' ? comparison : -comparison;
+            });
+          }
+
+          return sortedData.map(transformPeopleGroupFromCache);
         }
 
         // Fallback to API if cache miss

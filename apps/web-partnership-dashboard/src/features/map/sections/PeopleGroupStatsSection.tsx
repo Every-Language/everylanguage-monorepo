@@ -18,7 +18,7 @@ type PeopleGroupStatsSectionProps = {
 
 /**
  * People Group Stats Section displays overview statistics for a people group
- * from mv_people_group_stats
+ * from people_groups_stats
  */
 export const PeopleGroupStatsSection: React.FC<
   PeopleGroupStatsSectionProps
@@ -31,7 +31,7 @@ export const PeopleGroupStatsSection: React.FC<
     queryKey: ['people-group-stats', entityId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('mv_people_group_stats')
+        .from('people_groups_stats')
         .select('*')
         .eq('people_group_id', entityId)
         .maybeSingle(); // Use maybeSingle() instead of single() to avoid 404 errors

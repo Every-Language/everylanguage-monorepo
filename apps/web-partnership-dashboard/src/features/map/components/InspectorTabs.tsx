@@ -377,7 +377,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
       }
       if (selection.kind === 'people_group') {
         const { data, error } = await supabase
-          .from('vw_people_groups_in_region')
+          .from('people_groups_regions_stats')
           .select('region_id')
           .eq('people_group_id', selection.id)
           .limit(1); // Just check if any exist
@@ -429,15 +429,15 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
       // Check if any people groups exist using database views
       if (selection.kind === 'language_entity') {
         const { data } = await supabase
-          .from('vw_people_groups_by_language')
+          .from('languages_people_groups_stats')
           .select('people_group_id')
           .eq('language_entity_id', selection.id)
           .limit(1);
         return data ?? [];
       } else {
-        // For regions, check vw_people_groups_in_region
+        // For regions, check people_groups_regions_stats
         const { data } = await supabase
-          .from('vw_people_groups_in_region')
+          .from('people_groups_regions_stats')
           .select('people_group_id')
           .eq('region_id', selection.id)
           .limit(1);
