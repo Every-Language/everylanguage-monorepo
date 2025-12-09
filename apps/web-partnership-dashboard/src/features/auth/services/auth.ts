@@ -144,9 +144,10 @@ export class AuthService {
       const supabase = getSupabaseClient();
 
       // Get the current origin for email redirect
+      // Include next=/dashboard so users are redirected to dashboard after confirmation
       const emailRedirectTo =
         typeof window !== 'undefined'
-          ? `${window.location.origin}/api/auth/confirm`
+          ? `${window.location.origin}/api/auth/confirm?next=/dashboard`
           : undefined;
 
       const { data, error } = await supabase.auth.signUp({
@@ -177,9 +178,10 @@ export class AuthService {
       const supabase = getSupabaseClient();
 
       // Get the current origin for email redirect
+      // Include next=/dashboard so users are redirected to dashboard after confirmation
       const emailRedirectTo =
         typeof window !== 'undefined'
-          ? `${window.location.origin}/api/auth/confirm`
+          ? `${window.location.origin}/api/auth/confirm?next=/dashboard`
           : undefined;
 
       const { error } = await supabase.auth.resend({
@@ -555,23 +557,38 @@ export class AuthService {
   async promoteAnonymousUser(
     email: string,
     password: string,
-    userData?: Partial<DbUser>
+    userData?: Partial<DbUser>,
+    phone?: string
   ) {
     try {
       const supabase = getSupabaseClient();
 
       // Get the current origin for email redirect
+      // Include next=/dashboard so users are redirected to dashboard after confirmation
       const emailRedirectTo =
         typeof window !== 'undefined'
-          ? `${window.location.origin}/api/auth/confirm`
+          ? `${window.location.origin}/api/auth/confirm?next=/dashboard`
           : undefined;
 
+      // Prepare user metadata with normalized phone number if provided
+      const metadata: Record<string, unknown> = { ...userData };
+      if (phone) {
+        // Normalize phone number and store in metadata (will be synced to public.users by trigger)
+        metadata.phone_number = normalizePhoneNumber(phone);
+      }
+
       // Update anonymous user with email and password to promote to authenticated
-      const { data, error } = await supabase.auth.updateUser({
-        email,
-        password,
-        data: userData,
-      });
+      // Pass emailRedirectTo in options so email change confirmation uses correct redirect
+      const { data, error } = await supabase.auth.updateUser(
+        {
+          email,
+          password,
+          data: metadata,
+        },
+        {
+          emailRedirectTo,
+        }
+      );
 
       if (error) {
         throw error;

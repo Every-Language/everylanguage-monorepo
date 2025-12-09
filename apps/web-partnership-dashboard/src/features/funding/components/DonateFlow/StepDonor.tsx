@@ -2,10 +2,11 @@ import React from 'react';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
 import { CustomPhoneInput } from '@/features/auth/components/CustomPhoneInput';
-import { PartnerOrgDropdown } from './PartnerOrgDropdown';
 import { LoggedInPartnerOrgSelector } from './LoggedInPartnerOrgSelector';
+import { AnonymousPartnerOrgSelector } from './AnonymousPartnerOrgSelector';
 import { supabase } from '@/shared/services/supabase';
 import { findAnonymousUserByContact } from '../../api/fundingApi';
+import { authService } from '@/features/auth/services/auth';
 import type { DonateFlow } from '../../hooks/useDonateFlow';
 
 export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
@@ -16,7 +17,16 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
   const [donorMode, setDonorMode] = React.useState<
     'individual' | 'existing' | 'new'
   >('individual');
+  const [donorType, setDonorType] = React.useState<
+    'individual' | 'organization' | null
+  >('individual');
   const [partnerOrgId, setPartnerOrgId] = React.useState('');
+  const [selectedOrg, setSelectedOrg] = React.useState<{
+    id: string;
+    name: string;
+    description: string | null;
+    isNew?: boolean;
+  } | null>(null);
   const [newOrgName, setNewOrgName] = React.useState('');
   const [newOrgDesc, setNewOrgDesc] = React.useState('');
   const [newOrgPublic, setNewOrgPublic] = React.useState(false);
@@ -25,6 +35,12 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
   const [user, setUser] = React.useState<any | null>(null);
   const [isAnonymous, setIsAnonymous] = React.useState<boolean | null>(null);
   const [checkingAuth, setCheckingAuth] = React.useState(true);
+  const [showLoginForm, setShowLoginForm] = React.useState(false);
+  const [matchedEmail, setMatchedEmail] = React.useState<string | null>(null);
+  const [matchedPhone, setMatchedPhone] = React.useState<string | null>(null);
+  const [loginPassword, setLoginPassword] = React.useState('');
+  const [loginLoading, setLoginLoading] = React.useState(false);
+  const [loginError, setLoginError] = React.useState<string | null>(null);
 
   // Check auth status on mount
   React.useEffect(() => {
@@ -76,6 +92,13 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
       return;
     }
 
+    // For anonymous users with new component structure
+    if (donorType === 'organization' && !selectedOrg) {
+      setError('Please select or create an organization.');
+      return;
+    }
+
+    // Legacy validation for old structure (if still used)
     if (donorMode === 'new' && !newOrgName) {
       setError('Please enter an organization name.');
       return;
@@ -140,10 +163,10 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
             // OR we could store the anonymous user's token somehow - but that's complex
             // For now, we'll create a new anonymous user and the RPC function will help prevent duplicates
           } else {
-            // Existing authenticated user - show login prompt
-            setError(
-              'An account with this email already exists. Please sign in to continue.'
-            );
+            // Existing authenticated user - show inline login form
+            setMatchedEmail(existingUser.email || email || null);
+            setMatchedPhone(existingUser.phone || phone || null);
+            setShowLoginForm(true);
             setLoading(false);
             return;
           }
@@ -178,8 +201,26 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
       // Set donor details
       flow.setDonor({ firstName, lastName, email, phone });
 
-      // Set donor type
-      if (donorMode === 'individual') {
+      // Set donor type - use new structure if available, otherwise fall back to legacy
+      if (donorType === 'individual') {
+        flow.setDonorType({ type: 'individual' });
+      } else if (donorType === 'organization' && selectedOrg) {
+        if (selectedOrg.isNew) {
+          flow.setDonorType({
+            type: 'partner_org',
+            newPartnerOrg: {
+              name: selectedOrg.name,
+              description: selectedOrg.description || undefined,
+              isPublic: newOrgPublic,
+            },
+          });
+        } else {
+          flow.setDonorType({
+            type: 'partner_org',
+            partnerOrgId: selectedOrg.id,
+          });
+        }
+      } else if (donorMode === 'individual') {
         flow.setDonorType({ type: 'individual' });
       } else if (donorMode === 'existing') {
         flow.setDonorType({ type: 'partner_org', partnerOrgId });
@@ -256,9 +297,10 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
               }
             }
 
-            // Automatically set payment method to card and proceed
+            // Automatically set payment method to card and proceed directly to payment details (step 4)
             flow.setPaymentMethod('card');
-            flow.next();
+            // Go directly to step 4 (Review & Payment)
+            flow.next(); // Step 3 -> Step 4
           }}
         />
       </div>
@@ -299,109 +341,160 @@ export const StepDonor: React.FC<{ flow: DonateFlow }> = ({ flow }) => {
         </div>
       </div>
 
-      {/* Donor Type Selection */}
-      <div className='pt-2'>
-        <label className='text-sm text-neutral-700 dark:text-neutral-300 mb-2 block font-medium'>
-          Donating as
-        </label>
-        <div className='space-y-2'>
-          <label className='flex items-center space-x-3 cursor-pointer'>
-            <input
-              type='radio'
-              name='donor-mode'
-              value='individual'
-              checked={donorMode === 'individual'}
-              onChange={() => setDonorMode('individual')}
-              className='w-4 h-4 text-primary-600 focus:ring-primary-500'
-            />
-            <span className='text-sm text-neutral-900 dark:text-neutral-100'>
-              An individual
-            </span>
-          </label>
-          <label className='flex items-center space-x-3 cursor-pointer'>
-            <input
-              type='radio'
-              name='donor-mode'
-              value='existing'
-              checked={donorMode === 'existing'}
-              onChange={() => setDonorMode('existing')}
-              className='w-4 h-4 text-primary-600 focus:ring-primary-500'
-            />
-            <span className='text-sm text-neutral-900 dark:text-neutral-100'>
-              An existing organization
-            </span>
-          </label>
-          <label className='flex items-center space-x-3 cursor-pointer'>
-            <input
-              type='radio'
-              name='donor-mode'
-              value='new'
-              checked={donorMode === 'new'}
-              onChange={() => setDonorMode('new')}
-              className='w-4 h-4 text-primary-600 focus:ring-primary-500'
-            />
-            <span className='text-sm text-neutral-900 dark:text-neutral-100'>
-              A new organization
-            </span>
-          </label>
-        </div>
-      </div>
-
-      {/* Existing org selector */}
-      {donorMode === 'existing' && (
-        <div className='space-y-2'>
-          <label className='text-sm text-neutral-700 dark:text-neutral-300 block font-medium'>
-            Select organization
-          </label>
-          <PartnerOrgDropdown
-            value={partnerOrgId}
-            onChange={setPartnerOrgId}
-            error={
-              error && donorMode === 'existing' && !partnerOrgId
-                ? 'Please select an organization.'
-                : undefined
-            }
-          />
-        </div>
-      )}
-
-      {/* New org form */}
-      {donorMode === 'new' && (
-        <div className='space-y-3'>
-          <Input
-            placeholder='Organization name'
-            value={newOrgName}
-            onChange={e => setNewOrgName(e.target.value)}
-          />
-          <textarea
-            placeholder='Description (optional)'
-            className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm'
-            rows={3}
-            value={newOrgDesc}
-            onChange={e => setNewOrgDesc(e.target.value)}
-          />
-          <label className='flex items-center space-x-2 cursor-pointer'>
-            <input
-              type='checkbox'
-              id='org-public'
-              checked={newOrgPublic}
-              onChange={e => setNewOrgPublic(e.target.checked)}
-              className='w-4 h-4 text-primary-600 focus:ring-primary-500 rounded'
-            />
-            <span className='text-sm text-neutral-700 dark:text-neutral-300'>
-              Make organization publicly visible
-            </span>
-          </label>
-        </div>
-      )}
+      {/* Donor Type Selection - New component for anonymous users */}
+      <AnonymousPartnerOrgSelector
+        donorType={donorType}
+        onDonorTypeChange={type => {
+          setDonorType(type);
+          // Update legacy donorMode for backward compatibility
+          if (type === 'individual') {
+            setDonorMode('individual');
+          } else if (type === 'organization') {
+            setDonorMode('existing'); // Default to existing, will be updated when org is selected/created
+          }
+        }}
+        selectedOrgId={selectedOrg?.id || null}
+        onOrgSelect={org => {
+          setSelectedOrg(org);
+          if (org.isNew) {
+            setPartnerOrgId('');
+            setNewOrgName(org.name);
+            setNewOrgDesc(org.description || '');
+            setDonorMode('new');
+          } else {
+            setPartnerOrgId(org.id);
+            setDonorMode('existing');
+          }
+        }}
+        newOrgName={newOrgName}
+        onNewOrgNameChange={setNewOrgName}
+        newOrgDesc={newOrgDesc}
+        onNewOrgDescChange={setNewOrgDesc}
+        newOrgPublic={newOrgPublic}
+        onNewOrgPublicChange={setNewOrgPublic}
+      />
 
       {error && <div className='text-sm text-error-600'>{error}</div>}
 
-      <div className='pt-2 flex justify-end'>
-        <Button onClick={handleSubmit} loading={loading}>
-          Continue
-        </Button>
-      </div>
+      {/* Inline Login Form - shown when existing user is detected */}
+      {showLoginForm && (
+        <div className='pt-4 border-t border-neutral-200 dark:border-neutral-700 space-y-4'>
+          <div className='text-sm text-neutral-600 dark:text-neutral-400'>
+            An account with this {matchedEmail ? 'email' : 'phone number'}{' '}
+            already exists. Please sign in to continue.
+          </div>
+
+          <div className='space-y-3'>
+            {(matchedEmail || email) && (
+              <Input
+                placeholder='Email'
+                type='email'
+                value={matchedEmail || email}
+                disabled
+              />
+            )}
+            {matchedPhone && !matchedEmail && (
+              <CustomPhoneInput
+                value={matchedPhone}
+                onChange={() => {}}
+                disabled
+              />
+            )}
+            <Input
+              placeholder='Password'
+              type='password'
+              value={loginPassword}
+              onChange={e => {
+                setLoginPassword(e.target.value);
+                setLoginError(null);
+              }}
+              autoFocus
+            />
+            {loginError && (
+              <div className='text-sm text-error-600'>{loginError}</div>
+            )}
+            <div className='flex gap-2'>
+              <Button
+                variant='outline'
+                onClick={() => {
+                  setShowLoginForm(false);
+                  setMatchedEmail(null);
+                  setMatchedPhone(null);
+                  setLoginPassword('');
+                  setLoginError(null);
+                }}
+                disabled={loginLoading}>
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!loginPassword) {
+                    setLoginError('Please enter your password.');
+                    return;
+                  }
+
+                  setLoginLoading(true);
+                  setLoginError(null);
+
+                  try {
+                    const loginEmail = matchedEmail || email;
+                    if (!loginEmail) {
+                      setLoginError('Email is required for login.');
+                      setLoginLoading(false);
+                      return;
+                    }
+
+                    // Sign in with email and password
+                    await authService.signIn(loginEmail, loginPassword);
+
+                    // Wait for auth state to update
+                    await new Promise(resolve => setTimeout(resolve, 100));
+
+                    // Check session
+                    const session = await supabase.auth.getSession();
+                    if (
+                      session.data.session?.user &&
+                      !session.data.session.user.is_anonymous
+                    ) {
+                      // Successfully logged in - update user state
+                      // The component will re-render and show LoggedInPartnerOrgSelector
+                      setUser(session.data.session.user);
+                      setIsAnonymous(false);
+                      setShowLoginForm(false);
+                      setLoginPassword('');
+                      setLoginError(null);
+                      // Don't proceed to next step - let the logged-in UI render instead
+                    } else {
+                      setLoginError(
+                        'Login failed. Please check your password.'
+                      );
+                    }
+                  } catch (err) {
+                    const errorMsg =
+                      err instanceof Error
+                        ? err.message
+                        : 'Login failed. Please try again.';
+                    setLoginError(errorMsg);
+                  } finally {
+                    setLoginLoading(false);
+                  }
+                }}
+                loading={loginLoading}
+                className='flex-1'>
+                Sign in
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!showLoginForm && (
+        <div className='pt-2 flex justify-end'>
+          <Button onClick={handleSubmit} loading={loading}>
+            Continue
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

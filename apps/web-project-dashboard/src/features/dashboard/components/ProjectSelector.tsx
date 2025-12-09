@@ -8,9 +8,10 @@ import {
   ArrowRight,
   X,
 } from 'lucide-react';
-import { useProjects } from '@/shared/hooks/query/projects';
+import { useProjectsByUser } from '@/shared/hooks/query/projects';
 import { useLanguageEntitiesByIds } from '@/shared/hooks/query/language-entities';
 import { useBibleProjectDashboard } from '@/shared/hooks/query/bible-structure';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Button } from '@/shared/design-system/components/Button';
 import { Input } from '@/shared/design-system/components/Input';
 import { Card } from '@/shared/design-system/components/Card';
@@ -43,8 +44,13 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [recentProjects, setRecentProjects] = useState<string[]>([]);
 
-  // Fetch projects and language entities
-  const { data: projects = [], isLoading, error } = useProjects();
+  // Get current user and fetch their projects (or all projects if system admin)
+  const { user } = useAuth();
+  const {
+    data: projects = [],
+    isLoading,
+    error,
+  } = useProjectsByUser(user?.id || null);
 
   // Extract unique language entity IDs from all projects
   const languageIds = useMemo(() => {

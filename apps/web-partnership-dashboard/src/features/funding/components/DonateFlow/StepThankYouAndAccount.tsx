@@ -33,6 +33,18 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
   const [accountSkipped, setAccountSkipped] = React.useState(false);
   const [accountCreated, setAccountCreated] = React.useState(false);
   const [resendLoading, setResendLoading] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = React.useState<boolean | null>(null);
+
+  // Check if user is logged in (not anonymous)
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setIsLoggedIn(user ? !user.is_anonymous : false);
+    };
+    checkAuth();
+  }, []);
 
   // Calculate display values
   const isMonthly = amount?.isRecurring ?? false;
@@ -93,10 +105,15 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
       if (currentUser?.is_anonymous) {
         // Promote anonymous user to authenticated
         try {
-          await authService.promoteAnonymousUser(email, password, {
-            first_name: state.donor?.firstName,
-            last_name: state.donor?.lastName,
-          });
+          await authService.promoteAnonymousUser(
+            email,
+            password,
+            {
+              first_name: state.donor?.firstName,
+              last_name: state.donor?.lastName,
+            },
+            state.donor?.phone
+          );
 
           // Account promoted successfully - show email confirmation message
           setAccountCreated(true);
@@ -209,9 +226,10 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
     setAccountSkipped(true);
   };
 
-  // Show account creation unless user has skipped it
+  // Show account creation unless user has skipped it or is already logged in
   // Note: customerId from Stripe doesn't mean they have an account in our system
-  const showAccountCreation = !accountSkipped && state.donor?.email;
+  const showAccountCreation =
+    !accountSkipped && state.donor?.email && isLoggedIn === false;
 
   return (
     <div className='space-y-6'>
@@ -310,6 +328,19 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Dashboard Button for Logged-in Users */}
+      {isLoggedIn === true && (
+        <div className='border-t border-neutral-200 dark:border-neutral-800 pt-6'>
+          <Button
+            onClick={() => {
+              window.location.href = '/dashboard';
+            }}
+            className='w-full'>
+            Go to Dashboard
+          </Button>
+        </div>
+      )}
 
       {/* Account Creation Section */}
       {showAccountCreation && !accountCreated && (

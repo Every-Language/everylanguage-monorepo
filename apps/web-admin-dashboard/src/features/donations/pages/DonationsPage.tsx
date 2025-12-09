@@ -4,8 +4,9 @@ import { donationsApi } from '../api/donationsApi';
 import { allocationsApi } from '../api/allocationsApi';
 import { ViewDonationModal } from '../components/ViewDonationModal';
 import { ViewAllocationModal } from '../components/ViewAllocationModal';
+import { AddDonationModal } from '../components/AddDonationModal';
 import type { DonationWithAllocations, AllocationWithDetails } from '@/types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
 import { languagesApi } from '../../languages/api/languagesApi';
 
@@ -65,6 +66,7 @@ export function DonationsPage() {
     useState<DonationWithAllocations | null>(null);
   const [selectedAllocation, setSelectedAllocation] =
     useState<AllocationWithDetails | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -332,13 +334,21 @@ export function DonationsPage() {
 
   return (
     <div className='p-8'>
-      <div className='mb-8'>
-        <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
-          Donations
-        </h1>
-        <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
-          Manage donations and allocations
-        </p>
+      <div className='mb-8 flex items-start justify-between'>
+        <div>
+          <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
+            Donations
+          </h1>
+          <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
+            Manage donations and allocations
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>
+          <Plus className='h-4 w-4' />
+          Add Donation
+        </button>
       </div>
 
       {/* Filters */}
@@ -582,6 +592,9 @@ export function DonationsPage() {
                     Status
                   </th>
                   <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    Source
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
                     <button
                       type='button'
                       onClick={() => handleSort('donor')}
@@ -628,6 +641,17 @@ export function DonationsPage() {
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm'>
                         {getStatusBadge(donation.status)}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm'>
+                        {donation.is_manual ? (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'>
+                            Manual
+                          </span>
+                        ) : (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'>
+                            Stripe
+                          </span>
+                        )}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
                         {donation.user ? (
@@ -733,7 +757,7 @@ export function DonationsPage() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                       {emptyMessage}
                     </td>
@@ -787,6 +811,17 @@ export function DonationsPage() {
           allocation={selectedAllocation}
           onClose={handleCloseAllocationModal}
           onUpdate={handleAllocationUpdated}
+        />
+      )}
+
+      {/* Add Donation Modal */}
+      {showAddModal && (
+        <AddDonationModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['donations'] });
+            setShowAddModal(false);
+          }}
         />
       )}
     </div>

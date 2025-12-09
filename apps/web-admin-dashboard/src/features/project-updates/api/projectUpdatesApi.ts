@@ -2,6 +2,7 @@ import { supabase } from '@/shared/services/supabase';
 import type {
   ProjectUpdateWithProject,
   CreateProjectUpdateData,
+  UpdateProjectUpdateData,
   ProjectUpdateFilters,
   ProjectForSelector,
 } from '../types';
@@ -40,6 +41,14 @@ export const projectUpdatesApi = {
             id,
             name
           )
+        ),
+        media:project_updates_media (
+          id,
+          media_type,
+          object_key,
+          original_filename,
+          display_order,
+          thumbnail_object_key
         )
       `,
         { count: 'exact' }
@@ -117,6 +126,107 @@ export const projectUpdatesApi = {
     if (!update) throw new Error('Failed to create project update');
 
     return update as ProjectUpdateWithProject;
+  },
+
+  /**
+   * Update an existing project update
+   */
+  async updateProjectUpdate(
+    updateId: string,
+    data: UpdateProjectUpdateData
+  ): Promise<ProjectUpdateWithProject> {
+    const { data: update, error } = await supabase
+      .from('project_updates')
+      .update({
+        title: data.title,
+        body: data.body,
+        publish_status: data.publish_status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', updateId)
+      .select(
+        `
+        *,
+        project:projects!project_updates_project_id_fkey (
+          id,
+          name,
+          target_language_entity_id,
+          target_language:language_entities!projects_target_language_entity_id_fkey (
+            id,
+            name
+          ),
+          region:regions!projects_region_id_fkey (
+            id,
+            name
+          )
+        )
+      `
+      )
+      .single();
+
+    if (error) throw error;
+    if (!update) throw new Error('Failed to update project update');
+
+    return update as ProjectUpdateWithProject;
+  },
+
+  /**
+   * Delete (soft delete) a project update
+   */
+  async deleteProjectUpdate(updateId: string): Promise<void> {
+    const { error } = await supabase
+      .from('project_updates')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', updateId);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Fetch media for a project update
+   */
+  async fetchProjectUpdateMedia(updateId: string): Promise<
+    Array<{
+      id: string;
+      media_type: 'image' | 'video';
+      object_key: string;
+      original_filename: string | null;
+      caption: string | null;
+      display_order: number;
+      thumbnail_object_key: string | null;
+    }>
+  > {
+    const { data, error } = await supabase
+      .from('project_updates_media')
+      .select(
+        'id, media_type, object_key, original_filename, caption, display_order, thumbnail_object_key'
+      )
+      .eq('project_update_id', updateId)
+      .is('deleted_at', null)
+      .order('display_order', { ascending: true });
+
+    if (error) throw error;
+    return (data || []) as Array<{
+      id: string;
+      media_type: 'image' | 'video';
+      object_key: string;
+      original_filename: string | null;
+      caption: string | null;
+      display_order: number;
+      thumbnail_object_key: string | null;
+    }>;
+  },
+
+  /**
+   * Delete (soft delete) a media item
+   */
+  async deleteProjectUpdateMedia(mediaId: string): Promise<void> {
+    const { error } = await supabase
+      .from('project_updates_media')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', mediaId);
+
+    if (error) throw error;
   },
 
   /**

@@ -6,7 +6,10 @@ import React, {
   useRef,
 } from 'react';
 import type { ReactNode } from 'react';
-import { type Project } from '../../../shared/hooks/query/projects';
+import {
+  type Project,
+  useIsSystemAdmin,
+} from '../../../shared/hooks/query/projects';
 import { useAuth } from '../../auth/hooks/useAuth';
 
 export interface ProjectContextValue {
@@ -34,6 +37,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({
     null
   );
   const { user } = useAuth();
+  const { data: isSystemAdmin = false } = useIsSystemAdmin();
   const prevUserIdRef = useRef<string | null>(null);
 
   // Load selected project from localStorage on mount
@@ -79,6 +83,11 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({
       return;
     }
 
+    // System admins can select any project, so skip validation for them
+    if (isSystemAdmin) {
+      return;
+    }
+
     // If a project is selected but doesn't belong to the current user, clear it
     if (
       selectedProject &&
@@ -95,7 +104,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({
         );
       }
     }
-  }, [user, selectedProject]);
+  }, [user, selectedProject, isSystemAdmin]);
 
   const setSelectedProject = useCallback((project: Project | null) => {
     setSelectedProjectState(project);

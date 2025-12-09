@@ -95,12 +95,14 @@ export async function findUserIndividualPartnerOrg(): Promise<{
     .select('id, name, description')
     .eq('created_by', user.id)
     .eq('is_individual', true)
-    .maybeSingle();
+    .order('created_at', { ascending: false })
+    .limit(1);
 
   if (error) {
     console.error('Error finding user individual partner org:', error);
     return null;
   }
 
-  return data;
+  // Return the most recent individual org, or null if none found
+  return data && data.length > 0 ? data[0] : null;
 }

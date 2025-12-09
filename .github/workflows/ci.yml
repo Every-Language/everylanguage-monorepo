@@ -356,6 +356,8 @@ jobs:
     if: |
       github.event_name == 'pull_request' &&
       needs.detect-changes.outputs.powersync-rules == 'true'
+    # Use production environment for PRs to main, development for PRs to develop
+    environment: ${{ github.base_ref == 'main' && 'production' || 'development' }}
     
     steps:
       - name: Checkout code

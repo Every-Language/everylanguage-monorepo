@@ -12,7 +12,8 @@ type SearchPartnerOrgsResult =
 
 export async function searchPartnerOrgs(
   query: string,
-  limit = 10
+  limit = 10,
+  excludeIndividual = false
 ): Promise<{
   results: Array<{
     id: string;
@@ -25,7 +26,34 @@ export async function searchPartnerOrgs(
     return { results: [] };
   }
 
-  // Call the RPC function directly through Supabase client
+  // If we need to exclude individual orgs, query directly from partner_orgs table
+  // Otherwise, use the RPC function for better performance
+  if (excludeIndividual) {
+    // Query partner_orgs directly with filters
+    const { data, error } = await (supabase as any)
+      .from('partner_orgs')
+      .select('id, name, description')
+      .eq('is_public', true)
+      .eq('is_individual', false)
+      .ilike('name', `%${query}%`)
+      .limit(limit);
+
+    if (error) {
+      console.error('Error searching partner orgs:', error);
+      throw new Error(error.message || 'Failed to search organizations');
+    }
+
+    return {
+      results: (data || []).map((org: any) => ({
+        id: org.id,
+        name: org.name,
+        description: org.description,
+        similarityScore: 1.0, // Simple match, no similarity score available
+      })),
+    };
+  }
+
+  // Call the RPC function directly through Supabase client (includes similarity scoring)
   const { data, error } = await (supabase as any).rpc('search_partner_orgs', {
     search_query: query,
     max_results: limit,

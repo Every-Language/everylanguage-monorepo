@@ -1,11 +1,20 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectUpdatesApi } from '../api/projectUpdatesApi';
 import { ProjectSelector } from '../components/ProjectSelector';
 import { AddProjectUpdateModal } from '../components/AddProjectUpdateModal';
+import { EditProjectUpdateModal } from '../components/EditProjectUpdateModal';
+import { downloadService } from '@/shared/services/downloadService';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import type { ProjectForSelector } from '../types';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Pencil,
+  Trash2,
+  Image as ImageIcon,
+} from 'lucide-react';
+import type { ProjectForSelector, ProjectUpdateWithProject } from '../types';
 
 export function ProjectUpdatesPage() {
   const [page, setPage] = useState(1);
@@ -18,6 +27,13 @@ export function ProjectUpdatesPage() {
   );
   const [showProjectSelector, setShowProjectSelector] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingUpdate, setEditingUpdate] =
+    useState<ProjectUpdateWithProject | null>(null);
+  const [deletingUpdateId, setDeletingUpdateId] = useState<string | null>(null);
+  const [mediaUrls, setMediaUrls] = useState<
+    Record<string, Record<string, string>>
+  >({});
+  const queryClient = useQueryClient();
 
   // Fetch project updates
   const { data: response, isLoading } = useQuery({
@@ -41,6 +57,93 @@ export function ProjectUpdatesPage() {
   const updates = response?.data || [];
   const totalCount = response?.count || 0;
   const totalPages = response?.totalPages || 1;
+
+  // Memoize media IDs and update-to-media mapping to avoid recreating on every render
+  const { allMediaIds, updateMediaMap } = useMemo(() => {
+    const mediaIds: string[] = [];
+    const mediaMap: Record<
+      string,
+      Array<{ id: string; media_type: string }>
+    > = {};
+
+    for (const update of updates) {
+      if (update.media && update.media.length > 0) {
+        mediaMap[update.id] = update.media;
+        for (const media of update.media) {
+          if (media.id && !mediaIds.includes(media.id)) {
+            mediaIds.push(media.id);
+          }
+        }
+      }
+    }
+
+    return {
+      allMediaIds: mediaIds.sort(),
+      updateMediaMap: mediaMap,
+    };
+  }, [updates]);
+
+  // Load media URLs for thumbnails
+  const { data: mediaUrlsData } = useQuery({
+    queryKey: ['project-updates-media-urls', allMediaIds.join(',')],
+    queryFn: async () => {
+      if (allMediaIds.length === 0) {
+        return {};
+      }
+
+      const urlMap: Record<string, Record<string, string>> = {};
+
+      try {
+        // Fetch all media URLs in one call
+        const result = await downloadService.getDownloadUrlsById({
+          projectUpdatesMediaIds: allMediaIds,
+          expirationHours: 24,
+        });
+
+        if (result.projectUpdatesMedia) {
+          // Map URLs back to updates using the memoized map
+          for (const [updateId, mediaList] of Object.entries(updateMediaMap)) {
+            const updateMediaUrls: Record<string, string> = {};
+            for (const media of mediaList) {
+              const url = result.projectUpdatesMedia?.[media.id];
+              if (url) {
+                updateMediaUrls[media.id] = url;
+              }
+            }
+            if (Object.keys(updateMediaUrls).length > 0) {
+              urlMap[updateId] = updateMediaUrls;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load media URLs:', error);
+        // Return empty map on error instead of throwing
+        return {};
+      }
+
+      return urlMap;
+    },
+    enabled: allMediaIds.length > 0,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 1, // Only retry once on failure
+  });
+
+  // Update mediaUrls state when data changes
+  useEffect(() => {
+    if (mediaUrlsData) {
+      setMediaUrls(mediaUrlsData);
+    }
+  }, [mediaUrlsData]);
+
+  const deleteMutation = useMutation({
+    mutationFn: async (updateId: string) => {
+      await projectUpdatesApi.deleteProjectUpdate(updateId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-updates'] });
+      setDeletingUpdateId(null);
+    },
+  });
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -198,6 +301,12 @@ export function ProjectUpdatesPage() {
                   <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
                     Publish Status
                   </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    Media
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className='bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-800'>
@@ -226,6 +335,64 @@ export function ProjectUpdatesPage() {
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap'>
                       {getPublishStatusBadge(update.publish_status)}
+                    </td>
+                    <td className='px-6 py-4'>
+                      {update.media && update.media.length > 0 ? (
+                        <div className='flex gap-2 flex-wrap'>
+                          {update.media.slice(0, 3).map(media => {
+                            const urls = mediaUrls[update.id];
+                            const url = urls?.[media.id];
+                            return (
+                              <div
+                                key={media.id}
+                                className='relative w-16 h-16 rounded overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800'>
+                                {url ? (
+                                  media.media_type === 'image' ? (
+                                    <img
+                                      src={url}
+                                      alt={media.original_filename || 'Media'}
+                                      className='w-full h-full object-cover'
+                                    />
+                                  ) : (
+                                    <div className='w-full h-full flex items-center justify-center'>
+                                      <ImageIcon className='h-6 w-6 text-neutral-400' />
+                                    </div>
+                                  )
+                                ) : (
+                                  <div className='w-full h-full flex items-center justify-center'>
+                                    <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-neutral-400'></div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {update.media.length > 3 && (
+                            <div className='w-16 h-16 rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 flex items-center justify-center text-xs text-neutral-500'>
+                              +{update.media.length - 3}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className='text-sm text-neutral-400'>
+                          No media
+                        </span>
+                      )}
+                    </td>
+                    <td className='px-6 py-4 whitespace-nowrap text-sm'>
+                      <div className='flex items-center gap-2'>
+                        <button
+                          onClick={() => setEditingUpdate(update)}
+                          className='inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors'>
+                          <Pencil className='h-4 w-4' />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setDeletingUpdateId(update.id)}
+                          className='inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 dark:text-red-300 bg-white dark:bg-neutral-800 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 transition-colors'>
+                          <Trash2 className='h-4 w-4' />
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -284,6 +451,51 @@ export function ProjectUpdatesPage() {
             setShowAddModal(false);
           }}
         />
+      )}
+
+      {/* Edit Project Update Modal */}
+      {editingUpdate && (
+        <EditProjectUpdateModal
+          update={editingUpdate}
+          onClose={() => setEditingUpdate(null)}
+          onSuccess={() => {
+            setEditingUpdate(null);
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingUpdateId && (
+        <div className='fixed inset-0 z-50 overflow-y-auto'>
+          <div className='flex min-h-screen items-center justify-center p-4'>
+            <div className='fixed inset-0 bg-black/50 transition-opacity' />
+            <div className='relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl max-w-md w-full p-6'>
+              <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
+                Delete Project Update
+              </h3>
+              <p className='text-sm text-neutral-600 dark:text-neutral-400 mb-6'>
+                Are you sure you want to delete this project update? This will
+                hide it from view, but it can be restored later if needed.
+              </p>
+              <div className='flex justify-end gap-3'>
+                <button
+                  onClick={() => setDeletingUpdateId(null)}
+                  disabled={deleteMutation.isPending}
+                  className='px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    deleteMutation.mutate(deletingUpdateId);
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className='px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
+                  {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
