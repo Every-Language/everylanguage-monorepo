@@ -146,23 +146,35 @@ comment ON policy segments_update ON public.segments IS 'Allows users to update 
 -- ============================================================================
 -- FIX MEDIA_FILES_VERSES SELECT POLICY
 -- ============================================================================
+-- media_files_verses doesn't have publish_status, must join to media_files
+-- but can use denormalized project_id instead of resolve_project_id
 DROP POLICY if EXISTS media_files_verses_select_inherit_project ON public.media_files_verses;
 
 
 CREATE POLICY media_files_verses_select_inherit_project ON public.media_files_verses FOR
 SELECT
   USING (
-    (publish_status = 'published')
-    OR public.has_permission (
-      auth.uid (),
-      'project.read',
-      'project',
-      project_id -- Use denormalized project_id directly instead of joining to media_files
+    EXISTS (
+      SELECT
+        1
+      FROM
+        public.media_files mf
+      WHERE
+        mf.id = media_files_verses.media_file_id
+        AND (
+          mf.publish_status = 'published'
+          OR public.has_permission (
+            auth.uid (),
+            'project.read',
+            'project',
+            mf.project_id -- Use media_files.project_id directly instead of resolve_project_id
+          )
+        )
     )
   );
 
 
-comment ON policy media_files_verses_select_inherit_project ON public.media_files_verses IS 'Allows users to select published media_files_verses or media_files_verses for projects they have read access to. Uses denormalized project_id directly to avoid RLS recursion.';
+comment ON policy media_files_verses_select_inherit_project ON public.media_files_verses IS 'Allows users to select media_files_verses for published media_files or media_files they have read access to. Uses JOIN to media_files.project_id to avoid resolve_project_id recursion.';
 
 
 -- ============================================================================
