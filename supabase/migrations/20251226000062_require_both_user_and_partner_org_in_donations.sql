@@ -15,13 +15,24 @@ DROP CONSTRAINT if EXISTS donations_donor_check;
 -- 3. subscriptions.original_donation_id will be set to NULL automatically (ON DELETE SET NULL)
 -- 
 -- Note: This will delete ALL donations. Only proceed if you're certain there's no live data.
+-- 
+-- IMPORTANT: We must temporarily disable the protect_donation_sourced_rows trigger because
+-- deleting donations cascades to donation_allocations, which triggers sync_partner_orgs_projects_from_allocations
+-- to update partner_orgs_projects. The protection trigger would block these updates.
 DO $$
 DECLARE
   v_deleted_count INTEGER;
 BEGIN
+  -- Temporarily disable the protection trigger to allow sync trigger to update partner_orgs_projects
+  ALTER TABLE partner_orgs_projects DISABLE TRIGGER trigger_protect_donation_sourced_rows;
+  
   -- Delete all donations (they don't satisfy the new constraint anyway)
+  -- This will cascade delete donation_allocations, which triggers sync to update partner_orgs_projects
   DELETE FROM donations;
   GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+  
+  -- Re-enable the protection trigger
+  ALTER TABLE partner_orgs_projects ENABLE TRIGGER trigger_protect_donation_sourced_rows;
   
   RAISE NOTICE 'Deleted % donations. Related donation_allocations and payment_attempts were cascade deleted. subscriptions.original_donation_id references were set to NULL.', v_deleted_count;
 END $$;
