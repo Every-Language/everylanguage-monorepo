@@ -11,6 +11,7 @@ import {
   LoginPage,
   RegisterPage,
   ForgotPasswordPage,
+  ResetPasswordPage,
   UnauthorizedPage,
 } from './features/auth/pages';
 import { DashboardPage } from './app/pages/DashboardPage';
@@ -22,6 +23,7 @@ import { ToastManager } from './shared/design-system/hooks/useToast';
 import { LoadingSpinner } from './shared/design-system';
 import { TextUploadProgress } from './features/upload/components/TextUploadProgress';
 import { UploadResumeHandler } from './features/upload/components/UploadResumeHandler';
+import { SandboxBanner } from './shared/components/SandboxBanner';
 
 // Lazy load non-critical pages for better performance
 const BibleProgressPage = React.lazy(() =>
@@ -86,6 +88,7 @@ function App() {
       <ToastManager>
         <AuthProvider>
           <ProjectProvider>
+            <SandboxBanner />
             <Router>
               <GlobalAudioPlayer />
               <GlobalUploadProgress />
@@ -99,6 +102,7 @@ function App() {
                   path='/forgot-password'
                   element={<ForgotPasswordPage />}
                 />
+                <Route path='/reset-password' element={<ResetPasswordPage />} />
                 <Route path='/unauthorized' element={<UnauthorizedPage />} />
 
                 {/* Protected routes with layout */}

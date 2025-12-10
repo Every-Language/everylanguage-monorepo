@@ -1,5 +1,9 @@
 import { supabase } from '@/shared/services/supabase';
-import type { DonationAllocation, DonationWithAllocations } from '@/types';
+import type {
+  Donation,
+  DonationAllocation,
+  DonationWithAllocations,
+} from '@/types';
 import type { Database } from '@everylanguage/shared-types';
 
 type DonationStatus = Database['public']['Enums']['donation_status'];
@@ -205,8 +209,11 @@ export const donationsApi = {
         );
         const remaining_cents = donation.amount_cents - allocated_cents;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const donationData = donation as any;
+
         return {
-          ...donation,
+          ...donationData,
           allocations,
           allocated_cents,
           remaining_cents,
@@ -222,6 +229,7 @@ export const donationsApi = {
                 email: donation.user.email || '',
               }
             : null,
+          is_manual: (donationData.is_manual as boolean | undefined) ?? false,
         } as DonationWithAllocations;
       }
     );
@@ -336,8 +344,11 @@ export const donationsApi = {
     );
     const remaining_cents = data.amount_cents - allocated_cents;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const donationData = data as any;
+
     return {
-      ...data,
+      ...donationData,
       allocations,
       allocated_cents,
       remaining_cents,
@@ -353,6 +364,7 @@ export const donationsApi = {
             email: data.user.email || '',
           }
         : null,
+      is_manual: (donationData.is_manual as boolean | undefined) ?? false,
     } as DonationWithAllocations;
   },
 
@@ -744,5 +756,88 @@ export const donationsApi = {
       totalPages: Math.ceil((count || 0) / pageSize),
       count: count || 0,
     };
+  },
+
+  /**
+   * Create a new manual donation
+   */
+  async createDonation(data: {
+    user_id: string;
+    partner_org_id: string;
+    intent_type: DonationIntentType;
+    intent_language_entity_id?: string;
+    intent_region_id?: string;
+    intent_operation_id?: string;
+    amount_cents: number;
+    currency_code?: string;
+    status?: DonationStatus;
+    payment_method?: Database['public']['Enums']['payment_method_type'];
+    is_recurring?: boolean;
+  }): Promise<Donation> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Validate required fields
+    if (!data.user_id || !data.partner_org_id) {
+      throw new Error('Both user_id and partner_org_id are required');
+    }
+
+    if (!data.intent_type) {
+      throw new Error('Intent type is required');
+    }
+
+    if (data.amount_cents <= 0) {
+      throw new Error('Amount must be greater than 0');
+    }
+
+    // Validate intent fields match intent_type
+    if (data.intent_type === 'language' && !data.intent_language_entity_id) {
+      throw new Error('Language entity is required for language intent');
+    }
+
+    if (data.intent_type === 'region' && !data.intent_region_id) {
+      throw new Error('Region is required for region intent');
+    }
+
+    if (data.intent_type === 'operation' && !data.intent_operation_id) {
+      throw new Error('Operation is required for operation intent');
+    }
+
+    const status = data.status || 'completed';
+
+    const insertData = {
+      user_id: data.user_id,
+      partner_org_id: data.partner_org_id,
+      intent_type: data.intent_type,
+      intent_language_entity_id:
+        data.intent_type === 'language' ? data.intent_language_entity_id : null,
+      intent_region_id:
+        data.intent_type === 'region' ? data.intent_region_id : null,
+      intent_operation_id:
+        data.intent_type === 'operation' ? data.intent_operation_id : null,
+      amount_cents: data.amount_cents,
+      currency_code: data.currency_code || 'USD',
+      status: status,
+      payment_method: data.payment_method || 'card',
+      is_recurring: data.is_recurring || false,
+      is_manual: true,
+      created_by: userData.user.id,
+      completed_at: status === 'completed' ? new Date().toISOString() : null,
+    } as Database['public']['Tables']['donations']['Insert'];
+
+    const { data: donation, error } = await supabase
+      .from('donations')
+      .insert(insertData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating donation:', error);
+      throw new Error(error.message || 'Failed to create donation');
+    }
+
+    return donation;
   },
 };

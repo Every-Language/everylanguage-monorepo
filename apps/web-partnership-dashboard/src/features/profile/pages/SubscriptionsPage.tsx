@@ -19,10 +19,11 @@ import {
   getCustomerPortalUrl,
   type Subscription,
 } from '../api/subscriptionsApi';
-import { SubscriptionCard } from '../components/SubscriptionCard';
 import { CancelSubscriptionModal } from '../components/CancelSubscriptionModal';
 import { useToast } from '@/shared/theme/hooks/useToast';
 import { supabase } from '@/shared/services/supabase';
+import { formatCurrency, formatDate } from '@/shared/utils/formatters';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 export const SubscriptionsPage: React.FC = () => {
   const { user } = useAuth();
@@ -33,6 +34,9 @@ export const SubscriptionsPage: React.FC = () => {
   const [cancelModalOpen, setCancelModalOpen] = React.useState(false);
   const [selectedSubscription, setSelectedSubscription] =
     React.useState<Subscription | null>(null);
+  const [expandedSubscriptions, setExpandedSubscriptions] = React.useState<
+    Set<string>
+  >(new Set());
 
   // Get user's partner org IDs
   const { data: partnerOrgIds = [] } = useQuery({
@@ -120,110 +124,276 @@ export const SubscriptionsPage: React.FC = () => {
     },
   });
 
-  const handleCancelClick = async (subscriptionId: string) => {
-    const subscription = subscriptions.find(s => s.id === subscriptionId);
-    if (subscription) {
-      setSelectedSubscription(subscription);
-      setCancelModalOpen(true);
-    }
-  };
-
   const handleCancelConfirm = async () => {
     if (!selectedSubscription) return;
     await cancelMutation.mutateAsync(selectedSubscription.id);
   };
 
-  const handleManagePaymentMethod = async (customerId: string) => {
+  const handleManageSubscription = async (customerId: string) => {
     await customerPortalMutation.mutateAsync(customerId);
+  };
+
+  const toggleSubscription = (subscriptionId: string) => {
+    setExpandedSubscriptions(prev => {
+      const next = new Set(prev);
+      if (next.has(subscriptionId)) {
+        next.delete(subscriptionId);
+      } else {
+        next.add(subscriptionId);
+      }
+      return next;
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      active: {
+        className:
+          'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+        label: 'Active',
+      },
+      canceled: {
+        className:
+          'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400',
+        label: 'Canceled',
+      },
+      past_due: {
+        className:
+          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300',
+        label: 'Past Due',
+      },
+      unpaid: {
+        className:
+          'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+        label: 'Unpaid',
+      },
+      incomplete: {
+        className:
+          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300',
+        label: 'Incomplete',
+      },
+      trialing: {
+        className:
+          'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+        label: 'Trialing',
+      },
+      paused: {
+        className:
+          'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400',
+        label: 'Paused',
+      },
+    };
+
+    const config =
+      statusConfig[status as keyof typeof statusConfig] ||
+      statusConfig.canceled;
+
+    return (
+      <span
+        className={`text-xs px-2 py-1 rounded capitalize inline-block ${config.className}`}>
+        {config.label}
+      </span>
+    );
   };
 
   if (isLoading) {
     return (
-      <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950'>
-        <div className='mx-auto max-w-4xl p-4 sm:p-6 lg:p-8'>
-          <TableRowSkeleton count={3} columns={1} />
+      <div className='space-y-6'>
+        <div>
+          <h1 className='text-2xl font-bold text-neutral-900 dark:text-neutral-100'>
+            My Subscriptions
+          </h1>
+          <p className='text-sm text-neutral-500 dark:text-neutral-400 mt-1'>
+            Manage your recurring donations
+          </p>
         </div>
+        <TableRowSkeleton count={5} columns={5} />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950'>
-        <div className='mx-auto max-w-4xl p-4 sm:p-6 lg:p-8'>
-          <Card className='border border-red-200 dark:border-red-800'>
-            <CardContent className='py-12 text-center'>
-              <p className='text-red-600 dark:text-red-400'>
-                Failed to load subscriptions. Please try again later.
-              </p>
-            </CardContent>
-          </Card>
+      <div className='space-y-6'>
+        <div>
+          <h1 className='text-2xl font-bold text-neutral-900 dark:text-neutral-100'>
+            My Subscriptions
+          </h1>
+          <p className='text-sm text-neutral-500 dark:text-neutral-400 mt-1'>
+            Manage your recurring donations
+          </p>
         </div>
+        <Card className='border border-red-200 dark:border-red-800'>
+          <CardContent className='py-12 text-center'>
+            <p className='text-red-600 dark:text-red-400'>
+              Failed to load subscriptions. Please try again later.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950'>
-      <div className='mx-auto max-w-4xl p-4 sm:p-6 lg:p-8'>
-        <div className='mb-6'>
-          <h1 className='text-2xl font-bold text-neutral-900 dark:text-neutral-100'>
-            My Subscriptions
-          </h1>
-          <p className='text-sm text-neutral-500 dark:text-neutral-400 mt-1'>
-            Manage your recurring donations and payment methods
-          </p>
-        </div>
-
-        {subscriptions.length === 0 ? (
-          <Card className='border border-neutral-200 dark:border-neutral-800'>
-            <CardContent className='py-12 text-center text-neutral-500'>
-              <p>You don't have any active subscriptions.</p>
-              <Button
-                variant='outline'
-                className='mt-4'
-                onClick={() => router.push('/donate')}>
-                Start a Recurring Donation
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className='space-y-4'>
-            {subscriptions.map((subscription, index) => {
-              const subscriptionQuery = subscriptionQueries[index];
-              const subscriptionWithDonations = subscriptionQuery?.data;
-
-              return (
-                <SubscriptionCard
-                  key={subscription.id}
-                  subscription={subscription}
-                  donations={subscriptionWithDonations?.donations || []}
-                  onCancel={handleCancelClick}
-                  onManagePaymentMethod={handleManagePaymentMethod}
-                  isCanceling={
-                    cancelMutation.isPending &&
-                    selectedSubscription?.id === subscription.id
-                  }
-                  isManagingPayment={
-                    customerPortalMutation.isPending &&
-                    customerPortalMutation.variables ===
-                      subscription.stripe_customer_id
-                  }
-                />
-              );
-            })}
-          </div>
-        )}
-
-        {/* Cancel Confirmation Modal */}
-        <CancelSubscriptionModal
-          open={cancelModalOpen}
-          onOpenChange={setCancelModalOpen}
-          subscription={selectedSubscription}
-          onConfirm={handleCancelConfirm}
-          isLoading={cancelMutation.isPending}
-        />
+    <div className='space-y-6'>
+      <div>
+        <h1 className='text-2xl font-bold text-neutral-900 dark:text-neutral-100'>
+          My Subscriptions
+        </h1>
+        <p className='text-sm text-neutral-500 dark:text-neutral-400 mt-1'>
+          Manage your recurring donations
+        </p>
       </div>
+
+      {subscriptions.length === 0 ? (
+        <Card className='border border-neutral-200 dark:border-neutral-800'>
+          <CardContent className='py-12 text-center text-neutral-500'>
+            <p>You don't have any active subscriptions.</p>
+            <Button
+              variant='outline'
+              className='mt-4'
+              onClick={() => router.push('/donate')}>
+              Start a Recurring Donation
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className='space-y-0'>
+          {/* Table Header */}
+          <div className='grid grid-cols-[1fr_1fr_1fr_1fr_1fr] gap-4 px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+            <div>Amount</div>
+            <div>Interval</div>
+            <div>Status</div>
+            <div>Next Billing</div>
+            <div>Actions</div>
+          </div>
+
+          {/* Table Rows */}
+          {subscriptions.map((subscription, index) => {
+            const subscriptionQuery = subscriptionQueries[index];
+            const subscriptionWithDonations = subscriptionQuery?.data;
+            const donations = subscriptionWithDonations?.donations || [];
+            const isExpanded = expandedSubscriptions.has(subscription.id);
+            const isActive =
+              subscription.status === 'active' ||
+              subscription.status === 'trialing';
+
+            return (
+              <React.Fragment key={subscription.id}>
+                <div className='grid grid-cols-[1fr_1fr_1fr_1fr_1fr] gap-4 px-4 py-4 border-b border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors'>
+                  {/* Amount Column */}
+                  <div className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                    {formatCurrency(
+                      subscription.amount_cents,
+                      subscription.currency_code
+                    )}
+                  </div>
+
+                  {/* Interval Column */}
+                  <div className='text-sm text-neutral-900 dark:text-neutral-100 capitalize'>
+                    {subscription.interval_type}
+                  </div>
+
+                  {/* Status Column */}
+                  <div>{getStatusBadge(subscription.status)}</div>
+
+                  {/* Next Billing Column */}
+                  <div className='text-sm text-neutral-900 dark:text-neutral-100'>
+                    {subscription.current_period_end && isActive
+                      ? formatDate(subscription.current_period_end)
+                      : subscription.canceled_at
+                        ? `Canceled ${formatDate(subscription.canceled_at)}`
+                        : 'N/A'}
+                  </div>
+
+                  {/* Actions Column */}
+                  <div className='flex items-center gap-2'>
+                    {donations.length > 0 && (
+                      <Button
+                        variant='ghost'
+                        size='xs'
+                        className='h-7 px-2'
+                        onClick={() => toggleSubscription(subscription.id)}>
+                        {isExpanded ? (
+                          <ChevronUp className='h-4 w-4' />
+                        ) : (
+                          <ChevronDown className='h-4 w-4' />
+                        )}
+                      </Button>
+                    )}
+                    {isActive && (
+                      <Button
+                        variant='outline'
+                        size='xs'
+                        className='h-7 px-2 text-xs'
+                        onClick={() =>
+                          handleManageSubscription(
+                            subscription.stripe_customer_id
+                          )
+                        }
+                        loading={
+                          customerPortalMutation.isPending &&
+                          customerPortalMutation.variables ===
+                            subscription.stripe_customer_id
+                        }>
+                        Manage
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Expanded Donations */}
+                {isExpanded && donations.length > 0 && (
+                  <div className='bg-neutral-50 dark:bg-neutral-900/30 border-b border-neutral-200 dark:border-neutral-800'>
+                    <div className='px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                      Payment History ({donations.length}{' '}
+                      {donations.length === 1 ? 'payment' : 'payments'})
+                    </div>
+                    <div className='px-4 py-2 space-y-2'>
+                      {donations.map(donation => (
+                        <div
+                          key={donation.id}
+                          className='grid grid-cols-[1fr_1fr_1fr] gap-4 text-sm pl-8'>
+                          <div className='text-neutral-700 dark:text-neutral-300'>
+                            {formatDate(donation.created_at)}
+                          </div>
+                          <div className='text-neutral-700 dark:text-neutral-300'>
+                            {formatCurrency(
+                              donation.amount_cents,
+                              subscription.currency_code
+                            )}
+                          </div>
+                          <div>
+                            <span
+                              className={`text-xs px-2 py-1 rounded capitalize inline-block ${
+                                donation.status === 'completed'
+                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                  : donation.status === 'pending'
+                                    ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                              }`}>
+                              {donation.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      <CancelSubscriptionModal
+        open={cancelModalOpen}
+        onOpenChange={setCancelModalOpen}
+        subscription={selectedSubscription}
+        onConfirm={handleCancelConfirm}
+        isLoading={cancelMutation.isPending}
+      />
     </div>
   );
 };

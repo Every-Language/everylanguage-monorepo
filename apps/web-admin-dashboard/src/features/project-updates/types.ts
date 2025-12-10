@@ -12,6 +12,15 @@ export type ProjectUpdateMediaRow =
 export type ProjectUpdateMediaInsert =
   Database['public']['Tables']['project_updates_media']['Insert'];
 
+export interface ProjectUpdateMedia {
+  id: string;
+  media_type: 'image' | 'video';
+  object_key: string;
+  original_filename: string | null;
+  display_order: number;
+  thumbnail_object_key: string | null;
+}
+
 export interface ProjectUpdateWithProject extends ProjectUpdateRow {
   project?: {
     id: string;
@@ -26,6 +35,7 @@ export interface ProjectUpdateWithProject extends ProjectUpdateRow {
       name: string;
     } | null;
   } | null;
+  media?: ProjectUpdateMedia[];
 }
 
 export interface CreateProjectUpdateData {
@@ -34,6 +44,12 @@ export interface CreateProjectUpdateData {
   body: string;
   publish_status: Database['public']['Enums']['publish_status'];
   created_by?: string | null;
+}
+
+export interface UpdateProjectUpdateData {
+  title: string;
+  body: string;
+  publish_status: Database['public']['Enums']['publish_status'];
 }
 
 export interface ProjectUpdateFilters {

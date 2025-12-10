@@ -147,6 +147,7 @@ export interface DonationWithAllocations extends Donation {
     last_name: string;
     email: string;
   } | null;
+  is_manual?: boolean;
 }
 
 export interface AllocationWithDetails extends DonationAllocation {

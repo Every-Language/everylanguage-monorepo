@@ -14,6 +14,8 @@ export const env = {
   NEXT_PUBLIC_ENABLE_DONATE: process.env.NEXT_PUBLIC_ENABLE_DONATE !== 'false',
   NEXT_PUBLIC_ENABLE_PROJECTS:
     process.env.NEXT_PUBLIC_ENABLE_PROJECTS !== 'false',
+  NEXT_PUBLIC_ENABLE_OPERATIONS:
+    process.env.NEXT_PUBLIC_ENABLE_OPERATIONS !== 'false',
 } as const;
 
 // Server-side only environment variables

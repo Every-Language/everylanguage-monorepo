@@ -111,15 +111,36 @@ enabled = true
 site_url = "https://everylanguage.com"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 additional_redirect_urls = [
-  # Production URLs
+  # Production URLs - Partnership Portal (Map)
   "https://map.everylanguage.com/api/auth/confirm",
+  "https://map.everylanguage.com/reset-password",
   "https://map.everylanguage.com/**",
-  # Dev/staging URLs
-  "https://everylanguage-map-portal.vercel.app/api/auth/confirm",
-  "https://everylanguage-map-portal.vercel.app/**",
-  # Local development URLs
+  # Production URLs - Admin Portal
+  "https://admin.everylanguage.com/reset-password",
+  "https://admin.everylanguage.com/**",
+  # Production URLs - Projects Dashboard
+  "https://projects.everylanguage.com/reset-password",
+  "https://projects.everylanguage.com/**",
+  # Dev/staging URLs - Partnership Portal (Map)
+  "https://everylanguage-partnership-dashboard.vercel.app/api/auth/confirm",
+  "https://everylanguage-partnership-dashboard.vercel.app/reset-password",
+  "https://everylanguage-partnership-dashboard.vercel.app/**",
+  # Dev/staging URLs - Admin Portal
+  "https://everylanguage-admin-dashboard.vercel.app/reset-password",
+  "https://everylanguage-admin-dashboard.vercel.app/**",
+  # Dev/staging URLs - Projects Dashboard
+  "https://everylanguage-project-dashboard.vercel.app/reset-password",
+  "https://everylanguage-project-dashboard.vercel.app/**",
+  # Local development URLs - Partnership Portal (Map)
   "http://localhost:5173/api/auth/confirm",
+  "http://localhost:5173/reset-password",
   "http://localhost:5173/**",
+  # Local development URLs - Admin Portal
+  "http://localhost:5174/reset-password",
+  "http://localhost:5174/**",
+  # Local development URLs - Projects Dashboard
+  "http://localhost:5175/reset-password",
+  "http://localhost:5175/**",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -178,6 +199,8 @@ otp_length = 6
 otp_expiry = 3600
 
 # Production-ready SMTP server configuration
+# Note: In production, SMTP is enabled via Supabase dashboard/environment variables
+# Resend API key is already configured in production
 [auth.email.smtp]
 enabled = false  # Set to true in production
 host = "smtp.resend.com"

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Card,
@@ -18,6 +18,7 @@ import { normalizeSupabaseRelation } from '@/shared/utils/supabase-helpers';
 
 export const PartnerOrgProjectsPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
+  const router = useRouter();
 
   const { data: projects, isLoading: projectsLoading } = usePartnerOrgProjects(
     orgId!
@@ -115,14 +116,17 @@ export const PartnerOrgProjectsPage: React.FC = () => {
           return (
             <Card
               key={project.project_id}
-              className='border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-shadow'>
+              className='border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-accent-300 dark:hover:border-accent-700 hover:scale-[1.02] transition-all duration-200 cursor-pointer'
+              onClick={() =>
+                router.push(
+                  `/dashboard/partner-org/${orgId}/project/${project.project_id}`
+                )
+              }>
               <CardHeader>
                 <CardTitle className='text-lg'>
-                  <Link
-                    href={`/dashboard/partner-org/${orgId}/project/${project.project_id}`}
-                    className='text-accent-600 hover:text-accent-700 dark:text-accent-600 dark:hover:text-accent-500'>
+                  <span className='text-accent-600 hover:text-accent-700 dark:text-accent-600 dark:hover:text-accent-500'>
                     {project.language_name}
-                  </Link>
+                  </span>
                 </CardTitle>
                 <div className='text-sm text-neutral-500 dark:text-neutral-400'>
                   {project.project_name}
