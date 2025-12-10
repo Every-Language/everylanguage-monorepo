@@ -76,7 +76,7 @@ const PROJECTS_LEGEND_ITEMS: LegendItem[] = [
  */
 export const MapColorLegend: React.FC<MapColorLegendProps> = ({
   activeLayers,
-  selectionMode,
+  selectionMode: _selectionMode,
   globalListeningGradient,
 }) => {
   const hasActiveLayers = Object.values(activeLayers).some(Boolean);
