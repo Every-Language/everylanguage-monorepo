@@ -14,6 +14,7 @@ interface MapColorLegendProps {
 interface LegendItem {
   color: string;
   label: string;
+  isGradient?: boolean;
 }
 
 /**
