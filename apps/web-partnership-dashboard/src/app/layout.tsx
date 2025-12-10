@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import './globals.css';
 import { Providers } from './providers';
+import { SandboxBanner } from '@/shared/components/SandboxBanner';
 
 export const metadata: Metadata = {
   title: 'Every Language Partnership Dashboard',
@@ -48,7 +49,10 @@ export default function RootLayout({
             `,
           }}
         />
-        <Providers>{children}</Providers>
+        <Providers>
+          <SandboxBanner />
+          {children}
+        </Providers>
       </body>
     </html>
   );

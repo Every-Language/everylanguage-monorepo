@@ -10,6 +10,7 @@ import { ThemeProvider } from './shared/theme';
 import { ProtectedRoute, LoginPage, UnauthorizedPage } from './features/auth';
 import { AppLayout } from './shared/components/Layout';
 import { AppHeader } from './shared/components/AppHeader';
+import { SandboxBanner } from './shared/components/SandboxBanner';
 
 // Lazy load pages
 const DashboardPage = lazy(() =>
@@ -129,6 +130,7 @@ function ProtectedLayout() {
 function App() {
   return (
     <ThemeProvider>
+      <SandboxBanner />
       <Router>
         <Routes>
           {/* Public routes */}

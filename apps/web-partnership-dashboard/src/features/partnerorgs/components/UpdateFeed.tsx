@@ -38,7 +38,7 @@ export const UpdateFeed: React.FC<UpdateFeedProps> = ({
             {showViewAll && viewAllHref && (
               <Link
                 href={viewAllHref}
-                className='text-sm text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300'>
+                className='text-sm text-accent-600 hover:text-accent-700 dark:text-primary-400 dark:hover:text-primary-300'>
                 View all →
               </Link>
             )}

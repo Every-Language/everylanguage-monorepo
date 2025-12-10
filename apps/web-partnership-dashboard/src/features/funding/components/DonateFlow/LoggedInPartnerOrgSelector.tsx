@@ -361,7 +361,7 @@ export const LoggedInPartnerOrgSelector: React.FC<
         <RadioGroupItem
           value='organization'
           id='donate-organization'
-          label='Donate as an organization'
+          label='Donate on behalf of an organization'
         />
       </RadioGroup>
 
