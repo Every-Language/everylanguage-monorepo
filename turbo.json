@@ -40,6 +40,12 @@
     "test": {
       "outputs": []
     },
+    "test:run": {
+      "outputs": []
+    },
+    "test:coverage": {
+      "outputs": ["coverage/**"]
+    },
     "type-check": {
       "dependsOn": ["^build"],
       "outputs": []

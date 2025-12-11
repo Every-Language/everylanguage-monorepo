@@ -276,9 +276,28 @@ export const languageAvailabilityApi = {
             .filter((r): r is Region => r !== null && r.deleted_at === null) ||
           [];
 
-        // Fetch population from mv_language_stats
-        const { data: statsData, error: statsError } = await supabase
-          .from('mv_language_stats')
+        // Fetch population from language_stats
+        // Note: Using type assertion because types haven't been regenerated after migration rename
+        // TODO: Regenerate types after migration 20251226000090_rename_stats_materialized_views.sql
+        type LanguageStatsRow = { population?: number };
+        const { data: statsDataRaw, error: statsError } = await (
+          supabase as unknown as {
+            from: (table: string) => {
+              select: (columns: string) => {
+                eq: (
+                  column: string,
+                  value: string
+                ) => {
+                  maybeSingle: () => Promise<{
+                    data: LanguageStatsRow | null;
+                    error: unknown;
+                  }>;
+                };
+              };
+            };
+          }
+        )
+          .from('language_stats')
           .select('population')
           .eq('language_entity_id', language.id)
           .maybeSingle();
@@ -290,6 +309,7 @@ export const languageAvailabilityApi = {
           );
         }
 
+        const statsData = statsDataRaw as LanguageStatsRow | null;
         const population: number | null =
           statsData?.population !== undefined ? statsData.population : null;
 
@@ -504,10 +524,41 @@ export const languageAvailabilityApi = {
           })
         );
 
+        // Fetch regions for all languages in parallel
+        const enrichedData = await Promise.all(
+          transformedData.map(async language => {
+            // Fetch regions for this language
+            const { data: regionsData, error: regionsError } = await supabase
+              .from('language_entities_regions')
+              .select('regions(*)')
+              .eq('language_entity_id', language.id)
+              .is('deleted_at', null);
+
+            if (regionsError) {
+              console.error(
+                `Error fetching regions for language ${language.id}:`,
+                regionsError
+              );
+            }
+
+            const regions: Region[] =
+              regionsData
+                ?.map(item => item.regions as Region)
+                .filter(
+                  (r): r is Region => r !== null && r.deleted_at === null
+                ) || [];
+
+            return {
+              ...language,
+              regions,
+            };
+          })
+        );
+
         const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
         return {
-          data: transformedData,
+          data: enrichedData,
           count: totalCount || 0,
           page,
           pageSize,
@@ -588,8 +639,38 @@ export const languageAvailabilityApi = {
       })
     );
 
+    // Fetch regions for all languages in parallel
+    const enrichedData = await Promise.all(
+      transformedData.map(async language => {
+        // Fetch regions for this language
+        const { data: regionsData, error: regionsError } = await supabase
+          .from('language_entities_regions')
+          .select('regions(*)')
+          .eq('language_entity_id', language.id)
+          .is('deleted_at', null);
+
+        if (regionsError) {
+          console.error(
+            `Error fetching regions for language ${language.id}:`,
+            regionsError
+          );
+        }
+
+        const regions: Region[] =
+          regionsData
+            ?.map(item => item.regions as Region)
+            .filter((r): r is Region => r !== null && r.deleted_at === null) ||
+          [];
+
+        return {
+          ...language,
+          regions,
+        };
+      })
+    );
+
     return {
-      data: transformedData,
+      data: enrichedData,
       count: totalCount,
       page,
       pageSize,

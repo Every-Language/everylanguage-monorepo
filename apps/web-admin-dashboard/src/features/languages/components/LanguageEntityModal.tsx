@@ -4,6 +4,11 @@ import { languagesApi } from '../api/languagesApi';
 import type { LanguageEntityWithRegions } from '@/types';
 import { X, Edit, Save, Plus, Trash2, Search } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
+import { LocationPicker } from '@/shared/components/LocationPicker/LocationPicker';
+import {
+  extractLocation,
+  locationToPostGIS,
+} from '@/shared/utils/locationUtils';
 
 interface LanguageEntityModalProps {
   entity: LanguageEntityWithRegions;
@@ -81,6 +86,12 @@ export function LanguageEntityModal({
     queryFn: () => languagesApi.fetchLanguageEntitySources(entity.id),
   });
 
+  // Fetch full region data with location, dominance_level, location_source
+  const { data: fullRegionData } = useQuery({
+    queryKey: ['language-entity-regions-full', entity.id],
+    queryFn: () => languagesApi.fetchLanguageEntityRegions(entity.id),
+  });
+
   // Local states for editing
   const [localProperties, setLocalProperties] = useState<
     Array<{ key: string; value: string }>
@@ -100,6 +111,17 @@ export function LanguageEntityModal({
       external_id_type: string;
     }>
   >([]);
+
+  // Local state for regions with full junction table data
+  type RegionEntry = {
+    id: string; // language_entities_regions.id
+    region_id: string;
+    region: { id: string; name: string; level: string } | null;
+    dominance_level: number | null;
+    location_source: string;
+    location: { lat: number; lng: number } | null;
+  };
+  const [localRegions, setLocalRegions] = useState<RegionEntry[]>([]);
 
   // Sync local states with fetched data
   useEffect(() => {
@@ -121,6 +143,28 @@ export function LanguageEntityModal({
       setSelectedRegionIds(fullEntity.regions.map(r => r.id));
     }
   }, [fullEntity]);
+
+  // Sync local regions with fetched full region data
+  useEffect(() => {
+    if (fullRegionData) {
+      setLocalRegions(
+        fullRegionData.map(ler => ({
+          id: ler.id,
+          region_id: ler.region_id,
+          region: ler.region
+            ? {
+                id: ler.region.id,
+                name: ler.region.name,
+                level: ler.region.level,
+              }
+            : null,
+          dominance_level: ler.dominance_level ?? null,
+          location_source: ler.location_source || '',
+          location: extractLocation(ler.location),
+        }))
+      );
+    }
+  }, [fullRegionData]);
 
   // Sync local sources with fetched data
   useEffect(() => {
@@ -246,15 +290,49 @@ export function LanguageEntityModal({
 
   const updateRegionsMutation = useMutation({
     mutationFn: async () => {
-      await languagesApi.updateLanguageEntityRegions(
-        entity.id,
-        selectedRegionIds
-      );
+      // Get existing region link IDs
+      const existingLinks = fullRegionData || [];
+      const existingLinkIds = new Set(existingLinks.map(l => l.id));
+      const localLinkIds = new Set(localRegions.map(r => r.id));
+
+      // Find links to delete (exist in DB but not in local state)
+      const toDelete = existingLinks.filter(link => !localLinkIds.has(link.id));
+      for (const link of toDelete) {
+        await languagesApi.deleteLanguageEntityRegion(link.id);
+      }
+
+      // Update existing links or create new ones
+      for (const localRegion of localRegions) {
+        if (localRegion.region_id) {
+          if (existingLinkIds.has(localRegion.id)) {
+            // Update existing link
+            await languagesApi.updateLanguageEntityRegion(localRegion.id, {
+              dominance_level: localRegion.dominance_level,
+              location: locationToPostGIS(localRegion.location),
+              location_source: localRegion.location_source.trim() || null,
+            });
+          } else {
+            // Create new link
+            await languagesApi.createLanguageEntityRegion(
+              entity.id,
+              localRegion.region_id,
+              {
+                dominance_level: localRegion.dominance_level,
+                location: locationToPostGIS(localRegion.location),
+                location_source: localRegion.location_source.trim() || null,
+              }
+            );
+          }
+        }
+      }
     },
     onSuccess: async () => {
       // Refetch and wait for fresh data
       await queryClient.refetchQueries({
         queryKey: ['language-entity-full', entity.id],
+      });
+      await queryClient.refetchQueries({
+        queryKey: ['language-entity-regions-full', entity.id],
       });
       await queryClient.refetchQueries({ queryKey: ['language-entities'] });
       setEditingRegions(false);
@@ -335,9 +413,46 @@ export function LanguageEntityModal({
   const handleToggleRegion = (regionId: string) => {
     if (selectedRegionIds.includes(regionId)) {
       setSelectedRegionIds(selectedRegionIds.filter(id => id !== regionId));
+      // Remove from local regions
+      setLocalRegions(localRegions.filter(r => r.region_id !== regionId));
     } else {
       setSelectedRegionIds([...selectedRegionIds, regionId]);
+      // Add to local regions
+      const region = searchedRegions?.find(r => r.id === regionId);
+      if (region) {
+        setLocalRegions([
+          ...localRegions,
+          {
+            id: '', // Will be set when created
+            region_id: regionId,
+            region: {
+              id: region.id,
+              name: region.name,
+              level: region.level,
+            },
+            dominance_level: 1.0,
+            location_source: '',
+            location: null,
+          },
+        ]);
+      }
     }
+  };
+
+  const handleUpdateRegion = (
+    regionId: string,
+    updates: Partial<Omit<RegionEntry, 'id' | 'region_id' | 'region'>>
+  ) => {
+    setLocalRegions(
+      localRegions.map(r =>
+        r.region_id === regionId ? { ...r, ...updates } : r
+      )
+    );
+  };
+
+  const handleRemoveRegion = (regionId: string) => {
+    setLocalRegions(localRegions.filter(r => r.region_id !== regionId));
+    setSelectedRegionIds(selectedRegionIds.filter(id => id !== regionId));
   };
 
   const handleAddSource = () => {
@@ -954,31 +1069,90 @@ export function LanguageEntityModal({
                       </div>
                     )}
 
-                  {/* Selected regions */}
+                  {/* Selected regions with details */}
                   <div>
                     <p className='text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2'>
-                      Selected Regions ({selectedRegionIds.length})
+                      Selected Regions ({localRegions.length})
                     </p>
-                    <div className='space-y-2 max-h-60 overflow-y-auto'>
-                      {fullEntity?.regions
-                        ?.filter(r => selectedRegionIds.includes(r.id))
-                        .map(region => (
-                          <div
-                            key={region.id}
-                            className='flex items-center justify-between p-2 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700'>
-                            <span className='text-sm text-neutral-900 dark:text-neutral-100'>
-                              {region.name}
+                    <div className='space-y-4'>
+                      {localRegions.map(localRegion => (
+                        <div
+                          key={localRegion.region_id}
+                          className='border border-neutral-300 dark:border-neutral-700 rounded-lg p-4 space-y-4 bg-white dark:bg-neutral-800'>
+                          <div className='flex items-center justify-between'>
+                            <h4 className='text-sm font-medium text-neutral-700 dark:text-neutral-300'>
+                              {localRegion.region?.name || 'Unknown Region'}
                               <span className='text-xs text-neutral-500 dark:text-neutral-400 ml-2'>
-                                ({region.level})
+                                ({localRegion.region?.level || 'unknown'})
                               </span>
-                            </span>
+                            </h4>
                             <button
-                              onClick={() => handleToggleRegion(region.id)}
+                              onClick={() =>
+                                handleRemoveRegion(localRegion.region_id)
+                              }
                               className='p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors'>
                               <X className='h-4 w-4' />
                             </button>
                           </div>
-                        ))}
+
+                          {/* Dominance Level */}
+                          <div>
+                            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                              Dominance Level
+                            </label>
+                            <input
+                              type='number'
+                              min='0'
+                              max='1'
+                              step='0.1'
+                              value={localRegion.dominance_level ?? ''}
+                              onChange={e =>
+                                handleUpdateRegion(localRegion.region_id, {
+                                  dominance_level:
+                                    e.target.value === ''
+                                      ? null
+                                      : parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                            />
+                          </div>
+
+                          {/* Location Source */}
+                          <div>
+                            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                              Location Source
+                            </label>
+                            <input
+                              type='text'
+                              value={localRegion.location_source}
+                              onChange={e =>
+                                handleUpdateRegion(localRegion.region_id, {
+                                  location_source: e.target.value,
+                                })
+                              }
+                              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                              placeholder='e.g., Manual, GRN'
+                            />
+                          </div>
+
+                          {/* Location Picker */}
+                          <div>
+                            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                              Location
+                            </label>
+                            <LocationPicker
+                              location={localRegion.location}
+                              onLocationChange={location =>
+                                handleUpdateRegion(localRegion.region_id, {
+                                  location,
+                                })
+                              }
+                              height='300px'
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
@@ -987,6 +1161,25 @@ export function LanguageEntityModal({
                       onClick={() => {
                         setEditingRegions(false);
                         setRegionSearchQuery('');
+                        // Reset local regions to fetched data
+                        if (fullRegionData) {
+                          setLocalRegions(
+                            fullRegionData.map(ler => ({
+                              id: ler.id,
+                              region_id: ler.region_id,
+                              region: ler.region
+                                ? {
+                                    id: ler.region.id,
+                                    name: ler.region.name,
+                                    level: ler.region.level,
+                                  }
+                                : null,
+                              dominance_level: ler.dominance_level ?? null,
+                              location_source: ler.location_source || '',
+                              location: extractLocation(ler.location),
+                            }))
+                          );
+                        }
                         if (fullEntity?.regions) {
                           setSelectedRegionIds(
                             fullEntity.regions.map(r => r.id)

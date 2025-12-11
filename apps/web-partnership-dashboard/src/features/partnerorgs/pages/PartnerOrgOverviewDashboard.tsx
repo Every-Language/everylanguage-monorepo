@@ -60,13 +60,19 @@ export const PartnerOrgOverviewDashboard: React.FC = () => {
           title='Number of Projects'
           value={projectsCount}
           animated={true}
+          viewAllHref={`/dashboard/partner-org/${orgId}/projects`}
         />
         <StatsCard
           title='Listening Sessions'
           value={sessionsCount}
           animated={true}
+          viewAllHref={`/dashboard/partner-org/${orgId}/distribution`}
         />
-        <StatsCard title='Total Donations' value={totalDonations} />
+        <StatsCard
+          title='Total Donations'
+          value={totalDonations}
+          viewAllHref={`/dashboard/partner-org/${orgId}/donations`}
+        />
       </div>
 
       {/* Recent Updates Feed */}

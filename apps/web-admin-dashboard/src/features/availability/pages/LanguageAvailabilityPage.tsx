@@ -64,6 +64,19 @@ function DraftLanguageRow({
           <span className='text-neutral-400 dark:text-neutral-600'>—</span>
         )}
       </td>
+      <td className='px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400'>
+        {language.regions && language.regions.length > 0 ? (
+          <div className='flex flex-col gap-1'>
+            {language.regions.map((region, idx) => (
+              <span key={idx} className='text-xs'>
+                {region.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className='text-neutral-400 dark:text-neutral-600'>—</span>
+        )}
+      </td>
       <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
         <button
           onClick={() => {
@@ -843,6 +856,9 @@ export function LanguageAvailabilityPage() {
                           <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                             External IDs
                           </th>
+                          <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
+                            Regions
+                          </th>
                           <th className='px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
                             Action
                           </th>
@@ -862,7 +878,7 @@ export function LanguageAvailabilityPage() {
                         ) : (
                           <tr>
                             <td
-                              colSpan={4}
+                              colSpan={5}
                               className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                               {addModalDebouncedSearch ||
                               addModalDebouncedExternalIdSearch

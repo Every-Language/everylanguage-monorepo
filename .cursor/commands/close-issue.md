@@ -4,7 +4,7 @@ Finalize issue implementation with comprehensive checks, commit final changes, a
 
 ## Context
 
-- **Quality Gate**: `pnpm run checkall` must pass (lint, format, type-check, tests, build, validation, security audit)
+- **Quality Gate**: `pnpm run ci:pr` must pass (lint, format, type-check, tests, build, validation, security audit)
 - **PR Workflow**: Draft PR → Ready for Review → Approved → Merged
 - **Linear Integration**: PR status updates automatically sync to Linear
 
@@ -64,20 +64,23 @@ git diff --name-only develop...HEAD | xargs grep -n "TODO\|FIXME" || true
 Run full quality gate:
 
 ```bash
-pnpm run checkall
+pnpm run ci:pr
 ```
 
-This executes:
+This executes (mirroring CI workflow):
 
-1. **Lint** (`pnpm run lint`)
-2. **Format check** (`pnpm run format:check`)
-3. **Type check** (`pnpm run type-check`)
-4. **Tests** (`pnpm run test`)
-5. **Build** (`pnpm run build`)
-6. **App-specific validation** (`pnpm run app-bible:validate`)
-7. **Security audit** (`pnpm run security:audit`)
+1. **Format check** (all workspaces)
+2. **Lint** (all workspaces)
+3. **Type check** (all workspaces)
+4. **Tests with coverage** (all workspaces)
+5. **Build** (all workspaces)
+6. **Backend checks** (if backend changed: Supabase start, tests, Deno type-check)
+7. **App-specific validation** (App Bible managed workflow check)
+8. **Security audit** (`pnpm audit --audit-level high`)
 
-**If `checkall` fails:**
+**Note**: The script automatically detects which parts of the monorepo changed and only runs relevant checks.
+
+\*\*If `ci:pr` fails:
 
 Iterate on fixes:
 
@@ -100,12 +103,12 @@ ref {issue_id}"
 git push
 ```
 
-4. Re-run `pnpm run checkall`
+4. Re-run `pnpm run ci:pr`
 5. Repeat until all checks pass
 
 **Maximum Iterations:**
 
-- If after 5 iterations `checkall` still fails, ask user:
+- If after 5 iterations `ci:pr` still fails, ask user:
   - "Quality checks still failing after 5 attempts. Options: (1) Continue fixing, (2) Show me errors for manual review, (3) Skip specific check (not recommended)"
 
 ### 5. Check for Merge Conflicts
@@ -127,7 +130,7 @@ git merge origin/develop
 # If conflicts, notify user and pause for resolution
 ```
 
-- After merge, re-run `checkall`
+- After merge, re-run `ci:pr`
 
 ### 6. Commit Final Changes
 
@@ -226,7 +229,7 @@ Show success message:
 
 ## Success Criteria
 
-- `pnpm run checkall` passes (all quality gates)
+- `pnpm run ci:pr` passes (all quality gates)
 - All uncommitted changes committed
 - No TODO comments unresolved (or intentional ones documented)
 - No merge conflicts with `develop`
@@ -238,7 +241,7 @@ Show success message:
 ## Error Handling
 
 - If on `develop`/`main`: Prevent execution, guide user to feature branch
-- If `checkall` fails: Iterate on fixes up to 5 times, then ask user
+- If `ci:pr` fails: Iterate on fixes up to 5 times, then ask user
 - If merge conflicts: Pause and ask user to resolve
 - If PR not found: Verify branch has associated PR
 - If Linear API fails: Continue workflow, warn user to check Linear manually
@@ -247,7 +250,7 @@ Show success message:
 
 ## Important Notes
 
-- **Never skip quality checks**: `checkall` must pass
+- **Never skip quality checks**: `ci:pr` must pass
 - **No direct merges**: PR must go through review process
 - **Linear integration**: Should be automatic, but verify
 - **Breaking changes**: Must be documented in PR description

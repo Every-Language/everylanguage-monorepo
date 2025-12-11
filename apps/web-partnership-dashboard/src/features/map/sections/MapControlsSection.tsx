@@ -3,6 +3,7 @@ import { type LayerKey } from '../components/LayerToggles';
 import { GlobalListeningSettingsSection } from './GlobalListeningSettingsSection';
 import { LanguagesSettingsSection } from './LanguagesSettingsSection';
 import { PeopleGroupsSettingsSection } from './PeopleGroupsSettingsSection';
+import { MapColorLegend } from '../components/MapColorLegend';
 import { useProjectsEnabled } from '@/shared/hooks/useFeatureFlags';
 import type { ColorGradient } from '../analytics/types';
 import type { SelectionMode } from '../inspector/state/inspectorStore';
@@ -154,6 +155,15 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
             />
           </div>
         )}
+      <MapColorLegend
+        activeLayers={value}
+        selectionMode={selectionMode}
+        globalListeningGradient={
+          value.globalListening
+            ? globalListeningSettings?.colorGradient
+            : undefined
+        }
+      />
     </div>
   );
 
