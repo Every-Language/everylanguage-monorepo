@@ -9,6 +9,10 @@ import type {
   UpdatePartnerOrgData,
 } from '../types';
 import { X, Edit, Save } from 'lucide-react';
+import { donationsApi } from '../../donations/api/donationsApi';
+import type { DonationWithAllocations } from '@/types';
+import { UserModal } from './UserModal';
+import type { UserWithRoles } from '../types';
 
 interface PartnerOrgModalProps {
   org: PartnerOrgWithUsers | null;
@@ -26,6 +30,7 @@ export const PartnerOrgModal: React.FC<PartnerOrgModalProps> = ({
   const [isClosing, setIsClosing] = useState(false);
   const [isEntering, setIsEntering] = useState(true);
   const [editingInfo, setEditingInfo] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [formData, setFormData] = useState<
     CreatePartnerOrgData | UpdatePartnerOrgData
   >({
@@ -440,8 +445,283 @@ export const PartnerOrgModal: React.FC<PartnerOrgModalProps> = ({
               </div>
             </section>
           )}
+
+          {/* Donations */}
+          {currentOrg && (
+            <section>
+              <PartnerOrgDonationsSection partnerOrgId={currentOrg.id} />
+            </section>
+          )}
         </div>
       </div>
+
+      {/* User Modal */}
+      {selectedUser && (
+        <UserModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          onUpdate={() => {
+            refetchOrg();
+            onUpdate?.();
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+interface PartnerOrgDonationsSectionProps {
+  partnerOrgId: string;
+}
+
+const PartnerOrgDonationsSection: React.FC<PartnerOrgDonationsSectionProps> = ({
+  partnerOrgId,
+}) => {
+  const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
+
+  const { data: donationsData, isLoading } = useQuery({
+    queryKey: ['partner-org-donations', partnerOrgId],
+    queryFn: () =>
+      donationsApi.fetchDonations({
+        page: 1,
+        pageSize: 1000, // Get all donations for this partner org
+      }),
+  });
+
+  const donations = (donationsData?.data || []).filter(
+    (donation: DonationWithAllocations) =>
+      donation.partner_org_id === partnerOrgId
+  );
+
+  const formatCurrency = (cents: number, currencyCode: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode,
+    }).format(cents / 100);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const badges: Record<string, { label: string; className: string }> = {
+      draft: {
+        label: 'Draft',
+        className:
+          'bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300',
+      },
+      pending: {
+        label: 'Pending',
+        className:
+          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
+      },
+      processing: {
+        label: 'Processing',
+        className:
+          'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+      },
+      completed: {
+        label: 'Completed',
+        className:
+          'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
+      },
+      failed: {
+        label: 'Failed',
+        className:
+          'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+      },
+      cancelled: {
+        label: 'Cancelled',
+        className:
+          'bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300',
+      },
+    };
+
+    const badge = badges[status] || badges.pending;
+    return (
+      <span
+        className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>
+        {badge.label}
+      </span>
+    );
+  };
+
+  const getIntentDisplay = (donation: DonationWithAllocations) => {
+    switch (donation.intent_type) {
+      case 'language':
+        return donation.intent_language?.name || 'Language';
+      case 'region':
+        return donation.intent_region?.name || 'Region';
+      case 'operation':
+        return donation.intent_operation?.name || 'Operation';
+      case 'unrestricted':
+        return 'Unrestricted';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const handleUserClick = async (userId: string | null) => {
+    if (!userId) return;
+    const { usersApi } = await import('../api/usersApi');
+    try {
+      const user = await usersApi.fetchUserById(userId);
+      if (user) {
+        setSelectedUser(user);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+    }
+  };
+
+  return (
+    <div>
+      <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
+        Donations
+      </h3>
+      <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg'>
+        {isLoading ? (
+          <div className='text-center py-4'>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 dark:border-primary-500 mx-auto'></div>
+            <p className='mt-2 text-sm text-neutral-500 dark:text-neutral-400'>
+              Loading donations...
+            </p>
+          </div>
+        ) : donations.length === 0 ? (
+          <p className='text-sm text-neutral-500 dark:text-neutral-400'>
+            No donations found for this partner organization.
+          </p>
+        ) : (
+          <div className='overflow-x-auto'>
+            <table className='min-w-full divide-y divide-neutral-200 dark:divide-neutral-800'>
+              <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
+                <tr>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Date
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Status
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Source
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    User
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Amount
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Intent
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Allocations
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='divide-y divide-neutral-200 dark:divide-neutral-800'>
+                {donations
+                  .sort(
+                    (a, b) =>
+                      new Date(b.created_at).getTime() -
+                      new Date(a.created_at).getTime()
+                  )
+                  .map(donation => (
+                    <tr key={donation.id}>
+                      <td className='px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                        {formatDate(donation.created_at)}
+                      </td>
+                      <td className='px-4 py-2 text-sm'>
+                        {getStatusBadge(donation.status)}
+                      </td>
+                      <td className='px-4 py-2 text-sm'>
+                        {donation.is_manual ? (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'>
+                            Manual
+                          </span>
+                        ) : (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'>
+                            Stripe
+                          </span>
+                        )}
+                      </td>
+                      <td className='px-4 py-2 text-sm text-neutral-900 dark:text-neutral-100'>
+                        {donation.user ? (
+                          <button
+                            onClick={() => handleUserClick(donation.user_id)}
+                            className='text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'>
+                            <div className='font-medium'>
+                              {donation.user.first_name}{' '}
+                              {donation.user.last_name}
+                            </div>
+                            <div className='text-xs text-neutral-500 dark:text-neutral-400'>
+                              {donation.user.email}
+                            </div>
+                          </button>
+                        ) : (
+                          <span className='text-neutral-500 dark:text-neutral-400'>
+                            —
+                          </span>
+                        )}
+                      </td>
+                      <td className='px-4 py-2 text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                        {formatCurrency(
+                          donation.amount_cents,
+                          donation.currency_code
+                        )}
+                      </td>
+                      <td className='px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                        <div>
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300'>
+                            {donation.intent_type}
+                          </span>
+                        </div>
+                        <div className='mt-1 text-xs'>
+                          {getIntentDisplay(donation)}
+                        </div>
+                      </td>
+                      <td className='px-4 py-2 text-sm text-neutral-900 dark:text-neutral-100'>
+                        {donation.allocations &&
+                        donation.allocations.length > 0 ? (
+                          <div>
+                            <div className='text-sm font-medium'>
+                              Total:{' '}
+                              {formatCurrency(
+                                donation.allocated_cents,
+                                donation.currency_code
+                              )}
+                            </div>
+                            <div className='text-xs text-neutral-500 dark:text-neutral-400'>
+                              Remaining:{' '}
+                              {formatCurrency(
+                                donation.remaining_cents,
+                                donation.currency_code
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className='text-neutral-500 dark:text-neutral-400 italic'>
+                            No allocations
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* User Modal */}
+      {selectedUser && (
+        <UserModal user={selectedUser} onClose={() => setSelectedUser(null)} />
+      )}
     </div>
   );
 };
