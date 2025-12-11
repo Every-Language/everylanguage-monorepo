@@ -62,9 +62,29 @@ export const languagesApi = {
             entity_parent_id: string | null;
             alias_name: string;
             alias_similarity_score: number;
-            region_count?: number;
-          }) =>
-            ({
+            regions?: Array<{
+              region_id: string;
+              region_name: string;
+              region_level: string;
+              region_parent_id: string | null;
+              dominance_level: number | null;
+            }> | null;
+          }) => {
+            // Extract regions from JSONB array
+            const regionsArray = Array.isArray(result.regions)
+              ? result.regions
+              : [];
+            const regions: Region[] = regionsArray.map(r => ({
+              id: r.region_id,
+              name: r.region_name,
+              level: r.region_level,
+              parent_id: r.region_parent_id,
+              created_at: '',
+              updated_at: '',
+              deleted_at: null,
+            }));
+
+            return {
               id: result.entity_id,
               name: result.entity_name,
               level: result.entity_level as
@@ -73,12 +93,14 @@ export const languagesApi = {
                 | 'dialect'
                 | 'mother_tongue',
               parent_id: result.entity_parent_id,
-              region_count: result.region_count || 0,
+              regions,
+              region_count: regions.length,
               created_at: '',
               updated_at: '',
               deleted_at: null,
               funding_status: null,
-            }) as LanguageEntityWithRegions
+            } as LanguageEntityWithRegions;
+          }
         );
 
         // Apply external_id search filter if provided
@@ -191,7 +213,7 @@ export const languagesApi = {
       .select(
         `
         *,
-        language_entities_regions(region_id),
+        language_entities_regions(regions(*)),
         language_funding(*)
       `,
         { count: 'exact' }
@@ -238,7 +260,8 @@ export const languagesApi = {
 
         const transformedData = paginatedData.map(item => ({
           ...item,
-          region_count: 0, // By definition, these have no regions
+          regions: [], // By definition, these have no regions
+          region_count: 0,
           language_funding:
             Array.isArray(item.language_funding) &&
             item.language_funding.length > 0
@@ -288,16 +311,32 @@ export const languagesApi = {
 
     if (error) throw error;
 
-    const transformedData = (data || []).map(item => ({
-      ...item,
-      region_count: Array.isArray(item.language_entities_regions)
-        ? item.language_entities_regions.length
-        : 0,
-      language_funding:
-        Array.isArray(item.language_funding) && item.language_funding.length > 0
-          ? item.language_funding[0]
-          : null,
-    })) as LanguageEntityWithRegions[];
+    const transformedData = (data || []).map(item => {
+      // Extract regions from language_entities_regions
+      // Supabase returns: language_entities_regions: [{ regions: {...} }, ...]
+      const regions: Region[] = Array.isArray(item.language_entities_regions)
+        ? item.language_entities_regions
+            .map((ler: { regions: Region | null }) => {
+              // Handle nested regions - regions is a single object (not array) from Supabase
+              if (!ler || !ler.regions) return null;
+              // Check if region is deleted
+              if (ler.regions.deleted_at) return null;
+              return ler.regions;
+            })
+            .filter((r: Region | null): r is Region => r !== null)
+        : [];
+
+      return {
+        ...item,
+        regions,
+        region_count: regions.length,
+        language_funding:
+          Array.isArray(item.language_funding) &&
+          item.language_funding.length > 0
+            ? item.language_funding[0]
+            : null,
+      };
+    }) as LanguageEntityWithRegions[];
 
     return {
       data: transformedData,
