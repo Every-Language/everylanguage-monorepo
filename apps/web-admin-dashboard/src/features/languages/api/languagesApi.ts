@@ -62,27 +62,38 @@ export const languagesApi = {
             entity_parent_id: string | null;
             alias_name: string;
             alias_similarity_score: number;
-            regions?: Array<{
-              region_id: string;
-              region_name: string;
-              region_level: string;
-              region_parent_id: string | null;
-              dominance_level: number | null;
-            }> | null;
+            regions: unknown; // RPC returns Json type
           }) => {
             // Extract regions from JSONB array
             const regionsArray = Array.isArray(result.regions)
-              ? result.regions
+              ? (result.regions as Array<{
+                  region_id: string;
+                  region_name: string;
+                  region_level: string;
+                  region_parent_id: string | null;
+                  dominance_level: number | null;
+                }>)
               : [];
-            const regions: Region[] = regionsArray.map(r => ({
-              id: r.region_id,
-              name: r.region_name,
-              level: r.region_level,
-              parent_id: r.region_parent_id,
-              created_at: '',
-              updated_at: '',
-              deleted_at: null,
-            }));
+            const regions: Region[] = regionsArray.map(
+              r =>
+                ({
+                  id: r.region_id,
+                  name: r.region_name,
+                  level: r.region_level,
+                  parent_id: r.region_parent_id,
+                  created_at: '',
+                  updated_at: '',
+                  deleted_at: null,
+                  bbox_max_lat: null,
+                  bbox_max_lon: null,
+                  bbox_min_lat: null,
+                  bbox_min_lon: null,
+                  boundary: null,
+                  boundary_simplified: null,
+                  center_lat: null,
+                  center_lon: null,
+                }) as Region
+            );
 
             return {
               id: result.entity_id,
