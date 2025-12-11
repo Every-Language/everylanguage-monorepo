@@ -12,6 +12,7 @@
   "scripts": {
     "ci:push": "node scripts/ci-local.js push",
     "ci:pr": "node scripts/ci-local.js pr",
+    "ci:commit": "prettier --write . && turbo run lint && turbo run type-check && turbo run test",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",

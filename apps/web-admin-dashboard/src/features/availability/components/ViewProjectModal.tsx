@@ -22,6 +22,7 @@ interface ViewProjectModalProps {
 }
 
 type ProjectStatus = Database['public']['Enums']['project_status'];
+type PublishStatus = Database['public']['Enums']['publish_status'];
 
 export function ViewProjectModal({
   projectId,
@@ -49,6 +50,7 @@ export function ViewProjectModal({
   );
   const [projectStatus, setProjectStatus] =
     useState<ProjectStatus>('precreated');
+  const [publishStatus, setPublishStatus] = useState<PublishStatus>('pending');
 
   // Search states for language/region selection
   const [targetLanguageSearch, setTargetLanguageSearch] = useState('');
@@ -88,6 +90,7 @@ export function ViewProjectModal({
       setRegionId(project.region_id);
       setLocation(project.location || null);
       setProjectStatus(project.project_status);
+      setPublishStatus(project.publish_status || 'pending');
     }
   }, [project]);
 
@@ -140,6 +143,7 @@ export function ViewProjectModal({
         region_id: regionId,
         location,
         project_status: projectStatus,
+        publish_status: publishStatus,
       });
     },
     onSuccess: () => {
@@ -736,6 +740,29 @@ export function ViewProjectModal({
                   </>
                 )}
               </div>
+              <div>
+                {editingInfo ? (
+                  <Select
+                    label='Publish Status'
+                    value={publishStatus}
+                    onValueChange={value =>
+                      setPublishStatus(value as PublishStatus)
+                    }>
+                    <SelectItem value='pending'>Pending</SelectItem>
+                    <SelectItem value='published'>Published</SelectItem>
+                    <SelectItem value='archived'>Archived</SelectItem>
+                  </Select>
+                ) : (
+                  <>
+                    <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                      Publish Status
+                    </label>
+                    <span className='inline-block px-2 py-1 rounded text-xs font-medium bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-300 capitalize'>
+                      {project.publish_status || 'pending'}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </section>
 
@@ -1112,6 +1139,7 @@ export function ViewProjectModal({
                   setRegionId(project.region_id);
                   setLocation(project.location || null);
                   setProjectStatus(project.project_status);
+                  setPublishStatus(project.publish_status || 'pending');
                 }}
                 className='px-4 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                 Cancel

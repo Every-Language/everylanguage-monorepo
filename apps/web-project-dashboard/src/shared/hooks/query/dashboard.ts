@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../services/supabase';
 import { useBibleProjectDashboard } from './bible-structure';
 import type { TableRow, SupabaseError } from './base-hooks';
+import { extractLocation } from '../../utils/locationUtils';
 
 export type User = TableRow<'users'>;
 export type UserRole = TableRow<'user_roles'>;
@@ -38,6 +39,9 @@ export interface ProjectMetadata {
   sourceLanguage: { id: string; name: string } | null;
   targetLanguage: { id: string; name: string } | null;
   region: { id: string; name: string } | null;
+  location: { lat: number; lng: number } | null;
+  projectStatus: string | null;
+  publishStatus: string | null;
   users: Array<{
     user: User;
     roles: string[];
@@ -434,6 +438,9 @@ export function useProjectMetadata(projectId: string | null) {
           description,
           created_at,
           updated_at,
+          location,
+          project_status,
+          publish_status,
           source_language_entity:language_entities!source_language_entity_id(
             id,
             name
@@ -454,12 +461,18 @@ export function useProjectMetadata(projectId: string | null) {
       if (error) throw error;
       if (!projectWithRelations) throw new Error('Project not found');
 
+      // Extract location from PostGIS geometry
+      const location = extractLocation(projectWithRelations.location);
+
       return {
         name: projectWithRelations.name,
         description: projectWithRelations.description || '',
         sourceLanguage: projectWithRelations.source_language_entity || null,
         targetLanguage: projectWithRelations.target_language_entity || null,
         region: projectWithRelations.region || null,
+        location,
+        projectStatus: projectWithRelations.project_status || null,
+        publishStatus: projectWithRelations.publish_status || null,
         users: users || [],
         createdAt: projectWithRelations.created_at || null,
         updatedAt: projectWithRelations.updated_at || null,

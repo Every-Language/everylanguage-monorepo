@@ -30,7 +30,11 @@ export function useUpdateProject() {
       console.error('Failed to update project:', error);
     },
     // Invalidate related queries when a project is updated
-    invalidateQueries: [['projects'], ['projects', 'by-user']],
+    invalidateQueries: [
+      ['projects'],
+      ['projects', 'by-user'],
+      ['project-metadata'],
+    ],
   });
 }
 

@@ -983,6 +983,9 @@ importers:
       lucide-react:
         specifier: ^0.525.0
         version: 0.525.0(react@19.2.1)
+      maplibre-gl:
+        specifier: ^5.7.1
+        version: 5.14.0
       openai:
         specifier: ^4.89.0
         version: 4.104.0(ws@8.18.3)(zod@4.1.13)
@@ -1004,6 +1007,9 @@ importers:
       react-hook-form:
         specifier: ^7.60.0
         version: 7.68.0(react@19.2.1)
+      react-map-gl:
+        specifier: ^8.0.4
+        version: 8.1.0(maplibre-gl@5.14.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-phone-number-input:
         specifier: ^3.4.12
         version: 3.4.14(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
