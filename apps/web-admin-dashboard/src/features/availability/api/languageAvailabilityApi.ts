@@ -524,10 +524,41 @@ export const languageAvailabilityApi = {
           })
         );
 
+        // Fetch regions for all languages in parallel
+        const enrichedData = await Promise.all(
+          transformedData.map(async language => {
+            // Fetch regions for this language
+            const { data: regionsData, error: regionsError } = await supabase
+              .from('language_entities_regions')
+              .select('regions(*)')
+              .eq('language_entity_id', language.id)
+              .is('deleted_at', null);
+
+            if (regionsError) {
+              console.error(
+                `Error fetching regions for language ${language.id}:`,
+                regionsError
+              );
+            }
+
+            const regions: Region[] =
+              regionsData
+                ?.map(item => item.regions as Region)
+                .filter(
+                  (r): r is Region => r !== null && r.deleted_at === null
+                ) || [];
+
+            return {
+              ...language,
+              regions,
+            };
+          })
+        );
+
         const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
         return {
-          data: transformedData,
+          data: enrichedData,
           count: totalCount || 0,
           page,
           pageSize,
@@ -608,8 +639,38 @@ export const languageAvailabilityApi = {
       })
     );
 
+    // Fetch regions for all languages in parallel
+    const enrichedData = await Promise.all(
+      transformedData.map(async language => {
+        // Fetch regions for this language
+        const { data: regionsData, error: regionsError } = await supabase
+          .from('language_entities_regions')
+          .select('regions(*)')
+          .eq('language_entity_id', language.id)
+          .is('deleted_at', null);
+
+        if (regionsError) {
+          console.error(
+            `Error fetching regions for language ${language.id}:`,
+            regionsError
+          );
+        }
+
+        const regions: Region[] =
+          regionsData
+            ?.map(item => item.regions as Region)
+            .filter((r): r is Region => r !== null && r.deleted_at === null) ||
+          [];
+
+        return {
+          ...language,
+          regions,
+        };
+      })
+    );
+
     return {
-      data: transformedData,
+      data: enrichedData,
       count: totalCount,
       page,
       pageSize,
