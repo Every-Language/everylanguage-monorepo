@@ -33,6 +33,11 @@ const DonationsPage = lazy(() =>
     default: m.DonationsPage,
   }))
 );
+const SubscriptionsPage = lazy(() =>
+  import('./features/subscriptions/pages/SubscriptionsPage').then(m => ({
+    default: m.SubscriptionsPage,
+  }))
+);
 const LanguageAvailabilityPage = lazy(() =>
   import('./features/availability/pages/LanguageAvailabilityPage').then(m => ({
     default: m.LanguageAvailabilityPage,
@@ -143,6 +148,10 @@ function App() {
             <Route path='/languages' element={<LanguagesPage />} />
             <Route path='/regions' element={<RegionsPage />} />
             <Route path='/donations' element={<DonationsPage />} />
+            <Route
+              path='/budgets/subscriptions'
+              element={<SubscriptionsPage />}
+            />
             <Route
               path='/budgets/languages'
               element={<LanguageAvailabilityPage />}

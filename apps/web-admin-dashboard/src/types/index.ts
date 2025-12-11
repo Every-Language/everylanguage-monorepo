@@ -161,3 +161,24 @@ export interface AllocationWithDetails extends DonationAllocation {
     email: string;
   } | null;
 }
+
+// Subscription types
+export type Subscription = Tables<'subscriptions'>;
+export type SubscriptionStatus = Enums<'subscription_status'>;
+
+export interface SubscriptionWithDonations extends Subscription {
+  donations: DonationWithAllocations[];
+  intent_language?: LanguageEntity | null;
+  intent_region?: Region | null;
+  intent_operation?: Operation | null;
+  partner_org?: {
+    id: string;
+    name: string;
+  } | null;
+  user?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null;
+}
