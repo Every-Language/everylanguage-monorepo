@@ -277,7 +277,26 @@ export const languageAvailabilityApi = {
           [];
 
         // Fetch population from language_stats
-        const { data: statsData, error: statsError } = await supabase
+        // Note: Using type assertion because types haven't been regenerated after migration rename
+        // TODO: Regenerate types after migration 20251226000090_rename_stats_materialized_views.sql
+        type LanguageStatsRow = { population?: number };
+        const { data: statsDataRaw, error: statsError } = await (
+          supabase as unknown as {
+            from: (table: string) => {
+              select: (columns: string) => {
+                eq: (
+                  column: string,
+                  value: string
+                ) => {
+                  maybeSingle: () => Promise<{
+                    data: LanguageStatsRow | null;
+                    error: unknown;
+                  }>;
+                };
+              };
+            };
+          }
+        )
           .from('language_stats')
           .select('population')
           .eq('language_entity_id', language.id)
@@ -290,6 +309,7 @@ export const languageAvailabilityApi = {
           );
         }
 
+        const statsData = statsDataRaw as LanguageStatsRow | null;
         const population: number | null =
           statsData?.population !== undefined ? statsData.population : null;
 

@@ -54,7 +54,7 @@ export function ProjectUpdatesPage() {
       }),
   });
 
-  const updates = response?.data || [];
+  const updates = useMemo(() => response?.data || [], [response?.data]);
   const totalCount = response?.count || 0;
   const totalPages = response?.totalPages || 1;
 
