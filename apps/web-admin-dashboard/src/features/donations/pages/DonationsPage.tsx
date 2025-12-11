@@ -731,9 +731,12 @@ export function DonationsPage() {
                       type='button'
                       onClick={() => handleSort('donor')}
                       className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
-                      Donor
+                      User
                       <span>{getSortIndicator('donor')}</span>
                     </button>
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    Partner Org
                   </th>
                   <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
                     <button
@@ -798,7 +801,14 @@ export function DonationsPage() {
                               {donation.user.email}
                             </div>
                           </button>
-                        ) : donation.partner_org ? (
+                        ) : (
+                          <span className='text-neutral-500 dark:text-neutral-400'>
+                            —
+                          </span>
+                        )}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
+                        {donation.partner_org ? (
                           <button
                             onClick={e =>
                               handlePartnerOrgClick(e, donation.partner_org_id)
@@ -813,7 +823,7 @@ export function DonationsPage() {
                           </button>
                         ) : (
                           <span className='text-neutral-500 dark:text-neutral-400'>
-                            Unknown
+                            —
                           </span>
                         )}
                       </td>

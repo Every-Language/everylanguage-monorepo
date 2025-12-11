@@ -13,6 +13,9 @@ import { donationsApi } from '../../donations/api/donationsApi';
 import type { DonationWithAllocations } from '@/types';
 import { UserModal } from './UserModal';
 import type { UserWithRoles } from '../types';
+import { subscriptionsApi } from '../../subscriptions/api/subscriptionsApi';
+import type { SubscriptionWithDonations } from '@/types';
+import { ViewSubscriptionModal } from '../../subscriptions/components/ViewSubscriptionModal';
 
 interface PartnerOrgModalProps {
   org: PartnerOrgWithUsers | null;
@@ -452,6 +455,13 @@ export const PartnerOrgModal: React.FC<PartnerOrgModalProps> = ({
               <PartnerOrgDonationsSection partnerOrgId={currentOrg.id} />
             </section>
           )}
+
+          {/* Subscriptions */}
+          {currentOrg && (
+            <section>
+              <PartnerOrgSubscriptionsSection partnerOrgId={currentOrg.id} />
+            </section>
+          )}
         </div>
       </div>
 
@@ -717,6 +727,277 @@ const PartnerOrgDonationsSection: React.FC<PartnerOrgDonationsSectionProps> = ({
           </div>
         )}
       </div>
+
+      {/* User Modal */}
+      {selectedUser && (
+        <UserModal user={selectedUser} onClose={() => setSelectedUser(null)} />
+      )}
+    </div>
+  );
+};
+
+interface PartnerOrgSubscriptionsSectionProps {
+  partnerOrgId: string;
+}
+
+const PartnerOrgSubscriptionsSection: React.FC<
+  PartnerOrgSubscriptionsSectionProps
+> = ({ partnerOrgId }) => {
+  const [selectedSubscription, setSelectedSubscription] =
+    useState<SubscriptionWithDonations | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
+
+  const { data: subscriptionsData, isLoading } = useQuery({
+    queryKey: ['partner-org-subscriptions', partnerOrgId],
+    queryFn: () =>
+      subscriptionsApi.fetchSubscriptions({
+        page: 1,
+        pageSize: 1000, // Get all subscriptions for this partner org
+      }),
+  });
+
+  const subscriptions = (subscriptionsData?.data || []).filter(
+    (subscription: SubscriptionWithDonations) =>
+      subscription.partner_org_id === partnerOrgId
+  );
+
+  const formatCurrency = (cents: number, currencyCode: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode,
+    }).format(cents / 100);
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const badges: Record<string, { label: string; className: string }> = {
+      active: {
+        label: 'Active',
+        className:
+          'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
+      },
+      cancelled: {
+        label: 'Cancelled',
+        className:
+          'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+      },
+      past_due: {
+        label: 'Past Due',
+        className:
+          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
+      },
+      incomplete: {
+        label: 'Incomplete',
+        className:
+          'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+      },
+      incomplete_expired: {
+        label: 'Incomplete Expired',
+        className:
+          'bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300',
+      },
+      trialing: {
+        label: 'Trialing',
+        className:
+          'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300',
+      },
+      unpaid: {
+        label: 'Unpaid',
+        className:
+          'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300',
+      },
+    };
+
+    const badge = badges[status] || badges.active;
+    return (
+      <span
+        className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>
+        {badge.label}
+      </span>
+    );
+  };
+
+  const getIntentDisplay = (subscription: SubscriptionWithDonations) => {
+    switch (subscription.intent_type) {
+      case 'language':
+        return subscription.intent_language?.name || 'Language';
+      case 'region':
+        return subscription.intent_region?.name || 'Region';
+      case 'operation':
+        return subscription.intent_operation?.name || 'Operation';
+      case 'unrestricted':
+        return 'Unrestricted';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const formatAmountFrequency = (
+    subscription: SubscriptionWithDonations
+  ): string => {
+    const amount = formatCurrency(
+      subscription.amount_cents,
+      subscription.currency_code
+    );
+    const interval = subscription.interval_type === 'month' ? 'month' : 'year';
+    return `${amount} / ${interval}`;
+  };
+
+  const handleSubscriptionClick = async (
+    subscription: SubscriptionWithDonations
+  ) => {
+    try {
+      const fullSubscription = await subscriptionsApi.fetchSubscriptionById(
+        subscription.id
+      );
+      if (fullSubscription) {
+        setSelectedSubscription(fullSubscription);
+      }
+    } catch (error) {
+      console.error('Failed to fetch subscription:', error);
+    }
+  };
+
+  const handleUserClick = async (userId: string | null) => {
+    if (!userId) return;
+    const { usersApi } = await import('../api/usersApi');
+    try {
+      const user = await usersApi.fetchUserById(userId);
+      if (user) {
+        setSelectedUser(user);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+    }
+  };
+
+  return (
+    <div>
+      <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
+        Subscriptions
+      </h3>
+      <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg'>
+        {isLoading ? (
+          <div className='text-center py-4'>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 dark:border-primary-500 mx-auto'></div>
+            <p className='mt-2 text-sm text-neutral-500 dark:text-neutral-400'>
+              Loading subscriptions...
+            </p>
+          </div>
+        ) : subscriptions.length === 0 ? (
+          <p className='text-sm text-neutral-500 dark:text-neutral-400'>
+            No subscriptions found for this partner organization.
+          </p>
+        ) : (
+          <div className='overflow-x-auto'>
+            <table className='min-w-full divide-y divide-neutral-200 dark:divide-neutral-800'>
+              <thead className='bg-neutral-50 dark:bg-neutral-800/50'>
+                <tr>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Date
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Status
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    User
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Amount
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Next Payment
+                  </th>
+                  <th className='px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                    Intent
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='divide-y divide-neutral-200 dark:divide-neutral-800'>
+                {subscriptions
+                  .sort(
+                    (
+                      a: SubscriptionWithDonations,
+                      b: SubscriptionWithDonations
+                    ) =>
+                      new Date(b.created_at).getTime() -
+                      new Date(a.created_at).getTime()
+                  )
+                  .map((subscription: SubscriptionWithDonations) => (
+                    <tr
+                      key={subscription.id}
+                      className='hover:bg-neutral-100 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
+                      onClick={() => handleSubscriptionClick(subscription)}>
+                      <td className='px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                        {formatDate(subscription.created_at)}
+                      </td>
+                      <td className='px-4 py-2 text-sm'>
+                        {getStatusBadge(subscription.status)}
+                      </td>
+                      <td className='px-4 py-2 text-sm text-neutral-900 dark:text-neutral-100'>
+                        {subscription.user ? (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleUserClick(subscription.user_id);
+                            }}
+                            className='text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'>
+                            <div className='font-medium'>
+                              {subscription.user.first_name}{' '}
+                              {subscription.user.last_name}
+                            </div>
+                            <div className='text-xs text-neutral-500 dark:text-neutral-400'>
+                              {subscription.user.email}
+                            </div>
+                          </button>
+                        ) : (
+                          <span className='text-neutral-500 dark:text-neutral-400'>
+                            —
+                          </span>
+                        )}
+                      </td>
+                      <td className='px-4 py-2 text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                        {formatAmountFrequency(subscription)}
+                      </td>
+                      <td className='px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                        {formatDate(subscription.current_period_end)}
+                      </td>
+                      <td className='px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                        <div>
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300'>
+                            {subscription.intent_type}
+                          </span>
+                        </div>
+                        <div className='mt-1 text-xs'>
+                          {getIntentDisplay(subscription)}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Subscription Modal */}
+      {selectedSubscription && (
+        <ViewSubscriptionModal
+          subscription={selectedSubscription}
+          onClose={() => setSelectedSubscription(null)}
+          onUpdate={() => {
+            // Refetch subscriptions
+          }}
+        />
+      )}
 
       {/* User Modal */}
       {selectedUser && (
