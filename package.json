@@ -10,7 +10,8 @@
     "supabase"
   ],
   "scripts": {
-    "checkall": "turbo run lint && turbo run type-check && turbo run build",
+    "ci:push": "node scripts/ci-local.js push",
+    "ci:pr": "node scripts/ci-local.js pr",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",

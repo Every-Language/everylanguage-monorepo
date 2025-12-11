@@ -6,7 +6,7 @@ export interface PeopleGroupWithLocation {
   longitude: number;
   latitude: number;
   peop_name_in_country: string | null;
-  // Stats from mv_people_group_stats
+  // Stats from people_groups_stats
   population: number | null;
   language_count: number | null;
   country_count: number | null;

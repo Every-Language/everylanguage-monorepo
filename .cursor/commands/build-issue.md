@@ -193,24 +193,27 @@ pnpm run test          # Run tests
 Run full quality check:
 
 ```bash
-pnpm run checkall
+pnpm run ci:pr
 ```
 
-This runs:
+This runs (mirroring CI workflow):
 
-- Lint
-- Format check
-- Type check
-- Tests
-- Build
-- App-specific validations
+- Format check (all workspaces)
+- Lint (all workspaces)
+- Type check (all workspaces)
+- Tests with coverage (all workspaces)
+- Build (all workspaces)
+- Backend checks (if backend changed: Supabase start, tests, Deno type-check)
+- App-specific validations (App Bible managed workflow check)
 - Security audit
 
-**If `checkall` fails:**
+**Note**: The script automatically detects which parts of the monorepo changed and only runs relevant checks.
+
+\*\*If `ci:pr` fails:
 
 - Identify which step failed
 - Fix the issues
-- Re-run `checkall`
+- Re-run `ci:pr`
 - Repeat until it passes
 
 ### 9. Update Documentation (if needed)
@@ -330,7 +333,7 @@ Provide summary:
 - If Linear API fails: Continue with cached/manual context
 - If tests fail: Debug, fix, and re-run
 - If breaking changes needed: Get user approval first
-- If `checkall` fails: Identify and fix issues iteratively
+- If `ci:pr` fails: Identify and fix issues iteratively
 - If library usage unclear: Use context7 MCP for documentation
 
 ## Important Notes

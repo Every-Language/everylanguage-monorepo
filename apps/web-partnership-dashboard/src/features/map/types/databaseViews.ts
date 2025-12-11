@@ -3,7 +3,7 @@
  * that are not included in the generated Supabase types
  */
 
-// Type for mv_people_group_stats materialized view
+// Type for people_groups_stats materialized view
 export type PeopleGroupStats = {
   people_group_id: string;
   people_id3: number;
@@ -61,7 +61,7 @@ export type GrnLanguageCache = {
   updated_at: string;
 };
 
-// Type for mv_region_stats materialized view
+// Type for region_stats materialized view
 export type JPCountryCache = {
   region_id: string;
   rog3: string | null;
@@ -95,7 +95,7 @@ export type JPCountryCache = {
   languages_full_bible?: number | null;
 };
 
-// Type for mv_language_stats materialized view
+// Type for language_stats materialized view
 export type JPLanguageCache = {
   language_entity_id: string;
   iso639_3: string | null;
