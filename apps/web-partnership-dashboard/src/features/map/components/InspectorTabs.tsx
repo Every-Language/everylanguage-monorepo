@@ -1,12 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/shared/services/supabase';
-import { Input } from '@/shared/components/ui/Input';
-import { Search as SearchIcon } from 'lucide-react';
-import Fuse from 'fuse.js';
 import { type MapSelection } from '../inspector/state/inspectorStore';
 import {
   MapControlsSection,
@@ -23,19 +17,16 @@ import {
 } from '@/features/global-stats/hooks/useGlobalStats';
 import { CollapsibleSection } from './shared/CollapsibleSection';
 import { LinkedEntitiesSection } from '../sections/LinkedEntitiesSection';
-import { JPLanguageStatsSection } from '../sections/JPLanguageStatsSection';
-import { JPCountryStatsSection } from '../sections/JPCountryStatsSection';
+import { LanguageStatsSection } from '../sections/LanguageStatsSection';
+import { CountryStatsSection } from '../sections/CountryStatsSection';
 import { PeopleGroupStatsSection } from '../sections/PeopleGroupStatsSection';
 import { HierarchySection } from '../sections/HierarchySection';
-import { GRNLanguageSampleSection } from '../sections/GRNLanguageSampleSection';
-import { GRNGospelResourcesSection } from '../sections/GRNGospelResourcesSection';
-import { PeopleGroupCard } from '@/shared/components/PeopleGroupCard';
-import { useSelection } from '../inspector/state/inspectorStore';
-import { usePeopleGroupIdFromPeopleId3 } from '../hooks/usePeopleGroupIdFromPeopleId3';
-import {
-  useJPPeopleGroupsByLanguageCache,
-  useJPPeopleGroupsByCountryCache,
-} from '../hooks/useJPPeopleGroupsCache';
+import { LanguageSampleSection } from '../sections/LanguageSampleSection';
+import { GospelRecordingsSection } from '../sections/GospelRecordingsSection';
+import { LinksSection } from '../sections/LinksSection';
+import { useLanguagesRegionsStats } from '../hooks/useLanguagesRegionsStats';
+import { useLanguagesPeopleGroupsStats } from '../hooks/useLanguagesPeopleGroupsStats';
+import { usePeopleGroupsRegionsStats } from '../hooks/usePeopleGroupsRegionsStats';
 import { useProjectsEnabled } from '@/shared/hooks/useFeatureFlags';
 
 type InspectorTab =
@@ -44,159 +35,6 @@ type InspectorTab =
   | 'language-data'
   | 'region-data'
   | 'people-groups-data';
-
-/**
- * Component for displaying linked people groups with search functionality
- */
-const LinkedPeopleGroupsSection: React.FC<{
-  parentId: string;
-  parentType: 'language_entity' | 'region';
-}> = ({ parentId, parentType }) => {
-  const [query, setQuery] = React.useState('');
-
-  // Fetch people groups based on parent type - call both hooks unconditionally
-  // Removed sorting to optimize loading performance
-  const isLanguage = parentType === 'language_entity';
-  const languagePeopleGroupsQuery = useJPPeopleGroupsByLanguageCache(
-    isLanguage ? parentId : '',
-    1,
-    1000
-  );
-  const countryPeopleGroupsQuery = useJPPeopleGroupsByCountryCache(
-    !isLanguage ? parentId : '',
-    1,
-    1000
-  );
-
-  const peopleGroupsQuery = isLanguage
-    ? languagePeopleGroupsQuery
-    : countryPeopleGroupsQuery;
-  const { data: peopleGroupsData, isLoading } = peopleGroupsQuery;
-
-  // Ensure peopleGroups is always an array
-  const peopleGroups = Array.isArray(peopleGroupsData) ? peopleGroupsData : [];
-
-  // Filter people groups by search query
-  const filtered = React.useMemo(() => {
-    if (!query.trim()) return peopleGroups;
-    // Additional safety check before creating Fuse instance
-    if (!Array.isArray(peopleGroups) || peopleGroups.length === 0) {
-      return [];
-    }
-    const fuse = new Fuse(peopleGroups, {
-      keys: ['PeopNameInCountry', 'PrimaryLanguageName'],
-      threshold: 0.35,
-      ignoreLocation: true,
-    });
-    return fuse.search(query.trim()).map(r => r.item);
-  }, [peopleGroups, query]);
-
-  if (isLoading) {
-    return (
-      <div className='space-y-2'>
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className='h-16 bg-neutral-200 rounded animate-pulse' />
-        ))}
-      </div>
-    );
-  }
-
-  if (peopleGroups.length === 0) {
-    return (
-      <div className='text-sm text-neutral-500'>No linked people groups</div>
-    );
-  }
-
-  return (
-    <div className='space-y-2'>
-      <Input
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        placeholder='Search people groups…'
-        leftIcon={<SearchIcon className='w-4 h-4' />}
-        size='sm'
-      />
-      <div className='grid grid-cols-1 gap-2'>
-        {filtered.map((group, index) => (
-          <PeopleGroupCardWrapper
-            key={`${group.PeopleID3}-${group.RegionName || group.Ctry || index}`}
-            group={group}
-            type={isLanguage ? 'language' : 'region'}
-            entityId={parentId}
-          />
-        ))}
-      </div>
-      {peopleGroups.length > 0 && filtered.length === 0 && (
-        <div className='text-sm text-neutral-500'>
-          No people groups match "{query}"
-        </div>
-      )}
-    </div>
-  );
-};
-
-/**
- * Wrapper component to handle PeopleID3 to people_group_id mapping
- */
-const PeopleGroupCardWrapper: React.FC<{
-  group: any; // JPPeopleGroup type
-  type: 'language' | 'region';
-  entityId: string;
-}> = ({ group, type, entityId }) => {
-  const router = useRouter();
-  const selection = useSelection();
-
-  // Map PeopleID3 to people_group_id
-  const { data: peopleGroupId } = usePeopleGroupIdFromPeopleId3(
-    group.PeopleID3
-  );
-
-  if (!peopleGroupId) {
-    // Fallback display if mapping fails
-    return (
-      <div className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-3 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors'>
-        <div className='grid grid-cols-12 gap-2 items-start'>
-          <div className='col-span-5'>
-            <div className='font-medium text-sm leading-tight'>
-              {group.PeopNameInCountry}
-            </div>
-            {group.PrimaryLanguageName && (
-              <div className='text-xs text-neutral-500 mt-0.5'>
-                {group.PrimaryLanguageName}
-              </div>
-            )}
-          </div>
-          <div className='col-span-3 text-right text-sm'>
-            {typeof group.Population === 'number'
-              ? group.Population.toLocaleString()
-              : 'N/A'}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <PeopleGroupCard
-      peopleGroupId={peopleGroupId}
-      contextualRegionId={type === 'region' ? entityId : undefined}
-      showName={true}
-      showPopulation={true}
-      showPrimaryLanguageBibleStatus={true}
-      showLanguageCount={false}
-      showCountryCount={false}
-      showImage={false}
-      showRegionName={true}
-      regionName={group.RegionName || group.Ctry || undefined}
-      isSelected={
-        selection?.kind === 'people_group' && selection.id === peopleGroupId
-      }
-      onClick={id => {
-        router.push(`/map/people-group/${encodeURIComponent(id)}`);
-      }}
-    />
-  );
-};
 
 interface InspectorTabsProps {
   selection: MapSelection | null;
@@ -299,155 +137,28 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
     enabled: projectsEnabled,
   });
 
-  // Check for linked entities to determine tab visibility
-  const linkedLanguagesQuery = useQuery({
-    queryKey: [
-      selection?.kind === 'region'
-        ? 'region-linked-languages-check'
-        : selection?.kind === 'people_group'
-          ? 'people-group-linked-languages-check'
-          : 'no-query',
-      selection?.id,
-    ],
-    queryFn: async () => {
-      if (
-        !selection ||
-        (selection.kind !== 'region' && selection.kind !== 'people_group')
-      ) {
-        return [];
-      }
-      // Use the same logic as LinkedEntitiesSection
-      if (selection.kind === 'people_group') {
-        const { data: pgrData, error: pgrError } = await supabase
-          .from('people_groups_regions')
-          .select('id')
-          .eq('people_group_id', selection.id)
-          .is('deleted_at', null);
-        if (pgrError) throw pgrError;
-        const pgrIds = (pgrData ?? []).map((r: { id: string }) => r.id);
-        if (pgrIds.length === 0) return [];
-        const { data, error } = await supabase
-          .from('language_entities_people_groups_regions')
-          .select('language_entity_id')
-          .in('people_group_region_id', pgrIds)
-          .limit(1); // Just check if any exist
-        if (error) throw error;
-        return data ?? [];
-      } else {
-        const { data, error } = await (supabase as any).rpc(
-          'list_languages_for_region',
-          {
-            p_region_id: selection.id,
-            p_include_descendants: true,
-          }
-        );
-        if (error) {
-          console.error(
-            '[InspectorTabs] Error fetching linked languages for region:',
-            error
-          );
-          throw error;
-        }
-        // Just check if any exist - return first one for count check
-        return (data ?? []).slice(0, 1);
-      }
-    },
-    enabled:
-      !!selection &&
-      (selection.kind === 'region' || selection.kind === 'people_group'),
-    staleTime: 10 * 60 * 1000,
+  // Use contextual hooks to check for linked entities (same as LinkedEntitiesSection)
+  // Call all hooks unconditionally to follow React hooks rules
+  const languagesRegionsStatsForLanguage = useLanguagesRegionsStats({
+    languageEntityId:
+      selection?.kind === 'language_entity' ? selection.id : null,
   });
-
-  const linkedRegionsQuery = useQuery({
-    queryKey: [
-      selection?.kind === 'language_entity'
-        ? 'language-linked-regions-check'
-        : selection?.kind === 'people_group'
-          ? 'people-group-linked-regions-check'
-          : 'no-query',
-      selection?.id,
-    ],
-    queryFn: async () => {
-      if (
-        !selection ||
-        (selection.kind !== 'language_entity' &&
-          selection.kind !== 'people_group')
-      ) {
-        return [];
-      }
-      if (selection.kind === 'people_group') {
-        const { data, error } = await supabase
-          .from('people_groups_regions_stats')
-          .select('region_id')
-          .eq('people_group_id', selection.id)
-          .limit(1); // Just check if any exist
-        if (error) throw error;
-        return data ?? [];
-      } else {
-        const { data, error } = await supabase
-          .from('language_entities_regions')
-          .select('regions(id, name, level)')
-          .eq('language_entity_id', selection.id)
-          .not('regions', 'is', null);
-        if (error) {
-          console.error(
-            '[InspectorTabs] Error fetching linked regions:',
-            error
-          );
-          throw error;
-        }
-        // Filter out null regions and return first one for count check
-        const validData = (data ?? [])
-          .filter((r: any) => r.regions !== null && r.regions.id !== null)
-          .slice(0, 1);
-        return validData;
-      }
-    },
-    enabled:
-      !!selection &&
-      (selection.kind === 'language_entity' ||
-        selection.kind === 'people_group'),
-    staleTime: 10 * 60 * 1000,
+  const languagesRegionsStatsForRegion = useLanguagesRegionsStats({
+    regionId: selection?.kind === 'region' ? selection.id : null,
   });
-
-  const linkedPeopleGroupsQuery = useQuery({
-    queryKey: [
-      selection?.kind === 'language_entity'
-        ? 'language-linked-people-groups-check'
-        : selection?.kind === 'region'
-          ? 'region-linked-people-groups-check'
-          : 'no-query',
-      selection?.id,
-    ],
-    queryFn: async () => {
-      if (
-        !selection ||
-        (selection.kind !== 'language_entity' && selection.kind !== 'region')
-      ) {
-        return [];
-      }
-      // Check if any people groups exist using database views
-      if (selection.kind === 'language_entity') {
-        const { data } = await supabase
-          .from('languages_people_groups_stats')
-          .select('people_group_id')
-          .eq('language_entity_id', selection.id)
-          .limit(1);
-        return data ?? [];
-      } else {
-        // For regions, check people_groups_regions_stats
-        const { data } = await supabase
-          .from('people_groups_regions_stats')
-          .select('people_group_id')
-          .eq('region_id', selection.id)
-          .limit(1);
-        return data ?? [];
-      }
-    },
-    enabled:
-      !!selection &&
-      (selection.kind === 'language_entity' || selection.kind === 'region'),
-    staleTime: 10 * 60 * 1000,
+  const languagesPeopleGroupsStatsForLanguage = useLanguagesPeopleGroupsStats({
+    languageEntityId:
+      selection?.kind === 'language_entity' ? selection.id : null,
+  });
+  const languagesPeopleGroupsStatsForPeopleGroup =
+    useLanguagesPeopleGroupsStats({
+      peopleGroupId: selection?.kind === 'people_group' ? selection.id : null,
+    });
+  const peopleGroupsRegionsStatsForPeopleGroup = usePeopleGroupsRegionsStats({
+    peopleGroupId: selection?.kind === 'people_group' ? selection.id : null,
+  });
+  const peopleGroupsRegionsStatsForRegion = usePeopleGroupsRegionsStats({
+    regionId: selection?.kind === 'region' ? selection.id : null,
   });
 
   // Determine which tabs should be visible and their order based on selection mode
@@ -461,28 +172,52 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
     if (selection.kind === 'language_entity') {
       // Language mode: Map controls, Language, Regions, People groups
       visibleTabs.push('language-data');
-      if ((linkedRegionsQuery.data?.length ?? 0) > 0) {
+      // Check if regions exist using contextual view
+      if (
+        languagesRegionsStatsForLanguage.data &&
+        languagesRegionsStatsForLanguage.data.length > 0
+      ) {
         visibleTabs.push('region-data');
       }
-      if ((linkedPeopleGroupsQuery.data?.length ?? 0) > 0) {
+      // Check if people groups exist using contextual view
+      if (
+        languagesPeopleGroupsStatsForLanguage.data &&
+        languagesPeopleGroupsStatsForLanguage.data.length > 0
+      ) {
         visibleTabs.push('people-groups-data');
       }
     } else if (selection.kind === 'region') {
       // Region mode: Map controls, Country, Languages, People groups
       visibleTabs.push('region-data');
-      if ((linkedLanguagesQuery.data?.length ?? 0) > 0) {
+      // Check if languages exist using contextual view
+      if (
+        languagesRegionsStatsForRegion.data &&
+        languagesRegionsStatsForRegion.data.length > 0
+      ) {
         visibleTabs.push('language-data');
       }
-      if ((linkedPeopleGroupsQuery.data?.length ?? 0) > 0) {
+      // Check if people groups exist using contextual view
+      if (
+        peopleGroupsRegionsStatsForRegion.data &&
+        peopleGroupsRegionsStatsForRegion.data.length > 0
+      ) {
         visibleTabs.push('people-groups-data');
       }
     } else if (selection.kind === 'people_group') {
       // People groups mode: Map controls, People group, Languages, Countries
       visibleTabs.push('people-groups-data');
-      if ((linkedLanguagesQuery.data?.length ?? 0) > 0) {
+      // Check if languages exist using contextual view
+      if (
+        languagesPeopleGroupsStatsForPeopleGroup.data &&
+        languagesPeopleGroupsStatsForPeopleGroup.data.length > 0
+      ) {
         visibleTabs.push('language-data');
       }
-      if ((linkedRegionsQuery.data?.length ?? 0) > 0) {
+      // Check if regions exist using contextual view
+      if (
+        peopleGroupsRegionsStatsForPeopleGroup.data &&
+        peopleGroupsRegionsStatsForPeopleGroup.data.length > 0
+      ) {
         visibleTabs.push('region-data');
       }
     }
@@ -643,21 +378,28 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
                   sectionId='language-stats'
                   defaultExpanded={true}
                   variant='card'>
-                  <JPLanguageStatsSection entityId={selection.id} />
+                  <LanguageStatsSection entityId={selection.id} />
                 </CollapsibleSection>
                 <CollapsibleSection
                   title='Language Sample'
                   sectionId='language-sample'
                   defaultExpanded={true}
                   variant='card'>
-                  <GRNLanguageSampleSection entityId={selection.id} />
+                  <LanguageSampleSection entityId={selection.id} />
                 </CollapsibleSection>
                 <CollapsibleSection
-                  title='Gospel Resources'
-                  sectionId='gospel-resources'
+                  title='Gospel Recordings'
+                  sectionId='gospel-recordings'
                   defaultExpanded={true}
                   variant='card'>
-                  <GRNGospelResourcesSection entityId={selection.id} />
+                  <GospelRecordingsSection entityId={selection.id} />
+                </CollapsibleSection>
+                <CollapsibleSection
+                  title='Resources'
+                  sectionId='links'
+                  defaultExpanded={true}
+                  variant='card'>
+                  <LinksSection entityId={selection.id} />
                 </CollapsibleSection>
               </>
             ) : selection?.kind === 'region' ||
@@ -697,7 +439,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
                   sectionId='region-stats'
                   defaultExpanded={true}
                   variant='card'>
-                  <JPCountryStatsSection entityId={selection.id} />
+                  <CountryStatsSection entityId={selection.id} />
                 </CollapsibleSection>
               </>
             ) : selection?.kind === 'language_entity' ||
@@ -733,9 +475,11 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
               selection?.kind === 'region' ? (
               <>
                 {/* Searchable People Group Cards */}
-                <LinkedPeopleGroupsSection
+                <LinkedEntitiesSection
+                  type='people_groups'
                   parentId={selection.id}
                   parentType={selection.kind}
+                  scrollRef={tabContentScrollRef}
                 />
               </>
             ) : null}

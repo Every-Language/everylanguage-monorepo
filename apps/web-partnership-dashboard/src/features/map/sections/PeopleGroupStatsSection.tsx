@@ -1,6 +1,7 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/shared/services/supabase';
+import { usePeopleGroupStats } from '../hooks/usePeopleGroupStats';
+import { useLanguagesPeopleGroupsStats } from '../hooks/useLanguagesPeopleGroupsStats';
+import { usePeopleGroupsRegionsStats } from '../hooks/usePeopleGroupsRegionsStats';
 import {
   UsersIcon,
   GlobeAltIcon,
@@ -10,7 +11,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { formatPopulationCompact } from '../utils/formatPopulation';
 import { BibleStatusBadge } from '@/shared/components/BibleStatusBadge';
-import type { PeopleGroupStats } from '../types/databaseViews';
 
 type PeopleGroupStatsSectionProps = {
   entityId: string;
@@ -23,38 +23,24 @@ type PeopleGroupStatsSectionProps = {
 export const PeopleGroupStatsSection: React.FC<
   PeopleGroupStatsSectionProps
 > = ({ entityId }) => {
-  const {
-    data: stats,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['people-group-stats', entityId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('people_groups_stats')
-        .select('*')
-        .eq('people_group_id', entityId)
-        .maybeSingle(); // Use maybeSingle() instead of single() to avoid 404 errors
+  const { data: stats, isLoading, error } = usePeopleGroupStats(entityId);
 
-      if (error) {
-        // If no data found, return null (not an error)
-        // PGRST116 = no rows returned, PGRST301 = resource not found
-        if (error.code === 'PGRST116' || error.code === 'PGRST301') {
-          return null;
-        }
-        throw error;
-      }
-
-      if (!data) {
-        return null;
-      }
-
-      return data as PeopleGroupStats;
-    },
-    enabled: !!entityId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    retry: false, // Don't retry on 404s
+  // Get counts from contextual views
+  const { data: languagesData } = useLanguagesPeopleGroupsStats({
+    peopleGroupId: entityId,
   });
+  const { data: regionsData } = usePeopleGroupsRegionsStats({
+    peopleGroupId: entityId,
+  });
+
+  const languageCount =
+    languagesData && languagesData.length > 0
+      ? languagesData.length
+      : (stats?.language_count ?? null);
+  const regionCount =
+    regionsData && regionsData.length > 0
+      ? regionsData.length
+      : (stats?.country_count ?? null);
 
   if (isLoading) {
     return (
@@ -97,10 +83,10 @@ export const PeopleGroupStatsSection: React.FC<
         <div className='bg-secondary-50 dark:bg-secondary-950/30 rounded-lg p-3 border border-secondary-200 dark:border-secondary-800'>
           <GlobeAltIcon className='w-5 h-5 text-secondary-600 dark:text-secondary-400 mb-1' />
           <div className='text-xs text-secondary-600 dark:text-secondary-400 mb-1'>
-            Countries
+            Regions
           </div>
           <div className='text-lg font-bold text-secondary-700 dark:text-secondary-300'>
-            {stats.country_count ?? 'N/A'}
+            {regionCount ?? 'N/A'}
           </div>
         </div>
 
@@ -110,7 +96,7 @@ export const PeopleGroupStatsSection: React.FC<
             Languages
           </div>
           <div className='text-lg font-bold text-secondary-700 dark:text-secondary-300'>
-            {stats.language_count ?? 'N/A'}
+            {languageCount ?? 'N/A'}
           </div>
         </div>
       </div>

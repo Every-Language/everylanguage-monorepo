@@ -1075,7 +1075,7 @@ export function LanguageEntityModal({
                       Selected Regions ({localRegions.length})
                     </p>
                     <div className='space-y-4'>
-                      {localRegions.map((localRegion, index) => (
+                      {localRegions.map(localRegion => (
                         <div
                           key={localRegion.region_id}
                           className='border border-neutral-300 dark:border-neutral-700 rounded-lg p-4 space-y-4 bg-white dark:bg-neutral-800'>

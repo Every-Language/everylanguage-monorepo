@@ -1098,7 +1098,7 @@ DROP VIEW if EXISTS vw_iso_country_to_region cascade;
 
 
 -- languages_regions_stats: Contextual view for language-region relationships
--- Only includes contextual fields: population and people_group_count
+-- Only includes contextual fields: population, people_group_count, and bible_status
 CREATE VIEW languages_regions_stats AS
 SELECT
   ler.region_id,
@@ -1106,11 +1106,14 @@ SELECT
   -- Contextual language population in region: SUM of people_group instance populations
   COALESCE(SUM(pgr.population), 0)::BIGINT AS population,
   -- Number of people groups speaking that language in that region
-  COUNT(DISTINCT pgr.people_group_id)::INTEGER AS people_group_count
+  COUNT(DISTINCT pgr.people_group_id)::INTEGER AS people_group_count,
+  -- Bible status from language_stats
+  ls.bible_status
 FROM
   language_entities_regions ler
   JOIN language_entities le ON ler.language_entity_id = le.id
   JOIN regions r ON ler.region_id = r.id
+  LEFT JOIN language_stats ls ON ls.language_entity_id = ler.language_entity_id
   LEFT JOIN language_entities_people_groups_regions lepgr ON lepgr.language_entity_id = ler.language_entity_id
   LEFT JOIN people_groups_regions pgr ON lepgr.people_group_region_id = pgr.id
   AND pgr.region_id = ler.region_id
@@ -1125,14 +1128,15 @@ WHERE
   )
 GROUP BY
   ler.region_id,
-  ler.language_entity_id;
+  ler.language_entity_id,
+  ls.bible_status;
 
 
-comment ON view languages_regions_stats IS 'Contextual view for language-region relationships. Includes only contextual fields: population (sum of people group instance populations) and people_group_count. Filter by language_entity_id or region_id.';
+comment ON view languages_regions_stats IS 'Contextual view for language-region relationships. Includes only contextual fields: population (sum of people group instance populations), people_group_count, and bible_status. Filter by language_entity_id or region_id.';
 
 
 -- languages_people_groups_stats: Contextual view for language-people_group relationships
--- Only includes contextual fields: population, region_count, and is_primary
+-- Only includes contextual fields: population, region_count, is_primary, and bible_status
 CREATE VIEW languages_people_groups_stats AS
 WITH
   region_counts AS (
@@ -1157,17 +1161,20 @@ SELECT
   -- Number of regions for that language/people group combo
   rc.region_count,
   -- Is this the primary language for the people group in this region?
-  lepg.is_primary
+  lepg.is_primary,
+  -- Bible status from language_stats
+  ls.bible_status
 FROM
   language_entities_people_groups_regions lepg
   JOIN people_groups_regions pgr ON lepg.people_group_region_id = pgr.id
+  LEFT JOIN language_stats ls ON ls.language_entity_id = lepg.language_entity_id
   LEFT JOIN region_counts rc ON rc.language_entity_id = lepg.language_entity_id
   AND rc.people_group_id = pgr.people_group_id
 WHERE
   pgr.deleted_at IS NULL;
 
 
-comment ON view languages_people_groups_stats IS 'Contextual view for language-people_group relationships. Includes only contextual fields: population (instance population per region), region_count (number of regions for that combo), and is_primary. Filter by language_entity_id or people_group_id.';
+comment ON view languages_people_groups_stats IS 'Contextual view for language-people_group relationships. Includes only contextual fields: population (instance population per region), region_count (number of regions for that combo), is_primary, and bible_status. Filter by language_entity_id or people_group_id.';
 
 
 -- people_groups_regions_stats: Contextual view for people_group-region relationships

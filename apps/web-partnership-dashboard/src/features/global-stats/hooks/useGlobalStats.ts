@@ -18,7 +18,7 @@ type GlobalStatisticsResponse = {
 };
 
 type ActiveProject =
-  Database['public']['Functions']['get_active_projects_with_progress']['Returns'];
+  Database['public']['Functions']['get_active_projects_with_progress']['Returns'][number];
 
 type ProjectStatusResponse = {
   summary: {
@@ -166,7 +166,9 @@ export function useActiveProjectsWithProgress(
               | 'total_chapters_completed'
             >
           >(),
-        (supabase as any).rpc('get_active_projects_with_progress'),
+        supabase
+          .rpc('get_active_projects_with_progress')
+          .returns<ActiveProject[]>(),
       ]);
 
       if (summaryResult.error) {
@@ -191,9 +193,15 @@ export function useActiveProjectsWithProgress(
           summaryResult.data.total_chapters_completed ?? 0,
       };
 
+      // Ensure projects is a flat array
+      const projectsData = projectsResult.data ?? [];
+      const projects = Array.isArray(projectsData[0])
+        ? projectsData[0]
+        : projectsData;
+
       return {
         summary,
-        projects: (projectsResult.data ?? []) as ActiveProject[],
+        projects: projects as ActiveProject[],
       };
     },
     staleTime: 30 * 60 * 1000, // 30 minutes
