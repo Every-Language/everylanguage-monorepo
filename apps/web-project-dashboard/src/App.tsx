@@ -11,7 +11,6 @@ import {
   LoginPage,
   RegisterPage,
   ForgotPasswordPage,
-  ResetPasswordPage,
   UnauthorizedPage,
 } from './features/auth/pages';
 import { DashboardPage } from './app/pages/DashboardPage';
@@ -23,7 +22,6 @@ import { ToastManager } from './shared/design-system/hooks/useToast';
 import { LoadingSpinner } from './shared/design-system';
 import { TextUploadProgress } from './features/upload/components/TextUploadProgress';
 import { UploadResumeHandler } from './features/upload/components/UploadResumeHandler';
-import { SandboxBanner } from './shared/components/SandboxBanner';
 
 // Lazy load non-critical pages for better performance
 const BibleProgressPage = React.lazy(() =>
@@ -68,6 +66,12 @@ const MyProfilePage = React.lazy(() =>
   }))
 );
 
+const LandingPage = React.lazy(() =>
+  import('./app/pages/LandingPage').then(module => ({
+    default: module.LandingPage,
+  }))
+);
+
 // Helper component to reduce repetition
 const ProtectedLayoutRoute = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
@@ -88,7 +92,6 @@ function App() {
       <ToastManager>
         <AuthProvider>
           <ProjectProvider>
-            <SandboxBanner />
             <Router>
               <GlobalAudioPlayer />
               <GlobalUploadProgress />
@@ -102,7 +105,6 @@ function App() {
                   path='/forgot-password'
                   element={<ForgotPasswordPage />}
                 />
-                <Route path='/reset-password' element={<ResetPasswordPage />} />
                 <Route path='/unauthorized' element={<UnauthorizedPage />} />
 
                 {/* Protected routes with layout */}
@@ -197,10 +199,14 @@ function App() {
 
                 {/* Other protected routes without layout */}
 
-                {/* Default redirect */}
+                {/* Default route - Landing Page */}
                 <Route
                   path='/'
-                  element={<Navigate to='/dashboard' replace />}
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <LandingPage />
+                    </Suspense>
+                  }
                 />
 
                 {/* Catch all - redirect to dashboard */}
