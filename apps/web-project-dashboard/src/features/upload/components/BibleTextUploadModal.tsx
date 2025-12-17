@@ -521,6 +521,7 @@ export function BibleTextUploadModal({
         name: newTextVersionName.trim(),
         language_entity_id: targetLanguageEntityId,
         bible_version_id: selectedBibleVersion,
+        project_id: selectedProject.id,
         text_version_source: 'user_submitted',
         created_by: user.id,
       });
