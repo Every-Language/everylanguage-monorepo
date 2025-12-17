@@ -1158,7 +1158,7 @@ export async function validateParsedFilenameBatch(
         Array<{ chapter: number; startVerse: number; endVerse: number }>
       >();
 
-      uncachedValidations.forEach((validation, key) => {
+      uncachedValidations.forEach(validation => {
         if (!validationsByBook.has(validation.book)) {
           validationsByBook.set(validation.book, []);
         }
