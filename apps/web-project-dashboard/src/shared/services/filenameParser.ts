@@ -95,6 +95,17 @@ const BOOK_NAME_TO_OSIS: Record<string, string> = {
   Revelation: 'rev',
 };
 
+// Reverse OSIS mapping (OSIS -> Book Name) for parsing OSIS-based filenames
+const OSIS_TO_BOOK_NAME: Record<string, string> = Object.entries(
+  BOOK_NAME_TO_OSIS
+).reduce(
+  (acc, [bookName, osis]) => {
+    acc[osis] = bookName;
+    return acc;
+  },
+  {} as Record<string, string>
+);
+
 // BSB format book number to book name mapping
 const BSB_BOOK_NUMBER_TO_NAME: Record<string, string> = {
   '01': 'Genesis',
@@ -440,6 +451,106 @@ function extractVerseNumbers(text: string): {
 }
 
 /**
+ * Parse OSIS hyphen-separated format: {OSIS}-{Chapter}-{StartVerse}-{EndVerse}.mp3
+ * Examples: gen-2-1-25.mp3, john-3-16-21.mp3, ps-23-1-6.mp3
+ * Also supports: {Language}-{OSIS}-{Chapter}-{StartVerse}-{EndVerse}.mp3
+ * Examples: Bajhangi-gen-2-1-25.mp3
+ */
+function parseOsisHyphenFormat(filename: string): ParsedFilename | null {
+  const parts = filename.split('-');
+
+  if (parts.length < 3 || parts.length > 5) {
+    return null; // Invalid format
+  }
+
+  let osis: string;
+  let chapter: number;
+  let startVerse: number;
+  let endVerse: number | null = null;
+  let language: string | undefined;
+
+  // Check if first part is OSIS
+  const firstPart = parts[0].toLowerCase();
+  const isFirstOsis = OSIS_TO_BOOK_NAME[firstPart];
+
+  if (isFirstOsis) {
+    // Format: {OSIS}-{Chapter}-{StartVerse}[-{EndVerse}]
+    // Examples: gen-2-1-25, john-3-16
+    osis = firstPart;
+    chapter = parseInt(parts[1], 10);
+    startVerse = parseInt(parts[2], 10);
+    if (parts.length === 4) {
+      endVerse = parseInt(parts[3], 10);
+    }
+  } else {
+    // Format: {Language}-{OSIS}-{Chapter}-{StartVerse}[-{EndVerse}]
+    // Examples: Bajhangi-gen-2-1-25, English-john-3-16
+    if (parts.length < 4) {
+      return null; // Need at least Language-OSIS-Chapter-Verse
+    }
+
+    language = parts[0];
+    const secondPart = parts[1].toLowerCase();
+    const isSecondOsis = OSIS_TO_BOOK_NAME[secondPart];
+
+    if (!isSecondOsis) {
+      return null; // Second part must be OSIS
+    }
+
+    osis = secondPart;
+    chapter = parseInt(parts[2], 10);
+    startVerse = parseInt(parts[3], 10);
+    if (parts.length === 5) {
+      endVerse = parseInt(parts[4], 10);
+    }
+  }
+
+  const bookName = OSIS_TO_BOOK_NAME[osis];
+  if (!bookName) {
+    return null; // Invalid OSIS code
+  }
+
+  const result: ParsedFilename = {
+    originalFilename: filename,
+    detectedLanguage: language,
+    detectedBook: bookName,
+    detectedBookOsis: osis,
+    detectedChapter: chapter,
+    detectedStartVerse: startVerse,
+    detectedEndVerse: endVerse ?? startVerse,
+    verseRange: endVerse ? `${startVerse}-${endVerse}` : startVerse.toString(),
+    confidence: 'high',
+    errors: [],
+    matchedPattern: language
+      ? 'Language_OSIS_Chapter_Verses'
+      : 'OSIS_Chapter_Verses',
+  };
+
+  // Basic validation
+  if (chapter < 1 || chapter > 150) {
+    result.errors?.push(`Invalid chapter number: ${chapter}`);
+    result.confidence = 'low';
+  }
+
+  if (startVerse < 1 || startVerse > 200) {
+    result.errors?.push(`Invalid start verse: ${startVerse}`);
+    result.confidence = 'low';
+  }
+
+  if (endVerse && (endVerse < 1 || endVerse > 200 || endVerse < startVerse)) {
+    result.errors?.push(`Invalid end verse: ${endVerse}`);
+    result.confidence = 'low';
+  }
+
+  // If no end verse specified, assume single verse
+  if (!endVerse) {
+    result.detectedEndVerse = startVerse;
+  }
+
+  return result;
+}
+
+/**
  * Parse BSB format filename: BSB_XX_AAA_XXX_H.mp3
  * Where XX = book number, AAA = book abbreviation, XXX = chapter, H = designation
  */
@@ -525,14 +636,21 @@ function parseBSBFormat(filename: string): ParsedFilename | null {
 
 /**
  * Main parsing function supporting multiple formats:
- * 1. BSB format: BSB_XX_AAA_XXX_H.mp3
- * 2. Original format: Language_BookName_ChapterXXX_VXXX_XXX.mp3
+ * 1. OSIS hyphen format: {OSIS}-{Chapter}-{StartVerse}-{EndVerse}.mp3 or {Language}-{OSIS}-{Chapter}-{StartVerse}-{EndVerse}.mp3
+ * 2. BSB format: BSB_XX_AAA_XXX_H.mp3
+ * 3. Original format: Language_BookName_ChapterXXX_VXXX_XXX.mp3
  */
 export function parseFilename(filename: string): ParsedFilename {
   // Remove file extension for pattern matching
   const cleanFilename = filename.replace(/\.[^/.]+$/, '').trim();
 
-  // Try BSB format first
+  // Try OSIS hyphen format first (most concise and modern)
+  const osisResult = parseOsisHyphenFormat(cleanFilename);
+  if (osisResult) {
+    return osisResult;
+  }
+
+  // Try BSB format
   const bsbResult = parseBSBFormat(cleanFilename);
   if (bsbResult) {
     return bsbResult;
@@ -711,11 +829,38 @@ export function getOsisId(bookName: string): string | undefined {
 // Key: `${bibleVersionId}-${bookName}-${chapterNumber}` -> total_verses
 const chapterCache = new Map<string, number>();
 
+// In-memory cache for validation results
+// Key: `${bibleVersionId}-${bookName}-${chapterNumber}-${startVerse}-${endVerse}` -> validation result
+interface ValidationResult {
+  bookExists: boolean;
+  chapterExists: boolean;
+  startVerseExists: boolean;
+  endVerseExists: boolean;
+  totalVerses?: number;
+  maxVerse?: number;
+}
+const validationCache = new Map<string, ValidationResult>();
+
 /**
  * Clear the chapter cache (useful for testing or when bible version changes)
  */
 export function clearChapterCache(): void {
   chapterCache.clear();
+}
+
+/**
+ * Clear the validation cache (useful for testing or when bible version changes)
+ */
+export function clearValidationCache(): void {
+  validationCache.clear();
+}
+
+/**
+ * Clear all caches
+ */
+export function clearAllCaches(): void {
+  chapterCache.clear();
+  validationCache.clear();
 }
 
 /**
@@ -947,6 +1092,340 @@ export async function resolveFullChapterEndVerse(
 ): Promise<ParsedFilename> {
   // Use batch function for single item
   const results = await resolveFullChapterEndVersesBatch(
+    [parsedResult],
+    bibleVersionId
+  );
+  return results[0];
+}
+
+/**
+ * Validate parsed filename against database
+ * Checks if book, chapter, and verses actually exist in the bible version
+ * Uses batch queries and caching for performance
+ */
+export async function validateParsedFilenameBatch(
+  parsedResults: ParsedFilename[],
+  bibleVersionId: string
+): Promise<ParsedFilename[]> {
+  if (!bibleVersionId || parsedResults.length === 0) {
+    return parsedResults;
+  }
+
+  // Filter results that need validation (have book, chapter, and verses)
+  const resultsToValidate = parsedResults.filter(
+    result =>
+      result.detectedBook &&
+      result.detectedChapter &&
+      result.detectedStartVerse &&
+      result.detectedEndVerse
+  );
+
+  if (resultsToValidate.length === 0) {
+    return parsedResults;
+  }
+
+  // Check cache and collect uncached validations
+  const uncachedValidations = new Map<
+    string,
+    { book: string; chapter: number; startVerse: number; endVerse: number }
+  >();
+  const cachedResults = new Map<string, ValidationResult>();
+
+  resultsToValidate.forEach(result => {
+    const cacheKey = `${bibleVersionId}-${result.detectedBook}-${result.detectedChapter}-${result.detectedStartVerse}-${result.detectedEndVerse}`;
+    const validationKey = `${result.detectedBook}-${result.detectedChapter}-${result.detectedStartVerse}-${result.detectedEndVerse}`;
+
+    if (validationCache.has(cacheKey)) {
+      cachedResults.set(validationKey, validationCache.get(cacheKey)!);
+    } else if (!uncachedValidations.has(validationKey)) {
+      uncachedValidations.set(validationKey, {
+        book: result.detectedBook!,
+        chapter: result.detectedChapter!,
+        startVerse: result.detectedStartVerse!,
+        endVerse: result.detectedEndVerse!,
+      });
+    }
+  });
+
+  // Perform database validation for uncached items
+  if (uncachedValidations.size > 0) {
+    try {
+      const { supabase } = await import('./supabase');
+
+      // Group by book for efficient batch queries
+      const validationsByBook = new Map<
+        string,
+        Array<{ chapter: number; startVerse: number; endVerse: number }>
+      >();
+
+      uncachedValidations.forEach((validation, key) => {
+        if (!validationsByBook.has(validation.book)) {
+          validationsByBook.set(validation.book, []);
+        }
+        validationsByBook.get(validation.book)!.push({
+          chapter: validation.chapter,
+          startVerse: validation.startVerse,
+          endVerse: validation.endVerse,
+        });
+      });
+
+      const newValidationData = new Map<string, ValidationResult>();
+
+      // Query each book's chapters and verses in batches
+      for (const [bookName, chapters] of validationsByBook.entries()) {
+        // Get book ID
+        const { data: bookData } = await supabase
+          .from('books')
+          .select('id')
+          .eq('bible_version_id', bibleVersionId)
+          .eq('name', bookName)
+          .single();
+
+        if (!bookData) {
+          // Book doesn't exist - mark all validations for this book as invalid
+          chapters.forEach(({ chapter, startVerse, endVerse }) => {
+            const key = `${bookName}-${chapter}-${startVerse}-${endVerse}`;
+            const validationResult: ValidationResult = {
+              bookExists: false,
+              chapterExists: false,
+              startVerseExists: false,
+              endVerseExists: false,
+            };
+            newValidationData.set(key, validationResult);
+            validationCache.set(
+              `${bibleVersionId}-${bookName}-${chapter}-${startVerse}-${endVerse}`,
+              validationResult
+            );
+          });
+          continue;
+        }
+
+        const bookId = bookData.id;
+        const chapterNumbers = [...new Set(chapters.map(c => c.chapter))];
+
+        // Get chapters for this book
+        const { data: chapterData } = await supabase
+          .from('chapters')
+          .select('id, chapter_number, total_verses')
+          .eq('book_id', bookId)
+          .in('chapter_number', chapterNumbers);
+
+        const chaptersByNumber = new Map(
+          (chapterData || []).map(c => [c.chapter_number, c])
+        );
+
+        // Get verses for all chapters in one query
+        const chapterIds = Array.from(chaptersByNumber.values()).map(c => c.id);
+        const { data: verseData } = await supabase
+          .from('verses')
+          .select('id, chapter_id, verse_number')
+          .in('chapter_id', chapterIds);
+
+        // Group verses by chapter
+        const versesByChapter = new Map<string, Set<number>>();
+        verseData?.forEach(verse => {
+          if (!versesByChapter.has(verse.chapter_id)) {
+            versesByChapter.set(verse.chapter_id, new Set());
+          }
+          versesByChapter.get(verse.chapter_id)!.add(verse.verse_number);
+        });
+
+        // Validate each chapter/verse combination
+        chapters.forEach(({ chapter, startVerse, endVerse }) => {
+          const chapterInfo = chaptersByNumber.get(chapter);
+          const key = `${bookName}-${chapter}-${startVerse}-${endVerse}`;
+
+          if (!chapterInfo) {
+            // Chapter doesn't exist
+            const validationResult: ValidationResult = {
+              bookExists: true,
+              chapterExists: false,
+              startVerseExists: false,
+              endVerseExists: false,
+            };
+            newValidationData.set(key, validationResult);
+            validationCache.set(
+              `${bibleVersionId}-${bookName}-${chapter}-${startVerse}-${endVerse}`,
+              validationResult
+            );
+            return;
+          }
+
+          const chapterVerses =
+            versesByChapter.get(chapterInfo.id) || new Set();
+          const maxVerse = Math.max(...Array.from(chapterVerses), 0);
+
+          const validationResult: ValidationResult = {
+            bookExists: true,
+            chapterExists: true,
+            startVerseExists: chapterVerses.has(startVerse),
+            endVerseExists: chapterVerses.has(endVerse),
+            totalVerses: chapterInfo.total_verses,
+            maxVerse,
+          };
+
+          newValidationData.set(key, validationResult);
+          validationCache.set(
+            `${bibleVersionId}-${bookName}-${chapter}-${startVerse}-${endVerse}`,
+            validationResult
+          );
+        });
+      }
+
+      // Combine cached and newly fetched validation data
+      const allValidationData = new Map([
+        ...cachedResults,
+        ...newValidationData,
+      ]);
+
+      // Apply validation results to parsed filenames
+      return parsedResults.map(result => {
+        if (
+          !result.detectedBook ||
+          !result.detectedChapter ||
+          !result.detectedStartVerse ||
+          !result.detectedEndVerse
+        ) {
+          return result;
+        }
+
+        const key = `${result.detectedBook}-${result.detectedChapter}-${result.detectedStartVerse}-${result.detectedEndVerse}`;
+        const validation = allValidationData.get(key);
+
+        if (!validation) {
+          return result; // No validation data available
+        }
+
+        const errors = [...(result.errors || [])];
+
+        if (!validation.bookExists) {
+          errors.push(
+            `Book "${result.detectedBook}" not found in bible version`
+          );
+          result.confidence = 'low';
+        }
+
+        if (validation.bookExists && !validation.chapterExists) {
+          errors.push(
+            `Chapter ${result.detectedChapter} not found in ${result.detectedBook}`
+          );
+          result.confidence = 'low';
+        }
+
+        if (validation.chapterExists && !validation.startVerseExists) {
+          errors.push(
+            `Verse ${result.detectedStartVerse} not found in ${result.detectedBook} ${result.detectedChapter} (max verse: ${validation.maxVerse})`
+          );
+          result.confidence = 'low';
+        }
+
+        if (
+          validation.chapterExists &&
+          validation.startVerseExists &&
+          !validation.endVerseExists
+        ) {
+          errors.push(
+            `Verse ${result.detectedEndVerse} not found in ${result.detectedBook} ${result.detectedChapter} (max verse: ${validation.maxVerse})`
+          );
+          result.confidence = 'low';
+        }
+
+        // If all validations pass, ensure confidence is at least medium
+        if (
+          validation.bookExists &&
+          validation.chapterExists &&
+          validation.startVerseExists &&
+          validation.endVerseExists &&
+          result.confidence === 'none'
+        ) {
+          result.confidence = 'high';
+        }
+
+        return {
+          ...result,
+          errors: errors.length > 0 ? errors : undefined,
+        };
+      });
+    } catch (error) {
+      console.warn('Error validating parsed filenames:', error);
+      // Return original results with error annotations
+      return parsedResults.map(result => ({
+        ...result,
+        errors: [
+          ...(result.errors || []),
+          `Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        ],
+      }));
+    }
+  }
+
+  // All results are cached, apply them directly
+  return parsedResults.map(result => {
+    if (
+      !result.detectedBook ||
+      !result.detectedChapter ||
+      !result.detectedStartVerse ||
+      !result.detectedEndVerse
+    ) {
+      return result;
+    }
+
+    const cacheKey = `${bibleVersionId}-${result.detectedBook}-${result.detectedChapter}-${result.detectedStartVerse}-${result.detectedEndVerse}`;
+    const validation = validationCache.get(cacheKey);
+
+    if (!validation) {
+      return result;
+    }
+
+    const errors = [...(result.errors || [])];
+
+    if (!validation.bookExists) {
+      errors.push(`Book "${result.detectedBook}" not found in bible version`);
+    }
+    if (validation.bookExists && !validation.chapterExists) {
+      errors.push(
+        `Chapter ${result.detectedChapter} not found in ${result.detectedBook}`
+      );
+    }
+    if (validation.chapterExists && !validation.startVerseExists) {
+      errors.push(
+        `Verse ${result.detectedStartVerse} not found in ${result.detectedBook} ${result.detectedChapter}`
+      );
+    }
+    if (
+      validation.chapterExists &&
+      validation.startVerseExists &&
+      !validation.endVerseExists
+    ) {
+      errors.push(
+        `Verse ${result.detectedEndVerse} not found in ${result.detectedBook} ${result.detectedChapter}`
+      );
+    }
+
+    return {
+      ...result,
+      errors: errors.length > 0 ? errors : undefined,
+      confidence:
+        validation.bookExists &&
+        validation.chapterExists &&
+        validation.startVerseExists &&
+        validation.endVerseExists
+          ? 'high'
+          : result.confidence === 'none'
+            ? 'low'
+            : result.confidence,
+    };
+  });
+}
+
+/**
+ * Validate a single parsed filename against database
+ */
+export async function validateParsedFilename(
+  parsedResult: ParsedFilename,
+  bibleVersionId: string
+): Promise<ParsedFilename> {
+  const results = await validateParsedFilenameBatch(
     [parsedResult],
     bibleVersionId
   );
