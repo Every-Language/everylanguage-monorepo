@@ -1381,16 +1381,19 @@ export async function validateParsedFilenameBatch(
 
     if (!validation.bookExists) {
       errors.push(`Book "${result.detectedBook}" not found in bible version`);
+      result.confidence = 'low';
     }
     if (validation.bookExists && !validation.chapterExists) {
       errors.push(
         `Chapter ${result.detectedChapter} not found in ${result.detectedBook}`
       );
+      result.confidence = 'low';
     }
     if (validation.chapterExists && !validation.startVerseExists) {
       errors.push(
         `Verse ${result.detectedStartVerse} not found in ${result.detectedBook} ${result.detectedChapter}`
       );
+      result.confidence = 'low';
     }
     if (
       validation.chapterExists &&
@@ -1400,20 +1403,23 @@ export async function validateParsedFilenameBatch(
       errors.push(
         `Verse ${result.detectedEndVerse} not found in ${result.detectedBook} ${result.detectedChapter}`
       );
+      result.confidence = 'low';
+    }
+
+    // If all validations pass, ensure confidence is at least medium
+    if (
+      validation.bookExists &&
+      validation.chapterExists &&
+      validation.startVerseExists &&
+      validation.endVerseExists &&
+      result.confidence === 'none'
+    ) {
+      result.confidence = 'high';
     }
 
     return {
       ...result,
       errors: errors.length > 0 ? errors : undefined,
-      confidence:
-        validation.bookExists &&
-        validation.chapterExists &&
-        validation.startVerseExists &&
-        validation.endVerseExists
-          ? 'high'
-          : result.confidence === 'none'
-            ? 'low'
-            : result.confidence,
     };
   });
 }
