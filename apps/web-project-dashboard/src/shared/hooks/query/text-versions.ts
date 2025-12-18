@@ -415,6 +415,7 @@ export function useCreateTextVersion() {
       name: string;
       language_entity_id: string;
       bible_version_id: string;
+      project_id: string;
       text_version_source?:
         | 'official_translation'
         | 'ai_transcription'
@@ -427,6 +428,7 @@ export function useCreateTextVersion() {
           name: textVersionData.name,
           language_entity_id: textVersionData.language_entity_id,
           bible_version_id: textVersionData.bible_version_id,
+          project_id: textVersionData.project_id,
           text_version_source:
             textVersionData.text_version_source || 'user_submitted',
           created_by: textVersionData.created_by || null,
