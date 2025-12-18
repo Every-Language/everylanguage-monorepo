@@ -474,10 +474,10 @@ Deno.serve(async (req: Request) => {
         }
 
         // Fallback: check payments array (for newer API versions with partial payments)
-        if (!paymentIntentId && inv.payments) {
-          const payments = Array.isArray(inv.payments)
-            ? inv.payments
-            : (inv.payments as any).data || [];
+        if (!paymentIntentId && 'payments' in inv && (inv as any).payments) {
+          const payments = Array.isArray((inv as any).payments)
+            ? (inv as any).payments
+            : ((inv as any).payments as any).data || [];
 
           // Find the first succeeded/paid payment
           const succeededPayment = payments.find(
@@ -506,10 +506,13 @@ Deno.serve(async (req: Request) => {
                 typeof retrievedInvoice.payment_intent === 'string'
                   ? retrievedInvoice.payment_intent
                   : retrievedInvoice.payment_intent.id;
-            } else if (retrievedInvoice.payments) {
-              const payments = Array.isArray(retrievedInvoice.payments)
-                ? retrievedInvoice.payments
-                : (retrievedInvoice.payments as any).data || [];
+            } else if (
+              'payments' in retrievedInvoice &&
+              (retrievedInvoice as any).payments
+            ) {
+              const payments = Array.isArray((retrievedInvoice as any).payments)
+                ? (retrievedInvoice as any).payments
+                : ((retrievedInvoice as any).payments as any).data || [];
 
               const succeededPayment = payments.find(
                 (p: any) =>
@@ -545,7 +548,9 @@ Deno.serve(async (req: Request) => {
               billing_reason: inv.billing_reason,
               payment_intent_type: typeof inv.payment_intent,
               payment_intent_value: inv.payment_intent,
-              has_payments_array: !!inv.payments,
+              has_payments_array: !!(
+                'payments' in inv && (inv as any).payments
+              ),
             }
           );
           // Don't break - continue processing even without payment_intent for $0 invoices
