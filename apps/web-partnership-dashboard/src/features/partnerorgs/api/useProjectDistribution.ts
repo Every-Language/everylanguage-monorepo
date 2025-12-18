@@ -39,7 +39,7 @@ export function useProjectDistribution(
       }
 
       const { data: heatmap, error: heatmapError } = await supabase
-        .from('vw_language_listens_heatmap')
+        .from('language_heatmap')
         .select('*')
         .in('language_entity_id', languageIds);
 

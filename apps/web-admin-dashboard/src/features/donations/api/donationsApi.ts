@@ -27,6 +27,7 @@ export const donationsApi = {
     intentTypeFilter?: string;
     intentLanguageId?: string;
     intentOperationId?: string;
+    intentRegionId?: string;
     sortField?: 'date' | 'amount' | 'remaining' | 'donor';
     sortDirection?: 'asc' | 'desc';
     onlyUnallocated?: boolean;
@@ -129,6 +130,10 @@ export const donationsApi = {
 
     if (params?.intentOperationId) {
       query = query.eq('intent_operation_id', params.intentOperationId);
+    }
+
+    if (params?.intentRegionId) {
+      query = query.eq('intent_region_id', params.intentRegionId);
     }
 
     // Apply search filter in SQL before pagination

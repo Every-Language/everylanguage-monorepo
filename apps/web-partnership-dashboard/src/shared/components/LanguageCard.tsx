@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from './ui/Card';
-import { useJPLanguageDataCache } from '@/features/map/hooks/useJPLanguageDataCache';
-import { useLanguageStatsContextual } from '@/features/map/hooks/useLanguageStatsContextual';
+import { useLanguageStats } from '@/features/map/hooks/useLanguageStats';
+import { useLanguagesRegionsStats } from '@/features/map/hooks/useLanguagesRegionsStats';
 import { formatPopulationCompact } from '@/features/map/utils/formatPopulation';
 import { BibleStatusBadge } from './BibleStatusBadge';
 import { Check, X } from 'lucide-react';
@@ -39,39 +39,35 @@ export const LanguageCard: React.FC<LanguageCardProps> = ({
   className = '',
 }) => {
   // Fetch total stats from MV
-  const { languageStats, isLoading: totalLoading } =
-    useJPLanguageDataCache(languageEntityId);
+  const { data: languageStats, isLoading: totalLoading } =
+    useLanguageStats(languageEntityId);
 
   // Fetch contextual stats if region provided
   const { data: contextualStats, isLoading: contextualLoading } =
-    useLanguageStatsContextual(
-      contextualRegionId ? languageEntityId : null,
-      contextualRegionId || null
-    );
+    useLanguagesRegionsStats({
+      languageEntityId: contextualRegionId ? languageEntityId : null,
+      regionId: contextualRegionId || null,
+    });
 
   const isLoading = totalLoading || contextualLoading;
 
+  // Get contextual stat for this specific region if available
+  const contextualStat = contextualStats?.find(
+    stat => stat.region_id === contextualRegionId
+  );
+
   // Use contextual stats if available, otherwise fall back to total stats
-  const languageName =
-    contextualStats?.language_name || languageStats?.Language || 'Unknown';
-  const population = contextualStats?.population ?? languageStats?.PoplPeoples;
-  const countryCount =
-    contextualStats?.country_count ?? languageStats?.Countries;
+  const languageName = languageStats?.language_name || 'Unknown';
+  const population =
+    contextualStat?.population ?? languageStats?.population ?? null;
+  const countryCount = languageStats?.country_count ?? null;
   const peopleGroupCount =
-    contextualStats?.people_group_count ?? languageStats?.Peoples;
-  const bibleStatusRaw =
-    contextualStats?.bible_status ?? languageStats?.BibleStatus;
-  // Convert bibleStatus to number if it's a string
+    contextualStat?.people_group_count ??
+    languageStats?.people_group_count ??
+    null;
   const bibleStatus =
-    typeof bibleStatusRaw === 'number'
-      ? bibleStatusRaw
-      : typeof bibleStatusRaw === 'string'
-        ? parseInt(bibleStatusRaw, 10) || null
-        : (bibleStatusRaw ?? null);
-  const hasAudioRecordings =
-    contextualStats?.has_audio_recordings ??
-    (languageStats?.AudioRecordings === 'Y' ||
-      languageStats?.HasJesusFilm === 'Y');
+    contextualStat?.bible_status ?? languageStats?.bible_status ?? null;
+  const hasAudioRecordings = languageStats?.has_audio_recordings ?? false;
 
   const handleClick = () => {
     if (onClick) {

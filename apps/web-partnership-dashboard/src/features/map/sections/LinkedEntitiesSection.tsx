@@ -10,10 +10,14 @@ import Fuse from 'fuse.js';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { LanguageCard } from '@/shared/components/LanguageCard';
 import { RegionCard } from '@/shared/components/RegionCard';
+import { PeopleGroupCard } from '@/shared/components/PeopleGroupCard';
 import { useSelection } from '../inspector/state/inspectorStore';
+import { useLanguagesRegionsStats } from '../hooks/useLanguagesRegionsStats';
+import { useLanguagesPeopleGroupsStats } from '../hooks/useLanguagesPeopleGroupsStats';
+import { usePeopleGroupsRegionsStats } from '../hooks/usePeopleGroupsRegionsStats';
 
 type LinkedEntitiesSectionProps = {
-  type: 'languages' | 'regions';
+  type: 'languages' | 'regions' | 'people_groups';
   parentId: string;
   parentType?: 'language_entity' | 'region' | 'people_group';
   scrollRef?: React.RefObject<HTMLDivElement | null>;
@@ -26,7 +30,7 @@ type EntityItem = {
 };
 
 /**
- * Unified section for displaying linked languages (for regions) or linked regions (for languages)
+ * Unified section for displaying linked languages, regions, or people groups
  */
 export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
   type,
@@ -36,12 +40,54 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
 }) => {
   // Infer parentType from type if not provided (backward compatibility)
   const inferredParentType =
-    parentType || (type === 'languages' ? 'region' : 'language_entity');
+    parentType ||
+    (type === 'languages'
+      ? 'region'
+      : type === 'regions'
+        ? 'language_entity'
+        : 'language_entity'); // Default for people_groups
   const [query, setQuery] = React.useState('');
   const router = useRouter();
   const selection = useSelection();
   const virtualContainerRef = React.useRef<HTMLDivElement | null>(null);
   const [scrollMargin, setScrollMargin] = React.useState(0);
+
+  // Use contextual hooks to get entity IDs (call all unconditionally)
+  const languagesRegionsStatsForRegion = useLanguagesRegionsStats({
+    regionId:
+      type === 'languages' && inferredParentType === 'region' ? parentId : null,
+  });
+  const languagesRegionsStatsForLanguage = useLanguagesRegionsStats({
+    languageEntityId:
+      type === 'regions' && inferredParentType === 'language_entity'
+        ? parentId
+        : null,
+  });
+  const languagesPeopleGroupsStatsForLanguage = useLanguagesPeopleGroupsStats({
+    languageEntityId:
+      type === 'people_groups' && inferredParentType === 'language_entity'
+        ? parentId
+        : null,
+  });
+  const languagesPeopleGroupsStatsForPeopleGroup =
+    useLanguagesPeopleGroupsStats({
+      peopleGroupId:
+        type === 'languages' && inferredParentType === 'people_group'
+          ? parentId
+          : null,
+    });
+  const peopleGroupsRegionsStatsForPeopleGroup = usePeopleGroupsRegionsStats({
+    peopleGroupId:
+      type === 'regions' && inferredParentType === 'people_group'
+        ? parentId
+        : null,
+  });
+  const peopleGroupsRegionsStatsForRegion = usePeopleGroupsRegionsStats({
+    regionId:
+      type === 'people_groups' && inferredParentType === 'region'
+        ? parentId
+        : null,
+  });
 
   const entitiesQuery = useQuery({
     queryKey: [
@@ -49,110 +95,143 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
         ? inferredParentType === 'people_group'
           ? 'people-group-linked-languages'
           : 'region-linked-languages'
-        : inferredParentType === 'people_group'
-          ? 'people-group-linked-regions'
-          : 'language-linked-regions',
+        : type === 'regions'
+          ? inferredParentType === 'people_group'
+            ? 'people-group-linked-regions'
+            : 'language-linked-regions'
+          : inferredParentType === 'language_entity'
+            ? 'language-linked-people-groups'
+            : 'region-linked-people-groups',
       parentId,
     ],
     queryFn: async () => {
       if (type === 'languages') {
         if (inferredParentType === 'people_group') {
-          // Fetch languages for a people group
-          // First get people_group_region_ids for this people_group_id
-          const { data: pgrData, error: pgrError } = await supabase
-            .from('people_groups_regions')
-            .select('id')
-            .eq('people_group_id', parentId)
-            .is('deleted_at', null);
-          if (pgrError) throw pgrError;
-          const pgrIds = (pgrData ?? []).map((r: { id: string }) => r.id);
-          if (pgrIds.length === 0) return [];
+          // Use contextual view to get language IDs
+          const stats = languagesPeopleGroupsStatsForPeopleGroup.data || [];
+          const languageIds = Array.from(
+            new Set(stats.map(s => s.language_entity_id))
+          );
+          if (languageIds.length === 0) return [];
 
-          // Then query language_entities_people_groups_regions joined with language_entities
+          // Fetch language details
           const { data, error } = await supabase
-            .from('language_entities_people_groups_regions')
-            .select(
-              'language_entity_id, language_entities!inner(id, name, level)'
-            )
-            .in('people_group_region_id', pgrIds);
-          if (error) throw error;
-          const items = (data ?? []).map(
-            (r: {
-              language_entity_id: string;
-              language_entities: { id: string; name: string; level: string };
-            }) => ({
-              id: r.language_entities.id,
-              name: r.language_entities.name,
-              level: r.language_entities.level,
-            })
-          );
-          // Deduplicate by id
-          const dedup = new Map<string, EntityItem>();
-          for (const it of items) if (!dedup.has(it.id)) dedup.set(it.id, it);
-          return Array.from(dedup.values());
-        } else {
-          // Fetch languages for a region
-          const { data, error } = await (supabase as any).rpc(
-            'list_languages_for_region',
-            {
-              p_region_id: parentId,
-              p_include_descendants: true,
-            }
-          );
-          if (error) throw error;
-          const items = (data ?? []) as EntityItem[];
-          // Deduplicate by id to prevent duplicate key errors
-          const dedup = new Map<string, EntityItem>();
-          for (const it of items) if (!dedup.has(it.id)) dedup.set(it.id, it);
-          return Array.from(dedup.values());
-        }
-      } else {
-        // type === 'regions'
-        if (inferredParentType === 'people_group') {
-          // Fetch regions for a people group using vw_people_groups_in_region
-          const { data, error } = await supabase
-            .from('vw_people_groups_in_region')
-            .select('region_id, region_name')
-            .eq('people_group_id', parentId);
-          if (error) throw error;
-          // Get region level from regions table
-          const regionIds = Array.from(
-            new Set((data ?? []).map((r: any) => r.region_id))
-          );
-          if (regionIds.length === 0) return [];
-          const { data: regionsData, error: regionsError } = await supabase
-            .from('regions')
+            .from('language_entities')
             .select('id, name, level')
-            .in('id', regionIds);
-          if (regionsError) throw regionsError;
-          return (regionsData ?? []).map((r: any) => ({
+            .in('id', languageIds)
+            .is('deleted_at', null);
+          if (error) throw error;
+          return (data ?? []).map((r: any) => ({
             id: r.id,
             name: r.name,
             level: r.level,
           })) as EntityItem[];
         } else {
-          // Fetch regions for a language
-          const { data, error } = await supabase
-            .from('language_entities_regions')
-            .select('regions(id,name,level)')
-            .eq('language_entity_id', parentId);
-          if (error) throw error;
-          const items = (data ?? []).map(
-            (r: { regions: { id: string; name: string; level: string } }) => ({
-              id: r.regions.id,
-              name: r.regions.name,
-              level: r.regions.level,
-            })
+          // Fetch languages for a region using contextual view
+          const stats = languagesRegionsStatsForRegion.data || [];
+          const languageIds = Array.from(
+            new Set(stats.map(s => s.language_entity_id))
           );
-          // Deduplicate by id
-          const dedup = new Map<string, EntityItem>();
-          for (const it of items) if (!dedup.has(it.id)) dedup.set(it.id, it);
-          return Array.from(dedup.values());
+          if (languageIds.length === 0) return [];
+
+          // Fetch language details
+          const { data, error } = await supabase
+            .from('language_entities')
+            .select('id, name, level')
+            .in('id', languageIds)
+            .is('deleted_at', null);
+          if (error) throw error;
+          return (data ?? []).map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            level: r.level,
+          })) as EntityItem[];
         }
+      } else if (type === 'regions') {
+        if (inferredParentType === 'people_group') {
+          // Use contextual view to get region IDs
+          const stats = peopleGroupsRegionsStatsForPeopleGroup.data || [];
+          const regionIds = Array.from(new Set(stats.map(s => s.region_id)));
+          if (regionIds.length === 0) return [];
+
+          // Fetch region details
+          const { data, error } = await supabase
+            .from('regions')
+            .select('id, name, level')
+            .in('id', regionIds)
+            .is('deleted_at', null);
+          if (error) throw error;
+          return (data ?? []).map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            level: r.level,
+          })) as EntityItem[];
+        } else {
+          // Fetch regions for a language using contextual view
+          const stats = languagesRegionsStatsForLanguage.data || [];
+          const regionIds = Array.from(new Set(stats.map(s => s.region_id)));
+          if (regionIds.length === 0) return [];
+
+          // Fetch region details
+          const { data, error } = await supabase
+            .from('regions')
+            .select('id, name, level')
+            .in('id', regionIds)
+            .is('deleted_at', null);
+          if (error) throw error;
+          return (data ?? []).map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            level: r.level,
+          })) as EntityItem[];
+        }
+      } else {
+        // type === 'people_groups'
+        let peopleGroupIds: string[] = [];
+        if (inferredParentType === 'language_entity') {
+          const stats = languagesPeopleGroupsStatsForLanguage.data || [];
+          peopleGroupIds = Array.from(
+            new Set(stats.map(s => s.people_group_id))
+          );
+        } else if (inferredParentType === 'region') {
+          const stats = peopleGroupsRegionsStatsForRegion.data || [];
+          peopleGroupIds = Array.from(
+            new Set(stats.map(s => s.people_group_id))
+          );
+        }
+        if (peopleGroupIds.length === 0) return [];
+
+        // Fetch people group names from stats MV for search
+        const { data, error } = await supabase
+          .from('people_groups_stats')
+          .select('people_group_id, name')
+          .in('people_group_id', peopleGroupIds);
+        if (error) throw error;
+        return (data ?? []).map((r: any) => ({
+          id: r.people_group_id,
+          name: r.name || 'Unknown',
+          level: '', // People groups don't have levels
+        })) as EntityItem[];
       }
     },
     staleTime: 10 * 60 * 1000,
-    enabled: !!parentId && parentId.trim() !== '',
+    enabled:
+      !!parentId &&
+      parentId.trim() !== '' &&
+      (type === 'languages' && inferredParentType === 'people_group'
+        ? languagesPeopleGroupsStatsForPeopleGroup.isSuccess
+        : type === 'languages' && inferredParentType === 'region'
+          ? languagesRegionsStatsForRegion.isSuccess
+          : type === 'regions' && inferredParentType === 'people_group'
+            ? peopleGroupsRegionsStatsForPeopleGroup.isSuccess
+            : type === 'regions' && inferredParentType === 'language_entity'
+              ? languagesRegionsStatsForLanguage.isSuccess
+              : type === 'people_groups' &&
+                  inferredParentType === 'language_entity'
+                ? languagesPeopleGroupsStatsForLanguage.isSuccess
+                : type === 'people_groups' && inferredParentType === 'region'
+                  ? peopleGroupsRegionsStatsForRegion.isSuccess
+                  : true),
   });
 
   const filtered = React.useMemo(() => {
@@ -223,7 +302,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
 
   const useVirtual = filtered.length > 50;
   const gapSize = 8; // gap-2 = 0.5rem = 8px
-  const baseSize = type === 'languages' ? 72 : 92;
+  const baseSize = type === 'languages' ? 72 : type === 'regions' ? 92 : 92; // People groups similar to regions
   const rowVirtualizer = useVirtualizer({
     count: useVirtual ? filtered.length : 0,
     getScrollElement: () => scrollRef?.current ?? null,
@@ -235,9 +314,18 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
     scrollMargin,
   });
 
-  const sectionTitle = type === 'languages' ? 'Languages' : 'Countries';
+  const sectionTitle =
+    type === 'languages'
+      ? 'Languages'
+      : type === 'regions'
+        ? 'Countries'
+        : 'People groups';
   const searchPlaceholder =
-    type === 'languages' ? 'Search languages…' : 'Search countries…';
+    type === 'languages'
+      ? 'Search languages…'
+      : type === 'regions'
+        ? 'Search countries…'
+        : 'Search people groups…';
 
   return (
     <div className='space-y-2'>
@@ -287,7 +375,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
                       router.push(`/map/language/${encodeURIComponent(lid)}`)
                     }
                   />
-                ) : (
+                ) : type === 'regions' ? (
                   <RegionCard
                     regionId={item.id}
                     contextualLanguageId={
@@ -306,6 +394,27 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
                     }
                     onClick={rid =>
                       router.push(`/map/region/${encodeURIComponent(rid)}`)
+                    }
+                  />
+                ) : (
+                  <PeopleGroupCard
+                    peopleGroupId={item.id}
+                    contextualRegionId={
+                      inferredParentType === 'region' ? parentId : undefined
+                    }
+                    showName={true}
+                    showPopulation={true}
+                    showPrimaryLanguageBibleStatus={true}
+                    showLanguageCount={false}
+                    showCountryCount={false}
+                    showImage={false}
+                    showRegionName={false}
+                    isSelected={
+                      selection?.kind === 'people_group' &&
+                      selection.id === item.id
+                    }
+                    onClick={id =>
+                      router.push(`/map/people-group/${encodeURIComponent(id)}`)
                     }
                   />
                 )}
@@ -337,7 +446,7 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
                   router.push(`/map/language/${encodeURIComponent(lid)}`)
                 }
               />
-            ) : (
+            ) : type === 'regions' ? (
               <RegionCard
                 key={item.id}
                 regionId={item.id}
@@ -357,6 +466,27 @@ export const LinkedEntitiesSection: React.FC<LinkedEntitiesSectionProps> = ({
                 }
                 onClick={rid =>
                   router.push(`/map/region/${encodeURIComponent(rid)}`)
+                }
+              />
+            ) : (
+              <PeopleGroupCard
+                key={item.id}
+                peopleGroupId={item.id}
+                contextualRegionId={
+                  inferredParentType === 'region' ? parentId : undefined
+                }
+                showName={true}
+                showPopulation={true}
+                showPrimaryLanguageBibleStatus={true}
+                showLanguageCount={false}
+                showCountryCount={false}
+                showImage={false}
+                showRegionName={false}
+                isSelected={
+                  selection?.kind === 'people_group' && selection.id === item.id
+                }
+                onClick={id =>
+                  router.push(`/map/people-group/${encodeURIComponent(id)}`)
                 }
               />
             )

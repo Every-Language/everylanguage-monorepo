@@ -36,7 +36,34 @@ React 19, TypeScript 5.8, Vite 7, TailwindCSS, TanStack Query 5.83, Zustand 5.0,
 - **Production**: `main` branch → prod Supabase project
 - **All changes**: Only make changes through CI/CD to `develop` branch
 
+## File Size Limits
+
+**Keep UI and business logic files under 500-800 lines unless there's a really good reason**
+
+### Rules:
+- ✅ **Target**: UI components and business logic files should be 500-800 lines max
+- ✅ **Split by responsibility**: If a file has multiple responsibilities, split it into separate files
+- ✅ **Split large files**: If you find a file > 800 lines with no clear reason, split it by responsibility
+- ✅ **Good reasons to exceed**: 
+  - Breaking up would create more complications (e.g., tightly coupled logic)
+  - Generated code or configuration files
+  - Test files with many test cases
+  - Data/type definition files
+
+### When to Split:
+- File has multiple distinct responsibilities (e.g., handles both UI rendering and complex business logic)
+- File is > 800 lines and can be logically split
+- Related functionality can be extracted into hooks, utilities, or sub-components
+- File mixes concerns (e.g., API calls + UI + validation)
+
+### Splitting Strategy:
+1. Identify distinct responsibilities within the file
+2. Extract into separate files (hooks, utilities, sub-components)
+3. Maintain clear imports and public APIs
+4. Update tests accordingly
+
 ## AI Agent Behavior
 - **No unsolicited documentation**: Don't create .md files for summaries, documentation, or explanations unless explicitly requested
 - **Write tests**: When implementing features or fixing bugs, write corresponding tests (see testing.mdc for patterns)
 - **Look up best practices**: Use context7 MCP or available tools to reference official documentation for libraries before implementing patterns
+- **File size awareness**: When editing files, check if they exceed 800 lines and suggest splitting if appropriate

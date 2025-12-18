@@ -18,9 +18,11 @@ type ModalStackItem =
 function LanguageRow({
   entity,
   onEntityClick,
+  onRegionClick,
 }: {
   entity: LanguageEntityWithRegions;
   onEntityClick: (entity: LanguageEntityWithRegions) => void;
+  onRegionClick: (regionId: string) => void;
 }) {
   // Fetch language entity sources for external IDs
   const { data: sources } = useQuery({
@@ -34,6 +36,16 @@ function LanguageRow({
       ?.filter(s => s.external_id && s.external_id_type)
       .map(s => `${s.external_id_type}:${s.external_id}`) || [];
 
+  const regions = entity.regions || [];
+
+  const handleRegionClick = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    regionId: string
+  ) => {
+    e.stopPropagation();
+    onRegionClick(regionId);
+  };
+
   return (
     <tr
       className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
@@ -46,8 +58,21 @@ function LanguageRow({
           {entity.level}
         </span>
       </td>
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-        {entity.region_count || 0} regions
+      <td className='px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400'>
+        {regions.length > 0 ? (
+          <div className='flex flex-col gap-1'>
+            {regions.map(region => (
+              <button
+                key={region.id}
+                onClick={e => handleRegionClick(e, region.id)}
+                className='text-left text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 hover:underline transition-colors'>
+                {region.name}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <span className='text-neutral-400 dark:text-neutral-600'>—</span>
+        )}
       </td>
       <td className='px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400'>
         {externalIds.length > 0 ? (
@@ -378,6 +403,7 @@ export function LanguagesPage() {
                       key={entity.id}
                       entity={entity}
                       onEntityClick={handleEntityClick}
+                      onRegionClick={handleNavigateToRegion}
                     />
                   ))
                 ) : (

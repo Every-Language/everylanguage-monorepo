@@ -10,7 +10,9 @@
     "supabase"
   ],
   "scripts": {
-    "checkall": "turbo run lint && turbo run type-check && turbo run build",
+    "ci:push": "node scripts/ci-local.js push",
+    "ci:pr": "node scripts/ci-local.js pr",
+    "ci:commit": "prettier --write . && turbo run lint && turbo run type-check && turbo run test",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
@@ -65,7 +67,7 @@
       "jws": ">=3.2.3",
       "glob": ">=10.5.0",
       "@modelcontextprotocol/sdk": ">=1.24.0",
-      "react-server-dom-webpack": ">=19.0.1"
+      "react-server-dom-webpack": ">=19.2.2"
     }
   }
 }
