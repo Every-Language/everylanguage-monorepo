@@ -8,15 +8,13 @@ import {
   CardTitle,
   CardContent,
 } from '@/shared/components/ui/Card';
-import { CountUp } from '../components/CountUp';
-import { usePartnerOrgProjects } from '../hooks/usePartnerOrgProjects';
-import { useProjectDistribution } from '../hooks/useProjectDistribution';
+import { usePartnerOrgProjects } from '../api/usePartnerOrgProjects';
+import { useProjectDistribution } from '../api/useProjectDistribution';
 import { MapShell } from '@/features/map/components/MapShell';
 import { ProjectDistributionHeatmapLayers } from '../components/ProjectDistributionHeatmapLayers';
-import {
-  StatsCardSkeleton,
-  MapSkeleton,
-} from '@/shared/components/ui/Skeletons';
+import { MapSkeleton } from '@/shared/components/ui/Skeletons';
+import { createProjectColorMap } from '../utils/colors';
+import type { PartnerOrgProject } from '../types';
 
 export const PartnerOrgDistributionPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
@@ -34,12 +32,14 @@ export const PartnerOrgDistributionPage: React.FC = () => {
   // Initialize all projects as enabled
   React.useEffect(() => {
     if (projects) {
-      const uniqueProjectIds = [...new Set(projects.map(p => p.project_id))];
+      const uniqueProjectIds: string[] = Array.from(
+        new Set(projects.map((p: PartnerOrgProject) => p.project_id))
+      );
       setEnabledProjects(new Set(uniqueProjectIds));
     }
   }, [projects]);
 
-  // Get unique projects - must be called before early return
+  // Get unique projects
   const uniqueProjects = React.useMemo(() => {
     if (!projects) return [];
     const seen = new Map<string, (typeof projects)[0]>();
@@ -51,30 +51,16 @@ export const PartnerOrgDistributionPage: React.FC = () => {
     return Array.from(seen.values());
   }, [projects]);
 
-  // Generate distinct colors for each project - must be called before early return
-  const projectColors = React.useMemo(() => {
-    const colors = [
-      '#3b82f6', // blue
-      '#ef4444', // red
-      '#10b981', // green
-      '#f59e0b', // amber
-      '#8b5cf6', // purple
-      '#ec4899', // pink
-      '#06b6d4', // cyan
-      '#84cc16', // lime
-    ];
-    const colorMap = new Map<string, string>();
-    uniqueProjects.forEach((project, idx) => {
-      colorMap.set(project.project_id, colors[idx % colors.length]);
-    });
-    return colorMap;
-  }, [uniqueProjects]);
+  // Generate distinct colors for each project
+  const projectColors = React.useMemo(
+    () => createProjectColorMap(uniqueProjects, p => p.project_id),
+    [uniqueProjects]
+  );
 
   // Show skeleton while loading projects
   if (projectsLoading) {
     return (
       <div className='space-y-6'>
-        <StatsCardSkeleton count={2} />
         <Card className='border border-neutral-200 dark:border-neutral-800'>
           <CardHeader>
             <CardTitle>Distribution Map</CardTitle>
@@ -130,8 +116,7 @@ export const PartnerOrgDistributionPage: React.FC = () => {
                             color: color,
                           }
                         : undefined
-                    }
-                  >
+                    }>
                     <span
                       className='inline-block w-3 h-3 rounded-full mr-2'
                       style={{ backgroundColor: color }}
@@ -145,55 +130,6 @@ export const PartnerOrgDistributionPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Statistics */}
-      {distributionLoading ? (
-        <StatsCardSkeleton count={2} />
-      ) : (
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-          <Card className='border border-neutral-200 dark:border-neutral-800'>
-            <CardHeader>
-              <CardTitle className='text-sm text-neutral-500'>
-                App Downloads
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-3xl font-bold tracking-tight'>
-                <CountUp
-                  value={(distributionData as any)?.totalDownloads || 0}
-                />
-              </div>
-              <div className='text-xs text-neutral-500 mt-1'>
-                {enabledProjects.size > 0
-                  ? `${enabledProjects.size} project${enabledProjects.size > 1 ? 's' : ''} selected`
-                  : 'No projects selected'}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className='border border-neutral-200 dark:border-neutral-800'>
-            <CardHeader>
-              <CardTitle className='text-sm text-neutral-500'>
-                Total Minutes Listened
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='text-3xl font-bold tracking-tight'>
-                <CountUp
-                  value={
-                    ((distributionData as any)?.totalListeningHours || 0) * 60
-                  }
-                />
-              </div>
-              <div className='text-xs text-neutral-500 mt-1'>
-                {Math.round(
-                  (distributionData as any)?.totalListeningHours || 0
-                )}{' '}
-                hours
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Distribution Map */}
       <Card className='border border-neutral-200 dark:border-neutral-800'>
         <CardHeader>
@@ -204,18 +140,25 @@ export const PartnerOrgDistributionPage: React.FC = () => {
             <MapSkeleton height='600px' />
           ) : (
             <div className='h-[600px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800'>
-              {(distributionData as any)?.heatmap &&
-              Array.isArray((distributionData as any).heatmap) &&
-              (distributionData as any).heatmap.length > 0 ? (
+              {distributionData?.heatmap &&
+              Array.isArray(distributionData.heatmap) &&
+              distributionData.heatmap.length > 0 ? (
                 <MapShell
                   countriesEnabled={false}
-                  padding={{ top: 0, bottom: 0, left: 0, right: 0 }}
-                >
+                  padding={{ top: 0, bottom: 0, left: 0, right: 0 }}>
                   <ProjectDistributionHeatmapLayers
                     enabledProjectIds={enabledProjects}
                     projects={uniqueProjects}
                     projectColors={projectColors}
-                    heatmapData={(distributionData as any).heatmap}
+                    heatmapData={distributionData.heatmap.map(point => ({
+                      language_entity_id: point.language_entity_id,
+                      grid: {
+                        type: 'Point',
+                        coordinates: [point.longitude, point.latitude],
+                      },
+                      event_count: point.listen_count,
+                      last_event_at: null,
+                    }))}
                   />
                 </MapShell>
               ) : (

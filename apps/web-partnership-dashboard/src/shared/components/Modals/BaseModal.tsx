@@ -54,15 +54,13 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       open={open}
       onOpenChange={
         closeOnOverlayClick || closeOnEscape ? onOpenChange : undefined
-      }
-    >
+      }>
       <DialogContent
         className={`${sizeClasses[size]} ${className}`}
         onEscapeKeyDown={closeOnEscape ? undefined : e => e.preventDefault()}
         onPointerDownOutside={
           closeOnOverlayClick ? undefined : e => e.preventDefault()
-        }
-      >
+        }>
         {(title || description || showCloseButton) && (
           <DialogHeader className={headerClassName}>
             <div className='flex items-start justify-between'>
@@ -82,8 +80,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
                 <button
                   onClick={handleClose}
                   className='ml-4 inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:text-neutral-300 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  aria-label='Close modal'
-                >
+                  aria-label='Close modal'>
                   <XMarkIcon className='h-5 w-5' />
                 </button>
               )}

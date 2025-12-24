@@ -28,8 +28,7 @@ export const ImageManager: React.FC = () => {
         name: set.name,
       }))}
       versionsLoading={imageManagement.isLoading}
-      allowAllVersions={true}
-    >
+      allowAllVersions={true}>
       <Button variant='outline' onClick={imageManagement.modals.openCreateSet}>
         <PlusIcon className='h-4 w-4 mr-2' />
         Create Set

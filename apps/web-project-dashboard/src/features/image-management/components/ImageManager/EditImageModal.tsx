@@ -52,8 +52,7 @@ export const EditImageModal: React.FC<EditImageModalProps> = ({
               value={formData.targetType}
               onValueChange={value =>
                 onUpdateField('targetType', value as Image['target_type'])
-              }
-            >
+              }>
               <SelectItem value='book'>Book</SelectItem>
               <SelectItem value='chapter'>Chapter</SelectItem>
               <SelectItem value='verse'>Verse</SelectItem>
@@ -85,8 +84,7 @@ export const EditImageModal: React.FC<EditImageModalProps> = ({
               value={formData.publishStatus}
               onValueChange={value =>
                 onUpdateField('publishStatus', value as Image['publish_status'])
-              }
-            >
+              }>
               <SelectItem value='pending'>Pending</SelectItem>
               <SelectItem value='published'>Published</SelectItem>
               <SelectItem value='archived'>Archived</SelectItem>

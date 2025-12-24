@@ -44,6 +44,7 @@ export function RegionModal({
   const [editingProperties, setEditingProperties] = useState(false);
   const [editingAliases, setEditingAliases] = useState(false);
   const [editingLanguages, setEditingLanguages] = useState(false);
+  const [editingExternalIds, setEditingExternalIds] = useState(false);
 
   // Form states
   const [name, setName] = useState(region.name);
@@ -68,6 +69,16 @@ export function RegionModal({
   >([]);
   const [selectedLanguageIds, setSelectedLanguageIds] = useState<string[]>([]);
   const [languageSearchQuery, setLanguageSearchQuery] = useState('');
+  const [localSources, setLocalSources] = useState<
+    Array<{
+      id?: string;
+      source: string;
+      version: string;
+      is_external: boolean;
+      external_id: string;
+      external_id_type: string;
+    }>
+  >([]);
 
   // Fetch full region details with language entities
   const { data: fullRegion, isLoading: isLoadingFullRegion } = useQuery({
@@ -92,6 +103,12 @@ export function RegionModal({
   const { data: aliases } = useQuery({
     queryKey: ['region-aliases', region.id],
     queryFn: () => regionsApi.fetchRegionAliases(region.id),
+  });
+
+  // Fetch external IDs (sources)
+  const { data: sources } = useQuery({
+    queryKey: ['region-sources', region.id],
+    queryFn: () => regionsApi.fetchRegionSources(region.id),
   });
 
   // Search languages (for linked languages section)
@@ -121,6 +138,22 @@ export function RegionModal({
       setLocalAliases(aliases.map(a => ({ alias_name: a.alias_name || '' })));
     }
   }, [aliases]);
+
+  // Sync local sources with fetched data
+  useEffect(() => {
+    if (sources) {
+      setLocalSources(
+        sources.map(s => ({
+          id: s.id,
+          source: s.source || '',
+          version: s.version || '',
+          is_external: s.is_external,
+          external_id: s.external_id || '',
+          external_id_type: s.external_id_type || '',
+        }))
+      );
+    }
+  }, [sources]);
 
   // Initialize selected languages when full region is loaded
   useEffect(() => {
@@ -204,8 +237,7 @@ export function RegionModal({
             <button
               className='w-5 h-5 flex items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
               onClick={() => toggleHierarchyNode(nodeId)}
-              aria-label={openHierarchyNodes[nodeId] ? 'Collapse' : 'Expand'}
-            >
+              aria-label={openHierarchyNodes[nodeId] ? 'Collapse' : 'Expand'}>
               {openHierarchyNodes[nodeId] ? '▾' : '▸'}
             </button>
           ) : (
@@ -217,8 +249,7 @@ export function RegionModal({
               isCurrentRegion
                 ? 'text-secondary-600 dark:text-secondary-400 font-semibold'
                 : 'text-neutral-700 dark:text-neutral-300'
-            }`}
-          >
+            }`}>
             {node.name}
           </button>
           <span
@@ -226,8 +257,7 @@ export function RegionModal({
               isCurrentRegion
                 ? 'text-secondary-600 dark:text-secondary-400'
                 : 'text-neutral-500 dark:text-neutral-400'
-            }`}
-          >
+            }`}>
             {node.level}
           </span>
         </div>
@@ -306,12 +336,76 @@ export function RegionModal({
     },
   });
 
+  const updateExternalIdsMutation = useMutation({
+    mutationFn: async () => {
+      // Get existing source IDs
+      const existingIds = sources?.map(s => s.id) || [];
+      const localIds = localSources.filter(s => s.id).map(s => s.id!);
+
+      // Delete sources that were removed
+      const toDelete = existingIds.filter(id => !localIds.includes(id));
+      for (const id of toDelete) {
+        await regionsApi.deleteRegionSource(id);
+      }
+
+      // Update or create sources
+      for (const source of localSources.filter(s => s.source.trim())) {
+        if (source.id) {
+          // Update existing
+          await regionsApi.updateRegionSource(source.id, {
+            source: source.source,
+            version: source.version || null,
+            is_external: source.is_external,
+            external_id: source.is_external ? source.external_id || null : null,
+            external_id_type: source.is_external
+              ? source.external_id_type || null
+              : null,
+          });
+        } else {
+          // Create new
+          await regionsApi.createRegionSource(region.id, {
+            source: source.source,
+            version: source.version || null,
+            is_external: source.is_external,
+            external_id: source.is_external ? source.external_id || null : null,
+            external_id_type: source.is_external
+              ? source.external_id_type || null
+              : null,
+          });
+        }
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.refetchQueries({
+        queryKey: ['region-sources', region.id],
+      });
+      setEditingExternalIds(false);
+    },
+  });
+
   const handleToggleLanguage = (languageId: string) => {
     setSelectedLanguageIds(prev =>
       prev.includes(languageId)
         ? prev.filter(id => id !== languageId)
         : [...prev, languageId]
     );
+  };
+
+  const handleAddSource = () => {
+    setLocalSources([
+      ...localSources,
+      {
+        source: '',
+        version: '',
+        is_external: false,
+        external_id: '',
+        external_id_type: '',
+      },
+    ]);
+  };
+
+  const handleRemoveSource = (index: number) => {
+    setLocalSources(localSources.filter((_, i) => i !== index));
   };
 
   return (
@@ -328,8 +422,7 @@ export function RegionModal({
       <div
         className={`absolute inset-y-0 right-0 max-w-3xl w-full bg-white dark:bg-neutral-900 shadow-xl flex flex-col transition-transform duration-300 ease-out ${
           isEntering && !isExiting ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
+        }`}>
         {/* Header */}
         <div className='px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between'>
           <div>
@@ -342,8 +435,7 @@ export function RegionModal({
           </div>
           <button
             onClick={handleClose}
-            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-          >
+            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'>
             <X className='h-5 w-5 text-neutral-600 dark:text-neutral-400' />
           </button>
         </div>
@@ -365,8 +457,7 @@ export function RegionModal({
                   {!editingInfo && (
                     <button
                       onClick={() => setEditingInfo(true)}
-                      className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center gap-1'
-                    >
+                      className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center gap-1'>
                       <Edit className='h-4 w-4' />
                       Edit
                     </button>
@@ -408,8 +499,7 @@ export function RegionModal({
                               | 'town'
                               | 'village'
                           )
-                        }
-                      >
+                        }>
                         <SelectItem value='continent'>Continent</SelectItem>
                         <SelectItem value='world_region'>
                           World Region
@@ -439,8 +529,7 @@ export function RegionModal({
                         label='Parent Region'
                         value={parentId || ''}
                         onValueChange={value => setParentId(value || null)}
-                        placeholder='None'
-                      >
+                        placeholder='None'>
                         <SelectItem value=''>None</SelectItem>
                         {allRegions
                           ?.filter(r => r.id && r.id !== region.id)
@@ -475,15 +564,13 @@ export function RegionModal({
                         setLevel(fullRegion?.level || 'country');
                         setParentId(fullRegion?.parent_id || null);
                       }}
-                      className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updateInfoMutation.mutate()}
                       disabled={updateInfoMutation.isPending}
-                      className='px-4 py-2 bg-secondary-600 dark:bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 dark:hover:bg-secondary-700 transition-colors disabled:opacity-50 flex items-center'
-                    >
+                      className='px-4 py-2 bg-secondary-600 dark:bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 dark:hover:bg-secondary-700 transition-colors disabled:opacity-50 flex items-center'>
                       <Save className='h-4 w-4 mr-2' />
                       {updateInfoMutation.isPending
                         ? 'Saving...'
@@ -534,8 +621,7 @@ export function RegionModal({
                           );
                         }
                       }}
-                      className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center gap-1'
-                    >
+                      className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center gap-1'>
                       <Edit className='h-4 w-4' />
                       Edit
                     </button>
@@ -548,8 +634,7 @@ export function RegionModal({
                       {localProperties.map((prop, index) => (
                         <div
                           key={index}
-                          className='flex items-center space-x-2'
-                        >
+                          className='flex items-center space-x-2'>
                           <input
                             type='text'
                             placeholder='Key'
@@ -578,8 +663,7 @@ export function RegionModal({
                                 prev.filter((_, i) => i !== index)
                               )
                             }
-                            className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg'
-                          >
+                            className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg'>
                             <Trash2 className='h-4 w-4' />
                           </button>
                         </div>
@@ -591,8 +675,7 @@ export function RegionModal({
                             { key: '', value: '' },
                           ])
                         }
-                        className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center'
-                      >
+                        className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center'>
                         <Plus className='h-4 w-4 mr-1' />
                         Add Property
                       </button>
@@ -601,8 +684,7 @@ export function RegionModal({
                     properties.map(prop => (
                       <div
                         key={prop.id}
-                        className='flex justify-between px-3 py-2 bg-neutral-50 dark:bg-neutral-800 rounded-lg'
-                      >
+                        className='flex justify-between px-3 py-2 bg-neutral-50 dark:bg-neutral-800 rounded-lg'>
                         <span className='text-sm font-medium text-neutral-700 dark:text-neutral-300'>
                           {prop.key}
                         </span>
@@ -625,15 +707,13 @@ export function RegionModal({
                         setEditingProperties(false);
                         setLocalProperties([]);
                       }}
-                      className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updatePropertiesMutation.mutate()}
                       disabled={updatePropertiesMutation.isPending}
-                      className='px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors disabled:opacity-50 flex items-center'
-                    >
+                      className='px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors disabled:opacity-50 flex items-center'>
                       <Save className='h-4 w-4' />
                       {updatePropertiesMutation.isPending
                         ? 'Saving...'
@@ -641,6 +721,163 @@ export function RegionModal({
                     </button>
                   </div>
                 )}
+              </section>
+
+              {/* External IDs */}
+              <section>
+                <div className='flex items-center justify-between mb-4'>
+                  <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
+                    External IDs
+                  </h3>
+                  {!editingExternalIds && (
+                    <button
+                      onClick={() => setEditingExternalIds(true)}
+                      className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center gap-1'>
+                      <Edit className='h-4 w-4' />
+                      Edit
+                    </button>
+                  )}
+                </div>
+                <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg space-y-3'>
+                  {editingExternalIds ? (
+                    <>
+                      {localSources.map((source, index) => (
+                        <div
+                          key={index}
+                          className='border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 space-y-2'>
+                          <div className='flex gap-2'>
+                            <input
+                              type='text'
+                              placeholder='Source'
+                              value={source.source}
+                              onChange={e => {
+                                const updated = [...localSources];
+                                updated[index].source = e.target.value;
+                                setLocalSources(updated);
+                              }}
+                              className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500'
+                            />
+                            <input
+                              type='text'
+                              placeholder='Version'
+                              value={source.version}
+                              onChange={e => {
+                                const updated = [...localSources];
+                                updated[index].version = e.target.value;
+                                setLocalSources(updated);
+                              }}
+                              className='w-32 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500'
+                            />
+                            <button
+                              onClick={() => handleRemoveSource(index)}
+                              className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'>
+                              <Trash2 className='h-4 w-4' />
+                            </button>
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <label className='flex items-center gap-2 text-sm'>
+                              <input
+                                type='checkbox'
+                                checked={source.is_external}
+                                onChange={e => {
+                                  const updated = [...localSources];
+                                  updated[index].is_external = e.target.checked;
+                                  setLocalSources(updated);
+                                }}
+                                className='rounded'
+                              />
+                              External ID
+                            </label>
+                          </div>
+                          {source.is_external && (
+                            <div className='flex gap-2'>
+                              <input
+                                type='text'
+                                placeholder='External ID Type'
+                                value={source.external_id_type}
+                                onChange={e => {
+                                  const updated = [...localSources];
+                                  updated[index].external_id_type =
+                                    e.target.value;
+                                  setLocalSources(updated);
+                                }}
+                                className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500'
+                              />
+                              <input
+                                type='text'
+                                placeholder='External ID'
+                                value={source.external_id}
+                                onChange={e => {
+                                  const updated = [...localSources];
+                                  updated[index].external_id = e.target.value;
+                                  setLocalSources(updated);
+                                }}
+                                className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-secondary-500'
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        onClick={handleAddSource}
+                        className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'>
+                        <Plus className='h-4 w-4' />
+                        Add Source
+                      </button>
+                      <div className='flex gap-2 pt-2'>
+                        <button
+                          onClick={() => {
+                            setEditingExternalIds(false);
+                            if (sources) {
+                              setLocalSources(
+                                sources.map(s => ({
+                                  id: s.id,
+                                  source: s.source || '',
+                                  version: s.version || '',
+                                  is_external: s.is_external,
+                                  external_id: s.external_id || '',
+                                  external_id_type: s.external_id_type || '',
+                                }))
+                              );
+                            }
+                          }}
+                          className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => updateExternalIdsMutation.mutate()}
+                          disabled={updateExternalIdsMutation.isPending}
+                          className='px-3 py-1.5 text-sm bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
+                          <Save className='h-4 w-4' />
+                          {updateExternalIdsMutation.isPending
+                            ? 'Saving...'
+                            : 'Save'}
+                        </button>
+                      </div>
+                    </>
+                  ) : sources && sources.length > 0 ? (
+                    <div className='flex flex-col gap-2'>
+                      {sources
+                        .filter(s => s.external_id && s.external_id_type)
+                        .map(source => (
+                          <div
+                            key={source.id}
+                            className='flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0'>
+                            <span className='font-mono text-sm text-neutral-700 dark:text-neutral-300'>
+                              {source.external_id_type}:{source.external_id}
+                            </span>
+                            <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                              {source.source}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className='text-neutral-500 dark:text-neutral-400'>
+                      No external IDs
+                    </p>
+                  )}
+                </div>
               </section>
 
               {/* Alternate Names */}
@@ -661,8 +898,7 @@ export function RegionModal({
                           );
                         }
                       }}
-                      className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center gap-1'
-                    >
+                      className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center gap-1'>
                       <Edit className='h-4 w-4' />
                       Edit
                     </button>
@@ -675,8 +911,7 @@ export function RegionModal({
                       {localAliases.map((alias, index) => (
                         <div
                           key={index}
-                          className='flex items-center space-x-2'
-                        >
+                          className='flex items-center space-x-2'>
                           <input
                             type='text'
                             placeholder='Alias name'
@@ -694,8 +929,7 @@ export function RegionModal({
                                 prev.filter((_, i) => i !== index)
                               )
                             }
-                            className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg'
-                          >
+                            className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg'>
                             <Trash2 className='h-4 w-4' />
                           </button>
                         </div>
@@ -704,8 +938,7 @@ export function RegionModal({
                         onClick={() =>
                           setLocalAliases(prev => [...prev, { alias_name: '' }])
                         }
-                        className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center'
-                      >
+                        className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center'>
                         <Plus className='h-4 w-4 mr-1' />
                         Add Alias
                       </button>
@@ -715,8 +948,7 @@ export function RegionModal({
                       {aliases.map(alias => (
                         <span
                           key={alias.id}
-                          className='px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-full text-sm'
-                        >
+                          className='px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-full text-sm'>
                           {alias.alias_name}
                         </span>
                       ))}
@@ -735,15 +967,13 @@ export function RegionModal({
                         setEditingAliases(false);
                         setLocalAliases([]);
                       }}
-                      className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updateAliasesMutation.mutate()}
                       disabled={updateAliasesMutation.isPending}
-                      className='px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors disabled:opacity-50 flex items-center'
-                    >
+                      className='px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors disabled:opacity-50 flex items-center'>
                       <Save className='h-4 w-4' />
                       {updateAliasesMutation.isPending ? 'Saving...' : 'Save'}
                     </button>
@@ -760,8 +990,7 @@ export function RegionModal({
                   {!editingLanguages && (
                     <button
                       onClick={() => setEditingLanguages(true)}
-                      className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center gap-1'
-                    >
+                      className='text-sm text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 flex items-center gap-1'>
                       <Edit className='h-4 w-4' />
                       Edit
                     </button>
@@ -797,8 +1026,7 @@ export function RegionModal({
                                   selectedLanguageIds.includes(language.id)
                                     ? 'bg-secondary-50 dark:bg-secondary-900/20'
                                     : ''
-                                }`}
-                              >
+                                }`}>
                                 <span className='text-sm text-neutral-900 dark:text-neutral-100'>
                                   {language.name}
                                   <span className='text-xs text-neutral-500 dark:text-neutral-400 ml-2'>
@@ -824,13 +1052,11 @@ export function RegionModal({
                           return (
                             <span
                               key={langId}
-                              className='px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-300 rounded-full text-sm flex items-center'
-                            >
+                              className='px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-300 rounded-full text-sm flex items-center'>
                               {lang?.name || 'Unknown'}
                               <button
                                 onClick={() => handleToggleLanguage(langId)}
-                                className='ml-2 text-secondary-600 dark:text-secondary-400 hover:text-secondary-800 dark:hover:text-secondary-200'
-                              >
+                                className='ml-2 text-secondary-600 dark:text-secondary-400 hover:text-secondary-800 dark:hover:text-secondary-200'>
                                 ×
                               </button>
                             </span>
@@ -848,8 +1074,7 @@ export function RegionModal({
                           <button
                             key={language.id}
                             onClick={() => onNavigateToLanguage(language.id)}
-                            className='px-4 py-3 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left'
-                          >
+                            className='px-4 py-3 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left'>
                             <div className='font-medium text-neutral-900 dark:text-neutral-100 text-sm'>
                               {language.name}
                             </div>
@@ -882,15 +1107,13 @@ export function RegionModal({
                           );
                         }
                       }}
-                      className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updateLanguagesMutation.mutate()}
                       disabled={updateLanguagesMutation.isPending}
-                      className='px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors disabled:opacity-50 flex items-center'
-                    >
+                      className='px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors disabled:opacity-50 flex items-center'>
                       <Save className='h-4 w-4' />
                       {updateLanguagesMutation.isPending ? 'Saving...' : 'Save'}
                     </button>

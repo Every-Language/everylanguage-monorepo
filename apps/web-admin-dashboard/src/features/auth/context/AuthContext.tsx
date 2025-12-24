@@ -38,7 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let userRoles: UserRole[] = [];
       if (user) {
         userRoles = await authService.getUserRoles(user.id);
-        console.log('User roles fetched:', userRoles);
       }
 
       setState({
@@ -157,15 +156,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = authService.onAuthStateChange(async (user, session) => {
-      console.log('Auth state changed:', user?.id);
-
       if (!isMounted) return;
 
       // Fetch user roles if user is authenticated
       let userRoles: UserRole[] = [];
       if (user) {
         userRoles = await authService.getUserRoles(user.id);
-        console.log('User roles fetched on auth change:', userRoles);
       }
 
       setState({

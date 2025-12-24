@@ -20,12 +20,21 @@ export TOTAL_COUNT=0
 # Function to parse .env file
 parse_env_file() {
     local file=$1
-    while IFS='=' read -r key value || [ -n "$key" ]; do
+    while IFS= read -r line || [ -n "$line" ]; do
         # Skip empty lines and comments
-        [[ -z "$key" || "$key" =~ ^#.*$ ]] && continue
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        
+        # Split only on first '=' to handle values with '=' characters (e.g., base64 tokens)
+        key="${line%%=*}"
+        value="${line#*=}"
+        
         # Remove leading/trailing whitespace and quotes
         key=$(echo "$key" | xargs)
         value=$(echo "$value" | xargs | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+        
+        # Skip if key is empty after trimming
+        [[ -z "$key" ]] && continue
+        
         echo "$key=$value"
     done < "$file"
 }
@@ -60,10 +69,19 @@ check_env_file() {
 get_env_value() {
     local key=$1
     local env_file=$2
-    while IFS='=' read -r k v; do
-        [[ -z "$k" || "$k" =~ ^#.*$ ]] && continue
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip empty lines and comments
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        
+        # Split only on first '=' to handle values with '=' characters (e.g., base64 tokens)
+        k="${line%%=*}"
+        v="${line#*=}"
+        
+        # Remove leading/trailing whitespace
         k=$(echo "$k" | xargs)
+        
         if [[ "$k" == "$key" ]]; then
+            # Remove quotes and whitespace from value
             echo "$v" | xargs | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"
             return 0
         fi

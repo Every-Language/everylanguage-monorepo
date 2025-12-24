@@ -342,8 +342,7 @@ export const VerseMarkingModal: React.FC<VerseMarkingModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         size='xl'
-        className='max-w-4xl max-h-[90vh] overflow-hidden flex flex-col'
-      >
+        className='max-w-4xl max-h-[90vh] overflow-hidden flex flex-col'>
         <DialogHeader className='flex-shrink-0'>
           <div className='flex items-center justify-between'>
             <div className='flex-1 min-w-0'>
@@ -353,8 +352,7 @@ export const VerseMarkingModal: React.FC<VerseMarkingModalProps> = ({
               variant='ghost'
               size='sm'
               onClick={() => onOpenChange(false)}
-              className='ml-2 flex-shrink-0'
-            >
+              className='ml-2 flex-shrink-0'>
               <XMarkIcon className='h-4 w-4' />
             </Button>
           </div>
@@ -409,8 +407,7 @@ export const VerseMarkingModal: React.FC<VerseMarkingModalProps> = ({
                   tempVerses.length >= verseConstraints.maxVerses
                 }
                 className='flex items-center space-x-2'
-                size='sm'
-              >
+                size='sm'>
                 <PlusIcon className='h-4 w-4' />
                 <span>
                   Mark Verse{' '}
@@ -453,8 +450,7 @@ export const VerseMarkingModal: React.FC<VerseMarkingModalProps> = ({
                         currentVerse?.id === verse.id
                           ? 'bg-accent-50 dark:bg-accent-900/10'
                           : 'bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700'
-                      }`}
-                    >
+                      }`}>
                       <div className='flex items-center space-x-3 flex-1 min-w-0'>
                         <span className='font-medium text-sm flex-shrink-0 text-primary-600 dark:text-primary-400'>
                           Verse {verse.verse_number}
@@ -487,8 +483,7 @@ export const VerseMarkingModal: React.FC<VerseMarkingModalProps> = ({
                             removeVerse(verse.id);
                           }}
                           className='text-error-600 hover:text-error-800 dark:text-error-400 dark:hover:text-error-200 p-1'
-                          title='Remove verse'
-                        >
+                          title='Remove verse'>
                           <TrashIcon className='h-5 w-5' />
                         </Button>
                       </div>
@@ -506,8 +501,7 @@ export const VerseMarkingModal: React.FC<VerseMarkingModalProps> = ({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isSaving || isLoading || isLoadingAudio}
-          >
+            disabled={isSaving || isLoading || isLoadingAudio}>
             {isSaving ? 'Saving...' : 'Save Verses'}
           </Button>
         </DialogFooter>

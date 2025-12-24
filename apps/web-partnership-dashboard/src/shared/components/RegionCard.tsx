@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from './ui/Card';
-import { useJPCountryDataCache } from '@/features/map/hooks/useJPCountryDataCache';
-import { useRegionStatsContextual } from '@/features/map/hooks/useRegionStatsContextual';
+import { useRegionStats } from '@/features/map/hooks/useRegionStats';
+import { useLanguagesRegionsStats } from '@/features/map/hooks/useLanguagesRegionsStats';
 import { formatPopulationCompact } from '@/features/map/utils/formatPopulation';
 
 export type RegionCardProps = {
@@ -31,44 +31,44 @@ export const RegionCard: React.FC<RegionCardProps> = ({
   showPeopleGroupCount = false,
   showLanguageCount = false,
   showBibleStatusBreakdown = true,
-  showReligiousComposition = false,
+  showReligiousComposition: _showReligiousComposition = false,
   onClick,
   isSelected,
   className = '',
 }) => {
   // Fetch total stats from MV
-  const { countryStats, isLoading: totalLoading } =
-    useJPCountryDataCache(regionId);
+  const { data: regionStats, isLoading: totalLoading } =
+    useRegionStats(regionId);
 
   // Fetch contextual stats if language provided
   const { data: contextualStats, isLoading: contextualLoading } =
-    useRegionStatsContextual(
-      contextualLanguageId ? regionId : null,
-      contextualLanguageId || null
-    );
+    useLanguagesRegionsStats({
+      languageEntityId: contextualLanguageId || null,
+      regionId: contextualLanguageId ? regionId : null,
+    });
 
   const isLoading = totalLoading || contextualLoading;
 
-  // Use contextual stats if available, otherwise fall back to total stats
-  const regionName =
-    contextualStats?.region_name || countryStats?.Ctry || 'Unknown';
-  const population =
-    contextualStats?.region_population ??
-    countryStats?.Population ??
-    countryStats?.WBPopulation;
-  const peopleGroupCount =
-    contextualStats?.region_people_group_count ??
-    countryStats?.CntPeoples ??
-    countryStats?.PeopleGroups;
-  const languageCount =
-    contextualStats?.region_language_count ?? countryStats?.CntPrimaryLanguages;
+  // Get contextual stat for this specific language if available
+  const contextualStat = contextualStats?.find(
+    stat => stat.language_entity_id === contextualLanguageId
+  );
 
-  // Bible status breakdown
-  const languagesNoScripture = contextualStats?.languages_no_scripture ?? null;
-  const languagesPortions = contextualStats?.languages_portions ?? null;
-  const languagesNewTestament =
-    contextualStats?.languages_new_testament ?? null;
-  const languagesFullBible = contextualStats?.languages_full_bible ?? null;
+  // Use contextual stats if available, otherwise fall back to total stats
+  const regionName = regionStats?.region_name || 'Unknown';
+  const population =
+    contextualStat?.population ?? regionStats?.population ?? null;
+  const peopleGroupCount =
+    contextualStat?.people_group_count ??
+    regionStats?.people_group_count ??
+    null;
+  const languageCount = regionStats?.language_count ?? null;
+
+  // Bible status breakdown (from total stats, not contextual)
+  const languagesNoScripture = regionStats?.languages_no_scripture ?? null;
+  const languagesPortions = regionStats?.languages_portions ?? null;
+  const languagesNewTestament = regionStats?.languages_new_testament ?? null;
+  const languagesFullBible = regionStats?.languages_full_bible ?? null;
 
   const handleClick = () => {
     if (onClick) {
@@ -82,8 +82,7 @@ export const RegionCard: React.FC<RegionCardProps> = ({
         <Card
           padding='sm'
           variant='ghost'
-          className={`border border-neutral-200 dark:border-neutral-800 ${className}`}
-        >
+          className={`border border-neutral-200 dark:border-neutral-800 ${className}`}>
           <CardContent>
             <div className='h-12 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse' />
           </CardContent>
@@ -96,20 +95,17 @@ export const RegionCard: React.FC<RegionCardProps> = ({
     <button
       type='button'
       onClick={handleClick}
-      className={`w-full text-left ${className}`}
-    >
+      className={`w-full text-left ${className}`}>
       <Card
         padding='sm'
         variant='ghost'
-        className={`border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 ${isSelected ? 'ring-2 ring-accent-600 ring-offset-1 ring-offset-white dark:ring-offset-neutral-900' : ''}`}
-      >
+        className={`border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 ${isSelected ? 'ring-2 ring-accent-600 ring-offset-1 ring-offset-white dark:ring-offset-neutral-900' : ''}`}>
         <CardContent>
           <div className='space-y-2'>
             {/* Name */}
             {showName && (
               <div
-                className={`text-sm font-medium ${isSelected ? 'text-accent-600' : 'text-neutral-900 dark:text-neutral-100'}`}
-              >
+                className={`text-sm font-medium ${isSelected ? 'text-accent-600' : 'text-neutral-900 dark:text-neutral-100'}`}>
                 {regionName}
               </div>
             )}
@@ -202,95 +198,6 @@ export const RegionCard: React.FC<RegionCardProps> = ({
                       </div>
                     </div>
                   )}
-                </div>
-              )}
-
-            {/* Religious Composition */}
-            {showReligiousComposition &&
-              contextualStats &&
-              (contextualStats.percent_christianity != null ||
-                contextualStats.percent_islam != null ||
-                contextualStats.percent_buddhism != null ||
-                contextualStats.percent_hinduism != null ||
-                contextualStats.percent_ethnic_religions != null ||
-                contextualStats.percent_non_religious != null ||
-                contextualStats.percent_other_small != null) && (
-                <div className='space-y-1 pt-1'>
-                  <div className='text-xs font-medium text-neutral-700 dark:text-neutral-300'>
-                    Religious Composition
-                  </div>
-                  <div className='space-y-0.5 text-xs'>
-                    {contextualStats.percent_christianity != null && (
-                      <div className='flex justify-between'>
-                        <span className='text-neutral-600 dark:text-neutral-400'>
-                          Christianity
-                        </span>
-                        <span className='font-medium'>
-                          {contextualStats.percent_christianity.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                    {contextualStats.percent_islam != null && (
-                      <div className='flex justify-between'>
-                        <span className='text-neutral-600 dark:text-neutral-400'>
-                          Islam
-                        </span>
-                        <span className='font-medium'>
-                          {contextualStats.percent_islam.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                    {contextualStats.percent_buddhism != null && (
-                      <div className='flex justify-between'>
-                        <span className='text-neutral-600 dark:text-neutral-400'>
-                          Buddhism
-                        </span>
-                        <span className='font-medium'>
-                          {contextualStats.percent_buddhism.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                    {contextualStats.percent_hinduism != null && (
-                      <div className='flex justify-between'>
-                        <span className='text-neutral-600 dark:text-neutral-400'>
-                          Hinduism
-                        </span>
-                        <span className='font-medium'>
-                          {contextualStats.percent_hinduism.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                    {contextualStats.percent_ethnic_religions != null && (
-                      <div className='flex justify-between'>
-                        <span className='text-neutral-600 dark:text-neutral-400'>
-                          Ethnic Religions
-                        </span>
-                        <span className='font-medium'>
-                          {contextualStats.percent_ethnic_religions.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                    {contextualStats.percent_non_religious != null && (
-                      <div className='flex justify-between'>
-                        <span className='text-neutral-600 dark:text-neutral-400'>
-                          Non-Religious
-                        </span>
-                        <span className='font-medium'>
-                          {contextualStats.percent_non_religious.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                    {contextualStats.percent_other_small != null && (
-                      <div className='flex justify-between'>
-                        <span className='text-neutral-600 dark:text-neutral-400'>
-                          Other
-                        </span>
-                        <span className='font-medium'>
-                          {contextualStats.percent_other_small.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
           </div>

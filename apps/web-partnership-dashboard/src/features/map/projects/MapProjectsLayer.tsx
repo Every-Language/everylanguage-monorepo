@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchProjectsWithLocation } from './api';
 import { useMapContext } from '../context/MapContext';
 import { useTheme } from '@/shared/theme';
-import { useProjectProgress } from '../../partnerorgs/hooks/useProjectProgress';
+import { useProjectProgress } from '../../partnerorgs/api/useProjectProgress';
 import { Progress } from '@/shared/components/ui/Progress';
 import type * as maplibregl from 'maplibre-gl';
 
@@ -334,8 +334,7 @@ export const MapProjectsLayer: React.FC<{ show: boolean }> = ({ show }) => {
         <Source
           id='projects-pulse-source'
           type='geojson'
-          data={visibleProjectsCollection}
-        >
+          data={visibleProjectsCollection}>
           <Layer
             id='projects-pulse-layer'
             type='circle'
@@ -378,8 +377,7 @@ export const MapProjectsLayer: React.FC<{ show: boolean }> = ({ show }) => {
           closeOnClick={false}
           anchor='bottom'
           offset={[0, -8]}
-          className='projects-popup'
-        >
+          className='projects-popup'>
           <div className='px-2 py-1.5 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 rounded border border-neutral-200 dark:border-neutral-700 shadow-sm min-w-[180px]'>
             <div className='font-semibold text-sm mb-1 text-neutral-900 dark:text-neutral-100'>
               Project

@@ -8,7 +8,7 @@ Functions and triggers related to user management and RBAC.
 
 **RPC function** - Safely retrieves user roles without triggering RLS recursion.
 
-- Returns: Table of role assignments with `role_key`, `role_name`, `resource_type`, `context_type`, `context_id`
+- Returns: Table of role assignments with `role_key`, `role_name`, `resource_type`, `project_id`, `base_id`, `partner_org_id`, `is_global`
 - Security: Uses `SECURITY DEFINER` to bypass RLS
 - Validation: Users can only fetch their own roles
 

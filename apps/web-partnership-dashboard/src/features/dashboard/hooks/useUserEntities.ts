@@ -1,144 +1,114 @@
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 
-export type SimpleEntity = { id: string; name: string; description?: string };
+export type SimpleEntity = {
+  id: string;
+  name: string;
+  description?: string;
+};
+
+export type EntityWithRole = SimpleEntity & {
+  role_id: string;
+  role_key: string | null;
+  role_name: string | null;
+  role_resource_type: string | null;
+};
 
 export function useUserEntities(userId: string | null) {
-  const rolesQ = useQuery({
-    enabled: !!userId,
-    queryKey: ['user-roles', userId],
-    staleTime: 300_000,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('user_roles')
-        .select('context_type,context_id,user_id')
-        .eq('user_id', userId as string);
-      if (error) throw error;
-      return (data ?? []) as Array<{
-        context_type?: string | null;
-        context_id?: string | null;
-        user_id?: string | null;
-      }>;
-    },
-  });
-
-  const idSets = React.useMemo(() => {
-    const sets: Record<'team' | 'base' | 'project' | 'partner', Set<string>> = {
-      team: new Set(),
-      base: new Set(),
-      project: new Set(),
-      partner: new Set(),
-    };
-    for (const r of rolesQ.data ?? []) {
-      const raw = (r.context_type ?? '') as string;
-      const t = raw.trim().toLowerCase();
-      const id = (r.context_id ?? '') as string;
-      if (!id) continue;
-      if (t === 'team') sets.team.add(id);
-      else if (t === 'base') sets.base.add(id);
-      else if (t === 'project') sets.project.add(id);
-      else if (t === 'partner' || t === 'partner_org' || t === 'partner_orgs')
-        sets.partner.add(id);
-    }
-    return sets;
-  }, [rolesQ.data]);
-
-  const teamsQ = useQuery({
-    enabled: idSets.team.size > 0,
-    queryKey: ['entities-teams', Array.from(idSets.team).sort().join(',')],
-    staleTime: 300_000,
-    queryFn: async () => {
-      const ids = Array.from(idSets.team);
-      const { data, error } = await (supabase as any)
-        .from('teams')
-        .select('id,name')
-        .in('id', ids);
-      if (error) throw error;
-      return (data ?? []).map((r: any) => ({
-        id: String((r as { id?: string }).id),
-        name: String((r as { name?: string | null }).name ?? ''),
-      })) as SimpleEntity[];
-    },
-  });
-
+  // Query views directly - they return entities with role information
   const basesQ = useQuery({
-    enabled: idSets.base.size > 0,
-    queryKey: ['entities-bases', Array.from(idSets.base).sort().join(',')],
+    enabled: !!userId,
+    queryKey: ['user-bases', userId],
     staleTime: 300_000,
     queryFn: async () => {
-      const ids = Array.from(idSets.base);
       const { data, error } = await (supabase as any)
-        .from('bases')
-        .select('id,name')
-        .in('id', ids);
+        .from('user_bases')
+        .select(
+          'id,name,description,role_id,role_key,role_name,role_resource_type'
+        );
       if (error) throw error;
       return (data ?? []).map((r: any) => ({
-        id: String((r as { id?: string }).id),
-        name: String((r as { name?: string | null }).name ?? ''),
-      })) as SimpleEntity[];
+        id: String(r.id),
+        name: String(r.name ?? ''),
+        description: r.description ?? undefined,
+        role_id: String(r.role_id),
+        role_key: r.role_key ?? null,
+        role_name: r.role_name ?? null,
+        role_resource_type: r.role_resource_type ?? null,
+      })) as EntityWithRole[];
     },
   });
 
   const projectsQ = useQuery({
-    enabled: idSets.project.size > 0,
-    queryKey: [
-      'entities-projects',
-      Array.from(idSets.project).sort().join(','),
-    ],
+    enabled: !!userId,
+    queryKey: ['user-projects', userId],
     staleTime: 300_000,
     queryFn: async () => {
-      const ids = Array.from(idSets.project);
       const { data, error } = await (supabase as any)
-        .from('projects')
-        .select('id,name')
-        .in('id', ids);
+        .from('user_projects')
+        .select(
+          'id,name,description,role_id,role_key,role_name,role_resource_type'
+        );
       if (error) throw error;
       return (data ?? []).map((r: any) => ({
-        id: String((r as { id?: string }).id),
-        name: String((r as { name?: string | null }).name ?? ''),
-      })) as SimpleEntity[];
+        id: String(r.id),
+        name: String(r.name ?? ''),
+        description: r.description ?? undefined,
+        role_id: String(r.role_id),
+        role_key: r.role_key ?? null,
+        role_name: r.role_name ?? null,
+        role_resource_type: r.role_resource_type ?? null,
+      })) as EntityWithRole[];
     },
   });
 
   const partnersQ = useQuery({
-    enabled: idSets.partner.size > 0,
-    queryKey: [
-      'entities-partners',
-      Array.from(idSets.partner).sort().join(','),
-    ],
+    enabled: !!userId,
+    queryKey: ['user-partner-orgs', userId],
     staleTime: 300_000,
     queryFn: async () => {
-      const ids = Array.from(idSets.partner);
-      // partner_orgs might not be in generated types yet
       const { data, error } = await (supabase as any)
-        .from('partner_orgs')
-        .select('id,name')
-        .in('id', ids);
+        .from('user_partner_orgs')
+        .select(
+          'id,name,description,role_id,role_key,role_name,role_resource_type'
+        );
       if (error) throw error;
-      return (data ?? []).map((r: { id?: string; name?: string | null }) => ({
+      return (data ?? []).map((r: any) => ({
         id: String(r.id),
         name: String(r.name ?? ''),
-      })) as SimpleEntity[];
+        description: r.description ?? undefined,
+        role_id: String(r.role_id),
+        role_key: r.role_key ?? null,
+        role_name: r.role_name ?? null,
+        role_resource_type: r.role_resource_type ?? null,
+      })) as EntityWithRole[];
     },
   });
 
+  // Teams are no longer used, but keeping for backward compatibility
+  const teamsQ = useQuery({
+    enabled: false,
+    queryKey: ['entities-teams'],
+    staleTime: 300_000,
+    queryFn: async () => [] as SimpleEntity[],
+  });
+
   const isLoading =
-    rolesQ.isLoading ||
-    teamsQ.isLoading ||
     basesQ.isLoading ||
     projectsQ.isLoading ||
-    partnersQ.isLoading;
+    partnersQ.isLoading ||
+    teamsQ.isLoading;
+
   const loading = {
-    roles: rolesQ.isLoading,
-    teams: rolesQ.isLoading || teamsQ.isLoading,
-    bases: rolesQ.isLoading || basesQ.isLoading,
-    projects: rolesQ.isLoading || projectsQ.isLoading,
-    partners: rolesQ.isLoading || partnersQ.isLoading,
+    roles: false, // No longer needed - roles are included in entities
+    teams: teamsQ.isLoading,
+    bases: basesQ.isLoading,
+    projects: projectsQ.isLoading,
+    partners: partnersQ.isLoading,
   };
 
   return {
-    roles: rolesQ.data ?? [],
+    roles: [], // Deprecated - use role information from entities instead
     teams: teamsQ.data ?? [],
     bases: basesQ.data ?? [],
     projects: projectsQ.data ?? [],

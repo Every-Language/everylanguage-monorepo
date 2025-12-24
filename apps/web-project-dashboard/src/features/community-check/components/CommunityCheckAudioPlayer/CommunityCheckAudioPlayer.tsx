@@ -238,9 +238,8 @@ export function CommunityCheckAudioPlayer({
         setError(null);
 
         // Get presigned URL for streaming by ID
-        const downloadService = await import(
-          '@/shared/services/downloadService'
-        );
+        const downloadService =
+          await import('@/shared/services/downloadService');
         const service = new downloadService.DownloadService();
         const result = await service.getDownloadUrlsById({
           mediaFileIds: [file.id],
@@ -348,8 +347,7 @@ export function CommunityCheckAudioPlayer({
           size='sm'
           onClick={skipToPreviousVerse}
           disabled={!verseTimestamps.length}
-          className='flex items-center space-x-1'
-        >
+          className='flex items-center space-x-1'>
           <BackwardIcon className='h-4 w-4' />
           <span>Prev Verse</span>
         </Button>
@@ -359,8 +357,7 @@ export function CommunityCheckAudioPlayer({
           size='lg'
           onClick={togglePlay}
           disabled={isLoading}
-          className='flex items-center justify-center w-12 h-12 rounded-full p-0'
-        >
+          className='flex items-center justify-center w-12 h-12 rounded-full p-0'>
           {isLoading ? (
             <div className='animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full' />
           ) : isPlaying ? (
@@ -375,8 +372,7 @@ export function CommunityCheckAudioPlayer({
           size='sm'
           onClick={skipToNextVerse}
           disabled={!verseTimestamps.length}
-          className='flex items-center space-x-1'
-        >
+          className='flex items-center space-x-1'>
           <span>Next Verse</span>
           <ForwardIcon className='h-4 w-4' />
         </Button>
@@ -390,8 +386,7 @@ export function CommunityCheckAudioPlayer({
             variant='ghost'
             size='sm'
             onClick={toggleMute}
-            className='p-1'
-          >
+            className='p-1'>
             {isMuted ? (
               <SpeakerXMarkIcon className='h-4 w-4' />
             ) : (
@@ -416,8 +411,7 @@ export function CommunityCheckAudioPlayer({
           <select
             value={playbackSpeed}
             onChange={e => changePlaybackSpeed(parseFloat(e.target.value))}
-            className='text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-          >
+            className='text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'>
             {speedOptions.map(speed => (
               <option key={speed} value={speed}>
                 {speed}x
@@ -449,8 +443,7 @@ export function CommunityCheckAudioPlayer({
                   currentVerse?.id === verse.id
                     ? 'bg-primary-100 dark:bg-primary-900/30 border-primary-300 dark:border-primary-700 text-primary-800 dark:text-primary-200'
                     : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
-                }`}
-              >
+                }`}>
                 {verse.verse_number}
               </button>
             ))}

@@ -30,8 +30,7 @@ const ThemeButton: React.FC = () => {
       <button
         onClick={handleThemeToggle}
         className='flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-sm text-neutral-700 dark:text-neutral-300'
-        title={`Theme: ${theme}`}
-      >
+        title={`Theme: ${theme}`}>
         {getThemeIcon()}
         <span className='hidden sm:inline'>{getThemeLabel()}</span>
       </button>
@@ -59,8 +58,7 @@ const AuthMenu: React.FC = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-        className='flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-      >
+        className='flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'>
         <div className='h-8 w-8 bg-primary-600 rounded-full flex items-center justify-center'>
           <span className='text-white text-sm font-medium'>{initial}</span>
         </div>
@@ -80,8 +78,7 @@ const AuthMenu: React.FC = () => {
           </div>
           <button
             onClick={handleSignOut}
-            className='w-full flex items-center gap-2 px-3 py-2 text-sm text-error-600 dark:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 transition-colors'
-          >
+            className='w-full flex items-center gap-2 px-3 py-2 text-sm text-error-600 dark:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 transition-colors'>
             <LogOut className='h-4 w-4' />
             <span>Sign Out</span>
           </button>

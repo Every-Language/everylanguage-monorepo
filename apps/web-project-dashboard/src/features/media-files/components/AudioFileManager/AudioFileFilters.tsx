@@ -28,8 +28,7 @@ export const AudioFileFiltersComponent: React.FC<AudioFileFiltersProps> = ({
           </label>
           <Select
             value={filters.bookId}
-            onValueChange={value => handleFilterChange('bookId', value)}
-          >
+            onValueChange={value => handleFilterChange('bookId', value)}>
             <SelectItem value='all'>All Books</SelectItem>
             {books.map(book => (
               <SelectItem key={book.id} value={book.id}>
@@ -46,8 +45,7 @@ export const AudioFileFiltersComponent: React.FC<AudioFileFiltersProps> = ({
           </label>
           <Select
             value={filters.chapterId}
-            onValueChange={value => handleFilterChange('chapterId', value)}
-          >
+            onValueChange={value => handleFilterChange('chapterId', value)}>
             <SelectItem value='all'>All Chapters</SelectItem>
             {chapters.map(chapter => (
               <SelectItem key={chapter.id} value={chapter.id}>
@@ -64,8 +62,7 @@ export const AudioFileFiltersComponent: React.FC<AudioFileFiltersProps> = ({
           </label>
           <Select
             value={filters.publishStatus}
-            onValueChange={value => handleFilterChange('publishStatus', value)}
-          >
+            onValueChange={value => handleFilterChange('publishStatus', value)}>
             <SelectItem value='all'>All Statuses</SelectItem>
             <SelectItem value='pending'>Pending</SelectItem>
             <SelectItem value='published'>Published</SelectItem>
@@ -79,8 +76,7 @@ export const AudioFileFiltersComponent: React.FC<AudioFileFiltersProps> = ({
           </label>
           <Select
             value={filters.uploadStatus}
-            onValueChange={value => handleFilterChange('uploadStatus', value)}
-          >
+            onValueChange={value => handleFilterChange('uploadStatus', value)}>
             <SelectItem value='all'>All Upload Statuses</SelectItem>
             <SelectItem value='completed'>Completed</SelectItem>
             <SelectItem value='pending'>Pending</SelectItem>
@@ -99,8 +95,7 @@ export const AudioFileFiltersComponent: React.FC<AudioFileFiltersProps> = ({
               onClick={() =>
                 handleFilterChange('showDeleted', !filters.showDeleted)
               }
-              className='text-xs'
-            >
+              className='text-xs'>
               {filters.showDeleted ? 'Show Active Files' : 'Show Deleted Files'}
             </Button>
             <span className='text-xs text-gray-500 dark:text-gray-500'>

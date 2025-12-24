@@ -1,0 +1,233 @@
+---
+description: Supabase, Database, Edge Functions
+globs: ["supabase/**/*.{ts,sql}"]
+alwaysApply: false
+---
+
+## Supabase Migration Workflow (CRITICAL)
+
+**NEVER use `supabase db push`**
+
+Always follow:
+1. `supabase migration new <descriptive_name>`
+2. Edit migration in `supabase/migrations/`
+3. `supabase db reset` - Test locally
+4. Commit & push migrations folder
+5. CI/CD handles deployment automatically
+
+## Migration Immutability (CRITICAL)
+
+**NEVER modify migrations once they have been applied to any database (including development)**
+
+### Rules:
+- ✅ **DO**: Create a new migration to fix issues or make changes
+- ❌ **NEVER**: Edit, delete, or rename existing migration files that have been applied
+- ✅ **DO**: Make migrations idempotent (safe to run multiple times)
+- ❌ **NEVER**: Assume a migration will only run once
+
+### Idempotency Patterns:
+
+```sql
+-- ✅ Correct - Idempotent CREATE TABLE
+CREATE TABLE IF NOT EXISTS example (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- ✅ Correct - Idempotent ALTER TABLE
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'example' AND column_name = 'new_column'
+    ) THEN
+        ALTER TABLE example ADD COLUMN new_column TEXT;
+    END IF;
+END $$;
+
+-- ✅ Correct - Idempotent CREATE INDEX
+CREATE INDEX IF NOT EXISTS idx_example_created_at ON example(created_at);
+
+-- ✅ Correct - Idempotent DROP (safe if doesn't exist)
+DROP INDEX IF EXISTS idx_example_old_index;
+
+-- ❌ Wrong - Not idempotent, will fail on second run
+CREATE TABLE example (...);
+CREATE INDEX idx_example_created_at ON example(created_at);
+```
+
+### When You Need to Fix a Migration:
+1. **If migration hasn't been applied yet**: You can still modify it locally before committing
+2. **If migration has been applied**: Create a new migration with a descriptive name like `fix_<original_migration_name>_<issue>`
+
+## Supabase MCP Usage
+
+- **Read-only**: Use Supabase MCP to query development project data only
+- **Never modify**: Do not create/update/delete data through MCP
+- **No deployments**: Never apply migrations or deploy Edge Functions through MCP - only through CI/CD
+- **Default project**: Always use dev remote project (`sjczwtpnjbmscxoszlyi`) unless explicitly asked to use prod
+- **Never execute SQL on prod**: Never execute SQL on production project unless explicitly instructed
+
+## Database Migrations
+
+**All migrations must be idempotent** (see Migration Immutability section above).
+
+Every migration must include:
+```sql
+-- Idempotent CREATE TABLE
+CREATE TABLE IF NOT EXISTS example (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- ALWAYS enable RLS (idempotent - safe to run multiple times)
+ALTER TABLE example ENABLE ROW LEVEL SECURITY;
+
+-- Add indexes for foreign keys (idempotent)
+CREATE INDEX IF NOT EXISTS idx_example_user_id ON example(user_id);
+
+-- Add updated_at trigger (idempotent - DROP IF EXISTS then CREATE)
+DROP TRIGGER IF EXISTS set_updated_at ON example;
+CREATE TRIGGER set_updated_at BEFORE UPDATE ON example
+FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+```
+
+## Database Documentation (REQUIRED)
+
+**Update database documentation when applying migrations:**
+
+After creating or modifying tables, columns, functions, triggers, or policies in a migration, update the relevant documentation file in `docs/database/` organized by domain:
+
+- **Reference Data**: `docs/database/ref-languages-and-regions/`
+- **Bible Data**: `docs/database/bible/`
+- **Bible Progress**: `docs/database/bible/`
+- **Analytics**: `docs/database/analytics/`
+- **User Data**: `docs/database/users/`
+- **Finance**: `docs/database/finance/`
+- **Projects**:`docs/database/projects/`
+- **User & RBAC**:`docs/database/users/`
+
+## RBAC System for RLS
+
+**Use the custom RBAC system, not simple checks:**
+
+```sql
+-- ✅ Correct - uses has_permission
+CREATE POLICY "users_can_view_projects" ON projects FOR SELECT
+USING (
+  (SELECT has_permission(
+    auth.uid(), 
+    'project.read'::permission_key, 
+    'project'::resource_type, 
+    id
+  ))
+);
+
+-- ❌ Wrong - bypasses RBAC
+CREATE POLICY "wrong" ON projects FOR SELECT
+USING (auth.uid() = user_id);
+```
+
+## RLS Performance (REQUIRED)
+
+**CRITICAL: Wrap queries that can be wrapped in SELECT statements to optimize performance**
+
+RLS policies are evaluated once per row. Wrapping function calls in SELECT statements ensures they're evaluated once per query, not once per row.
+
+### Pattern: Wrap auth.uid() and other functions
+
+```sql
+-- ✅ Correct - Wrapped in SELECT, evaluates once per query
+CREATE POLICY "users_can_view_own_data" ON example FOR SELECT
+USING (user_id = (SELECT auth.uid()));
+
+-- ✅ Correct - Wrapped function calls
+CREATE POLICY "users_can_update_own_data" ON example FOR UPDATE
+USING (created_by = (SELECT auth.uid()));
+
+-- ❌ Wrong - Evaluates once per row (performance issue)
+CREATE POLICY "wrong" ON example FOR SELECT
+USING (user_id = auth.uid());
+
+-- ❌ Wrong - Evaluates once per row
+CREATE POLICY "wrong" ON example FOR SELECT
+USING (created_by = auth.uid());
+```
+
+### When to Wrap
+- ✅ **Always wrap**: `auth.uid()`, `auth.jwt()`, and other auth functions
+- ✅ **Wrap**: Function calls that don't depend on row data
+- ❌ **Don't wrap**: Column comparisons that need row context: `user_id = other_user_id` (no function call)
+- ❌ **Don't wrap**: If wrapping breaks the query logic (rare)
+
+### Additional RLS Performance Rules
+- Add indexes on columns used in RLS policies
+- Use security definer functions for complex checks
+- Test RLS policies with EXPLAIN ANALYZE to verify performance
+
+## Edge Functions (Deno)
+
+Config in `supabase/config.toml`:
+```toml
+[functions.my-function]
+verify_jwt = true   # For authenticated endpoints
+# verify_jwt = false  # For public/webhooks
+```
+
+Pattern:
+```ts
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from '@supabase/supabase-js'
+
+serve(async (req: Request) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  // For authenticated endpoints, create client with user context
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: req.headers.get('Authorization')! }}}
+  )
+
+  // Queries respect RLS
+  const { data, error } = await supabaseClient.from('table').select()
+
+  return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  })
+})
+```
+
+**Security:**
+- Only use service role key for system operations, never user data access
+- Always validate input
+- Never expose sensitive errors to client
+
+## Database Best Practices
+- Tables: `snake_case`, plural
+- Always add indexes for foreign keys
+- Use constraints for validation
+- Use soft deletes: `deleted_at TIMESTAMPTZ`
+- Generate types after schema changes: `pnpm db:generate-types`
+
+## CASCADE Operations (CRITICAL)
+
+**When using CASCADE drops, always verify dependent objects:**
+
+- Before dropping with CASCADE, identify all dependent objects (constraints, indexes, views, functions, triggers)
+- Ensure dependent objects are either:
+  - Not needed and safe to drop, OR
+  - Recreated in the same migration if required
+- Check dependencies using:
+  ```sql
+  -- Check foreign key dependencies
+  SELECT * FROM pg_constraint WHERE confrelid = 'table_name'::regclass;
+  
+  -- Check dependent views/functions
+  SELECT * FROM pg_depend WHERE refobjid = 'table_name'::regclass;
+  ```

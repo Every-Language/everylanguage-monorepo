@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../services/supabase';
 import { useBibleProjectDashboard } from './bible-structure';
 import type { TableRow, SupabaseError } from './base-hooks';
+import { extractLocation } from '../../utils/locationUtils';
 
 export type User = TableRow<'users'>;
 export type UserRole = TableRow<'user_roles'>;
@@ -38,6 +39,9 @@ export interface ProjectMetadata {
   sourceLanguage: { id: string; name: string } | null;
   targetLanguage: { id: string; name: string } | null;
   region: { id: string; name: string } | null;
+  location: { lat: number; lng: number } | null;
+  projectStatus: string | null;
+  publishStatus: string | null;
   users: Array<{
     user: User;
     roles: string[];
@@ -328,6 +332,7 @@ export function useBibleVersionProgress(projectId: string | null) {
 
 /**
  * Hook to fetch project users and their roles
+ * Uses direct query now that RLS recursion is fixed
  */
 export function useProjectUsers(projectId: string | null) {
   return useQuery<ProjectMetadata['users'], SupabaseError>({
@@ -335,31 +340,25 @@ export function useProjectUsers(projectId: string | null) {
     queryFn: async () => {
       if (!projectId) throw new Error('Project ID is required');
 
-      // Get user roles for this project
-      const { data: userRoles, error: rolesError } = await supabase
+      // Use direct query now that RLS recursion is fixed
+      const { data: members, error } = await supabase
         .from('user_roles')
         .select(
           `
           user_id,
-          users (
+          role_id,
+          user:users!user_roles_user_id_fkey (
             id,
             first_name,
             last_name,
-            email,
-            phone_number,
-            created_at,
-            updated_at,
-            is_anonymous
-          ),
-          roles (
-            name
+            email
           )
         `
         )
-        .eq('context_type', 'project')
-        .eq('context_id', projectId);
+        .eq('project_id', projectId)
+        .not('project_id', 'is', null);
 
-      if (rolesError) throw rolesError;
+      if (error) throw error;
 
       // Group by user and collect roles
       const userMap = new Map<
@@ -371,26 +370,45 @@ export function useProjectUsers(projectId: string | null) {
         }
       >();
 
-      userRoles?.forEach(
-        (userRole: {
-          user_id: string;
-          users: User;
-          roles: { name: string };
-        }) => {
-          const userId = userRole.user_id;
-          if (!userMap.has(userId)) {
-            userMap.set(userId, {
-              user: userRole.users,
-              roles: [],
-              lastActivity: userRole.users?.updated_at || null,
-            });
-          }
-          if (userRole.roles) {
-            const existingEntry = userMap.get(userId)!;
-            existingEntry.roles.push(userRole.roles.name);
+      type MemberRow = {
+        user_id: string;
+        role_id: string | null;
+        user: {
+          id: string;
+          first_name: string | null;
+          last_name: string | null;
+          email: string | null;
+        } | null;
+      };
+
+      (members || []).forEach((member: MemberRow) => {
+        const user = member.user;
+        const userId = member.user_id;
+        if (!userMap.has(userId)) {
+          userMap.set(userId, {
+            user: {
+              id: userId,
+              first_name: user?.first_name || null,
+              last_name: user?.last_name || null,
+              email: user?.email || null,
+              phone_number: null,
+              created_at: null,
+              updated_at: null,
+              is_anonymous: false,
+            },
+            roles: [],
+            lastActivity: null,
+          });
+        }
+        // Push role_id (not role_name) because UserTable expects role IDs to look up names
+        if (member.role_id) {
+          const existingEntry = userMap.get(userId)!;
+          // Only add if not already present (avoid duplicates)
+          if (!existingEntry.roles.includes(member.role_id)) {
+            existingEntry.roles.push(member.role_id);
           }
         }
-      );
+      });
 
       return Array.from(userMap.values());
     },
@@ -420,6 +438,9 @@ export function useProjectMetadata(projectId: string | null) {
           description,
           created_at,
           updated_at,
+          location,
+          project_status,
+          publish_status,
           source_language_entity:language_entities!source_language_entity_id(
             id,
             name
@@ -440,12 +461,18 @@ export function useProjectMetadata(projectId: string | null) {
       if (error) throw error;
       if (!projectWithRelations) throw new Error('Project not found');
 
+      // Extract location from PostGIS geometry
+      const location = extractLocation(projectWithRelations.location);
+
       return {
         name: projectWithRelations.name,
         description: projectWithRelations.description || '',
         sourceLanguage: projectWithRelations.source_language_entity || null,
         targetLanguage: projectWithRelations.target_language_entity || null,
         region: projectWithRelations.region || null,
+        location,
+        projectStatus: projectWithRelations.project_status || null,
+        publishStatus: projectWithRelations.publish_status || null,
         users: users || [],
         createdAt: projectWithRelations.created_at || null,
         updatedAt: projectWithRelations.updated_at || null,
@@ -671,8 +698,7 @@ export function useAddUserToProject() {
         .insert({
           user_id: user.id,
           role_id: roleId,
-          context_type: 'project',
-          context_id: projectId,
+          project_id: projectId,
         })
         .select()
         .single();
@@ -707,8 +733,8 @@ export function useRemoveUserFromProject() {
         .from('user_roles')
         .delete()
         .eq('user_id', userId)
-        .eq('context_type', 'project')
-        .eq('context_id', projectId);
+        .eq('project_id', projectId)
+        .not('project_id', 'is', null);
 
       if (error) throw error;
       return { success: true };
@@ -723,7 +749,8 @@ export function useRemoveUserFromProject() {
 }
 
 /**
- * Mutation to update a user's roles in a project
+ * Mutation to update a user's role in a project
+ * Note: With one-role-per-entity constraint, only the first roleId is used
  */
 export function useUpdateUserRoles() {
   const queryClient = useQueryClient();
@@ -738,33 +765,55 @@ export function useUpdateUserRoles() {
       userId: string;
       roleIds: string[];
     }) => {
-      // Remove existing roles for this user in this project
-      await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('context_type', 'project')
-        .eq('context_id', projectId);
+      // With one-role-per-entity constraint, only use first roleId
+      const roleId = roleIds[0];
 
-      // Add new roles
-      if (roleIds.length > 0) {
+      if (!roleId) {
+        // If no role provided, remove existing role
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('project_id', projectId)
+          .not('project_id', 'is', null);
+
+        if (error) throw error;
+        return [];
+      }
+
+      // UPSERT: Check if user already has a role for this project
+      const { data: existing } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('project_id', projectId)
+        .not('project_id', 'is', null)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing role
         const { data, error } = await supabase
           .from('user_roles')
-          .insert(
-            roleIds.map(roleId => ({
-              user_id: userId,
-              role_id: roleId,
-              context_type: 'project',
-              context_id: projectId,
-            }))
-          )
+          .update({ role_id: roleId, updated_at: new Date().toISOString() })
+          .eq('id', existing.id)
           .select();
 
         if (error) throw error;
-        return data;
-      }
+        return data || [];
+      } else {
+        // Insert new role (trigger will handle if duplicate exists)
+        const { data, error } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role_id: roleId,
+            project_id: projectId,
+          })
+          .select();
 
-      return [];
+        if (error) throw error;
+        return data || [];
+      }
     },
     onSuccess: (_, variables) => {
       // Invalidate project users query
@@ -799,8 +848,8 @@ export function useBulkUserOperations() {
             .from('user_roles')
             .delete()
             .in('user_id', userIds)
-            .eq('context_type', 'project')
-            .eq('context_id', projectId);
+            .eq('project_id', projectId)
+            .not('project_id', 'is', null);
 
           if (removeError) throw removeError;
           break;
@@ -810,16 +859,41 @@ export function useBulkUserOperations() {
           if (!roleId)
             throw new Error('Role ID required for add_role operation');
 
-          const { error: addError } = await supabase.from('user_roles').insert(
-            userIds.map(userId => ({
-              user_id: userId,
-              role_id: roleId,
-              context_type: 'project',
-              context_id: projectId,
-            }))
-          );
+          // UPSERT: Update existing roles or insert new ones
+          // Process each user individually to handle UPSERT correctly
+          for (const userId of userIds) {
+            const { data: existing } = await supabase
+              .from('user_roles')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('project_id', projectId)
+              .not('project_id', 'is', null)
+              .maybeSingle();
 
-          if (addError) throw addError;
+            if (existing) {
+              // Update existing role
+              const { error: updateError } = await supabase
+                .from('user_roles')
+                .update({
+                  role_id: roleId,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', existing.id);
+
+              if (updateError) throw updateError;
+            } else {
+              // Insert new role (trigger will handle if duplicate exists)
+              const { error: insertError } = await supabase
+                .from('user_roles')
+                .insert({
+                  user_id: userId,
+                  role_id: roleId,
+                  project_id: projectId,
+                });
+
+              if (insertError) throw insertError;
+            }
+          }
           break;
         }
 
@@ -832,8 +906,8 @@ export function useBulkUserOperations() {
             .delete()
             .in('user_id', userIds)
             .eq('role_id', roleId)
-            .eq('context_type', 'project')
-            .eq('context_id', projectId);
+            .eq('project_id', projectId)
+            .not('project_id', 'is', null);
 
           if (removeRoleError) throw removeRoleError;
           break;

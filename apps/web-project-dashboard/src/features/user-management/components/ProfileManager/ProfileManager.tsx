@@ -123,8 +123,7 @@ export const ProfileManager: React.FC = () => {
         <Alert
           variant='success'
           dismissible
-          onDismiss={() => setSuccessMessage(null)}
-        >
+          onDismiss={() => setSuccessMessage(null)}>
           {successMessage}
         </Alert>
       )}
@@ -133,8 +132,7 @@ export const ProfileManager: React.FC = () => {
         <Alert
           variant='error'
           dismissible
-          onDismiss={() => setErrorMessage(null)}
-        >
+          onDismiss={() => setErrorMessage(null)}>
           {errorMessage}
         </Alert>
       )}
@@ -152,8 +150,7 @@ export const ProfileManager: React.FC = () => {
 
         <form
           onSubmit={profileForm.handleSubmit(handleProfileUpdate)}
-          className='space-y-6'
-        >
+          className='space-y-6'>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <div>
               <Input
@@ -240,8 +237,7 @@ export const ProfileManager: React.FC = () => {
               loading={isLoading}
               disabled={
                 !profileForm.formState.isDirty || !profileForm.formState.isValid
-              }
-            >
+              }>
               Update Profile
             </Button>
           </div>
@@ -261,8 +257,7 @@ export const ProfileManager: React.FC = () => {
 
         <form
           onSubmit={passwordForm.handleSubmit(handlePasswordUpdate)}
-          className='space-y-6'
-        >
+          className='space-y-6'>
           <div>
             <Input
               id='currentPassword'
@@ -322,8 +317,7 @@ export const ProfileManager: React.FC = () => {
               type='submit'
               loading={isLoading}
               disabled={!passwordForm.formState.isValid}
-              variant='primary'
-            >
+              variant='primary'>
               Update Password
             </Button>
           </div>

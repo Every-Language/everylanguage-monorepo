@@ -91,8 +91,7 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
       defaultOpen={defaultOpen}
       onOpenChange={onOpenChange}
       delayDuration={delayDuration}
-      disableHoverableContent={disableHoverableContent}
-    >
+      disableHoverableContent={disableHoverableContent}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent
         ref={ref}
@@ -100,8 +99,7 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
         size={size}
         side={side}
         align={align}
-        className={className}
-      >
+        className={className}>
         {content}
       </TooltipContent>
     </TooltipRoot>

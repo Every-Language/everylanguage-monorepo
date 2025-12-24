@@ -51,14 +51,12 @@ export const Progress: React.FC<ProgressProps> = ({
           'relative inline-flex items-center justify-center',
           sizeClasses[size],
           className
-        )}
-      >
+        )}>
         <svg
           className='transform -rotate-90'
           width='100%'
           height='100%'
-          viewBox={`0 0 ${(radius + strokeWidth) * 2} ${(radius + strokeWidth) * 2}`}
-        >
+          viewBox={`0 0 ${(radius + strokeWidth) * 2} ${(radius + strokeWidth) * 2}`}>
           {/* Background circle */}
           <circle
             cx={radius + strokeWidth}
@@ -91,8 +89,7 @@ export const Progress: React.FC<ProgressProps> = ({
             <span
               className={cn(
                 'text-sm font-semibold text-neutral-900 dark:text-neutral-100'
-              )}
-            >
+              )}>
               {Math.round(percentage)}%
             </span>
           </div>
@@ -133,8 +130,7 @@ export const Progress: React.FC<ProgressProps> = ({
         className={cn(
           'bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden',
           heightClasses[size]
-        )}
-      >
+        )}>
         <div
           className={cn(
             'h-full rounded-full transition-all duration-500 ease-out',

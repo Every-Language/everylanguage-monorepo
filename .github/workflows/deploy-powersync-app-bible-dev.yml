@@ -1,0 +1,98 @@
+name: Deploy PowerSync Sync Rules to Development (App Bible)
+
+on:
+  push:
+    branches: [develop]
+    paths: ['apps/app-bible/powersync/sync-rules.yaml', '.github/workflows/deploy-powersync-app-bible-dev.yml']
+  pull_request:
+    branches: [develop]
+    paths: ['apps/app-bible/powersync/sync-rules.yaml']
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  validate:
+    name: Validate Sync Rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Validate sync rules syntax
+        run: |
+          python -c "import yaml; yaml.safe_load(open('apps/app-bible/powersync/sync-rules.yaml'))"
+          echo "✅ Sync rules YAML syntax is valid"
+
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: validate
+    environment: development
+    if: |
+      (github.ref == 'refs/heads/develop' && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Verify schema is in sync with sync rules
+        working-directory: apps/app-bible
+        env:
+          AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
+          ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+        run: |
+          echo "🔍 Checking if committed schema matches sync rules..."
+          pnpm run powersync:verify-schema
+          echo "✅ Schema verification completed"
+
+      - name: Validate sync rules against dev instance
+        working-directory: apps/app-bible
+        env:
+          AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
+          ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+        run: |
+          npx powersync instance sync-rules validate -f powersync/sync-rules.yaml
+          echo "✅ Sync rules validated against dev instance"
+
+      - name: Deploy sync rules to development
+        working-directory: apps/app-bible
+        env:
+          AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
+          ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+        run: |
+          echo "🚀 Deploying sync rules to development environment..."
+          npx powersync instance sync-rules deploy -f powersync/sync-rules.yaml --skipConfirmation
+          echo "✅ Sync rules deployed to development successfully"

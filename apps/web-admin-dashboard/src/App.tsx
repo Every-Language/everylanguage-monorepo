@@ -10,6 +10,7 @@ import { ThemeProvider } from './shared/theme';
 import { ProtectedRoute, LoginPage, UnauthorizedPage } from './features/auth';
 import { AppLayout } from './shared/components/Layout';
 import { AppHeader } from './shared/components/AppHeader';
+import { SandboxBanner } from './shared/components/SandboxBanner';
 
 // Lazy load pages
 const DashboardPage = lazy(() =>
@@ -32,6 +33,11 @@ const DonationsPage = lazy(() =>
     default: m.DonationsPage,
   }))
 );
+const SubscriptionsPage = lazy(() =>
+  import('./features/subscriptions/pages/SubscriptionsPage').then(m => ({
+    default: m.SubscriptionsPage,
+  }))
+);
 const LanguageAvailabilityPage = lazy(() =>
   import('./features/availability/pages/LanguageAvailabilityPage').then(m => ({
     default: m.LanguageAvailabilityPage,
@@ -40,6 +46,21 @@ const LanguageAvailabilityPage = lazy(() =>
 const ProjectsPage = lazy(() =>
   import('./features/availability/pages/ProjectsPage').then(m => ({
     default: m.ProjectsPage,
+  }))
+);
+const AudioVersionsPage = lazy(() =>
+  import('./features/availability/pages/AudioVersionsPage').then(m => ({
+    default: m.AudioVersionsPage,
+  }))
+);
+const TextVersionsPage = lazy(() =>
+  import('./features/availability/pages/TextVersionsPage').then(m => ({
+    default: m.TextVersionsPage,
+  }))
+);
+const ProjectUpdatesPage = lazy(() =>
+  import('./features/project-updates/pages/ProjectUpdatesPage').then(m => ({
+    default: m.ProjectUpdatesPage,
   }))
 );
 const OperationsPage = lazy(() =>
@@ -71,14 +92,14 @@ const PartnerOrgsPage = lazy(() =>
     default: m.PartnerOrgsPage,
   }))
 );
-const TeamsPage = lazy(() =>
-  import('./features/users/pages/TeamsPage').then(m => ({
-    default: m.TeamsPage,
-  }))
-);
 const BasesPage = lazy(() =>
   import('./features/users/pages/BasesPage').then(m => ({
     default: m.BasesPage,
+  }))
+);
+const PermissionsPage = lazy(() =>
+  import('./features/users/pages/PermissionsPage').then(m => ({
+    default: m.PermissionsPage,
   }))
 );
 
@@ -114,6 +135,7 @@ function ProtectedLayout() {
 function App() {
   return (
     <ThemeProvider>
+      <SandboxBanner />
       <Router>
         <Routes>
           {/* Public routes */}
@@ -127,10 +149,23 @@ function App() {
             <Route path='/regions' element={<RegionsPage />} />
             <Route path='/donations' element={<DonationsPage />} />
             <Route
+              path='/budgets/subscriptions'
+              element={<SubscriptionsPage />}
+            />
+            <Route
               path='/budgets/languages'
               element={<LanguageAvailabilityPage />}
             />
-            <Route path='/budgets/projects' element={<ProjectsPage />} />
+            <Route path='/projects' element={<ProjectsPage />} />
+            <Route
+              path='/projects/audio-versions'
+              element={<AudioVersionsPage />}
+            />
+            <Route
+              path='/projects/text-versions'
+              element={<TextVersionsPage />}
+            />
+            <Route path='/projects/updates' element={<ProjectUpdatesPage />} />
             <Route path='/budgets/operations' element={<OperationsPage />} />
             <Route
               path='/statistics/bible-translations'
@@ -142,8 +177,8 @@ function App() {
             />
             <Route path='/users' element={<UsersPage />} />
             <Route path='/users/partner-orgs' element={<PartnerOrgsPage />} />
-            <Route path='/users/teams' element={<TeamsPage />} />
             <Route path='/users/bases' element={<BasesPage />} />
+            <Route path='/permissions' element={<PermissionsPage />} />
           </Route>
 
           {/* Default redirect */}

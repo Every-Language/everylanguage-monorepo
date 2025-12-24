@@ -158,8 +158,7 @@ export function AudioPlayer({
               variant='ghost'
               size='sm'
               onClick={() => onOpenChange(false)}
-              className='ml-2 flex-shrink-0'
-            >
+              className='ml-2 flex-shrink-0'>
               <XMarkIcon className='h-4 w-4' />
             </Button>
           </div>
@@ -224,8 +223,7 @@ export function AudioPlayer({
                   size='lg'
                   onClick={togglePlay}
                   disabled={isLoading}
-                  className='rounded-full w-12 h-12 p-0'
-                >
+                  className='rounded-full w-12 h-12 p-0'>
                   {isLoading ? (
                     <LoadingSpinner />
                   ) : isPlaying ? (
@@ -242,8 +240,7 @@ export function AudioPlayer({
                   variant='ghost'
                   size='sm'
                   onClick={toggleMute}
-                  className='p-1'
-                >
+                  className='p-1'>
                   {isMuted ? (
                     <SpeakerXMarkIcon className='h-4 w-4' />
                   ) : (

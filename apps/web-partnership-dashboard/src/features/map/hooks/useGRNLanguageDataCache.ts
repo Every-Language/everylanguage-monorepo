@@ -64,42 +64,116 @@ export function useGRNLanguageDataCache(
     : null;
 
   return useQuery({
-    queryKey: ['grn-language-data-cache', languageEntityId, iso6393],
+    queryKey: ['grn-language-data-cache', languageEntityId, iso6393, grnId],
     queryFn: async () => {
-      // Try cache first
+      // Helper function to transform cache data to GRNLanguageFeed format
+      const transformCacheData = (
+        cacheData: GrnLanguageCache,
+        iso: string
+      ): GRNLanguageFeed => {
+        // Handle programs - can be null or an array, need to wrap in { program: [...] } format
+        const programsData = cacheData.programs;
+        let programs: { program: any[] };
+        if (Array.isArray(programsData)) {
+          programs = { program: programsData };
+        } else if (
+          programsData &&
+          typeof programsData === 'object' &&
+          'program' in programsData
+        ) {
+          programs = programsData as { program: any[] };
+        } else {
+          programs = { program: [] };
+        }
+
+        return {
+          id: cacheData.grn_language_id || 0,
+          name: cacheData.language_name || iso,
+          nameIetf: cacheData.name_ietf || cacheData.ietf || '',
+          audioSample: cacheData.audio_sample || false,
+          ietf: cacheData.ietf || '',
+          iso: iso,
+          mediaIds:
+            (cacheData.media_ids as
+              | { org_key: number; code: string }[]
+              | null) || [],
+          alternateNames:
+            (cacheData.alternate_names as
+              | { name: string; ietf: string; best?: string }[]
+              | null) || [],
+          programs: programs,
+          version: 1,
+          fetchTime: cacheData.last_synced_at || new Date().toISOString(),
+        };
+      };
+
+      // Strategy 1: Query by GRN Language ID if available (most specific, always unique)
+      if (grnId) {
+        try {
+          const grnIdNumber = parseInt(grnId, 10);
+          if (!isNaN(grnIdNumber)) {
+            const { data: cacheDataRaw, error: cacheError } = await supabase
+              .from('grn_language_cache')
+              .select('*')
+              .eq('grn_language_id', grnIdNumber)
+              .single();
+
+            const cacheData = cacheDataRaw as GrnLanguageCache | null;
+            // Use cache data if found (even if programs is null - that's valid data)
+            if (!cacheError && cacheData) {
+              return transformCacheData(
+                cacheData,
+                cacheData.iso639_3 || iso6393 || ''
+              );
+            }
+          }
+        } catch (error) {
+          // Cache fetch failed, fall through to next strategy
+          console.warn(
+            `GRN cache fetch by GRN ID ${grnId} failed, trying ISO lookup:`,
+            error
+          );
+        }
+      }
+
+      // Strategy 2: Query by ISO code (with GRN ID filter if available to handle multiple matches)
       if (iso6393) {
         try {
-          // Fetch from grn_language_cache
-          const { data: cacheDataRaw, error: cacheError } = await supabase
+          let query = supabase
             .from('grn_language_cache')
             .select('*')
-            .eq('iso639_3', iso6393.toLowerCase())
-            .single();
+            .eq('iso639_3', iso6393.toLowerCase());
+
+          // If we have a GRN ID, filter by it to get the specific language variant
+          if (grnId) {
+            const grnIdNumber = parseInt(grnId, 10);
+            if (!isNaN(grnIdNumber)) {
+              query = query.eq('grn_language_id', grnIdNumber);
+            }
+          }
+
+          const { data: cacheDataRaw, error: cacheError } =
+            await query.single();
 
           const cacheData = cacheDataRaw as GrnLanguageCache | null;
-          if (!cacheError && cacheData && cacheData.programs) {
-            // Transform cache data to GRNLanguageFeed format
-            const languageFeed: GRNLanguageFeed = {
-              id: cacheData.grn_language_id || 0,
-              name: cacheData.language_name || iso6393,
-              nameIetf: cacheData.name_ietf || cacheData.ietf || '',
-              audioSample: cacheData.audio_sample || false,
-              ietf: cacheData.ietf || '',
-              iso: iso6393,
-              mediaIds:
-                (cacheData.media_ids as
-                  | { org_key: number; code: string }[]
-                  | null) || [],
-              alternateNames:
-                (cacheData.alternate_names as
-                  | { name: string; ietf: string; best?: string }[]
-                  | null) || [],
-              programs: cacheData.programs as { program: any[] },
-              version: 1,
-              fetchTime: cacheData.last_synced_at || new Date().toISOString(),
-            };
+          // Use cache data if found (even if programs is null - that's valid data)
+          if (!cacheError && cacheData) {
+            return transformCacheData(cacheData, iso6393);
+          }
 
-            return languageFeed;
+          // If single() failed due to multiple matches, try getting first match
+          // This handles cases where ISO matches multiple but we don't have GRN ID
+          if (cacheError && cacheError.code === 'PGRST116') {
+            const { data: cacheDataArray, error: arrayError } = await supabase
+              .from('grn_language_cache')
+              .select('*')
+              .eq('iso639_3', iso6393.toLowerCase())
+              .limit(1);
+
+            // Use cache data if found (even if programs is null - that's valid data)
+            if (!arrayError && cacheDataArray && cacheDataArray.length > 0) {
+              return transformCacheData(cacheDataArray[0], iso6393);
+            }
           }
         } catch (error) {
           // Cache fetch failed, fall through to API fallback

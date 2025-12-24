@@ -73,7 +73,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ASSIGN SYSTEM ADMIN ROLE
 -- ============================================================================
 INSERT INTO
-  user_roles (user_id, role_id, context_type, context_id)
+  user_roles (user_id, role_id, is_global)
 SELECT
   '880e8400-e29b-41d4-a716-446655440017'::UUID,
   (
@@ -84,9 +84,8 @@ SELECT
     WHERE
       role_key = 'system_admin'
   ),
-  'global',
-  NULL
-ON CONFLICT (user_id, role_id, context_type, context_id) DO NOTHING;
+  TRUE
+ON CONFLICT (user_id, role_id) WHERE is_global = TRUE DO NOTHING;
 
 
 -- ============================================================================
@@ -98,7 +97,7 @@ SELECT
   au.email,
   r.name AS role_name,
   r.role_key,
-  ur.context_type,
+  ur.is_global,
   '✅ You can now login with:' AS login_info,
   'Email: systemadmin@everylanguage.com' AS email_credential,
   'Password: systemadmin@everylanguage.com' AS password_credential

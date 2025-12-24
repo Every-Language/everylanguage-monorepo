@@ -216,8 +216,7 @@ export const PartnerOrgDropdown: React.FC<PartnerOrgDropdownProps> = ({
       {isOpen && (
         <div
           ref={dropdownRef}
-          className='absolute z-50 w-full mt-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg max-h-60 overflow-y-auto'
-        >
+          className='absolute z-50 w-full mt-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
           {loading && orgs.length === 0 ? (
             <div className='px-4 py-3 text-sm text-neutral-600 dark:text-neutral-400'>
               Loading organizations...
@@ -239,8 +238,7 @@ export const PartnerOrgDropdown: React.FC<PartnerOrgDropdownProps> = ({
                     value === org.id
                       ? 'bg-primary-50 dark:bg-primary-900/20'
                       : ''
-                  }`}
-                >
+                  }`}>
                   <div className='font-medium text-sm text-neutral-900 dark:text-neutral-100'>
                     {org.name}
                   </div>
@@ -256,8 +254,7 @@ export const PartnerOrgDropdown: React.FC<PartnerOrgDropdownProps> = ({
               {hasMore && (
                 <div
                   ref={sentinelRef}
-                  className='h-4 flex items-center justify-center'
-                >
+                  className='h-4 flex items-center justify-center'>
                   {isLoadingMore && (
                     <div className='text-xs text-neutral-500'>
                       Loading more...

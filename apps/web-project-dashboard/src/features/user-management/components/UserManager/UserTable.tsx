@@ -150,8 +150,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                 return (
                   <tr
                     key={user.user.id}
-                    className='border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800'
-                  >
+                    className='border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800'>
                     {canManageUsers && (
                       <td className='py-3 px-4'>
                         <input
@@ -185,8 +184,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                         {user.roles.map(role => (
                           <span
                             key={role}
-                            className='inline-block bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs px-2 py-1 rounded'
-                          >
+                            className='inline-block bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs px-2 py-1 rounded'>
                             {availableRoles.find(r => r.id === role)?.name ||
                               'Unknown Role'}
                           </span>
@@ -214,16 +212,14 @@ export const UserTable: React.FC<UserTableProps> = ({
                           <Button
                             size='sm'
                             variant='outline'
-                            onClick={() => onEditUser(user)}
-                          >
+                            onClick={() => onEditUser(user)}>
                             <PencilIcon className='h-4 w-4' />
                           </Button>
                           <Button
                             size='sm'
                             variant='outline'
                             onClick={() => onRemoveUser(user.user.id)}
-                            disabled={removeUserPending}
-                          >
+                            disabled={removeUserPending}>
                             <TrashIcon className='h-4 w-4' />
                           </Button>
                         </div>

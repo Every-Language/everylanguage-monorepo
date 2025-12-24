@@ -1,8 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from './ui/Card';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/shared/services/supabase';
-import { usePeopleGroupStatsContextual } from '@/features/map/hooks/usePeopleGroupStatsContextual';
+import { usePeopleGroupStats } from '@/features/map/hooks/usePeopleGroupStats';
+import { usePeopleGroupsRegionsStats } from '@/features/map/hooks/usePeopleGroupsRegionsStats';
 import { formatPopulationCompact } from '@/features/map/utils/formatPopulation';
 import { BibleStatusBadge } from './BibleStatusBadge';
 
@@ -27,51 +26,6 @@ export type PeopleGroupCardProps = {
   className?: string;
 };
 
-import type { PeopleGroupStats } from '@/features/map/types/databaseViews';
-
-/**
- * Hook to fetch total people group stats from mv_people_group_stats
- */
-function usePeopleGroupStats(peopleGroupId: string | null) {
-  return useQuery({
-    queryKey: ['people-group-stats', peopleGroupId],
-    queryFn: async () => {
-      if (!peopleGroupId) return null;
-
-      const { data, error } = await supabase
-        .from('mv_people_group_stats')
-        .select(
-          'people_group_id, name, population, language_count, country_count, primary_language_bible_status, image_url'
-        )
-        .eq('people_group_id', peopleGroupId)
-        .maybeSingle(); // Use maybeSingle() instead of single() to avoid 404 errors
-
-      if (error) {
-        // If no data found, return null (not an error)
-        // PGRST116 = no rows returned, PGRST301 = resource not found
-        if (error.code === 'PGRST116' || error.code === 'PGRST301') {
-          return null;
-        }
-        throw error;
-      }
-
-      return data as Pick<
-        PeopleGroupStats,
-        | 'people_group_id'
-        | 'name'
-        | 'population'
-        | 'language_count'
-        | 'country_count'
-        | 'primary_language_bible_status'
-        | 'image_url'
-      > | null;
-    },
-    enabled: !!peopleGroupId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    retry: false, // Don't retry on 404s
-  });
-}
-
 export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
   peopleGroupId,
   contextualRegionId,
@@ -93,31 +47,28 @@ export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
 
   // Fetch contextual stats if region provided
   const { data: contextualStats, isLoading: contextualLoading } =
-    usePeopleGroupStatsContextual(
-      contextualRegionId ? peopleGroupId : null,
-      contextualRegionId || null
-    );
+    usePeopleGroupsRegionsStats({
+      peopleGroupId: contextualRegionId ? peopleGroupId : null,
+      regionId: contextualRegionId || null,
+    });
 
   const isLoading = totalLoading || contextualLoading;
 
+  // Get contextual stat for this specific region if available
+  const contextualStat = contextualStats?.find(
+    stat => stat.region_id === contextualRegionId
+  );
+
   // Use contextual stats if available, otherwise fall back to total stats
-  const displayName =
-    contextualStats?.peop_name_in_country ||
-    contextualStats?.people_group_name ||
-    totalStats?.name ||
-    'Unknown';
+  const displayName = contextualStat?.name || totalStats?.name || 'Unknown';
   const population =
-    contextualStats?.instance_population ??
-    contextualStats?.population ??
-    totalStats?.population;
+    contextualStat?.population ?? totalStats?.population ?? null;
   const languageCount =
-    contextualStats?.language_count ?? totalStats?.language_count;
-  const countryCount =
-    contextualStats?.country_count ?? totalStats?.country_count;
+    contextualStat?.language_count ?? totalStats?.language_count ?? null;
+  const countryCount = totalStats?.country_count ?? null; // Not in contextual view
   const primaryLanguageBibleStatus =
-    contextualStats?.primary_language_bible_status ??
-    totalStats?.primary_language_bible_status;
-  const imageUrl = contextualStats?.image_url ?? totalStats?.image_url;
+    totalStats?.primary_language_bible_status ?? null; // Not in contextual view
+  const imageUrl = totalStats?.image_url ?? null; // Not in contextual view
 
   const handleClick = () => {
     if (onClick) {
@@ -131,8 +82,7 @@ export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
         <Card
           padding='sm'
           variant='ghost'
-          className={`border border-neutral-200 dark:border-neutral-800 ${className}`}
-        >
+          className={`border border-neutral-200 dark:border-neutral-800 ${className}`}>
           <CardContent>
             <div className='h-12 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse' />
           </CardContent>
@@ -145,13 +95,11 @@ export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
     <button
       type='button'
       onClick={handleClick}
-      className={`w-full text-left ${className}`}
-    >
+      className={`w-full text-left ${className}`}>
       <Card
         padding='sm'
         variant='ghost'
-        className={`border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 ${isSelected ? 'ring-2 ring-accent-600 ring-offset-1 ring-offset-white dark:ring-offset-neutral-900' : ''}`}
-      >
+        className={`border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 ${isSelected ? 'ring-2 ring-accent-600 ring-offset-1 ring-offset-white dark:ring-offset-neutral-900' : ''}`}>
         <CardContent>
           <div className='flex items-start gap-3'>
             {/* Image */}
@@ -177,8 +125,7 @@ export const PeopleGroupCard: React.FC<PeopleGroupCardProps> = ({
               {showName && (
                 <div className='space-y-0.5'>
                   <div
-                    className={`text-sm font-medium ${isSelected ? 'text-accent-600' : 'text-neutral-900 dark:text-neutral-100'}`}
-                  >
+                    className={`text-sm font-medium ${isSelected ? 'text-accent-600' : 'text-neutral-900 dark:text-neutral-100'}`}>
                     {displayName}
                   </div>
                   {showRegionName && regionName && (

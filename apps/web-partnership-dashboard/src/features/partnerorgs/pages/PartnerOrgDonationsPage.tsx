@@ -1,31 +1,18 @@
 'use client';
 
 import React from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
 import { useAuth } from '@/features/auth';
-import { usePartnerOrgDonations } from '../hooks/usePartnerOrgDonations';
+import { usePartnerOrgDonations } from '../api/usePartnerOrgDonations';
 import { TableRowSkeleton } from '@/shared/components/ui/Skeletons';
-
-const formatCurrency = (cents: number, currencyCode: string = 'USD') =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currencyCode,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(cents / 100);
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
+import { formatCurrency, formatDate } from '@/shared/utils/formatters';
+import { normalizeSupabaseRelation } from '@/shared/utils/supabase-helpers';
 
 export const PartnerOrgDonationsPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
+  const router = useRouter();
   const { user } = useAuth();
 
   const { data: donations, isLoading } = usePartnerOrgDonations(
@@ -59,7 +46,6 @@ export const PartnerOrgDonationsPage: React.FC = () => {
 
       {/* Table Rows */}
       {donations.map(donation => {
-        // Calculate total allocations for this donation
         const totalAllocated = donation.donation_allocations.reduce(
           (sum, alloc) => sum + alloc.amount_cents,
           0
@@ -68,15 +54,14 @@ export const PartnerOrgDonationsPage: React.FC = () => {
         return (
           <div
             key={donation.id}
-            className='grid grid-cols-[1fr_1fr_1fr_2fr] gap-4 px-4 py-4 border-b border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors'
-          >
+            className='grid grid-cols-[1fr_1fr_1fr_2fr] gap-4 px-4 py-4 border-b border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors'>
             {/* Date Column */}
             <div className='text-sm text-neutral-900 dark:text-neutral-100'>
               {formatDate(donation.created_at)}
             </div>
 
             {/* Status Column */}
-            <div>
+            <div className='space-y-1'>
               <span
                 className={`text-xs px-2 py-1 rounded capitalize inline-block ${
                   donation.status === 'completed'
@@ -84,10 +69,26 @@ export const PartnerOrgDonationsPage: React.FC = () => {
                     : donation.status === 'pending'
                       ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
                       : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                }`}
-              >
+                }`}>
                 {donation.status}
               </span>
+              {donation.is_recurring && donation.subscription && (
+                <div className='flex items-center gap-1'>
+                  <span className='text-xs text-blue-600 dark:text-blue-400'>
+                    Recurring
+                  </span>
+                  {normalizeSupabaseRelation(donation.subscription)?.status ===
+                    'active' && (
+                    <Button
+                      variant='ghost'
+                      size='xs'
+                      className='h-5 px-1 text-xs'
+                      onClick={() => router.push('/profile/subscriptions')}>
+                      Manage
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Amount Column */}
@@ -102,8 +103,7 @@ export const PartnerOrgDonationsPage: React.FC = () => {
                   {donation.donation_allocations.map(alloc => (
                     <div
                       key={alloc.id}
-                      className='text-sm text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='text-sm text-neutral-700 dark:text-neutral-300'>
                       <span className='font-medium'>
                         {formatCurrency(
                           alloc.amount_cents,

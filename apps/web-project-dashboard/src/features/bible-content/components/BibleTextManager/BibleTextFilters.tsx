@@ -29,8 +29,7 @@ export const BibleTextFiltersComponent: React.FC<BibleTextFiltersProps> = ({
           </label>
           <Select
             value={filters.bookId}
-            onValueChange={value => handleFilterChange('bookId', value)}
-          >
+            onValueChange={value => handleFilterChange('bookId', value)}>
             <SelectItem value='all'>All Books</SelectItem>
             {books.map(book => (
               <SelectItem key={book.id} value={book.id}>
@@ -48,8 +47,7 @@ export const BibleTextFiltersComponent: React.FC<BibleTextFiltersProps> = ({
           <Select
             value={filters.chapterId}
             onValueChange={value => handleFilterChange('chapterId', value)}
-            disabled={!filters.bookId || filters.bookId === 'all'}
-          >
+            disabled={!filters.bookId || filters.bookId === 'all'}>
             <SelectItem value='all'>
               {!filters.bookId || filters.bookId === 'all'
                 ? 'Select a book first'
@@ -70,8 +68,7 @@ export const BibleTextFiltersComponent: React.FC<BibleTextFiltersProps> = ({
           </label>
           <Select
             value={filters.publishStatus}
-            onValueChange={value => handleFilterChange('publishStatus', value)}
-          >
+            onValueChange={value => handleFilterChange('publishStatus', value)}>
             <SelectItem value='all'>All Statuses</SelectItem>
             <SelectItem value='pending'>Pending</SelectItem>
             <SelectItem value='published'>Published</SelectItem>
@@ -90,8 +87,7 @@ export const BibleTextFiltersComponent: React.FC<BibleTextFiltersProps> = ({
               onClick={() =>
                 handleFilterChange('showDeleted', !filters.showDeleted)
               }
-              className='text-xs'
-            >
+              className='text-xs'>
               {filters.showDeleted ? 'Show Active Texts' : 'Show Deleted Texts'}
             </Button>
             <span className='text-xs text-gray-500 dark:text-gray-500'>

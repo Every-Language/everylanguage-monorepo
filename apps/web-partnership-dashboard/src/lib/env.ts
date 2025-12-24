@@ -10,13 +10,12 @@ export const env = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_STRIPE_PK ||
-    '',
-  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '',
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
   NEXT_PUBLIC_ENABLE_DONATE: process.env.NEXT_PUBLIC_ENABLE_DONATE !== 'false',
   NEXT_PUBLIC_ENABLE_PROJECTS:
     process.env.NEXT_PUBLIC_ENABLE_PROJECTS !== 'false',
+  NEXT_PUBLIC_ENABLE_OPERATIONS:
+    process.env.NEXT_PUBLIC_ENABLE_OPERATIONS !== 'false',
 } as const;
 
 // Server-side only environment variables

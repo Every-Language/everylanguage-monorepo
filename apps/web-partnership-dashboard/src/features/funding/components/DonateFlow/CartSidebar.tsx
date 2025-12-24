@@ -63,8 +63,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
             {selectedEntities.map(entity => (
               <div
                 key={`${entity.type}-${entity.id}`}
-                className='flex items-start justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700'
-              >
+                className='flex items-start justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700'>
                 <div className='flex-1 min-w-0'>
                   <div className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
                     {entity.name}
@@ -77,8 +76,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                   <button
                     onClick={() => onRemove(entity.id, entity.type)}
                     className='ml-2 p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded transition-colors'
-                    aria-label={`Remove ${entity.name}`}
-                  >
+                    aria-label={`Remove ${entity.name}`}>
                     <X className='h-4 w-4 text-neutral-500' />
                   </button>
                 )}

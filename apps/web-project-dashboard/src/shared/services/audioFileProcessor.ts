@@ -2,6 +2,7 @@ import {
   parseFilename,
   resolveFullChapterEndVerse,
   resolveFullChapterEndVersesBatch,
+  validateParsedFilenameBatch,
   type ParsedFilename,
 } from './filenameParser';
 
@@ -63,6 +64,19 @@ export class AudioFileProcessor {
           file.name,
           error
         );
+      }
+    }
+
+    // Validate against database if we have a bible version
+    if (bibleVersionId && filenameParseResult.detectedBook) {
+      try {
+        const { validateParsedFilename } = await import('./filenameParser');
+        filenameParseResult = await validateParsedFilename(
+          filenameParseResult,
+          bibleVersionId
+        );
+      } catch (error) {
+        console.warn('Failed to validate filename for', file.name, error);
       }
     }
 
@@ -244,6 +258,26 @@ export class AudioFileProcessor {
 
       const batchTime = Date.now() - batchStartTime;
       console.log(`✅ Batch chapter resolution completed in ${batchTime}ms`);
+
+      // Step 2.5: Batch validate against database (book, chapter, verse existence)
+      const validationStartTime = Date.now();
+      const parseResultsForValidation = resolvedParseResults.map(
+        item => item.parseResult
+      );
+      const validatedResults = await validateParsedFilenameBatch(
+        parseResultsForValidation,
+        bibleVersionId
+      );
+
+      resolvedParseResults = resolvedParseResults.map((item, index) => ({
+        file: item.file,
+        parseResult: validatedResults[index],
+      }));
+
+      const validationTime = Date.now() - validationStartTime;
+      console.log(
+        `✅ Batch validation completed in ${validationTime}ms (${validatedResults.filter(r => r.errors && r.errors.length > 0).length} with errors)`
+      );
     } else {
       resolvedParseResults = filenameParseResults;
     }

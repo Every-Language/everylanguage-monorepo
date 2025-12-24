@@ -15,7 +15,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <AuthProvider>{children}</AuthProvider>
         </ToastManager>
       </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* Only show DevTools in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
     </QueryClientProvider>
   );
 }

@@ -12,8 +12,10 @@ export interface UserRole {
   role_key: string;
   role_name: string;
   resource_type: string;
-  context_type?: string | null;
-  context_id?: string | null;
+  project_id?: string | null;
+  base_id?: string | null;
+  partner_org_id?: string | null;
+  is_global?: boolean;
 }
 
 // Auth context interface

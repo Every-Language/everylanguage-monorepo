@@ -1,0 +1,105 @@
+---
+description: Testing with Vitest and Testing Library
+globs: ["**/*.{test,spec}.{ts,tsx}"]
+alwaysApply: false
+---
+
+## Test Philosophy
+- Test behavior, not implementation
+- Query by roles/labels, not CSS classes
+- Use `userEvent` for interactions
+
+## React Testing Library
+
+Query priority:
+1. `getByRole('button', { name: /submit/i })`
+2. `getByLabelText(/email/i)`
+3. `getByText(/welcome/i)`
+4. `getByTestId()` - last resort
+
+Pattern:
+```tsx
+import { render, screen } from '@testing-library/react'
+import { userEvent } from '@testing-library/user-event'
+
+it('submits form', async () => {
+  const user = userEvent.setup()
+  const onSubmit = vi.fn()
+  
+  render(<Form onSubmit={onSubmit} />)
+  
+  await user.type(screen.getByLabelText(/email/i), 'test@example.com')
+  await user.click(screen.getByRole('button', { name: /submit/i }))
+  
+  expect(onSubmit).toHaveBeenCalledWith({ email: 'test@example.com' })
+})
+```
+
+## TanStack Query Testing
+
+```tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false } }
+  })
+}
+
+it('loads data', async () => {
+  const queryClient = createTestQueryClient()
+  render(
+    <QueryClientProvider client={queryClient}>
+      <Component />
+    </QueryClientProvider>
+  )
+  
+  await waitFor(() => {
+    expect(screen.getByText('Loaded')).toBeInTheDocument()
+  })
+})
+```
+
+## Zustand Testing
+
+```tsx
+import { useStore } from '@/stores/auth'
+
+beforeEach(() => {
+  useStore.setState({ user: null, isAuth: false })
+})
+```
+
+## Mocking
+
+```ts
+// Mock API
+vi.mock('./api')
+vi.mocked(api.fetchUsers).mockResolvedValue([...])
+
+// Mock Supabase
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({ data: [...], error: null }))
+    }))
+  }
+}))
+```
+
+## Accessibility Testing
+
+```tsx
+import { axe, toHaveNoViolations } from 'jest-axe'
+expect.extend(toHaveNoViolations)
+
+it('has no a11y violations', async () => {
+  const { container } = render(<Component />)
+  expect(await axe(container)).toHaveNoViolations()
+})
+```
+
+## Commands
+- `pnpm test` - Run all
+- `pnpm test:watch` - Watch mode
+- `pnpm --filter=<workspace> test` - Specific workspace

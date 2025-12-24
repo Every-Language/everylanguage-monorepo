@@ -17,8 +17,7 @@ function BibleTranslationOverrideRow({
   return (
     <tr
       className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
-      onClick={() => onOverrideClick(override)}
-    >
+      onClick={() => onOverrideClick(override)}>
       <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
         {override.language_entity?.name || 'Unknown'}
       </td>
@@ -157,8 +156,7 @@ export function BibleTranslationOverridesPage() {
         </div>
         <button
           onClick={handleCreateClick}
-          className='px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2'
-        >
+          className='px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2'>
           <Plus className='h-5 w-5' />
           Create New
         </button>
@@ -212,8 +210,7 @@ export function BibleTranslationOverridesPage() {
                       }
                       setLanguageSearchQuery('');
                     }}
-                    className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100'
-                  >
+                    className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100'>
                     {language.name}{' '}
                     <span className='text-neutral-500 dark:text-neutral-400'>
                       ({language.level})
@@ -230,8 +227,7 @@ export function BibleTranslationOverridesPage() {
             {languageFilters.map(language => (
               <span
                 key={language.id}
-                className='inline-flex items-center gap-1 px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 rounded-full text-sm'
-              >
+                className='inline-flex items-center gap-1 px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 rounded-full text-sm'>
                 {language.name}
                 <button
                   onClick={() => {
@@ -240,8 +236,7 @@ export function BibleTranslationOverridesPage() {
                     );
                     setPage(1);
                   }}
-                  className='hover:text-primary-900 dark:hover:text-primary-100'
-                >
+                  className='hover:text-primary-900 dark:hover:text-primary-100'>
                   ×
                 </button>
               </span>
@@ -306,8 +301,7 @@ export function BibleTranslationOverridesPage() {
                   <tr>
                     <td
                       colSpan={9}
-                      className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                    >
+                      className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                       {debouncedSearch
                         ? 'No bible translation overrides found matching your search'
                         : 'No bible translation overrides found'}
@@ -329,8 +323,7 @@ export function BibleTranslationOverridesPage() {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              >
+                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                 <ChevronLeft className='h-4 w-4' />
               </button>
               <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
@@ -340,8 +333,7 @@ export function BibleTranslationOverridesPage() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              >
+                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                 <ChevronRight className='h-4 w-4' />
               </button>
             </div>

@@ -7,55 +7,36 @@ export interface PartnerOrgOption {
   name: string;
   description: string | null;
   isPersonal: boolean;
+  role_id?: string;
+  role_key?: string | null;
+  role_name?: string | null;
 }
 
 export function useUserPartnerOrgs(userId: string | null) {
-  // Query partner orgs from user_roles
-  const rolesQuery = useQuery({
-    enabled: !!userId,
-    queryKey: ['user-partner-org-roles', userId],
-    staleTime: 300_000,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('user_roles')
-        .select('context_id, context_type')
-        .eq('user_id', userId as string)
-        .in('context_type', ['partner', 'partner_org', 'partner_orgs']);
-      if (error) throw error;
-      return (data ?? []) as Array<{
-        context_id?: string | null;
-        context_type?: string | null;
-      }>;
-    },
-  });
-
-  // Get partner org IDs from roles
-  const partnerOrgIds =
-    rolesQuery.data
-      ?.map(r => r.context_id)
-      .filter((id): id is string => !!id) ?? [];
-
-  // Query partner orgs from user_roles
+  // Query partner orgs using user_partner_orgs view (includes role information)
   const partnerOrgsQuery = useQuery({
-    enabled: partnerOrgIds.length > 0,
-    queryKey: ['user-partner-orgs', partnerOrgIds.sort().join(',')],
+    enabled: !!userId,
+    queryKey: ['user-partner-orgs', userId],
     staleTime: 300_000,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from('partner_orgs')
-        .select('id, name, description')
-        .in('id', partnerOrgIds);
+        .from('user_partner_orgs')
+        .select('id, name, description, role_id, role_key, role_name');
       if (error) throw error;
       return (data ?? []).map((org: any) => ({
         id: String(org.id),
         name: String(org.name ?? ''),
         description: org.description ?? null,
         isPersonal: false,
+        role_id: String(org.role_id),
+        role_key: org.role_key ?? null,
+        role_name: org.role_name ?? null,
       })) as PartnerOrgOption[];
     },
   });
 
   // Query personal partner org (is_individual=true, created_by=user.id)
+  // This is separate because personal orgs are based on ownership, not roles
   const personalOrgQuery = useQuery({
     enabled: !!userId,
     queryKey: ['user-personal-partner-org', userId],
@@ -89,7 +70,7 @@ export function useUserPartnerOrgs(userId: string | null) {
       seenIds.add(personalOrgQuery.data.id);
     }
 
-    // Add partner orgs from roles (avoid duplicates)
+    // Add partner orgs from view (avoid duplicates)
     if (partnerOrgsQuery.data) {
       for (const org of partnerOrgsQuery.data) {
         if (!seenIds.has(org.id)) {
@@ -102,10 +83,7 @@ export function useUserPartnerOrgs(userId: string | null) {
     return orgs;
   }, [personalOrgQuery.data, partnerOrgsQuery.data]);
 
-  const isLoading =
-    rolesQuery.isLoading ||
-    partnerOrgsQuery.isLoading ||
-    personalOrgQuery.isLoading;
+  const isLoading = partnerOrgsQuery.isLoading || personalOrgQuery.isLoading;
 
   return {
     partnerOrgs: allPartnerOrgs,

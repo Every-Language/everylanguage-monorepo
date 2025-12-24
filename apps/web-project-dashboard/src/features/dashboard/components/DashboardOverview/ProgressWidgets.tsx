@@ -41,8 +41,7 @@ export const ProgressWidgets: React.FC<ProgressWidgetsProps> = ({
             size='md'
             label='Audio'
           />
-        }
-      >
+        }>
         <Progress
           value={progressStats?.audioProgress.percentage || 0}
           color='primary'
@@ -64,8 +63,7 @@ export const ProgressWidgets: React.FC<ProgressWidgetsProps> = ({
             size='md'
             label='Text'
           />
-        }
-      >
+        }>
         <Progress
           value={progressStats?.textProgress.percentage || 0}
           color='secondary'

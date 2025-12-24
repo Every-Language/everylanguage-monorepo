@@ -352,8 +352,7 @@ export function AudioUploadModal({
                       variant='outline'
                       size='sm'
                       onClick={() => setAudioFiles([])}
-                      disabled={isUploading}
-                    >
+                      disabled={isUploading}>
                       Clear All
                     </Button>
                   </div>
@@ -420,8 +419,7 @@ export function AudioUploadModal({
                   filesReadyForUpload === 0 ||
                   !selectedAudioVersionId
                 }
-                className='flex items-center space-x-2'
-              >
+                className='flex items-center space-x-2'>
                 {isUploading && <LoadingSpinner size='sm' />}
                 <span>
                   {isUploading

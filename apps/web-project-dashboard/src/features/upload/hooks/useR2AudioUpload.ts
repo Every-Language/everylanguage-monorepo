@@ -157,15 +157,14 @@ export function useR2AudioUpload() {
         }
 
         // Get language entity name for metadata
-        const { data: languageEntity } = await import(
-          '@/shared/services/supabase'
-        ).then(({ supabase }) =>
-          supabase
-            .from('language_entities')
-            .select('name')
-            .eq('id', selectedProject.target_language_entity_id)
-            .single()
-        );
+        const { data: languageEntity } =
+          await import('@/shared/services/supabase').then(({ supabase }) =>
+            supabase
+              .from('language_entities')
+              .select('name')
+              .eq('id', selectedProject.target_language_entity_id)
+              .single()
+          );
 
         const languageEntityName = languageEntity?.name || 'Unknown';
 
@@ -174,6 +173,7 @@ export function useR2AudioUpload() {
           languageEntityId: selectedProject.target_language_entity_id,
           languageEntityName,
           audioVersionId,
+          projectId: selectedProject.id, // Include projectId for RLS policy
         };
 
         // Start the upload asynchronously (don't await here)

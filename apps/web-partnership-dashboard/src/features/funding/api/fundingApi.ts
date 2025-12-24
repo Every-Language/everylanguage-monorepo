@@ -12,7 +12,8 @@ type SearchPartnerOrgsResult =
 
 export async function searchPartnerOrgs(
   query: string,
-  limit = 10
+  limit = 10,
+  excludeIndividual = false
 ): Promise<{
   results: Array<{
     id: string;
@@ -25,7 +26,34 @@ export async function searchPartnerOrgs(
     return { results: [] };
   }
 
-  // Call the RPC function directly through Supabase client
+  // If we need to exclude individual orgs, query directly from partner_orgs table
+  // Otherwise, use the RPC function for better performance
+  if (excludeIndividual) {
+    // Query partner_orgs directly with filters
+    const { data, error } = await (supabase as any)
+      .from('partner_orgs')
+      .select('id, name, description')
+      .eq('is_public', true)
+      .eq('is_individual', false)
+      .ilike('name', `%${query}%`)
+      .limit(limit);
+
+    if (error) {
+      console.error('Error searching partner orgs:', error);
+      throw new Error(error.message || 'Failed to search organizations');
+    }
+
+    return {
+      results: (data || []).map((org: any) => ({
+        id: org.id,
+        name: org.name,
+        description: org.description,
+        similarityScore: 1.0, // Simple match, no similarity score available
+      })),
+    };
+  }
+
+  // Call the RPC function directly through Supabase client (includes similarity scoring)
   const { data, error } = await (supabase as any).rpc('search_partner_orgs', {
     search_query: query,
     max_results: limit,
@@ -84,7 +112,7 @@ export async function fetchPartnerOrgsPaginated(
 }
 
 /**
- * Fetch languages available for donation from language_funding_remaining view
+ * Fetch languages available for donation from language_funding_balances view
  * Returns languages with funding_status 'available' or 'in_progress' and remaining_budget_cents > 0
  */
 export async function fetchLanguagesForDonation(): Promise<
@@ -92,7 +120,7 @@ export async function fetchLanguagesForDonation(): Promise<
 > {
   // Use explicit foreign key relationship syntax for PostgREST
   const { data, error } = await (supabase as any)
-    .from('language_funding_remaining')
+    .from('language_funding_balances')
     .select(
       'language_entity_id, remaining_budget_cents, language_entities!language_entity_id(id, name)'
     )
@@ -170,7 +198,7 @@ export async function checkLanguageRemainingBudget(
   name: string;
 } | null> {
   const { data, error } = await (supabase as any)
-    .from('language_funding_remaining')
+    .from('language_funding_balances')
     .select(
       'language_entity_id, remaining_budget_cents, language_entities!language_entity_id(id, name)'
     )
@@ -283,6 +311,49 @@ export async function fetchOperationsForDonation(): Promise<
   }));
 }
 
+/**
+ * Find existing anonymous or authenticated user by email or phone
+ * This prevents data fragmentation from multiple anonymous users with the same contact info
+ */
+export async function findAnonymousUserByContact(
+  email?: string,
+  phone?: string
+): Promise<{
+  user_id: string | null;
+  is_anonymous: boolean | null;
+  email: string | null;
+  phone: string | null;
+} | null> {
+  if (!email && !phone) {
+    return null;
+  }
+
+  const { data, error } = await (supabase as any).rpc(
+    'find_anonymous_user_by_contact',
+    {
+      p_email: email || null,
+      p_phone: phone || null,
+    }
+  );
+
+  if (error) {
+    console.error('Error finding anonymous user by contact:', error);
+    return null;
+  }
+
+  // RPC returns array, get first result
+  if (data && data.length > 0) {
+    return data[0] as {
+      user_id: string;
+      is_anonymous: boolean;
+      email: string | null;
+      phone: string | null;
+    };
+  }
+
+  return null;
+}
+
 export async function createDonationCheckout(payload: {
   donor: { firstName: string; lastName: string; email: string; phone?: string };
   donorType: 'individual' | 'partner_org';
@@ -341,19 +412,21 @@ export async function createDonationCheckout(payload: {
   ) {
     return functionResponse.data as {
       clientSecret: string | null;
-      paymentIntentId: string;
+      paymentIntentId: string | null;
       donationId: string;
       customerId: string;
       partnerOrgId: string | null;
+      subscriptionId?: string | null; // Included if recurring donation
     };
   }
 
   // Fallback: return the response as-is if structure is different
   return functionResponse as {
     clientSecret: string | null;
-    paymentIntentId: string;
+    paymentIntentId: string | null;
     donationId: string;
     customerId: string;
     partnerOrgId: string | null;
+    subscriptionId?: string | null; // Included if recurring donation
   };
 }

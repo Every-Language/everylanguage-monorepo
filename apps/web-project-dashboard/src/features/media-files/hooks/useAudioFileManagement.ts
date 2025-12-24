@@ -413,9 +413,8 @@ export function useAudioFileManagement(projectId: string | null) {
         setLoadingAudioId(file.id);
 
         // Get presigned URL for streaming by media file ID
-        const downloadService = await import(
-          '../../../shared/services/downloadService'
-        );
+        const downloadService =
+          await import('../../../shared/services/downloadService');
         const service = new downloadService.DownloadService();
         const result = await service.getDownloadUrlsById({
           mediaFileIds: [file.id],

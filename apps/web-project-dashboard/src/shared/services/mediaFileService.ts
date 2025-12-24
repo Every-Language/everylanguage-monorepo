@@ -5,6 +5,7 @@ import type { UploadFileProgress } from '../types/upload';
 export interface MediaFileInsertData {
   language_entity_id: string;
   audio_version_id: string;
+  project_id: string; // Required for RLS policy
   media_type: 'audio';
   is_bible_audio: boolean;
   chapter_id: string;
@@ -29,6 +30,7 @@ export interface MediaFileCreateRequest {
     languageEntityId: string;
     languageEntityName: string;
     audioVersionId: string;
+    projectId: string; // Required for RLS policy
   };
   userId: string;
 }
@@ -39,7 +41,11 @@ export class MediaFileService {
    */
   async createPendingMediaFile(params: {
     processedFile: ProcessedAudioFile;
-    projectData: { languageEntityId: string; audioVersionId: string };
+    projectData: {
+      languageEntityId: string;
+      audioVersionId: string;
+      projectId: string;
+    };
     userId: string;
   }): Promise<string> {
     const { processedFile, projectData, userId } = params;
@@ -57,6 +63,7 @@ export class MediaFileService {
       .insert({
         language_entity_id: projectData.languageEntityId,
         audio_version_id: projectData.audioVersionId,
+        project_id: projectData.projectId, // Include project_id for RLS policy
         media_type: 'audio',
         is_bible_audio: true,
         chapter_id: processedFile.selectedChapterId!,
@@ -94,7 +101,11 @@ export class MediaFileService {
    */
   async createPendingMediaFilesBatch(params: {
     processedFiles: ProcessedAudioFile[];
-    projectData: { languageEntityId: string; audioVersionId: string };
+    projectData: {
+      languageEntityId: string;
+      audioVersionId: string;
+      projectId: string;
+    };
     userId: string;
   }): Promise<string[]> {
     const { processedFiles, projectData, userId } = params;
@@ -114,6 +125,7 @@ export class MediaFileService {
     const insertRecords = processedFiles.map(file => ({
       language_entity_id: projectData.languageEntityId,
       audio_version_id: projectData.audioVersionId,
+      project_id: projectData.projectId, // Include project_id for RLS policy
       media_type: 'audio' as const,
       is_bible_audio: true,
       chapter_id: file.selectedChapterId!,
@@ -135,6 +147,16 @@ export class MediaFileService {
       created_by: userId,
     }));
 
+    // Debug logging: Log first record to verify values
+    if (insertRecords.length > 0) {
+      console.log('🔍 DEBUG: First insert record values:', {
+        project_id: insertRecords[0].project_id,
+        created_by: insertRecords[0].created_by,
+        audio_version_id: insertRecords[0].audio_version_id,
+        language_entity_id: insertRecords[0].language_entity_id,
+      });
+    }
+
     // Step 3: Batch insert with chunking for large batches
     const chunkSize = 25; // Smaller chunks for better performance
     const allIds: string[] = [];
@@ -148,6 +170,16 @@ export class MediaFileService {
 
       if (error) {
         console.error('Error creating pending media files batch:', error);
+        console.error('🔍 DEBUG: Insert records that failed:', {
+          count: insertRecords.length,
+          firstRecord: insertRecords[0]
+            ? {
+                project_id: insertRecords[0].project_id,
+                created_by: insertRecords[0].created_by,
+                audio_version_id: insertRecords[0].audio_version_id,
+              }
+            : null,
+        });
         throw new Error(
           `Failed to create pending media file records: ${error.message}`
         );
@@ -433,6 +465,7 @@ export class MediaFileService {
     const insertData: MediaFileInsertData = {
       language_entity_id: projectData.languageEntityId,
       audio_version_id: projectData.audioVersionId,
+      project_id: projectData.projectId,
       media_type: 'audio',
       is_bible_audio: true,
       chapter_id: processedFile.selectedChapterId!,

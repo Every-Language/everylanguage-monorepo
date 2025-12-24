@@ -269,8 +269,7 @@ export function ViewOperationModal({
             : isEntering
               ? 'translate-x-full'
               : 'translate-x-0'
-        }`}
-      >
+        }`}>
         {/* Header */}
         <div className='px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between'>
           <div>
@@ -283,8 +282,7 @@ export function ViewOperationModal({
           </div>
           <button
             onClick={handleClose}
-            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-          >
+            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'>
             <X className='h-5 w-5 text-neutral-600 dark:text-neutral-400' />
           </button>
         </div>
@@ -300,8 +298,7 @@ export function ViewOperationModal({
               {!editingInfo && (
                 <button
                   onClick={() => setEditingInfo(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -349,8 +346,7 @@ export function ViewOperationModal({
                     value={category}
                     onValueChange={value =>
                       setCategory(value as OperationCategory)
-                    }
-                  >
+                    }>
                     {OPERATION_CATEGORIES.map(cat => (
                       <SelectItem key={cat} value={cat}>
                         {formatCategory(cat)}
@@ -373,8 +369,7 @@ export function ViewOperationModal({
                   <Select
                     label='Status'
                     value={status}
-                    onValueChange={value => setStatus(value as EntityStatus)}
-                  >
+                    onValueChange={value => setStatus(value as EntityStatus)}>
                     {STATUS_OPTIONS.map(stat => (
                       <SelectItem key={stat} value={stat}>
                         {stat.charAt(0).toUpperCase() + stat.slice(1)}
@@ -425,15 +420,13 @@ export function ViewOperationModal({
                       setStatus(operation.status);
                       setIsPublic(operation.is_public);
                     }}
-                    className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                  >
+                    className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                     Cancel
                   </button>
                   <button
                     onClick={() => updateInfoMutation.mutate()}
                     disabled={updateInfoMutation.isPending}
-                    className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                  >
+                    className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                     <Save className='h-4 w-4' />
                     {updateInfoMutation.isPending ? 'Saving...' : 'Save'}
                   </button>
@@ -451,8 +444,7 @@ export function ViewOperationModal({
               {!showAddCostForm && !editingCostId && (
                 <button
                   onClick={() => setShowAddCostForm(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Plus className='h-4 w-4' />
                   Add Cost
                 </button>
@@ -484,8 +476,7 @@ export function ViewOperationModal({
                       onValueChange={value =>
                         setCostCategory(value as OperationCategory)
                       }
-                      required
-                    >
+                      required>
                       {OPERATION_CATEGORIES.map(cat => (
                         <SelectItem key={cat} value={cat}>
                           {formatCategory(cat)}
@@ -534,8 +525,7 @@ export function ViewOperationModal({
                 <div className='flex gap-2 pt-2'>
                   <button
                     onClick={handleCancelEditCost}
-                    className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                  >
+                    className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                     Cancel
                   </button>
                   <button
@@ -548,8 +538,7 @@ export function ViewOperationModal({
                       isNaN(parseFloat(costAmount)) ||
                       parseFloat(costAmount) <= 0
                     }
-                    className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                  >
+                    className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                     <Save className='h-4 w-4' />
                     {editingCostId
                       ? updateCostMutation.isPending
@@ -621,16 +610,14 @@ export function ViewOperationModal({
                                   editingCostId !== null
                                 }
                                 className='p-1.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded transition-colors disabled:opacity-50'
-                                title='Edit'
-                              >
+                                title='Edit'>
                                 <Edit className='h-4 w-4' />
                               </button>
                               <button
                                 onClick={() => handleDeleteCost(cost.id)}
                                 disabled={deleteCostMutation.isPending}
                                 className='p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50'
-                                title='Delete'
-                              >
+                                title='Delete'>
                                 <Trash2 className='h-4 w-4' />
                               </button>
                             </div>

@@ -6,7 +6,7 @@ import type {
   FilterSpecification,
   ExpressionSpecification,
 } from '@maplibre/maplibre-gl-style-spec';
-import type { PartnerOrgProject } from '../hooks/usePartnerOrgProjects';
+import type { PartnerOrgProject } from '../types';
 
 interface HeatmapDataPoint {
   language_entity_id: string;
@@ -138,8 +138,7 @@ export const ProjectDistributionHeatmapLayers: React.FC<
       id='project-distribution-heatmap'
       key='project-distribution-heatmap'
       type='geojson'
-      data={featureCollection}
-    >
+      data={featureCollection}>
       {enabledLanguageIds.flatMap(langId => {
         const projectInfo = languageToProjectMap.get(langId);
         if (!projectInfo) return [];

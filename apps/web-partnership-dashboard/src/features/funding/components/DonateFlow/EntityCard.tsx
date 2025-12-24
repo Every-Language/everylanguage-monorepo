@@ -19,8 +19,7 @@ export const EntityCard: React.FC<EntityCardProps> = ({ entity, onClick }) => {
     <button
       onClick={onClick}
       className='w-full flex items-center justify-between p-4 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors text-left'
-      aria-label={`Select ${entity.name}`}
-    >
+      aria-label={`Select ${entity.name}`}>
       <div className='flex-1 min-w-0'>
         <div className='font-medium text-neutral-900 dark:text-neutral-100 truncate'>
           {entity.name}

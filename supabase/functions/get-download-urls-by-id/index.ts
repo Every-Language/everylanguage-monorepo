@@ -6,6 +6,11 @@ import {
   createErrorResponse,
   createCorsResponse,
 } from '../_shared/response-utils.ts';
+import {
+  authenticateRequest,
+  isAuthError,
+  createAuthErrorResponse,
+} from '../_shared/auth-middleware.ts';
 
 interface RequestBody {
   mediaFileIds?: string[];
@@ -33,6 +38,12 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // Authenticate the request - only logged-in users can request download URLs
+    const authCtx = await authenticateRequest(req);
+    if (isAuthError(authCtx)) {
+      return createAuthErrorResponse(authCtx);
+    }
+
     let body: RequestBody;
     try {
       body = await req.json();

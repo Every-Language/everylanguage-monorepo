@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMapContext } from '../context/MapContext';
 import {
+  useSelection,
   useSetSelection,
   useSelectionMode,
 } from '../inspector/state/inspectorStore';
@@ -142,7 +143,8 @@ function getBibleStatusPillColor(language: LanguageWithLocation): string {
 
 // Convert languages to GeoJSON FeatureCollection
 function toFeatureCollection(
-  languages: LanguageWithLocation[]
+  languages: LanguageWithLocation[],
+  selectedLanguageId: string | null
 ): GeoJSON.FeatureCollection<
   GeoJSON.Point,
   {
@@ -153,8 +155,11 @@ function toFeatureCollection(
     has_full_audio_bible: boolean | null;
     has_audio_portions: boolean | null;
     has_text_portions: boolean | null;
+    is_selected: boolean;
+    has_selection: boolean;
   }
 > {
+  const hasSelection = selectedLanguageId !== null;
   const features: GeoJSON.Feature<
     GeoJSON.Point,
     {
@@ -167,6 +172,9 @@ function toFeatureCollection(
       has_text_portions: boolean | null;
       bible_status: number | null;
       has_jesus_film: boolean | null;
+      bible_status_score: number;
+      is_selected: boolean;
+      has_selection: boolean;
     }
   >[] = languages.map(lang => ({
     type: 'Feature',
@@ -185,6 +193,8 @@ function toFeatureCollection(
       has_text_portions: lang.has_text_portions,
       bible_status: lang.bible_status,
       has_jesus_film: lang.has_jesus_film,
+      is_selected: selectedLanguageId === lang.language_entity_id,
+      has_selection: hasSelection,
     },
   }));
 
@@ -201,25 +211,31 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
   const router = useRouter();
   const setSelection = useSetSelection();
   const selectionMode = useSelectionMode();
+  const selection = useSelection();
 
-  // Debug logging for clustering state
-  React.useEffect(() => {
-    if (show) {
-      console.log('[MapLanguagesLayer] Clustering state:', {
-        clustered,
-        show,
-      });
-    }
-  }, [clustered, show]);
+  const selectedLanguageId =
+    selection?.kind === 'language_entity' ? selection.id : null;
+
   const [viewportBounds, setViewportBounds] = React.useState<
     [number, number, number, number] | null
   >(null);
   const [zoom, setZoom] = React.useState<number>(1.5);
   const [hoveredLanguage, setHoveredLanguage] =
     React.useState<HoveredLanguage | null>(null);
+  const [hoveredLanguageId, setHoveredLanguageId] = React.useState<
+    string | null
+  >(null);
+  const [hoveredClusterId, setHoveredClusterId] = React.useState<number | null>(
+    null
+  );
+  const [pulseAnimationValue, setPulseAnimationValue] = React.useState(0);
   const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const throttleTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const lastThrottleCallRef = React.useRef<number>(0);
 
   // Track viewport bounds and zoom
   React.useEffect(() => {
@@ -230,6 +246,15 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
 
     const updateViewport = () => {
       try {
+        // Skip if map is currently animating (prefetching handles this case)
+        // Check if methods exist before calling (MapLibre may not have these)
+        const isAnimating =
+          (typeof map.isMoving === 'function' && map.isMoving()) ||
+          (typeof map.isZooming === 'function' && map.isZooming());
+        if (isAnimating) {
+          return;
+        }
+
         const bounds = map.getBounds();
         if (!bounds) return;
 
@@ -249,7 +274,7 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
           ne.lat + latSpan * 0.05, // maxLat
         ];
 
-        // Debounce viewport updates (300ms)
+        // Debounce viewport updates (200ms)
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
         }
@@ -266,26 +291,56 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
           if (boundsChanged) {
             setViewportBounds(expandedBounds);
           }
-        }, 300);
+        }, 200);
       } catch (error) {
         console.debug('Error updating viewport:', error);
+      }
+    };
+
+    // Throttled version for move events during animation (250ms)
+    const throttledUpdateViewport = () => {
+      const now = Date.now();
+      const timeSinceLastCall = now - lastThrottleCallRef.current;
+
+      if (timeSinceLastCall >= 250) {
+        // Execute immediately if enough time has passed
+        lastThrottleCallRef.current = now;
+        updateViewport();
+      } else {
+        // Schedule for later if throttled
+        if (throttleTimerRef.current) {
+          clearTimeout(throttleTimerRef.current);
+        }
+        throttleTimerRef.current = setTimeout(() => {
+          lastThrottleCallRef.current = Date.now();
+          updateViewport();
+        }, 250 - timeSinceLastCall);
       }
     };
 
     // Initial update
     updateViewport();
 
-    // Update on map move/zoom
+    // Update on map move/zoom (end events for precise updates)
     map.on('moveend', updateViewport);
     map.on('zoomend', updateViewport);
     map.on('resize', updateViewport);
+
+    // Also listen to move events during animation (throttled for performance)
+    map.on('move', throttledUpdateViewport);
+    map.on('zoom', throttledUpdateViewport);
 
     return () => {
       map.off('moveend', updateViewport);
       map.off('zoomend', updateViewport);
       map.off('resize', updateViewport);
+      map.off('move', throttledUpdateViewport);
+      map.off('zoom', throttledUpdateViewport);
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
+      }
+      if (throttleTimerRef.current) {
+        clearTimeout(throttleTimerRef.current);
       }
     };
     // viewportBounds intentionally excluded from deps
@@ -302,8 +357,9 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
         zoom,
       });
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 15 * 60 * 1000, // 15 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes garbage collection time
+    refetchOnWindowFocus: false, // Don't refetch on tab focus
     // Keep previous data while fetching to prevent blinking
     placeholderData: previousData =>
       previousData as LanguageWithLocation[] | undefined,
@@ -317,8 +373,46 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
         features: [],
       };
     }
-    return toFeatureCollection(languagesQuery.data);
-  }, [languagesQuery.data]);
+    return toFeatureCollection(languagesQuery.data, selectedLanguageId);
+  }, [languagesQuery.data, selectedLanguageId]);
+
+  // Create pulse layer feature collection for selected language
+  const pulseFeatureCollection = React.useMemo(() => {
+    if (!selectedLanguageId || !languagesQuery.data) {
+      return {
+        type: 'FeatureCollection' as const,
+        features: [],
+      };
+    }
+    const selectedLanguage = languagesQuery.data.find(
+      lang => lang.language_entity_id === selectedLanguageId
+    );
+    if (!selectedLanguage) {
+      return {
+        type: 'FeatureCollection' as const,
+        features: [],
+      };
+    }
+    return {
+      type: 'FeatureCollection' as const,
+      features: [
+        {
+          type: 'Feature' as const,
+          geometry: {
+            type: 'Point' as const,
+            coordinates: [
+              selectedLanguage.longitude,
+              selectedLanguage.latitude,
+            ],
+          },
+          properties: {
+            id: selectedLanguage.language_entity_id,
+            color: getBibleStatusColor(selectedLanguage),
+          },
+        },
+      ],
+    };
+  }, [selectedLanguageId, languagesQuery.data]);
 
   // Theme colors for stroke
   const markerStrokeColor = React.useMemo(() => {
@@ -375,11 +469,17 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
             number,
           ];
 
-          // Skip clusters for hover (only show tooltip for individual points)
-          if (props.cluster) {
+          // Handle cluster hover
+          if (props.cluster && props.cluster_id !== undefined) {
             setHoveredLanguage(null);
+            setHoveredLanguageId(null);
+            setHoveredClusterId(props.cluster_id);
+            map.getCanvas().style.cursor = 'pointer';
             return;
           }
+
+          // Not a cluster, clear cluster hover
+          setHoveredClusterId(null);
 
           if (
             props.language_entity_id &&
@@ -397,10 +497,13 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
                 language: languageData,
                 coordinates: coords,
               });
+              setHoveredLanguageId(props.language_entity_id);
             }
           }
         } else {
           setHoveredLanguage(null);
+          setHoveredLanguageId(null);
+          setHoveredClusterId(null);
         }
       } catch (error) {
         console.debug('Error querying language features:', error);
@@ -435,36 +538,20 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
             language_entity_id?: string;
           };
 
-          // Handle cluster click - zoom in
+          // Handle cluster click - zoom in by fixed amount
           if (props.cluster && clustered) {
-            const clusterId = props.cluster_id;
-            const pointCount = props.point_count;
-            if (clusterId !== undefined && pointCount !== undefined) {
-              const source = map.getSource(
-                'languages-source'
-              ) as maplibregl.GeoJSONSource;
-              if (
-                source &&
-                typeof source.getClusterExpansionZoom === 'function'
-              ) {
-                // TypeScript types don't include callback, but runtime API supports it
-                (source.getClusterExpansionZoom as any)(
-                  clusterId,
-                  (err: Error | null, zoom?: number) => {
-                    if (err || zoom === undefined) return;
-                    const mapInstance = mapRef.current?.getMap();
-                    if (mapInstance) {
-                      const coords = (feature.geometry as GeoJSON.Point)
-                        .coordinates as [number, number];
-                      mapInstance.easeTo({
-                        center: coords,
-                        zoom: zoom,
-                        duration: 500,
-                      });
-                    }
-                  }
-                );
-              }
+            e.originalEvent?.stopPropagation?.();
+            const mapInstance = mapRef.current?.getMap();
+            if (mapInstance) {
+              const coords = (feature.geometry as GeoJSON.Point)
+                .coordinates as [number, number];
+              const currentZoom = mapInstance.getZoom();
+              const newZoom = Math.min(currentZoom + 2, 18); // Zoom in by 2 levels, max zoom 18
+              mapInstance.easeTo({
+                center: coords,
+                zoom: newZoom,
+                duration: 500,
+              });
             }
             return;
           }
@@ -474,10 +561,17 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
             // Only allow selection if in language mode
             if (selectionMode !== 'language') return;
 
-            // Set selection
+            // Extract coordinates from the clicked feature
+            const coords = (feature.geometry as GeoJSON.Point).coordinates as [
+              number,
+              number,
+            ];
+
+            // Set selection with clicked coordinates
             setSelection({
               kind: 'language_entity',
               id: props.language_entity_id,
+              coordinates: coords,
             });
             // Navigate to language page
             router.push(
@@ -492,6 +586,8 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
 
     const handleMouseLeave = () => {
       setHoveredLanguage(null);
+      setHoveredLanguageId(null);
+      setHoveredClusterId(null);
       map.getCanvas().style.cursor = '';
     };
 
@@ -504,22 +600,53 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
       map.off('click', handleClick);
       map.off('mouseleave', handleMouseLeave);
     };
-  }, [mapRef, show, clustered, languagesQuery.data, router, setSelection]);
+  }, [
+    mapRef,
+    show,
+    clustered,
+    languagesQuery.data,
+    router,
+    setSelection,
+    selectionMode,
+    selectedLanguageId,
+    hoveredLanguageId,
+    hoveredClusterId,
+  ]);
 
-  // Debug logging for feature collection
+  // Animate pulse effect for selected language (opacity pulse, not size)
   React.useEffect(() => {
-    if (show && featureCollection.features.length > 0) {
-      console.log('[MapLanguagesLayer] Feature collection:', {
-        featureCount: featureCollection.features.length,
-        clustered,
-        sampleFeatures: featureCollection.features.slice(0, 3).map(f => ({
-          id: f.properties.language_entity_id,
-          hasScore:
-            typeof (f.properties as any).bible_status_score === 'number',
-        })),
-      });
+    if (!show || !selectedLanguageId) {
+      setPulseAnimationValue(0);
+      return;
     }
-  }, [show, featureCollection, clustered]);
+
+    let animationFrameId: number;
+    let startTime: number | null = null;
+    const duration = 2000; // 2 seconds per pulse cycle
+
+    const animate = (timestamp: number) => {
+      if (startTime === null) {
+        startTime = timestamp;
+      }
+
+      const elapsed = timestamp - startTime;
+      const progress = (elapsed % duration) / duration;
+
+      // Use sine wave for smooth pulsing effect (0 to 1)
+      const pulseValue = Math.sin(progress * Math.PI * 2) * 0.5 + 0.5;
+      setPulseAnimationValue(pulseValue);
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [show, selectedLanguageId]);
 
   // Clean up old layers when switching clustering modes
   React.useEffect(() => {
@@ -580,8 +707,7 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
             }
           : {
               cluster: false,
-            })}
-      >
+            })}>
         {clustered ? (
           [
             /* Cluster circles */
@@ -607,15 +733,44 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
                 'circle-radius': [
                   'step',
                   ['get', 'point_count'],
-                  20, // Base radius for small clusters
+                  [
+                    'case',
+                    ['==', ['get', 'cluster_id'], hoveredClusterId || -1],
+                    28, // 20 * 1.4 for hovered small clusters
+                    20, // Base radius for small clusters
+                  ],
                   100,
-                  30, // Medium clusters
+                  [
+                    'case',
+                    ['==', ['get', 'cluster_id'], hoveredClusterId || -1],
+                    42, // 30 * 1.4 for hovered medium clusters
+                    30, // Medium clusters
+                  ],
                   750,
-                  40, // Large clusters
+                  [
+                    'case',
+                    ['==', ['get', 'cluster_id'], hoveredClusterId || -1],
+                    56, // 40 * 1.4 for hovered large clusters
+                    40, // Large clusters
+                  ],
                 ],
                 'circle-stroke-color': markerStrokeColor,
                 'circle-stroke-width': 2,
-                'circle-opacity': opacity * 0.8,
+                'circle-opacity': [
+                  '*',
+                  opacity * 0.9,
+                  [
+                    'case',
+                    ['get', 'is_selected'],
+                    1.0,
+                    [
+                      'case',
+                      ['get', 'has_selection'],
+                      0.556, // 0.5 / 0.9 = 0.556 to maintain relative opacity
+                      1.0,
+                    ],
+                  ],
+                ],
               }}
             />,
             /* Cluster count labels */
@@ -645,16 +800,72 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
                   ['linear'],
                   ['zoom'],
                   0,
-                  3,
+                  [
+                    'case',
+                    ['get', 'is_selected'],
+                    4.2, // 3 * 1.4 for selected
+                    [
+                      'case',
+                      [
+                        '==',
+                        ['get', 'language_entity_id'],
+                        hoveredLanguageId || '',
+                      ],
+                      4.2, // 3 * 1.4 for hovered
+                      3,
+                    ],
+                  ],
                   6,
-                  5,
+                  [
+                    'case',
+                    ['get', 'is_selected'],
+                    7, // 5 * 1.4 for selected
+                    [
+                      'case',
+                      [
+                        '==',
+                        ['get', 'language_entity_id'],
+                        hoveredLanguageId || '',
+                      ],
+                      7, // 5 * 1.4 for hovered
+                      5,
+                    ],
+                  ],
                   12,
-                  8,
+                  [
+                    'case',
+                    ['get', 'is_selected'],
+                    11.2, // 8 * 1.4 for selected
+                    [
+                      'case',
+                      [
+                        '==',
+                        ['get', 'language_entity_id'],
+                        hoveredLanguageId || '',
+                      ],
+                      11.2, // 8 * 1.4 for hovered
+                      8,
+                    ],
+                  ],
                 ],
                 'circle-color': ['get', 'color'],
                 'circle-stroke-color': markerStrokeColor,
                 'circle-stroke-width': 1.5,
-                'circle-opacity': opacity * 0.9,
+                'circle-opacity': [
+                  '*',
+                  opacity * 0.9,
+                  [
+                    'case',
+                    ['get', 'is_selected'],
+                    1.0,
+                    [
+                      'case',
+                      ['get', 'has_selection'],
+                      0.556, // 0.5 / 0.9 = 0.556 to maintain relative opacity
+                      1.0,
+                    ],
+                  ],
+                ],
               }}
             />,
           ]
@@ -669,20 +880,110 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
                 ['linear'],
                 ['zoom'],
                 0,
-                3,
+                [
+                  'case',
+                  ['get', 'is_selected'],
+                  4.2, // 3 * 1.4 for selected
+                  [
+                    'case',
+                    [
+                      '==',
+                      ['get', 'language_entity_id'],
+                      hoveredLanguageId || '',
+                    ],
+                    4.2, // 3 * 1.4 for hovered
+                    3,
+                  ],
+                ],
                 6,
-                5,
+                [
+                  'case',
+                  ['get', 'is_selected'],
+                  7, // 5 * 1.4 for selected
+                  [
+                    'case',
+                    [
+                      '==',
+                      ['get', 'language_entity_id'],
+                      hoveredLanguageId || '',
+                    ],
+                    7, // 5 * 1.4 for hovered
+                    5,
+                  ],
+                ],
                 12,
-                8,
+                [
+                  'case',
+                  ['get', 'is_selected'],
+                  11.2, // 8 * 1.4 for selected
+                  [
+                    'case',
+                    [
+                      '==',
+                      ['get', 'language_entity_id'],
+                      hoveredLanguageId || '',
+                    ],
+                    11.2, // 8 * 1.4 for hovered
+                    8,
+                  ],
+                ],
               ],
               'circle-color': ['get', 'color'],
               'circle-stroke-color': markerStrokeColor,
               'circle-stroke-width': 1.5,
-              'circle-opacity': opacity * 0.9,
+              'circle-opacity': [
+                '*',
+                opacity,
+                [
+                  'case',
+                  ['get', 'is_selected'],
+                  1.0,
+                  selectedLanguageId ? 0.5 : 1.0,
+                ],
+              ],
             }}
           />
         )}
       </Source>
+
+      {/* Pulse animation layer for selected language */}
+      {pulseFeatureCollection.features.length > 0 && (
+        <Source
+          id='languages-pulse-source'
+          type='geojson'
+          data={pulseFeatureCollection}>
+          <Layer
+            id='languages-pulse-layer'
+            type='circle'
+            paint={{
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0,
+                6 + pulseAnimationValue * 4,
+                6,
+                10 + pulseAnimationValue * 6,
+                12,
+                16 + pulseAnimationValue * 8,
+              ],
+              'circle-color': ['get', 'color'],
+              'circle-opacity': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0,
+                Math.max(0, 0.3 - pulseAnimationValue * 0.3),
+                6,
+                Math.max(0, 0.25 - pulseAnimationValue * 0.25),
+                12,
+                Math.max(0, 0.2 - pulseAnimationValue * 0.2),
+              ],
+              'circle-stroke-width': 0,
+            }}
+          />
+        </Source>
+      )}
 
       {/* Hover tooltip popup */}
       {hoveredLanguage && (
@@ -693,8 +994,7 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
           closeOnClick={false}
           anchor='bottom'
           offset={[0, -8]}
-          className='languages-popup'
-        >
+          className='languages-popup'>
           <div className='px-2 py-1.5 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 rounded border border-neutral-200 dark:border-neutral-700 shadow-sm min-w-[180px]'>
             <div className='font-semibold text-sm mb-1 text-neutral-900 dark:text-neutral-100'>
               Language
@@ -712,8 +1012,7 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
               </div>
               <div className='flex items-center gap-2'>
                 <span
-                  className={`${getBibleStatusPillColor(hoveredLanguage.language)} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}
-                >
+                  className={`${getBibleStatusPillColor(hoveredLanguage.language)} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}>
                   {getBibleStatusText(hoveredLanguage.language)}
                 </span>
               </div>

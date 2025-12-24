@@ -278,8 +278,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                           variant='outline'
                           size='sm'
                           onClick={() => executeBulkOperation('restore')}
-                          className='text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200'
-                        >
+                          className='text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200'>
                           Restore Selected
                         </Button>
                       ) : (
@@ -291,8 +290,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                               if (value !== 'bulk-action') {
                                 executeBulkOperation(value);
                               }
-                            }}
-                          >
+                            }}>
                             <SelectItem value='bulk-action'>
                               Change Status
                             </SelectItem>
@@ -311,8 +309,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                           <Button
                             variant='danger'
                             size='sm'
-                            onClick={() => executeBulkOperation('soft_delete')}
-                          >
+                            onClick={() => executeBulkOperation('soft_delete')}>
                             Delete Selected
                           </Button>
                         </>
@@ -321,8 +318,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                       <Button
                         variant='outline'
                         size='sm'
-                        onClick={clearSelection}
-                      >
+                        onClick={clearSelection}>
                         Clear Selection
                       </Button>
                     </div>
@@ -351,8 +347,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                     <th className='text-left p-3 font-medium text-gray-900 dark:text-gray-100'>
                       <button
                         onClick={() => handleSort('verse_reference')}
-                        className='flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400'
-                      >
+                        className='flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400'>
                         <span>Verse Reference</span>
                         {sortField === 'verse_reference' && (
                           <span className='text-blue-600 dark:text-blue-400'>
@@ -391,8 +386,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                             file.deleted_at
                               ? 'bg-red-50/50 dark:bg-red-900/10 opacity-75'
                               : ''
-                          }`}
-                        >
+                          }`}>
                           <td className='p-3'>
                             <Checkbox
                               checked={selectedItems.includes(file.id)}
@@ -410,8 +404,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                             <div className='flex items-center space-x-2'>
                               <span
                                 className='text-sm font-medium text-gray-900 dark:text-gray-100 max-w-[200px] truncate'
-                                title={file.filename}
-                              >
+                                title={file.filename}>
                                 {truncateFilename(file.filename)}
                               </span>
                               {file.duration_seconds && (
@@ -427,8 +420,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                                 <button
                                   onClick={() => toggleRowExpansion(file.id)}
                                   className='flex items-center space-x-1 text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200'
-                                  disabled={loadingTimestamps}
-                                >
+                                  disabled={loadingTimestamps}>
                                   {isExpanded ? (
                                     <ChevronDownIcon className='h-4 w-4' />
                                   ) : (
@@ -448,8 +440,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                           </td>
                           <td className='p-3'>
                             <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(file.upload_status)}`}
-                            >
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(file.upload_status)}`}>
                               {file.upload_status === 'uploading' && (
                                 <LoadingSpinner size='sm' className='mr-1' />
                               )}
@@ -483,8 +474,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                                   size='sm'
                                   onClick={() => handleRestore?.(file)}
                                   title='Restore file'
-                                  className='text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200'
-                                >
+                                  className='text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200'>
                                   <span className='text-sm'>Restore</span>
                                 </Button>
                               ) : (
@@ -499,8 +489,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                                       loadingAudioId === file.id
                                         ? 'Loading audio...'
                                         : 'Play audio'
-                                    }
-                                  >
+                                    }>
                                     {loadingAudioId === file.id ? (
                                       <LoadingSpinner size='sm' />
                                     ) : (
@@ -511,8 +500,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                                     variant='outline'
                                     size='sm'
                                     onClick={() => handleEditClick(file)}
-                                    title='Edit'
-                                  >
+                                    title='Edit'>
                                     <PencilIcon className='h-4 w-4' />
                                   </Button>
                                   <Button
@@ -524,8 +512,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                                       downloadState.downloadingFileId ===
                                         file.id
                                     }
-                                    title='Download'
-                                  >
+                                    title='Download'>
                                     {downloadState.isDownloading &&
                                     downloadState.downloadingFileId ===
                                       file.id ? (
@@ -538,16 +525,14 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                                     variant='outline'
                                     size='sm'
                                     onClick={() => handleVerseMarking(file)}
-                                    title='Verse Marking'
-                                  >
+                                    title='Verse Marking'>
                                     <ClockIcon className='h-4 w-4' />
                                   </Button>
                                   <Button
                                     variant='outline'
                                     size='sm'
                                     onClick={() => handleDelete(file)}
-                                    title='Delete'
-                                  >
+                                    title='Delete'>
                                     <TrashIcon className='h-4 w-4 text-red-600 dark:text-red-400' />
                                   </Button>
                                 </>
@@ -568,8 +553,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                                   {fileTimestamps.map(verse => (
                                     <div
                                       key={verse.id}
-                                      className='flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'
-                                    >
+                                      className='flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
                                       <span className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                                         Verse {verse.verse_number}
                                       </span>

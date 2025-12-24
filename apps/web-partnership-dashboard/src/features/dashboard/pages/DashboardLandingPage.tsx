@@ -26,19 +26,22 @@ const InlineWelcome: React.FC = () => {
   );
 };
 
-const PartnerOrgCards: React.FC = () => {
+const GlobalTranslationSection: React.FC = () => {
   const router = useRouter();
-  const { user } = useAuth();
-  const { partnerOrgs, isLoading } = useUserPartnerOrgs(user?.id ?? null);
 
   return (
-    <div className='space-y-6'>
+    <section className='space-y-4'>
+      <div className='space-y-2'>
+        <h2 className='text-xl font-semibold'>Global Translation</h2>
+        <p className='text-sm text-neutral-600 dark:text-neutral-400'>
+          View and manage global translation statistics and progress across all
+          projects.
+        </p>
+      </div>
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-        {/* Global Statistics Card */}
         <Card
-          className='border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-accent-300 dark:hover:border-accent-700 hover:scale-[1.02] transition-all duration-200 cursor-pointer'
-          onClick={() => router.push('/dashboard/global-statistics')}
-        >
+          className='border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-primary-300 dark:hover:border-primary-700 hover:scale-[1.02] transition-all duration-200 cursor-pointer'
+          onClick={() => router.push('/dashboard/global-statistics')}>
           <CardHeader>
             <CardTitle className='text-lg'>
               Global Translation Statistics
@@ -51,14 +54,32 @@ const PartnerOrgCards: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+    </section>
+  );
+};
 
+const PartnerOrganizationsSection: React.FC = () => {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { partnerOrgs, isLoading } = useUserPartnerOrgs(user?.id ?? null);
+
+  return (
+    <section className='space-y-4'>
+      <div className='space-y-2'>
+        <h2 className='text-xl font-semibold'>Partner Organizations</h2>
+        <p className='text-sm text-neutral-600 dark:text-neutral-400'>
+          Access and manage your partner organizations. Click on any
+          organization to view its details, projects, and activities.
+        </p>
+      </div>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
         {/* Loading skeleton */}
         {isLoading &&
           Array.from({ length: 3 }).map((_, idx) => (
             <Card
               key={`skeleton-${idx}`}
-              className='border border-neutral-200 dark:border-neutral-800'
-            >
+              className='border border-neutral-200 dark:border-neutral-800'>
               <CardHeader>
                 <div className='h-5 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4 animate-pulse' />
               </CardHeader>
@@ -76,9 +97,10 @@ const PartnerOrgCards: React.FC = () => {
               key={org.id}
               className='border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-accent-300 dark:hover:border-accent-700 hover:scale-[1.02] transition-all duration-200 cursor-pointer'
               onClick={() =>
-                router.push(`/partner-org/${encodeURIComponent(org.id)}`)
-              }
-            >
+                router.push(
+                  `/dashboard/partner-org/${encodeURIComponent(org.id)}`
+                )
+              }>
               <CardHeader>
                 <CardTitle className='text-lg'>
                   {org.name}
@@ -104,7 +126,7 @@ const PartnerOrgCards: React.FC = () => {
             </Card>
           ))}
       </div>
-    </div>
+    </section>
   );
 };
 
@@ -130,9 +152,10 @@ export const DashboardLandingPage: React.FC = () => {
 
   return (
     <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950'>
-      <div className='mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-6'>
+      <div className='mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-8'>
         <InlineWelcome />
-        <PartnerOrgCards />
+        <GlobalTranslationSection />
+        <PartnerOrganizationsSection />
       </div>
     </div>
   );

@@ -1,9 +1,16 @@
 'use client';
 
-import { MyProfilePage } from '@/features/pages/MyProfilePage';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 export default function ProfilePage() {
-  return <MyProfilePage />;
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/profile/info');
+  }, [router]);
+
+  return null;
 }

@@ -26,10 +26,11 @@ export interface R2UploadState {
       languageEntityId: string;
       languageEntityName: string;
       audioVersionId: string;
+      projectId: string; // Project ID required for RLS policy
     },
     userId: string,
     queryClient?: QueryClient, // QueryClient instance for table refreshes
-    projectId?: string // Project ID for targeted query invalidation
+    projectId?: string // Project ID for targeted query invalidation (deprecated, use projectData.projectId)
   ) => Promise<void>;
 
   cancelUpload: () => void;
@@ -163,9 +164,25 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
       );
       const startTime = Date.now();
 
+      // Ensure projectId is available
+      const finalProjectId = projectId || projectData.projectId;
+      if (!finalProjectId) {
+        throw new Error('projectId is required for media file upload');
+      }
+
+      console.log('🔍 DEBUG: Upload project data:', {
+        projectId: finalProjectId,
+        audioVersionId: projectData.audioVersionId,
+        languageEntityId: projectData.languageEntityId,
+        userId,
+      });
+
       const pendingIds = await mediaFileService.createPendingMediaFilesBatch({
         processedFiles: filesWithMetadata.map(item => item.file),
-        projectData,
+        projectData: {
+          ...projectData,
+          projectId: finalProjectId,
+        },
         userId,
       });
 

@@ -278,8 +278,7 @@ export function CornerAudioPlayer() {
                         isCurrentVerse
                           ? 'bg-accent-600 text-neutral-900 shadow-md font-medium'
                           : 'bg-neutral-700 text-neutral-200 hover:bg-primary-700 hover:text-neutral-100'
-                      }`}
-                    >
+                      }`}>
                       <div className='flex items-center gap-3'>
                         <span className='font-medium text-sm'>
                           Verse {verse.verse_number}
@@ -309,8 +308,7 @@ export function CornerAudioPlayer() {
           {/* Progress Bar */}
           <div
             className='relative h-1 bg-neutral-700 group cursor-pointer'
-            onClick={handleProgressBarClick}
-          >
+            onClick={handleProgressBarClick}>
             <div
               className='absolute top-0 left-0 h-full bg-accent-500 transition-all duration-150'
               style={{
@@ -364,8 +362,7 @@ export function CornerAudioPlayer() {
                   variant='ghost'
                   size='sm'
                   onClick={handleSkipBackward}
-                  className='w-8 h-8 p-0 text-neutral-300 hover:text-neutral-100 hover:bg-neutral-700 transition-colors rounded-full'
-                >
+                  className='w-8 h-8 p-0 text-neutral-300 hover:text-neutral-100 hover:bg-neutral-700 transition-colors rounded-full'>
                   <BackwardIcon className='w-4 h-4' />
                 </Button>
 
@@ -374,8 +371,7 @@ export function CornerAudioPlayer() {
                   variant='ghost'
                   size='sm'
                   onClick={togglePlay}
-                  className='w-10 h-10 p-0 bg-accent-600 hover:bg-accent-500 text-neutral-900 rounded-full transition-colors shadow-md'
-                >
+                  className='w-10 h-10 p-0 bg-accent-600 hover:bg-accent-500 text-neutral-900 rounded-full transition-colors shadow-md'>
                   {isPlaying ? (
                     <PauseIcon className='w-5 h-5' />
                   ) : (
@@ -388,8 +384,7 @@ export function CornerAudioPlayer() {
                   variant='ghost'
                   size='sm'
                   onClick={handleSkipForward}
-                  className='w-8 h-8 p-0 text-neutral-300 hover:text-neutral-100 hover:bg-neutral-700 transition-colors rounded-full'
-                >
+                  className='w-8 h-8 p-0 text-neutral-300 hover:text-neutral-100 hover:bg-neutral-700 transition-colors rounded-full'>
                   <ForwardIcon className='w-4 h-4' />
                 </Button>
               </div>
@@ -407,8 +402,7 @@ export function CornerAudioPlayer() {
                         ? 'text-accent-500 bg-neutral-700'
                         : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700'
                     }`}
-                    title={`${isVersesExpanded ? 'Hide' : 'Show'} verse list (${verseTimestamps.length} verses)`}
-                  >
+                    title={`${isVersesExpanded ? 'Hide' : 'Show'} verse list (${verseTimestamps.length} verses)`}>
                     <ListBulletIcon className='w-4 h-4' />
                   </Button>
                 )}
@@ -418,8 +412,7 @@ export function CornerAudioPlayer() {
                   variant='ghost'
                   size='sm'
                   onClick={closePlayer}
-                  className='w-8 h-8 p-0 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700 transition-colors rounded-full ml-1'
-                >
+                  className='w-8 h-8 p-0 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700 transition-colors rounded-full ml-1'>
                   <XMarkIcon className='w-4 h-4' />
                 </Button>
               </div>

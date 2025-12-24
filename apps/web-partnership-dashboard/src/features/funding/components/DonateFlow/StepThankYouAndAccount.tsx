@@ -6,6 +6,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { CheckCircle2 } from 'lucide-react';
 import { authService } from '@/features/auth/services/auth';
 import { useToast } from '@/shared/theme/hooks/useToast';
+import { supabase } from '@/shared/services/supabase';
 import type { useDonateFlow } from '../../hooks/useDonateFlow';
 
 interface StepThankYouAndAccountProps {
@@ -32,6 +33,18 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
   const [accountSkipped, setAccountSkipped] = React.useState(false);
   const [accountCreated, setAccountCreated] = React.useState(false);
   const [resendLoading, setResendLoading] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = React.useState<boolean | null>(null);
+
+  // Check if user is logged in (not anonymous)
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setIsLoggedIn(user ? !user.is_anonymous : false);
+    };
+    checkAuth();
+  }, []);
 
   // Calculate display values
   const isMonthly = amount?.isRecurring ?? false;
@@ -84,18 +97,74 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
     setAccountLoading(true);
 
     try {
-      await authService.signUp(email, password, {
-        first_name: state.donor?.firstName,
-        last_name: state.donor?.lastName,
-      });
+      // Check if user is anonymous
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
 
-      // Account created successfully - show email confirmation message
-      setAccountCreated(true);
-      toast({
-        title: 'Account created',
-        description: 'Please check your email to confirm your account.',
-        variant: 'success',
-      });
+      if (currentUser?.is_anonymous) {
+        // Promote anonymous user to authenticated
+        try {
+          await authService.promoteAnonymousUser(
+            email,
+            password,
+            {
+              first_name: state.donor?.firstName,
+              last_name: state.donor?.lastName,
+            },
+            state.donor?.phone
+          );
+
+          // Account promoted successfully - show email confirmation message
+          setAccountCreated(true);
+          toast({
+            title: 'Account created',
+            description: 'Please check your email to confirm your account.',
+            variant: 'success',
+          });
+        } catch (promoteError: unknown) {
+          const promoteMsg =
+            promoteError instanceof Error
+              ? promoteError.message
+              : String(promoteError);
+
+          // Check for email send failure
+          if (/email|send|smtp/i.test(promoteMsg)) {
+            // Account was created but email failed to send
+            setAccountCreated(true);
+            toast({
+              title: 'Account created',
+              description:
+                'Your account has been created, but we encountered an issue sending the confirmation email. You can sign in with your email and password.',
+              variant: 'warning',
+            });
+            return;
+          }
+
+          if (/weak/i.test(promoteMsg)) {
+            setAccountError(
+              'Password is weak. Choose a longer password with letters and numbers.'
+            );
+            return;
+          }
+
+          throw promoteError; // Re-throw to be caught by outer catch
+        }
+      } else {
+        // User is not anonymous, use regular signUp
+        await authService.signUp(email, password, {
+          first_name: state.donor?.firstName,
+          last_name: state.donor?.lastName,
+        });
+
+        // Account created successfully - show email confirmation message
+        setAccountCreated(true);
+        toast({
+          title: 'Account created',
+          description: 'Please check your email to confirm your account.',
+          variant: 'success',
+        });
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (/already registered/i.test(msg)) {
@@ -111,6 +180,13 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
       if (/weak/i.test(msg)) {
         setAccountError(
           'Password is weak. Choose a longer password with letters and numbers.'
+        );
+        return;
+      }
+      if (/email|send|smtp/i.test(msg)) {
+        // Email send failure - account might still be created
+        setAccountError(
+          'Account creation may have succeeded, but we encountered an issue sending the confirmation email. Please try signing in.'
         );
         return;
       }
@@ -150,9 +226,10 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
     setAccountSkipped(true);
   };
 
-  // Show account creation unless user has skipped it
+  // Show account creation unless user has skipped it or is already logged in
   // Note: customerId from Stripe doesn't mean they have an account in our system
-  const showAccountCreation = !accountSkipped && state.donor?.email;
+  const showAccountCreation =
+    !accountSkipped && state.donor?.email && isLoggedIn === false;
 
   return (
     <div className='space-y-6'>
@@ -252,6 +329,19 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
         </div>
       </div>
 
+      {/* Dashboard Button for Logged-in Users */}
+      {isLoggedIn === true && (
+        <div className='border-t border-neutral-200 dark:border-neutral-800 pt-6'>
+          <Button
+            onClick={() => {
+              window.location.href = '/dashboard';
+            }}
+            className='w-full'>
+            Go to Dashboard
+          </Button>
+        </div>
+      )}
+
       {/* Account Creation Section */}
       {showAccountCreation && !accountCreated && (
         <div className='border-t border-neutral-200 dark:border-neutral-800 pt-6 space-y-4'>
@@ -281,15 +371,13 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
               <Button
                 onClick={handleCreateAccount}
                 loading={accountLoading}
-                className='flex-1'
-              >
+                className='flex-1'>
                 Create account
               </Button>
               <Button
                 variant='ghost'
                 onClick={handleSkipAccount}
-                disabled={accountLoading}
-              >
+                disabled={accountLoading}>
                 Skip
               </Button>
             </div>
@@ -306,8 +394,7 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
                 className='w-6 h-6 text-primary-600 dark:text-primary-400'
                 fill='none'
                 stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
+                viewBox='0 0 24 24'>
                 <path
                   strokeLinecap='round'
                   strokeLinejoin='round'
@@ -334,8 +421,7 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
                 variant='outline'
                 onClick={handleResendConfirmation}
                 loading={resendLoading}
-                className='w-full'
-              >
+                className='w-full'>
                 Resend confirmation email
               </Button>
               <p className='text-xs text-neutral-500 dark:text-neutral-500'>

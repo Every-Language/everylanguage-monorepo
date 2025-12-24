@@ -96,7 +96,3 @@ Donations that haven't been fully allocated.
 - Accounting layer: Double-entry bookkeeping for financial accuracy
 - All amounts stored in cents (integer) to avoid floating-point errors
 - Currency conversion handled via `exchange_rates` table
-
-## Related Documentation
-
-- [Functions & Triggers](./functions-and-triggers.md) - Finance functions and triggers

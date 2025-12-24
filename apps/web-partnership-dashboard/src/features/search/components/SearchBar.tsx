@@ -46,8 +46,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <div
       ref={rootRef}
-      className={`${embedded ? 'w-full' : 'absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-xl'} ${className ?? ''}`}
-    >
+      className={`${embedded ? 'w-full' : 'absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-xl'} ${className ?? ''}`}>
       <div className='flex gap-2'>
         <div className='flex-1 relative'>
           <input
@@ -75,8 +74,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                       setIsOpen(false);
                       onSelect(r);
                     }}
-                    className='w-full text-left px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                  >
+                    className='w-full text-left px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800'>
                     <div className='flex items-center justify-between gap-3'>
                       <div>
                         <div className='font-medium text-sm'>{r.name}</div>

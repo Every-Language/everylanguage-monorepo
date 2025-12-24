@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from './ui/Card';
-import { useJPLanguageDataCache } from '@/features/map/hooks/useJPLanguageDataCache';
-import { useLanguageStatsContextual } from '@/features/map/hooks/useLanguageStatsContextual';
+import { useLanguageStats } from '@/features/map/hooks/useLanguageStats';
+import { useLanguagesRegionsStats } from '@/features/map/hooks/useLanguagesRegionsStats';
 import { formatPopulationCompact } from '@/features/map/utils/formatPopulation';
 import { BibleStatusBadge } from './BibleStatusBadge';
 import { Check, X } from 'lucide-react';
@@ -39,39 +39,35 @@ export const LanguageCard: React.FC<LanguageCardProps> = ({
   className = '',
 }) => {
   // Fetch total stats from MV
-  const { languageStats, isLoading: totalLoading } =
-    useJPLanguageDataCache(languageEntityId);
+  const { data: languageStats, isLoading: totalLoading } =
+    useLanguageStats(languageEntityId);
 
   // Fetch contextual stats if region provided
   const { data: contextualStats, isLoading: contextualLoading } =
-    useLanguageStatsContextual(
-      contextualRegionId ? languageEntityId : null,
-      contextualRegionId || null
-    );
+    useLanguagesRegionsStats({
+      languageEntityId: contextualRegionId ? languageEntityId : null,
+      regionId: contextualRegionId || null,
+    });
 
   const isLoading = totalLoading || contextualLoading;
 
+  // Get contextual stat for this specific region if available
+  const contextualStat = contextualStats?.find(
+    stat => stat.region_id === contextualRegionId
+  );
+
   // Use contextual stats if available, otherwise fall back to total stats
-  const languageName =
-    contextualStats?.language_name || languageStats?.Language || 'Unknown';
-  const population = contextualStats?.population ?? languageStats?.PoplPeoples;
-  const countryCount =
-    contextualStats?.country_count ?? languageStats?.Countries;
+  const languageName = languageStats?.language_name || 'Unknown';
+  const population =
+    contextualStat?.population ?? languageStats?.population ?? null;
+  const countryCount = languageStats?.country_count ?? null;
   const peopleGroupCount =
-    contextualStats?.people_group_count ?? languageStats?.Peoples;
-  const bibleStatusRaw =
-    contextualStats?.bible_status ?? languageStats?.BibleStatus;
-  // Convert bibleStatus to number if it's a string
+    contextualStat?.people_group_count ??
+    languageStats?.people_group_count ??
+    null;
   const bibleStatus =
-    typeof bibleStatusRaw === 'number'
-      ? bibleStatusRaw
-      : typeof bibleStatusRaw === 'string'
-        ? parseInt(bibleStatusRaw, 10) || null
-        : (bibleStatusRaw ?? null);
-  const hasAudioRecordings =
-    contextualStats?.has_audio_recordings ??
-    (languageStats?.AudioRecordings === 'Y' ||
-      languageStats?.HasJesusFilm === 'Y');
+    contextualStat?.bible_status ?? languageStats?.bible_status ?? null;
+  const hasAudioRecordings = languageStats?.has_audio_recordings ?? false;
 
   const handleClick = () => {
     if (onClick) {
@@ -85,8 +81,7 @@ export const LanguageCard: React.FC<LanguageCardProps> = ({
         <Card
           padding='sm'
           variant='ghost'
-          className={`border border-neutral-200 dark:border-neutral-800 ${className}`}
-        >
+          className={`border border-neutral-200 dark:border-neutral-800 ${className}`}>
           <CardContent>
             <div className='h-12 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse' />
           </CardContent>
@@ -99,20 +94,17 @@ export const LanguageCard: React.FC<LanguageCardProps> = ({
     <button
       type='button'
       onClick={handleClick}
-      className={`w-full text-left ${className}`}
-    >
+      className={`w-full text-left ${className}`}>
       <Card
         padding='sm'
         variant='ghost'
-        className={`border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 ${isSelected ? 'ring-2 ring-accent-600 ring-offset-1 ring-offset-white dark:ring-offset-neutral-900' : ''}`}
-      >
+        className={`border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 ${isSelected ? 'ring-2 ring-accent-600 ring-offset-1 ring-offset-white dark:ring-offset-neutral-900' : ''}`}>
         <CardContent>
           <div className='space-y-2'>
             {/* Name */}
             {showName && (
               <div
-                className={`text-sm font-medium ${isSelected ? 'text-accent-600' : 'text-neutral-900 dark:text-neutral-100'}`}
-              >
+                className={`text-sm font-medium ${isSelected ? 'text-accent-600' : 'text-neutral-900 dark:text-neutral-100'}`}>
                 {languageName}
               </div>
             )}

@@ -9,8 +9,7 @@ type ExternalProjectOverrideInsert =
 type ExternalProjectOverrideUpdate =
   Database['public']['Tables']['external_projects_overrides']['Update'];
 
-export interface ExternalProjectOverrideWithLanguage
-  extends ExternalProjectOverrideRow {
+export interface ExternalProjectOverrideWithLanguage extends ExternalProjectOverrideRow {
   language_entity?: LanguageEntity | null;
 }
 

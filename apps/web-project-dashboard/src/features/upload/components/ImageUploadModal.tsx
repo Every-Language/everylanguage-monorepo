@@ -338,8 +338,7 @@ export function ImageUploadModal({
                   <Select
                     value={selectedSetId}
                     onValueChange={setSelectedSetId}
-                    disabled={imageSetsLoading}
-                  >
+                    disabled={imageSetsLoading}>
                     <option value=''>Select an image set...</option>
                     {imageSets.map(set => (
                       <SelectItem key={set.id} value={set.id}>
@@ -371,8 +370,7 @@ export function ImageUploadModal({
                   {imageFiles.map(file => (
                     <div
                       key={file.id}
-                      className='flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg'
-                    >
+                      className='flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg'>
                       <div className='flex items-center space-x-3 flex-1 min-w-0'>
                         <PhotoIcon className='h-8 w-8 text-gray-400 flex-shrink-0' />
                         <div className='flex-1 min-w-0'>
@@ -428,8 +426,7 @@ export function ImageUploadModal({
                           variant='ghost'
                           size='sm'
                           onClick={() => removeFile(file.id)}
-                          disabled={isUploading}
-                        >
+                          disabled={isUploading}>
                           <TrashIcon className='h-4 w-4' />
                         </Button>
                       </div>
@@ -456,8 +453,7 @@ export function ImageUploadModal({
             </DialogClose>
             <Button
               onClick={handleUpload}
-              disabled={!canUpload || isUploading || isProcessing}
-            >
+              disabled={!canUpload || isUploading || isProcessing}>
               {isUploading ? (
                 <>
                   <LoadingSpinner className='mr-2' />

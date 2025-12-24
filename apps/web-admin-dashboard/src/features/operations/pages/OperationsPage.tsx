@@ -166,8 +166,7 @@ export function OperationsPage() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className='inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors'
-        >
+          className='inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors'>
           <Plus className='h-5 w-5 mr-2' />
           Add Operation
         </button>
@@ -194,8 +193,7 @@ export function OperationsPage() {
           onValueChange={value => {
             setCategoryFilter(value);
             setPage(1);
-          }}
-        >
+          }}>
           <SelectItem value='all'>All categories</SelectItem>
           {OPERATION_CATEGORIES.map(category => (
             <SelectItem key={category} value={category}>
@@ -210,8 +208,7 @@ export function OperationsPage() {
           onValueChange={value => {
             setStatusFilterValue(value);
             setPage(1);
-          }}
-        >
+          }}>
           <SelectItem value='all'>All statuses</SelectItem>
           {STATUS_OPTIONS.map(status => (
             <SelectItem key={status} value={status}>
@@ -240,8 +237,7 @@ export function OperationsPage() {
                       <button
                         type='button'
                         onClick={() => handleSort('name')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Name
                         <span>{getSortIndicator('name')}</span>
                       </button>
@@ -253,8 +249,7 @@ export function OperationsPage() {
                       <button
                         type='button'
                         onClick={() => handleSort('allocations')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Allocations
                         <span>{getSortIndicator('allocations')}</span>
                       </button>
@@ -263,8 +258,7 @@ export function OperationsPage() {
                       <button
                         type='button'
                         onClick={() => handleSort('costs')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Costs
                         <span>{getSortIndicator('costs')}</span>
                       </button>
@@ -273,8 +267,7 @@ export function OperationsPage() {
                       <button
                         type='button'
                         onClick={() => handleSort('balance')}
-                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                      >
+                        className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                         Balance
                         <span>{getSortIndicator('balance')}</span>
                       </button>
@@ -293,8 +286,7 @@ export function OperationsPage() {
                           operation.operation_id &&
                           handleOperationClick(operation.operation_id)
                         }
-                        className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer'
-                      >
+                        className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer'>
                         <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
                           {operation.operation_name || '—'}
                         </td>
@@ -316,15 +308,13 @@ export function OperationsPage() {
                         <td
                           className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${getBalanceClassName(
                             operation.balance_cents
-                          )}`}
-                        >
+                          )}`}>
                           {formatCurrency(operation.balance_cents)}
                         </td>
                         <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
                           <div
                             onClick={e => e.stopPropagation()}
-                            className='w-full'
-                          >
+                            className='w-full'>
                             <Select
                               value={operation.status || 'draft'}
                               onValueChange={value =>
@@ -334,8 +324,7 @@ export function OperationsPage() {
                                   value as EntityStatus
                                 )
                               }
-                              disabled={updateStatusMutation.isPending}
-                            >
+                              disabled={updateStatusMutation.isPending}>
                               {STATUS_OPTIONS.map(status => (
                                 <SelectItem key={status} value={status}>
                                   {status.charAt(0).toUpperCase() +
@@ -351,8 +340,7 @@ export function OperationsPage() {
                     <tr>
                       <td
                         colSpan={6}
-                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                      >
+                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                         {debouncedSearch
                           ? 'No operations found matching your search'
                           : 'No operations found'}
@@ -374,8 +362,7 @@ export function OperationsPage() {
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronLeft className='h-4 w-4' />
                   </button>
                   <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
@@ -385,8 +372,7 @@ export function OperationsPage() {
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronRight className='h-4 w-4' />
                   </button>
                 </div>

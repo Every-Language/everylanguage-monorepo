@@ -3,10 +3,10 @@ import { type LayerKey } from '../components/LayerToggles';
 import { GlobalListeningSettingsSection } from './GlobalListeningSettingsSection';
 import { LanguagesSettingsSection } from './LanguagesSettingsSection';
 import { PeopleGroupsSettingsSection } from './PeopleGroupsSettingsSection';
+import { MapColorLegend } from '../components/MapColorLegend';
 import { useProjectsEnabled } from '@/shared/hooks/useFeatureFlags';
 import type { ColorGradient } from '../analytics/types';
 import type { SelectionMode } from '../inspector/state/inspectorStore';
-import { SelectionModeTabs } from '../components/SelectionModeTabs';
 
 export type LayerState = Record<LayerKey, boolean>;
 
@@ -68,9 +68,6 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
 
   const content = (
     <div>
-      <div className='mb-4'>
-        <SelectionModeTabs />
-      </div>
       <div className='text-sm font-medium mb-2'>Layers</div>
       {(
         [
@@ -86,8 +83,7 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
           return (
             <label
               key={k}
-              className='flex items-center justify-between text-sm py-1 select-none'
-            >
+              className='flex items-center justify-between text-sm py-1 select-none'>
               <span className='capitalize'>
                 {k === 'globalListening'
                   ? 'Global Listening'
@@ -159,6 +155,15 @@ export const MapControlsSection: React.FC<MapControlsSectionProps> = ({
             />
           </div>
         )}
+      <MapColorLegend
+        activeLayers={value}
+        selectionMode={selectionMode}
+        globalListeningGradient={
+          value.globalListening
+            ? globalListeningSettings?.colorGradient
+            : undefined
+        }
+      />
     </div>
   );
 

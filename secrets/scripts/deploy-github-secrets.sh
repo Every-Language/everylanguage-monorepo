@@ -87,12 +87,46 @@ echo ""
 
 echo -e "${BLUE}2. Deploying Development Secrets${NC}"
 echo -e "${YELLOW}GitHub Development Environment:${NC}"
+
+# Deploy base secrets first
 while IFS='=' read -r key value; do
-    # Skip Vercel-specific secrets (VITE_*) for GitHub
-    if [[ ! "$key" =~ ^VITE_ ]]; then
+    # Skip Vercel-specific secrets (VITE_*, NEXT_PUBLIC_*) for GitHub
+    # Skip EXPO_PUBLIC_* as we'll derive them from base variables
+    if [[ ! "$key" =~ ^(VITE_|NEXT_PUBLIC_|EXPO_PUBLIC_) ]]; then
         deploy_github_secret "$key" "$value" "development"
     fi
 done < <(parse_env_file "$SECRETS_DIR/.env.development")
+
+# Derive EXPO_PUBLIC_* variables from base variables
+# Get base values
+SUPABASE_URL=$(get_env_value "SUPABASE_URL" "$SECRETS_DIR/.env.development" || true)
+if [ -z "$SUPABASE_URL" ]; then
+    # Try to derive from SUPABASE_PROJECT_ID
+    SUPABASE_PROJECT_ID=$(get_env_value "SUPABASE_PROJECT_ID" "$SECRETS_DIR/.env.development" || true)
+    if [ -n "$SUPABASE_PROJECT_ID" ]; then
+        SUPABASE_URL=$(derive_supabase_url "$SUPABASE_PROJECT_ID")
+    fi
+fi
+
+SUPABASE_ANON_KEY=$(get_env_value "SUPABASE_ANON_KEY" "$SECRETS_DIR/.env.development" || true)
+if [ -z "$SUPABASE_ANON_KEY" ]; then
+    # Try SUPABASE_PUBLISHABLE_KEY as fallback
+    SUPABASE_ANON_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development" || true)
+fi
+
+POWERSYNC_URL=$(get_env_value "POWERSYNC_URL" "$SECRETS_DIR/.env.development" || true)
+
+# Deploy derived EXPO_PUBLIC_* variables
+if [ -n "$SUPABASE_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_SUPABASE_URL" "$SUPABASE_URL" "development"
+fi
+if [ -n "$SUPABASE_ANON_KEY" ]; then
+    deploy_github_secret "EXPO_PUBLIC_SUPABASE_ANON_KEY" "$SUPABASE_ANON_KEY" "development"
+fi
+if [ -n "$POWERSYNC_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_URL" "$POWERSYNC_URL" "development"
+fi
+
 echo ""
 
 # ============================================================
@@ -101,12 +135,46 @@ echo ""
 
 echo -e "${BLUE}3. Deploying Production Secrets${NC}"
 echo -e "${YELLOW}GitHub Production Environment:${NC}"
+
+# Deploy base secrets first
 while IFS='=' read -r key value; do
-    # Skip Vercel-specific secrets (VITE_*) for GitHub
-    if [[ ! "$key" =~ ^VITE_ ]]; then
+    # Skip Vercel-specific secrets (VITE_*, NEXT_PUBLIC_*) for GitHub
+    # Skip EXPO_PUBLIC_* as we'll derive them from base variables
+    if [[ ! "$key" =~ ^(VITE_|NEXT_PUBLIC_|EXPO_PUBLIC_) ]]; then
         deploy_github_secret "$key" "$value" "production"
     fi
 done < <(parse_env_file "$SECRETS_DIR/.env.production")
+
+# Derive EXPO_PUBLIC_* variables from base variables
+# Get base values
+SUPABASE_URL=$(get_env_value "SUPABASE_URL" "$SECRETS_DIR/.env.production" || true)
+if [ -z "$SUPABASE_URL" ]; then
+    # Try to derive from SUPABASE_PROJECT_ID
+    SUPABASE_PROJECT_ID=$(get_env_value "SUPABASE_PROJECT_ID" "$SECRETS_DIR/.env.production" || true)
+    if [ -n "$SUPABASE_PROJECT_ID" ]; then
+        SUPABASE_URL=$(derive_supabase_url "$SUPABASE_PROJECT_ID")
+    fi
+fi
+
+SUPABASE_ANON_KEY=$(get_env_value "SUPABASE_ANON_KEY" "$SECRETS_DIR/.env.production" || true)
+if [ -z "$SUPABASE_ANON_KEY" ]; then
+    # Try SUPABASE_PUBLISHABLE_KEY as fallback
+    SUPABASE_ANON_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production" || true)
+fi
+
+POWERSYNC_URL=$(get_env_value "POWERSYNC_URL" "$SECRETS_DIR/.env.production" || true)
+
+# Deploy derived EXPO_PUBLIC_* variables
+if [ -n "$SUPABASE_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_SUPABASE_URL" "$SUPABASE_URL" "production"
+fi
+if [ -n "$SUPABASE_ANON_KEY" ]; then
+    deploy_github_secret "EXPO_PUBLIC_SUPABASE_ANON_KEY" "$SUPABASE_ANON_KEY" "production"
+fi
+if [ -n "$POWERSYNC_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_URL" "$POWERSYNC_URL" "production"
+fi
+
 echo ""
 
 # ============================================================

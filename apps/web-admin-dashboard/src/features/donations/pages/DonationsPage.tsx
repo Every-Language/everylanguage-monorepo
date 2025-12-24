@@ -4,10 +4,15 @@ import { donationsApi } from '../api/donationsApi';
 import { allocationsApi } from '../api/allocationsApi';
 import { ViewDonationModal } from '../components/ViewDonationModal';
 import { ViewAllocationModal } from '../components/ViewAllocationModal';
+import { AddDonationModal } from '../components/AddDonationModal';
 import type { DonationWithAllocations, AllocationWithDetails } from '@/types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
 import { languagesApi } from '../../languages/api/languagesApi';
+import { subscriptionsApi } from '../../subscriptions/api/subscriptionsApi';
+import { UserModal } from '../../users/components/UserModal';
+import { PartnerOrgModal } from '../../users/components/PartnerOrgModal';
+import type { UserWithRoles, PartnerOrgWithUsers } from '../../users/types';
 
 type DonationSortField = 'date' | 'amount' | 'remaining' | 'donor';
 type SortDirection = 'asc' | 'desc';
@@ -49,10 +54,16 @@ export function DonationsPage() {
     name: string;
     category?: string | null;
   } | null>(null);
+  const [regionFilter, setRegionFilter] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [languageSearchTerm, setLanguageSearchTerm] = useState('');
   const [operationSearchTerm, setOperationSearchTerm] = useState('');
+  const [regionSearchTerm, setRegionSearchTerm] = useState('');
   const [debouncedLanguageSearch, setDebouncedLanguageSearch] = useState('');
   const [debouncedOperationSearch, setDebouncedOperationSearch] = useState('');
+  const [debouncedRegionSearch, setDebouncedRegionSearch] = useState('');
   const [showOperationDropdown, setShowOperationDropdown] = useState(false);
   const [operationPage, setOperationPage] = useState(1);
   const [accumulatedOperations, setAccumulatedOperations] = useState<
@@ -65,6 +76,10 @@ export function DonationsPage() {
     useState<DonationWithAllocations | null>(null);
   const [selectedAllocation, setSelectedAllocation] =
     useState<AllocationWithDetails | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
+  const [selectedPartnerOrg, setSelectedPartnerOrg] =
+    useState<PartnerOrgWithUsers | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -84,6 +99,14 @@ export function DonationsPage() {
     return () => clearTimeout(timer);
   }, [operationSearchTerm]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedRegionSearch(regionSearchTerm);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [regionSearchTerm]);
+
   const { data: languageSearchResults = [] } = useQuery({
     queryKey: ['donation-language-filter', debouncedLanguageSearch],
     queryFn: () => languagesApi.searchLanguageEntities(debouncedLanguageSearch),
@@ -94,6 +117,12 @@ export function DonationsPage() {
     queryKey: ['donation-operation-filter', debouncedOperationSearch],
     queryFn: () => donationsApi.searchOperations(debouncedOperationSearch, 20),
     enabled: debouncedOperationSearch.length >= 2,
+  });
+
+  const { data: regionSearchResults = [] } = useQuery({
+    queryKey: ['donation-region-filter', debouncedRegionSearch],
+    queryFn: () => subscriptionsApi.searchRegions(debouncedRegionSearch, 50),
+    enabled: debouncedRegionSearch.length >= 2,
   });
 
   // Fetch paginated operations (when no search query)
@@ -166,6 +195,7 @@ export function DonationsPage() {
       onlyUnallocated,
       languageFilter?.id ?? null,
       operationFilter?.id ?? null,
+      regionFilter?.id ?? null,
       sortField,
       sortDirection,
     ],
@@ -178,6 +208,7 @@ export function DonationsPage() {
           intentTypeFilter !== 'all' ? intentTypeFilter : undefined,
         intentLanguageId: languageFilter?.id,
         intentOperationId: operationFilter?.id,
+        intentRegionId: regionFilter?.id,
         sortField,
         sortDirection,
         onlyUnallocated,
@@ -217,6 +248,40 @@ export function DonationsPage() {
 
   const handleDonationClick = (donation: DonationWithAllocations) => {
     setSelectedDonation(donation);
+  };
+
+  const handleUserClick = async (
+    e: React.MouseEvent,
+    userId: string | null
+  ) => {
+    e.stopPropagation();
+    if (!userId) return;
+    const { usersApi } = await import('../../users/api/usersApi');
+    try {
+      const user = await usersApi.fetchUserById(userId);
+      if (user) {
+        setSelectedUser(user);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+    }
+  };
+
+  const handlePartnerOrgClick = async (
+    e: React.MouseEvent,
+    partnerOrgId: string | null
+  ) => {
+    e.stopPropagation();
+    if (!partnerOrgId) return;
+    const { partnerOrgsApi } = await import('../../users/api/partnerOrgsApi');
+    try {
+      const org = await partnerOrgsApi.fetchPartnerOrgById(partnerOrgId);
+      if (org) {
+        setSelectedPartnerOrg(org);
+      }
+    } catch (error) {
+      console.error('Failed to fetch partner org:', error);
+    }
   };
 
   const handleCloseModal = () => {
@@ -309,8 +374,7 @@ export function DonationsPage() {
     const badge = badges[status] || badges.pending;
     return (
       <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}
-      >
+        className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>
         {badge.label}
       </span>
     );
@@ -333,18 +397,26 @@ export function DonationsPage() {
 
   return (
     <div className='p-8'>
-      <div className='mb-8'>
-        <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
-          Donations
-        </h1>
-        <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
-          Manage donations and allocations
-        </p>
+      <div className='mb-8 flex items-start justify-between'>
+        <div>
+          <h1 className='text-3xl font-bold text-neutral-900 dark:text-neutral-100'>
+            Donations
+          </h1>
+          <p className='mt-2 text-neutral-600 dark:text-neutral-400'>
+            Manage donations and allocations
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>
+          <Plus className='h-4 w-4' />
+          Add Donation
+        </button>
       </div>
 
       {/* Filters */}
       <div className='mb-6 space-y-4'>
-        <div className='grid grid-cols-1 lg:grid-cols-4 gap-4'>
+        <div className='grid grid-cols-1 lg:grid-cols-5 gap-4'>
           {/* Status Filter */}
           <Select
             label='Status'
@@ -352,8 +424,7 @@ export function DonationsPage() {
             onValueChange={value => {
               setStatusFilter(value);
               setPage(1);
-            }}
-          >
+            }}>
             <SelectItem value='all'>All Statuses</SelectItem>
             <SelectItem value='pending'>Pending</SelectItem>
             <SelectItem value='processing'>Processing</SelectItem>
@@ -369,8 +440,7 @@ export function DonationsPage() {
             onValueChange={value => {
               setIntentTypeFilter(value);
               setPage(1);
-            }}
-          >
+            }}>
             <SelectItem value='all'>All Intent Types</SelectItem>
             <SelectItem value='language'>Language</SelectItem>
             <SelectItem value='region'>Region</SelectItem>
@@ -399,8 +469,7 @@ export function DonationsPage() {
                     setLanguageFilter(null);
                     setPage(1);
                   }}
-                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'
-                >
+                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'>
                   Clear
                 </button>
               </div>
@@ -434,8 +503,7 @@ export function DonationsPage() {
                             setIntentTypeFilter('language');
                             setPage(1);
                           }}
-                          className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                        >
+                          className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
                           {language.name}{' '}
                           <span className='text-xs text-neutral-500 dark:text-neutral-400'>
                             ({language.level})
@@ -470,8 +538,7 @@ export function DonationsPage() {
                     setOperationFilter(null);
                     setPage(1);
                   }}
-                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'
-                >
+                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'>
                   Clear
                 </button>
               </div>
@@ -508,8 +575,7 @@ export function DonationsPage() {
                               setIntentTypeFilter('operation');
                               setPage(1);
                             }}
-                            className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                          >
+                            className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
                             {operation.name}{' '}
                             <span className='text-xs text-neutral-500 dark:text-neutral-400'>
                               ({operation.category || 'operation'})
@@ -525,8 +591,7 @@ export function DonationsPage() {
                               onClick={() => {
                                 setOperationPage(p => p + 1);
                               }}
-                              className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'
-                            >
+                              className='w-full px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-t border-neutral-200 dark:border-neutral-700'>
                               Load more...
                             </button>
                           )}
@@ -537,6 +602,75 @@ export function DonationsPage() {
                           ? 'No matches'
                           : 'Loading...'}
                       </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Region filter */}
+          <div>
+            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+              Region Intent
+            </label>
+            {regionFilter ? (
+              <div className='flex items-center justify-between px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900'>
+                <div>
+                  <p className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                    {regionFilter.name}
+                  </p>
+                  <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+                    Region
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  onClick={() => {
+                    setRegionFilter(null);
+                    setPage(1);
+                  }}
+                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'>
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <div className='relative'>
+                <input
+                  type='text'
+                  value={regionSearchTerm}
+                  onChange={e => setRegionSearchTerm(e.target.value)}
+                  placeholder='Search regions...'
+                  className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
+                />
+                {debouncedRegionSearch.length >= 2 && (
+                  <div className='absolute z-20 w-full mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+                    {regionSearchResults.length === 0 ? (
+                      <div className='px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                        No matches
+                      </div>
+                    ) : (
+                      regionSearchResults.map(region => (
+                        <button
+                          key={region.id}
+                          type='button'
+                          onClick={() => {
+                            setRegionFilter({
+                              id: region.id,
+                              name: region.name,
+                            });
+                            setRegionSearchTerm('');
+                            setDebouncedRegionSearch('');
+                            setIntentTypeFilter('region');
+                            setPage(1);
+                          }}
+                          className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
+                          {region.name}{' '}
+                          <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                            ({region.level})
+                          </span>
+                        </button>
+                      ))
                     )}
                   </div>
                 )}
@@ -581,8 +715,7 @@ export function DonationsPage() {
                     <button
                       type='button'
                       onClick={() => handleSort('date')}
-                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                    >
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                       Date
                       <span>{getSortIndicator('date')}</span>
                     </button>
@@ -591,21 +724,25 @@ export function DonationsPage() {
                     Status
                   </th>
                   <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    Source
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
                     <button
                       type='button'
                       onClick={() => handleSort('donor')}
-                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                    >
-                      Donor
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
+                      User
                       <span>{getSortIndicator('donor')}</span>
                     </button>
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    Partner Org
                   </th>
                   <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
                     <button
                       type='button'
                       onClick={() => handleSort('amount')}
-                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                    >
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                       Amount
                       <span>{getSortIndicator('amount')}</span>
                     </button>
@@ -620,8 +757,7 @@ export function DonationsPage() {
                     <button
                       type='button'
                       onClick={() => handleSort('remaining')}
-                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'
-                    >
+                      className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
                       Remaining
                       <span>{getSortIndicator('remaining')}</span>
                     </button>
@@ -634,17 +770,29 @@ export function DonationsPage() {
                     <tr
                       key={donation.id}
                       className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
-                      onClick={() => handleDonationClick(donation)}
-                    >
+                      onClick={() => handleDonationClick(donation)}>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
                         {formatDate(donation.created_at)}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm'>
                         {getStatusBadge(donation.status)}
                       </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm'>
+                        {donation.is_manual ? (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'>
+                            Manual
+                          </span>
+                        ) : (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'>
+                            Stripe
+                          </span>
+                        )}
+                      </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
                         {donation.user ? (
-                          <div>
+                          <button
+                            onClick={e => handleUserClick(e, donation.user_id)}
+                            className='text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'>
                             <div className='font-medium'>
                               {donation.user.first_name}{' '}
                               {donation.user.last_name}
@@ -652,19 +800,30 @@ export function DonationsPage() {
                             <div className='text-neutral-500 dark:text-neutral-400 text-xs'>
                               {donation.user.email}
                             </div>
-                          </div>
-                        ) : donation.partner_org ? (
-                          <div>
+                          </button>
+                        ) : (
+                          <span className='text-neutral-500 dark:text-neutral-400'>
+                            —
+                          </span>
+                        )}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
+                        {donation.partner_org ? (
+                          <button
+                            onClick={e =>
+                              handlePartnerOrgClick(e, donation.partner_org_id)
+                            }
+                            className='text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'>
                             <div className='font-medium'>
                               {donation.partner_org.name}
                             </div>
                             <div className='text-neutral-500 dark:text-neutral-400 text-xs'>
                               Partner Org
                             </div>
-                          </div>
+                          </button>
                         ) : (
                           <span className='text-neutral-500 dark:text-neutral-400'>
-                            Unknown
+                            —
                           </span>
                         )}
                       </td>
@@ -699,8 +858,7 @@ export function DonationsPage() {
                                 onClick={e =>
                                   handleAllocationClick(e, allocation.id)
                                 }
-                                className='block text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'
-                              >
+                                className='block text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'>
                                 {formatCurrency(
                                   allocation.amount_cents,
                                   allocation.currency_code ||
@@ -735,8 +893,7 @@ export function DonationsPage() {
                             donation.remaining_cents > 0
                               ? 'font-medium text-green-600 dark:text-green-400'
                               : 'text-neutral-500 dark:text-neutral-400'
-                          }
-                        >
+                          }>
                           {formatCurrency(
                             donation.remaining_cents,
                             donation.currency_code
@@ -748,9 +905,8 @@ export function DonationsPage() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={7}
-                      className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                    >
+                      colSpan={8}
+                      className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                       {emptyMessage}
                     </td>
                   </tr>
@@ -770,8 +926,7 @@ export function DonationsPage() {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              >
+                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                 <ChevronLeft className='h-4 w-4' />
               </button>
               <span className='text-sm text-neutral-600 dark:text-neutral-400 min-w-[100px] text-center'>
@@ -781,8 +936,7 @@ export function DonationsPage() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              >
+                className='px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                 <ChevronRight className='h-4 w-4' />
               </button>
             </div>
@@ -805,6 +959,40 @@ export function DonationsPage() {
           allocation={selectedAllocation}
           onClose={handleCloseAllocationModal}
           onUpdate={handleAllocationUpdated}
+        />
+      )}
+
+      {/* Add Donation Modal */}
+      {showAddModal && (
+        <AddDonationModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['donations'] });
+            setShowAddModal(false);
+          }}
+        />
+      )}
+
+      {/* User Modal */}
+      {selectedUser && (
+        <UserModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          onUpdate={() => {
+            queryClient.invalidateQueries({ queryKey: ['donations'] });
+          }}
+        />
+      )}
+
+      {/* Partner Org Modal */}
+      {selectedPartnerOrg && (
+        <PartnerOrgModal
+          org={selectedPartnerOrg}
+          isCreating={false}
+          onClose={() => setSelectedPartnerOrg(null)}
+          onUpdate={() => {
+            queryClient.invalidateQueries({ queryKey: ['donations'] });
+          }}
         />
       )}
     </div>

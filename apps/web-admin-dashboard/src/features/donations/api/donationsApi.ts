@@ -1,5 +1,9 @@
 import { supabase } from '@/shared/services/supabase';
-import type { DonationAllocation, DonationWithAllocations } from '@/types';
+import type {
+  Donation,
+  DonationAllocation,
+  DonationWithAllocations,
+} from '@/types';
 import type { Database } from '@everylanguage/shared-types';
 
 type DonationStatus = Database['public']['Enums']['donation_status'];
@@ -23,6 +27,7 @@ export const donationsApi = {
     intentTypeFilter?: string;
     intentLanguageId?: string;
     intentOperationId?: string;
+    intentRegionId?: string;
     sortField?: 'date' | 'amount' | 'remaining' | 'donor';
     sortDirection?: 'asc' | 'desc';
     onlyUnallocated?: boolean;
@@ -127,6 +132,10 @@ export const donationsApi = {
       query = query.eq('intent_operation_id', params.intentOperationId);
     }
 
+    if (params?.intentRegionId) {
+      query = query.eq('intent_region_id', params.intentRegionId);
+    }
+
     // Apply search filter in SQL before pagination
     if (params?.searchQuery && params.searchQuery.trim().length >= 2) {
       const searchTerm = params.searchQuery.trim();
@@ -205,8 +214,11 @@ export const donationsApi = {
         );
         const remaining_cents = donation.amount_cents - allocated_cents;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const donationData = donation as any;
+
         return {
-          ...donation,
+          ...donationData,
           allocations,
           allocated_cents,
           remaining_cents,
@@ -222,6 +234,7 @@ export const donationsApi = {
                 email: donation.user.email || '',
               }
             : null,
+          is_manual: (donationData.is_manual as boolean | undefined) ?? false,
         } as DonationWithAllocations;
       }
     );
@@ -336,8 +349,11 @@ export const donationsApi = {
     );
     const remaining_cents = data.amount_cents - allocated_cents;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const donationData = data as any;
+
     return {
-      ...data,
+      ...donationData,
       allocations,
       allocated_cents,
       remaining_cents,
@@ -353,6 +369,7 @@ export const donationsApi = {
             email: data.user.email || '',
           }
         : null,
+      is_manual: (donationData.is_manual as boolean | undefined) ?? false,
     } as DonationWithAllocations;
   },
 
@@ -368,23 +385,153 @@ export const donationsApi = {
     effective_from?: string;
     effective_to?: string;
   }): Promise<DonationAllocation> {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:362',
+        message: 'createAllocation called',
+        data: {
+          donation_id: allocation.donation_id,
+          amount_cents: allocation.amount_cents,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'C',
+      }),
+    }).catch(() => {});
+    // #endregion
     const { data: userData } = await supabase.auth.getUser();
     if (!userData?.user) {
       throw new Error('User not authenticated');
     }
 
-    const { data: insertedData, error: insertError } = await supabase
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:375',
+        message: 'User auth check',
+        data: { userId: userData.user.id, email: userData.user.email },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'C',
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    const insertData = {
+      ...allocation,
+      created_by: userData.user.id,
+    };
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:383',
+        message: 'Insert data prepared',
+        data: insertData,
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run3',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    // Test has_permission function directly
+    // #region agent log
+    const { data: permCheck, error: permError } = await supabase.rpc(
+      'has_permission',
+      {
+        p_user_id: userData.user.id,
+        p_action: 'system.admin',
+        p_resource_type: 'global',
+        p_resource_id: '00000000-0000-0000-0000-000000000000', // Dummy UUID for global resources
+      }
+    );
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:390',
+        message: 'has_permission check',
+        data: { hasPermission: permCheck, error: permError?.message },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run3',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    // Try insert without RETURNING first to isolate INSERT vs SELECT policy issue
+    // #region agent log
+    const { error: insertOnlyError } = await supabase
       .from('donation_allocations')
-      .insert({
-        ...allocation,
-        created_by: userData.user.id,
-      })
+      .insert(insertData);
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:397',
+        message: 'Insert without RETURNING',
+        data: {
+          success: !insertOnlyError,
+          error: insertOnlyError?.message,
+          code: insertOnlyError?.code,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run3',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    if (insertOnlyError) {
+      throw insertOnlyError;
+    }
+
+    // If insert succeeded, now try to query it back
+    const { data: insertedData, error: queryError } = await supabase
+      .from('donation_allocations')
       .select('id')
+      .eq('donation_id', allocation.donation_id)
+      .eq('created_by', userData.user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
-    if (insertError) throw insertError;
-    if (!insertedData?.id) {
-      throw new Error('Failed to create allocation');
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b21c1bbc-918b-4be7-8e62-e18feb341829', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'donationsApi.ts:410',
+        message: 'Query after insert',
+        data: {
+          success: !queryError,
+          foundId: insertedData?.id,
+          error: queryError?.message,
+          code: queryError?.code,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run3',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    if (queryError || !insertedData?.id) {
+      throw new Error(queryError?.message || 'Failed to create allocation');
     }
 
     // Fetch the full allocation record
@@ -614,5 +761,88 @@ export const donationsApi = {
       totalPages: Math.ceil((count || 0) / pageSize),
       count: count || 0,
     };
+  },
+
+  /**
+   * Create a new manual donation
+   */
+  async createDonation(data: {
+    user_id: string;
+    partner_org_id: string;
+    intent_type: DonationIntentType;
+    intent_language_entity_id?: string;
+    intent_region_id?: string;
+    intent_operation_id?: string;
+    amount_cents: number;
+    currency_code?: string;
+    status?: DonationStatus;
+    payment_method?: Database['public']['Enums']['payment_method_type'];
+    is_recurring?: boolean;
+  }): Promise<Donation> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Validate required fields
+    if (!data.user_id || !data.partner_org_id) {
+      throw new Error('Both user_id and partner_org_id are required');
+    }
+
+    if (!data.intent_type) {
+      throw new Error('Intent type is required');
+    }
+
+    if (data.amount_cents <= 0) {
+      throw new Error('Amount must be greater than 0');
+    }
+
+    // Validate intent fields match intent_type
+    if (data.intent_type === 'language' && !data.intent_language_entity_id) {
+      throw new Error('Language entity is required for language intent');
+    }
+
+    if (data.intent_type === 'region' && !data.intent_region_id) {
+      throw new Error('Region is required for region intent');
+    }
+
+    if (data.intent_type === 'operation' && !data.intent_operation_id) {
+      throw new Error('Operation is required for operation intent');
+    }
+
+    const status = data.status || 'completed';
+
+    const insertData = {
+      user_id: data.user_id,
+      partner_org_id: data.partner_org_id,
+      intent_type: data.intent_type,
+      intent_language_entity_id:
+        data.intent_type === 'language' ? data.intent_language_entity_id : null,
+      intent_region_id:
+        data.intent_type === 'region' ? data.intent_region_id : null,
+      intent_operation_id:
+        data.intent_type === 'operation' ? data.intent_operation_id : null,
+      amount_cents: data.amount_cents,
+      currency_code: data.currency_code || 'USD',
+      status: status,
+      payment_method: data.payment_method || 'card',
+      is_recurring: data.is_recurring || false,
+      is_manual: true,
+      created_by: userData.user.id,
+      completed_at: status === 'completed' ? new Date().toISOString() : null,
+    } as Database['public']['Tables']['donations']['Insert'];
+
+    const { data: donation, error } = await supabase
+      .from('donations')
+      .insert(insertData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating donation:', error);
+      throw new Error(error.message || 'Failed to create donation');
+    }
+
+    return donation;
   },
 };

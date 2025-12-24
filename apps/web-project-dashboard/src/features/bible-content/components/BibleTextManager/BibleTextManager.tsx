@@ -32,12 +32,10 @@ export const BibleTextManager: React.FC<BibleTextManagerProps> = ({
       versions={bibleTextState.textVersions}
       versionsLoading={bibleTextState.isLoading}
       searchable={true}
-      allowAllVersions={false}
-    >
+      allowAllVersions={false}>
       <Button
         variant='outline'
-        onClick={() => bibleTextState.openModal('textVersion')}
-      >
+        onClick={() => bibleTextState.openModal('textVersion')}>
         <PlusIcon className='h-4 w-4 mr-2' />
         New Text Version
       </Button>

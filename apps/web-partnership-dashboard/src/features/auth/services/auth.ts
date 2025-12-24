@@ -144,9 +144,10 @@ export class AuthService {
       const supabase = getSupabaseClient();
 
       // Get the current origin for email redirect
+      // Include next=/dashboard so users are redirected to dashboard after confirmation
       const emailRedirectTo =
         typeof window !== 'undefined'
-          ? `${window.location.origin}/api/auth/confirm`
+          ? `${window.location.origin}/api/auth/confirm?next=/dashboard`
           : undefined;
 
       const { data, error } = await supabase.auth.signUp({
@@ -177,9 +178,10 @@ export class AuthService {
       const supabase = getSupabaseClient();
 
       // Get the current origin for email redirect
+      // Include next=/dashboard so users are redirected to dashboard after confirmation
       const emailRedirectTo =
         typeof window !== 'undefined'
-          ? `${window.location.origin}/api/auth/confirm`
+          ? `${window.location.origin}/api/auth/confirm?next=/dashboard`
           : undefined;
 
       const { error } = await supabase.auth.resend({
@@ -544,6 +546,76 @@ export class AuthService {
       console.log('✅ Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Promote anonymous user to authenticated user
+   * Updates the anonymous user with email, password, and user data to convert to authenticated user
+   */
+  async promoteAnonymousUser(
+    email: string,
+    password: string,
+    userData?: Partial<DbUser>,
+    phone?: string
+  ) {
+    try {
+      const supabase = getSupabaseClient();
+
+      // Get the current origin for email redirect
+      // Include next=/dashboard so users are redirected to dashboard after confirmation
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/api/auth/confirm?next=/dashboard`
+          : undefined;
+
+      // Prepare user metadata with normalized phone number if provided
+      const metadata: Record<string, unknown> = { ...userData };
+      if (phone) {
+        // Normalize phone number and store in metadata (will be synced to public.users by trigger)
+        metadata.phone_number = normalizePhoneNumber(phone);
+      }
+
+      // Update anonymous user with email and password to promote to authenticated
+      // Pass emailRedirectTo in options so email change confirmation uses correct redirect
+      const { data, error } = await supabase.auth.updateUser(
+        {
+          email,
+          password,
+          data: metadata,
+        },
+        {
+          emailRedirectTo,
+        }
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      // If email confirmation is required, send confirmation email
+      if (data.user && !data.user.email_confirmed_at) {
+        const { error: emailError } = await supabase.auth.resend({
+          type: 'signup',
+          email,
+          options: {
+            emailRedirectTo,
+          },
+        });
+
+        if (emailError) {
+          // Log error but don't fail - user account is created, just email send failed
+          console.error('Error sending confirmation email:', emailError);
+          throw new Error(
+            `Account created but failed to send confirmation email: ${emailError.message}`
+          );
+        }
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error promoting anonymous user:', error);
       throw error;
     }
   }

@@ -91,8 +91,7 @@ export const Form = React.forwardRef<HTMLFormElement, FormProps>(
           ref={ref}
           className={cn('space-y-6', className)}
           onSubmit={handleSubmit}
-          {...props}
-        >
+          {...props}>
           {children}
         </form>
       </FormContext.Provider>
@@ -127,8 +126,7 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
 FormField.displayName = 'FormField';
 
 // FormLabel Component
-export interface FormLabelProps
-  extends React.LabelHTMLAttributes<HTMLLabelElement> {
+export interface FormLabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
   required?: boolean;
   children: React.ReactNode;
 }
@@ -142,8 +140,7 @@ export const FormLabel = React.forwardRef<HTMLLabelElement, FormLabelProps>(
         'peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
         className
       )}
-      {...props}
-    >
+      {...props}>
       {children}
       {required && <span className='text-error-500 ml-1'>*</span>}
     </label>
@@ -167,8 +164,7 @@ export const FormDescription = React.forwardRef<
 FormDescription.displayName = 'FormDescription';
 
 // FormMessage Component (for errors)
-export interface FormMessageProps
-  extends React.HTMLAttributes<HTMLParagraphElement> {
+export interface FormMessageProps extends React.HTMLAttributes<HTMLParagraphElement> {
   type?: 'error' | 'success' | 'warning' | 'info';
 }
 

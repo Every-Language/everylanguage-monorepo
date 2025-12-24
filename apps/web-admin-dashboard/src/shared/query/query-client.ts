@@ -92,12 +92,13 @@ export const queryKeys = {
     pageSize?: number,
     search?: string,
     levelFilter?: string,
-    regionFilter?: string
+    regionFilter?: string,
+    externalIdSearch?: string
   ) =>
     [
       ...queryKeys.all,
       'language-entities',
-      { page, pageSize, search, levelFilter, regionFilter },
+      { page, pageSize, search, levelFilter, regionFilter, externalIdSearch },
     ] as const,
   languageEntity: (id: string) =>
     [...queryKeys.all, 'language-entities', 'language-entity', id] as const,
@@ -110,12 +111,13 @@ export const queryKeys = {
     pageSize?: number,
     search?: string,
     levelFilter?: string,
-    languageFilter?: string
+    languageFilter?: string,
+    externalIdSearch?: string
   ) =>
     [
       ...queryKeys.all,
       'regions',
-      { page, pageSize, search, levelFilter, languageFilter },
+      { page, pageSize, search, levelFilter, languageFilter, externalIdSearch },
     ] as const,
   region: (id: string) => [...queryKeys.all, 'regions', 'region', id] as const,
 

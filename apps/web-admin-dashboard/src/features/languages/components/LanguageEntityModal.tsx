@@ -4,6 +4,11 @@ import { languagesApi } from '../api/languagesApi';
 import type { LanguageEntityWithRegions } from '@/types';
 import { X, Edit, Save, Plus, Trash2, Search } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
+import { LocationPicker } from '@/shared/components/LocationPicker/LocationPicker';
+import {
+  extractLocation,
+  locationToPostGIS,
+} from '@/shared/utils/locationUtils';
 
 interface LanguageEntityModalProps {
   entity: LanguageEntityWithRegions;
@@ -37,6 +42,7 @@ export function LanguageEntityModal({
   const [editingProperties, setEditingProperties] = useState(false);
   const [editingAliases, setEditingAliases] = useState(false);
   const [editingRegions, setEditingRegions] = useState(false);
+  const [editingExternalIds, setEditingExternalIds] = useState(false);
 
   // Form states for Language Info
   const [name, setName] = useState(entity.name);
@@ -74,6 +80,18 @@ export function LanguageEntityModal({
     queryFn: () => languagesApi.fetchLanguageAliases(entity.id),
   });
 
+  // Fetch external IDs (sources)
+  const { data: sources } = useQuery({
+    queryKey: ['language-entity-sources', entity.id],
+    queryFn: () => languagesApi.fetchLanguageEntitySources(entity.id),
+  });
+
+  // Fetch full region data with location, dominance_level, location_source
+  const { data: fullRegionData } = useQuery({
+    queryKey: ['language-entity-regions-full', entity.id],
+    queryFn: () => languagesApi.fetchLanguageEntityRegions(entity.id),
+  });
+
   // Local states for editing
   const [localProperties, setLocalProperties] = useState<
     Array<{ key: string; value: string }>
@@ -83,6 +101,27 @@ export function LanguageEntityModal({
   >([]);
   const [selectedRegionIds, setSelectedRegionIds] = useState<string[]>([]);
   const [regionSearchQuery, setRegionSearchQuery] = useState('');
+  const [localSources, setLocalSources] = useState<
+    Array<{
+      id?: string;
+      source: string;
+      version: string;
+      is_external: boolean;
+      external_id: string;
+      external_id_type: string;
+    }>
+  >([]);
+
+  // Local state for regions with full junction table data
+  type RegionEntry = {
+    id: string; // language_entities_regions.id
+    region_id: string;
+    region: { id: string; name: string; level: string } | null;
+    dominance_level: number | null;
+    location_source: string;
+    location: { lat: number; lng: number } | null;
+  };
+  const [localRegions, setLocalRegions] = useState<RegionEntry[]>([]);
 
   // Sync local states with fetched data
   useEffect(() => {
@@ -104,6 +143,44 @@ export function LanguageEntityModal({
       setSelectedRegionIds(fullEntity.regions.map(r => r.id));
     }
   }, [fullEntity]);
+
+  // Sync local regions with fetched full region data
+  useEffect(() => {
+    if (fullRegionData) {
+      setLocalRegions(
+        fullRegionData.map(ler => ({
+          id: ler.id,
+          region_id: ler.region_id,
+          region: ler.region
+            ? {
+                id: ler.region.id,
+                name: ler.region.name,
+                level: ler.region.level,
+              }
+            : null,
+          dominance_level: ler.dominance_level ?? null,
+          location_source: ler.location_source || '',
+          location: extractLocation(ler.location),
+        }))
+      );
+    }
+  }, [fullRegionData]);
+
+  // Sync local sources with fetched data
+  useEffect(() => {
+    if (sources) {
+      setLocalSources(
+        sources.map(s => ({
+          id: s.id,
+          source: s.source || '',
+          version: s.version || '',
+          is_external: s.is_external,
+          external_id: s.external_id || '',
+          external_id_type: s.external_id_type || '',
+        }))
+      );
+    }
+  }, [sources]);
 
   // Build tree structure from hierarchy
   const { nodesById, rootId } = useMemo(() => {
@@ -213,19 +290,100 @@ export function LanguageEntityModal({
 
   const updateRegionsMutation = useMutation({
     mutationFn: async () => {
-      await languagesApi.updateLanguageEntityRegions(
-        entity.id,
-        selectedRegionIds
-      );
+      // Get existing region link IDs
+      const existingLinks = fullRegionData || [];
+      const existingLinkIds = new Set(existingLinks.map(l => l.id));
+      const localLinkIds = new Set(localRegions.map(r => r.id));
+
+      // Find links to delete (exist in DB but not in local state)
+      const toDelete = existingLinks.filter(link => !localLinkIds.has(link.id));
+      for (const link of toDelete) {
+        await languagesApi.deleteLanguageEntityRegion(link.id);
+      }
+
+      // Update existing links or create new ones
+      for (const localRegion of localRegions) {
+        if (localRegion.region_id) {
+          if (existingLinkIds.has(localRegion.id)) {
+            // Update existing link
+            await languagesApi.updateLanguageEntityRegion(localRegion.id, {
+              dominance_level: localRegion.dominance_level,
+              location: locationToPostGIS(localRegion.location),
+              location_source: localRegion.location_source.trim() || null,
+            });
+          } else {
+            // Create new link
+            await languagesApi.createLanguageEntityRegion(
+              entity.id,
+              localRegion.region_id,
+              {
+                dominance_level: localRegion.dominance_level,
+                location: locationToPostGIS(localRegion.location),
+                location_source: localRegion.location_source.trim() || null,
+              }
+            );
+          }
+        }
+      }
     },
     onSuccess: async () => {
       // Refetch and wait for fresh data
       await queryClient.refetchQueries({
         queryKey: ['language-entity-full', entity.id],
       });
+      await queryClient.refetchQueries({
+        queryKey: ['language-entity-regions-full', entity.id],
+      });
       await queryClient.refetchQueries({ queryKey: ['language-entities'] });
       setEditingRegions(false);
       setRegionSearchQuery('');
+    },
+  });
+
+  const updateExternalIdsMutation = useMutation({
+    mutationFn: async () => {
+      // Get existing source IDs
+      const existingIds = sources?.map(s => s.id) || [];
+      const localIds = localSources.filter(s => s.id).map(s => s.id!);
+
+      // Delete sources that were removed
+      const toDelete = existingIds.filter(id => !localIds.includes(id));
+      for (const id of toDelete) {
+        await languagesApi.deleteLanguageEntitySource(id);
+      }
+
+      // Update or create sources
+      for (const source of localSources.filter(s => s.source.trim())) {
+        if (source.id) {
+          // Update existing
+          await languagesApi.updateLanguageEntitySource(source.id, {
+            source: source.source,
+            version: source.version || null,
+            is_external: source.is_external,
+            external_id: source.is_external ? source.external_id || null : null,
+            external_id_type: source.is_external
+              ? source.external_id_type || null
+              : null,
+          });
+        } else {
+          // Create new
+          await languagesApi.createLanguageEntitySource(entity.id, {
+            source: source.source,
+            version: source.version || null,
+            is_external: source.is_external,
+            external_id: source.is_external ? source.external_id || null : null,
+            external_id_type: source.is_external
+              ? source.external_id_type || null
+              : null,
+          });
+        }
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.refetchQueries({
+        queryKey: ['language-entity-sources', entity.id],
+      });
+      setEditingExternalIds(false);
     },
   });
 
@@ -255,9 +413,63 @@ export function LanguageEntityModal({
   const handleToggleRegion = (regionId: string) => {
     if (selectedRegionIds.includes(regionId)) {
       setSelectedRegionIds(selectedRegionIds.filter(id => id !== regionId));
+      // Remove from local regions
+      setLocalRegions(localRegions.filter(r => r.region_id !== regionId));
     } else {
       setSelectedRegionIds([...selectedRegionIds, regionId]);
+      // Add to local regions
+      const region = searchedRegions?.find(r => r.id === regionId);
+      if (region) {
+        setLocalRegions([
+          ...localRegions,
+          {
+            id: '', // Will be set when created
+            region_id: regionId,
+            region: {
+              id: region.id,
+              name: region.name,
+              level: region.level,
+            },
+            dominance_level: 1.0,
+            location_source: '',
+            location: null,
+          },
+        ]);
+      }
     }
+  };
+
+  const handleUpdateRegion = (
+    regionId: string,
+    updates: Partial<Omit<RegionEntry, 'id' | 'region_id' | 'region'>>
+  ) => {
+    setLocalRegions(
+      localRegions.map(r =>
+        r.region_id === regionId ? { ...r, ...updates } : r
+      )
+    );
+  };
+
+  const handleRemoveRegion = (regionId: string) => {
+    setLocalRegions(localRegions.filter(r => r.region_id !== regionId));
+    setSelectedRegionIds(selectedRegionIds.filter(id => id !== regionId));
+  };
+
+  const handleAddSource = () => {
+    setLocalSources([
+      ...localSources,
+      {
+        source: '',
+        version: '',
+        is_external: false,
+        external_id: '',
+        external_id_type: '',
+      },
+    ]);
+  };
+
+  const handleRemoveSource = (index: number) => {
+    setLocalSources(localSources.filter((_, i) => i !== index));
   };
 
   const toggleNode = (nodeId: string) => {
@@ -279,8 +491,7 @@ export function LanguageEntityModal({
             <button
               className='w-5 h-5 flex items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
               onClick={() => toggleNode(nodeId)}
-              aria-label={openNodes[nodeId] ? 'Collapse' : 'Expand'}
-            >
+              aria-label={openNodes[nodeId] ? 'Collapse' : 'Expand'}>
               {openNodes[nodeId] ? '▾' : '▸'}
             </button>
           ) : (
@@ -296,8 +507,7 @@ export function LanguageEntityModal({
               if (!isCurrentEntity && onNavigateToLanguage) {
                 onNavigateToLanguage(nodeId);
               }
-            }}
-          >
+            }}>
             {node.name}
           </button>
           <span
@@ -305,8 +515,7 @@ export function LanguageEntityModal({
               isCurrentEntity
                 ? 'text-primary-600 dark:text-primary-500'
                 : 'text-neutral-500 dark:text-neutral-400'
-            }`}
-          >
+            }`}>
             {node.level}
           </span>
         </div>
@@ -337,8 +546,7 @@ export function LanguageEntityModal({
             : isEntering
               ? 'translate-x-full'
               : 'translate-x-0'
-        }`}
-      >
+        }`}>
         {/* Header */}
         <div className='px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between'>
           <div>
@@ -351,8 +559,7 @@ export function LanguageEntityModal({
           </div>
           <button
             onClick={handleClose}
-            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
-          >
+            className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'>
             <X className='h-5 w-5 text-neutral-600 dark:text-neutral-400' />
           </button>
         </div>
@@ -368,8 +575,7 @@ export function LanguageEntityModal({
               {!editingInfo && (
                 <button
                   onClick={() => setEditingInfo(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -398,8 +604,7 @@ export function LanguageEntityModal({
                   <Select
                     label='Level'
                     value={level}
-                    onValueChange={value => setLevel(value as typeof level)}
-                  >
+                    onValueChange={value => setLevel(value as typeof level)}>
                     <SelectItem value='family'>Family</SelectItem>
                     <SelectItem value='language'>Language</SelectItem>
                     <SelectItem value='dialect'>Dialect</SelectItem>
@@ -424,15 +629,13 @@ export function LanguageEntityModal({
                       setName(entity.name);
                       setLevel(entity.level);
                     }}
-                    className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                  >
+                    className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                     Cancel
                   </button>
                   <button
                     onClick={() => updateInfoMutation.mutate()}
                     disabled={updateInfoMutation.isPending}
-                    className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                  >
+                    className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                     <Save className='h-4 w-4' />
                     {updateInfoMutation.isPending ? 'Saving...' : 'Save'}
                   </button>
@@ -470,8 +673,7 @@ export function LanguageEntityModal({
               {!editingProperties && (
                 <button
                   onClick={() => setEditingProperties(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -506,16 +708,14 @@ export function LanguageEntityModal({
                       />
                       <button
                         onClick={() => handleRemoveProperty(index)}
-                        className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'
-                      >
+                        className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'>
                         <Trash2 className='h-4 w-4' />
                       </button>
                     </div>
                   ))}
                   <button
                     onClick={handleAddProperty}
-                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'
-                  >
+                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'>
                     <Plus className='h-4 w-4' />
                     Add Property
                   </button>
@@ -532,15 +732,13 @@ export function LanguageEntityModal({
                           );
                         }
                       }}
-                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updatePropertiesMutation.mutate()}
                       disabled={updatePropertiesMutation.isPending}
-                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                    >
+                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                       <Save className='h-4 w-4' />
                       {updatePropertiesMutation.isPending
                         ? 'Saving...'
@@ -552,8 +750,7 @@ export function LanguageEntityModal({
                 properties.map(prop => (
                   <div
                     key={prop.id}
-                    className='flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0'
-                  >
+                    className='flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0'>
                     <span className='font-medium text-neutral-700 dark:text-neutral-300'>
                       {prop.key}
                     </span>
@@ -570,7 +767,163 @@ export function LanguageEntityModal({
             </div>
           </section>
 
-          {/* 4. Alternate Names (Aliases) */}
+          {/* 4. External IDs */}
+          <section>
+            <div className='flex items-center justify-between mb-4'>
+              <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
+                External IDs
+              </h3>
+              {!editingExternalIds && (
+                <button
+                  onClick={() => setEditingExternalIds(true)}
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
+                  <Edit className='h-4 w-4' />
+                  Edit
+                </button>
+              )}
+            </div>
+            <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg space-y-3'>
+              {editingExternalIds ? (
+                <>
+                  {localSources.map((source, index) => (
+                    <div
+                      key={index}
+                      className='border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 space-y-2'>
+                      <div className='flex gap-2'>
+                        <input
+                          type='text'
+                          placeholder='Source'
+                          value={source.source}
+                          onChange={e => {
+                            const updated = [...localSources];
+                            updated[index].source = e.target.value;
+                            setLocalSources(updated);
+                          }}
+                          className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                        />
+                        <input
+                          type='text'
+                          placeholder='Version'
+                          value={source.version}
+                          onChange={e => {
+                            const updated = [...localSources];
+                            updated[index].version = e.target.value;
+                            setLocalSources(updated);
+                          }}
+                          className='w-32 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                        />
+                        <button
+                          onClick={() => handleRemoveSource(index)}
+                          className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'>
+                          <Trash2 className='h-4 w-4' />
+                        </button>
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        <label className='flex items-center gap-2 text-sm'>
+                          <input
+                            type='checkbox'
+                            checked={source.is_external}
+                            onChange={e => {
+                              const updated = [...localSources];
+                              updated[index].is_external = e.target.checked;
+                              setLocalSources(updated);
+                            }}
+                            className='rounded'
+                          />
+                          External ID
+                        </label>
+                      </div>
+                      {source.is_external && (
+                        <div className='flex gap-2'>
+                          <input
+                            type='text'
+                            placeholder='External ID Type'
+                            value={source.external_id_type}
+                            onChange={e => {
+                              const updated = [...localSources];
+                              updated[index].external_id_type = e.target.value;
+                              setLocalSources(updated);
+                            }}
+                            className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                          />
+                          <input
+                            type='text'
+                            placeholder='External ID'
+                            value={source.external_id}
+                            onChange={e => {
+                              const updated = [...localSources];
+                              updated[index].external_id = e.target.value;
+                              setLocalSources(updated);
+                            }}
+                            className='flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={handleAddSource}
+                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'>
+                    <Plus className='h-4 w-4' />
+                    Add Source
+                  </button>
+                  <div className='flex gap-2 pt-2'>
+                    <button
+                      onClick={() => {
+                        setEditingExternalIds(false);
+                        if (sources) {
+                          setLocalSources(
+                            sources.map(s => ({
+                              id: s.id,
+                              source: s.source || '',
+                              version: s.version || '',
+                              is_external: s.is_external,
+                              external_id: s.external_id || '',
+                              external_id_type: s.external_id_type || '',
+                            }))
+                          );
+                        }
+                      }}
+                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => updateExternalIdsMutation.mutate()}
+                      disabled={updateExternalIdsMutation.isPending}
+                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
+                      <Save className='h-4 w-4' />
+                      {updateExternalIdsMutation.isPending
+                        ? 'Saving...'
+                        : 'Save'}
+                    </button>
+                  </div>
+                </>
+              ) : sources && sources.length > 0 ? (
+                <div className='flex flex-col gap-2'>
+                  {sources
+                    .filter(s => s.external_id && s.external_id_type)
+                    .map(source => (
+                      <div
+                        key={source.id}
+                        className='flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0'>
+                        <span className='font-mono text-sm text-neutral-700 dark:text-neutral-300'>
+                          {source.external_id_type}:{source.external_id}
+                        </span>
+                        <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                          {source.source}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className='text-neutral-500 dark:text-neutral-400'>
+                  No external IDs
+                </p>
+              )}
+            </div>
+          </section>
+
+          {/* 5. Alternate Names (Aliases) */}
           <section>
             <div className='flex items-center justify-between mb-4'>
               <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
@@ -579,8 +932,7 @@ export function LanguageEntityModal({
               {!editingAliases && (
                 <button
                   onClick={() => setEditingAliases(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -604,16 +956,14 @@ export function LanguageEntityModal({
                       />
                       <button
                         onClick={() => handleRemoveAlias(index)}
-                        className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'
-                      >
+                        className='p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors'>
                         <Trash2 className='h-4 w-4' />
                       </button>
                     </div>
                   ))}
                   <button
                     onClick={handleAddAlias}
-                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'
-                  >
+                    className='w-full px-3 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400 flex items-center justify-center gap-2'>
                     <Plus className='h-4 w-4' />
                     Add Alias
                   </button>
@@ -629,15 +979,13 @@ export function LanguageEntityModal({
                           );
                         }
                       }}
-                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updateAliasesMutation.mutate()}
                       disabled={updateAliasesMutation.isPending}
-                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                    >
+                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                       <Save className='h-4 w-4' />
                       {updateAliasesMutation.isPending ? 'Saving...' : 'Save'}
                     </button>
@@ -648,8 +996,7 @@ export function LanguageEntityModal({
                   {aliases.map(alias => (
                     <span
                       key={alias.id}
-                      className='px-3 py-1 bg-neutral-200 dark:bg-neutral-700 rounded-full text-sm text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-3 py-1 bg-neutral-200 dark:bg-neutral-700 rounded-full text-sm text-neutral-700 dark:text-neutral-300'>
                       {alias.alias_name}
                     </span>
                   ))}
@@ -662,7 +1009,7 @@ export function LanguageEntityModal({
             </div>
           </section>
 
-          {/* 5. Regions */}
+          {/* 6. Regions */}
           <section>
             <div className='flex items-center justify-between mb-4'>
               <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
@@ -671,8 +1018,7 @@ export function LanguageEntityModal({
               {!editingRegions && (
                 <button
                   onClick={() => setEditingRegions(true)}
-                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'
-                >
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
                   <Edit className='h-4 w-4' />
                   Edit
                 </button>
@@ -706,8 +1052,7 @@ export function LanguageEntityModal({
                               selectedRegionIds.includes(region.id)
                                 ? 'bg-primary-50 dark:bg-primary-900/20'
                                 : ''
-                            }`}
-                          >
+                            }`}>
                             <span className='text-sm text-neutral-900 dark:text-neutral-100'>
                               {region.name}
                               <span className='text-xs text-neutral-500 dark:text-neutral-400 ml-2'>
@@ -724,33 +1069,90 @@ export function LanguageEntityModal({
                       </div>
                     )}
 
-                  {/* Selected regions */}
+                  {/* Selected regions with details */}
                   <div>
                     <p className='text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2'>
-                      Selected Regions ({selectedRegionIds.length})
+                      Selected Regions ({localRegions.length})
                     </p>
-                    <div className='space-y-2 max-h-60 overflow-y-auto'>
-                      {fullEntity?.regions
-                        ?.filter(r => selectedRegionIds.includes(r.id))
-                        .map(region => (
-                          <div
-                            key={region.id}
-                            className='flex items-center justify-between p-2 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700'
-                          >
-                            <span className='text-sm text-neutral-900 dark:text-neutral-100'>
-                              {region.name}
+                    <div className='space-y-4'>
+                      {localRegions.map(localRegion => (
+                        <div
+                          key={localRegion.region_id}
+                          className='border border-neutral-300 dark:border-neutral-700 rounded-lg p-4 space-y-4 bg-white dark:bg-neutral-800'>
+                          <div className='flex items-center justify-between'>
+                            <h4 className='text-sm font-medium text-neutral-700 dark:text-neutral-300'>
+                              {localRegion.region?.name || 'Unknown Region'}
                               <span className='text-xs text-neutral-500 dark:text-neutral-400 ml-2'>
-                                ({region.level})
+                                ({localRegion.region?.level || 'unknown'})
                               </span>
-                            </span>
+                            </h4>
                             <button
-                              onClick={() => handleToggleRegion(region.id)}
-                              className='p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors'
-                            >
+                              onClick={() =>
+                                handleRemoveRegion(localRegion.region_id)
+                              }
+                              className='p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors'>
                               <X className='h-4 w-4' />
                             </button>
                           </div>
-                        ))}
+
+                          {/* Dominance Level */}
+                          <div>
+                            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                              Dominance Level
+                            </label>
+                            <input
+                              type='number'
+                              min='0'
+                              max='1'
+                              step='0.1'
+                              value={localRegion.dominance_level ?? ''}
+                              onChange={e =>
+                                handleUpdateRegion(localRegion.region_id, {
+                                  dominance_level:
+                                    e.target.value === ''
+                                      ? null
+                                      : parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                            />
+                          </div>
+
+                          {/* Location Source */}
+                          <div>
+                            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                              Location Source
+                            </label>
+                            <input
+                              type='text'
+                              value={localRegion.location_source}
+                              onChange={e =>
+                                handleUpdateRegion(localRegion.region_id, {
+                                  location_source: e.target.value,
+                                })
+                              }
+                              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                              placeholder='e.g., Manual, GRN'
+                            />
+                          </div>
+
+                          {/* Location Picker */}
+                          <div>
+                            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+                              Location
+                            </label>
+                            <LocationPicker
+                              location={localRegion.location}
+                              onLocationChange={location =>
+                                handleUpdateRegion(localRegion.region_id, {
+                                  location,
+                                })
+                              }
+                              height='300px'
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
@@ -759,21 +1161,38 @@ export function LanguageEntityModal({
                       onClick={() => {
                         setEditingRegions(false);
                         setRegionSearchQuery('');
+                        // Reset local regions to fetched data
+                        if (fullRegionData) {
+                          setLocalRegions(
+                            fullRegionData.map(ler => ({
+                              id: ler.id,
+                              region_id: ler.region_id,
+                              region: ler.region
+                                ? {
+                                    id: ler.region.id,
+                                    name: ler.region.name,
+                                    level: ler.region.level,
+                                  }
+                                : null,
+                              dominance_level: ler.dominance_level ?? null,
+                              location_source: ler.location_source || '',
+                              location: extractLocation(ler.location),
+                            }))
+                          );
+                        }
                         if (fullEntity?.regions) {
                           setSelectedRegionIds(
                             fullEntity.regions.map(r => r.id)
                           );
                         }
                       }}
-                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'
-                    >
+                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
                       Cancel
                     </button>
                     <button
                       onClick={() => updateRegionsMutation.mutate()}
                       disabled={updateRegionsMutation.isPending}
-                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'
-                    >
+                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
                       <Save className='h-4 w-4' />
                       {updateRegionsMutation.isPending ? 'Saving...' : 'Save'}
                     </button>
@@ -789,8 +1208,7 @@ export function LanguageEntityModal({
                           onNavigateToRegion(region.id);
                         }
                       }}
-                      className='p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors text-left'
-                    >
+                      className='p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors text-left'>
                       <p className='font-medium text-neutral-900 dark:text-neutral-100'>
                         {region.name}
                       </p>

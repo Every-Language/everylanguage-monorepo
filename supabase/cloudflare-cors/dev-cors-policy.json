@@ -5,11 +5,15 @@
       "AllowedHeaders": ["*"],
       "AllowedMethods": ["GET", "HEAD", "PUT", "POST", "DELETE"],
       "AllowedOrigins": [
-        "http://localhost:3000",
         "http://localhost:5173",
-        "http://127.0.0.1:3000",
+        "http://localhost:5174",
+        "http://localhost:5175",
         "http://127.0.0.1:5173",
-        "https://dev.everylanguage.com"
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
+        "https://everylanguage-project-dashboard.vercel.app",
+        "https://everylanguage-partnership-dashboard.vercel.app",
+        "https://everylanguage-admin-dashboard.vercel.app"
       ],
       "ExposeHeaders": [
         "ETag",

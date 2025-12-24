@@ -293,7 +293,7 @@ export function useMediaFilesByProject(projectId: string | null) {
           start_verse_id: startVerse?.id || '',
           end_verse_id: endVerse?.id || '',
           book_global_order: book?.global_order || 999,
-        } as MediaFileWithVerseInfo;
+        } as unknown as MediaFileWithVerseInfo;
       });
 
       return enhancedFiles;
@@ -577,7 +577,7 @@ export function useMediaFilesByProjectPaginated(
           chapter_number: chapter?.chapter_number || null,
           start_verse_number: startVerse?.verse_number || null,
           end_verse_number: endVerse?.verse_number || null,
-        } as MediaFileWithVerseInfo;
+        } as unknown as MediaFileWithVerseInfo;
       });
 
       return {
@@ -967,7 +967,7 @@ export function useDeletedMediaFilesByProject(projectId: string | null) {
           start_verse_id: startVerse?.id || '',
           end_verse_id: endVerse?.id || '',
           book_global_order: book?.global_order || 999,
-        } as MediaFileWithVerseInfo;
+        } as unknown as MediaFileWithVerseInfo;
       });
 
       return enhancedFiles;

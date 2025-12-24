@@ -2,6 +2,7 @@
 node_modules/
 .pnp
 .pnp.js
+.pnpm-store/
 
 # Testing
 coverage/
@@ -66,7 +67,7 @@ Thumbs.db
 .turbo
 
 # IDE files
-.cursor/
+# .cursor/
 
 # Frontend tasks
 tasks.json
@@ -74,6 +75,16 @@ tasks/
 
 # Backend data (large files)
 assets/
+# Exception: Allow app-bible generated book art registry
+!apps/app-bible/src/features/bible/assets/
+!apps/app-bible/src/features/bible/assets/bookArtRegistry.tsx
 
 # Schema dump
 schema.sql
+
+# Expo (app-bible)
+.expo/
+expo-env.d.ts
+
+# Metro
+.metro-health-check*

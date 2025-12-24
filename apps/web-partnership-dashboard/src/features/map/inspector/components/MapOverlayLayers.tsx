@@ -3,12 +3,10 @@ import { Source, Layer } from 'react-map-gl/maplibre';
 import { useSelection } from '../state/inspectorStore';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
-import {
-  useLanguageOverlayGeometries,
-  useRegionBoundary,
-} from '../hooks/overlay';
+import { useLanguageOverlayGeometries } from '../hooks/overlay';
 
-// Minimal overlay that highlights the selected region or the union of regions for a language.
+// Overlay that highlights regions for selected language or project.
+// Region highlighting is now handled by MapCountriesLayer in region mode.
 export const MapOverlayLayers: React.FC<{
   countriesEnabled?: boolean;
   opacity?: number;
@@ -37,43 +35,33 @@ export const MapOverlayLayers: React.FC<{
     retry: false,
   });
 
-  const regionBoundary = useRegionBoundary(
-    selection?.kind === 'region'
-      ? selection.id
-      : (projectRegionIdQuery.data ?? null),
-    {
-      enabled:
-        !!selection &&
-        (selection.kind === 'region' || !!projectRegionIdQuery.data),
-    }
-  );
-
+  // Only show language regions overlay (for language mode)
   const langRegionsQuery = useLanguageOverlayGeometries(
     selection?.kind === 'language_entity' ? selection.id : null,
     { enabled: !!selection && selection.kind === 'language_entity' }
   );
 
   const features: GeoJSON.Feature[] = [];
-  if (regionBoundary.data)
-    features.push({
-      type: 'Feature',
-      geometry: regionBoundary.data,
-      properties: {},
-    });
+
+  // Add language regions (for language mode)
   if (langRegionsQuery.data?.length) {
     for (const g of langRegionsQuery.data)
       features.push({ type: 'Feature', geometry: g, properties: {} });
+  }
+
+  // Add project region (for project selection)
+  if (projectRegionIdQuery.data) {
+    // Note: We would need to fetch the boundary here, but for now
+    // project region highlighting can be handled separately if needed
+    // This keeps the component focused on language region overlays
   }
 
   if (!countriesEnabled || !features.length) return null;
 
   const fc: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features };
 
-  // Reduce prominence when a region is selected (to make project pins more visible)
-  const isRegionSelected = selection?.kind === 'region';
-  const baseFillOpacity = isRegionSelected ? 0.15 : 0.25;
-  const fillOpacity = baseFillOpacity * opacity;
-  const lineWidth = isRegionSelected ? 1.5 : 2;
+  const fillOpacity = 0.25 * opacity;
+  const lineWidth = 2;
 
   return (
     <Source id='selection-overlay' type='geojson' data={fc}>

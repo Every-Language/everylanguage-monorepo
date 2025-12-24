@@ -79,8 +79,7 @@ export const MobileAppHeader: React.FC = () => {
             <button
               onClick={() => setMode('search')}
               aria-label='Search'
-              className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            >
+              className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800'>
               <Search className='h-5 w-5' />
             </button>
           )}
@@ -103,8 +102,7 @@ export const MobileAppHeader: React.FC = () => {
               setSearchQuery('');
             }}
             aria-label='Back'
-            className='p-2 -ml-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800'
-          >
+            className='p-2 -ml-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800'>
             ←
           </button>
           <div className='flex-1 relative'>
@@ -133,8 +131,7 @@ export const MobileAppHeader: React.FC = () => {
                   <button
                     key={`${r.kind}-${r.id}-${idx}`}
                     onClick={() => handleSearchSelect(r)}
-                    className='w-full text-left px-4 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-800 last:border-b-0'
-                  >
+                    className='w-full text-left px-4 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-800 last:border-b-0'>
                     <div className='font-medium text-sm'>{r.name}</div>
                     <div className='text-xs text-neutral-500 mt-0.5'>
                       {r.kind === 'language' ? 'Language' : 'Region'}
@@ -167,8 +164,7 @@ export const MobileAppHeader: React.FC = () => {
       {/* Full-screen menu overlay */}
       <div
         className='fixed inset-0 z-40 bg-white dark:bg-neutral-900 flex items-center justify-start px-8 animate-in fade-in slide-in-from-top-4 duration-300'
-        style={{ top: '56px' }}
-      >
+        style={{ top: '56px' }}>
         <nav className='w-full max-w-md space-y-6'>
           <div className='text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-8'>
             Every Language
@@ -180,8 +176,7 @@ export const MobileAppHeader: React.FC = () => {
               isMapRoute
                 ? 'text-accent-600 font-semibold'
                 : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
-          >
+            }`}>
             Map
           </button>
 
@@ -191,8 +186,7 @@ export const MobileAppHeader: React.FC = () => {
               isDashboardRoute
                 ? 'text-accent-600 font-semibold'
                 : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
-          >
+            }`}>
             Dashboard
           </button>
 
@@ -202,8 +196,7 @@ export const MobileAppHeader: React.FC = () => {
                 variant='primary'
                 size='lg'
                 onClick={() => handleMenuNavigate('/donate')}
-                className='w-full'
-              >
+                className='w-full'>
                 Donate
               </Button>
             </div>
@@ -225,8 +218,7 @@ const MenuButton: React.FC<{ isOpen: boolean; onClick: () => void }> = ({
     <button
       onClick={onClick}
       aria-label={isOpen ? 'Close menu' : 'Open menu'}
-      className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 relative w-10 h-10 flex items-center justify-center'
-    >
+      className='p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 relative w-10 h-10 flex items-center justify-center'>
       <div className='w-5 h-4 flex flex-col justify-center gap-1.5'>
         <span
           className={`block h-0.5 w-full bg-current transition-all duration-300 origin-center ${

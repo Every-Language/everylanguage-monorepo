@@ -7,8 +7,10 @@ export type TextVersion = TableRow<'text_versions'>;
 export type VerseText = TableRow<'verse_texts'>;
 
 // Enhanced type for verse texts with relations
-export interface VerseTextWithRelations
-  extends Omit<VerseText, 'publish_status'> {
+export interface VerseTextWithRelations extends Omit<
+  VerseText,
+  'publish_status'
+> {
   publish_status: 'pending' | 'published' | 'archived';
   text_versions?: TextVersion;
   verses?: {
@@ -413,6 +415,7 @@ export function useCreateTextVersion() {
       name: string;
       language_entity_id: string;
       bible_version_id: string;
+      project_id: string;
       text_version_source?:
         | 'official_translation'
         | 'ai_transcription'
@@ -425,6 +428,7 @@ export function useCreateTextVersion() {
           name: textVersionData.name,
           language_entity_id: textVersionData.language_entity_id,
           bible_version_id: textVersionData.bible_version_id,
+          project_id: textVersionData.project_id,
           text_version_source:
             textVersionData.text_version_source || 'user_submitted',
           created_by: textVersionData.created_by || null,

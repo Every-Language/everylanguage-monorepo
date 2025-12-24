@@ -74,6 +74,7 @@ Deno.serve(async (req: Request) => {
       expirationHours = 24,
       originalFilenames = {},
     } = body;
+
     if (
       mediaFileIds.length === 0 &&
       imageIds.length === 0 &&
@@ -278,14 +279,14 @@ Deno.serve(async (req: Request) => {
         const { data: hasPermission, error: permError } = await supabase.rpc(
           'has_permission',
           {
-            user_id: publicUserId,
-            permission: 'project.write',
-            resource_type: 'project',
-            resource_id: updateData.project_id,
+            p_user_id: publicUserId,
+            p_action: 'project.write',
+            p_resource_type: 'project',
+            p_resource_id: updateData.project_id,
           }
         );
 
-        if (permError || !hasPermission) {
+        if (permError || hasPermission !== true) {
           errors[row.id] = 'Not authorized to upload media for this update';
           continue;
         }

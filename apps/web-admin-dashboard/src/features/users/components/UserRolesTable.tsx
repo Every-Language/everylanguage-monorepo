@@ -18,7 +18,7 @@ export const UserRolesTable: React.FC<UserRolesTableProps> = ({
 }) => {
   const [showAddRole, setShowAddRole] = useState(false);
   const [selectedContextType, setSelectedContextType] = useState<
-    'team' | 'base' | 'project' | 'partner' | null
+    'base' | 'project' | 'partner' | 'global' | null
   >(null);
   const queryClient = useQueryClient();
 
@@ -34,13 +34,16 @@ export const UserRolesTable: React.FC<UserRolesTableProps> = ({
   const assignRoleMutation = useMutation({
     mutationFn: ({
       roleId,
-      contextType,
-      contextId,
+      context,
     }: {
       roleId: string;
-      contextType: string | null;
-      contextId: string | null;
-    }) => usersApi.assignUserRole(userId, roleId, contextType, contextId),
+      context: {
+        projectId?: string | null;
+        baseId?: string | null;
+        partnerOrgId?: string | null;
+        isGlobal?: boolean;
+      };
+    }) => usersApi.assignUserRole(userId, roleId, context),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-roles', userId] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -57,17 +60,47 @@ export const UserRolesTable: React.FC<UserRolesTableProps> = ({
   };
 
   const handleAssign = (entityId: string, roleId: string) => {
+    let context: {
+      projectId?: string | null;
+      baseId?: string | null;
+      partnerOrgId?: string | null;
+      isGlobal?: boolean;
+    };
+
+    if (selectedContextType === 'global') {
+      context = { isGlobal: true };
+    } else if (selectedContextType === 'project') {
+      context = { projectId: entityId };
+    } else if (selectedContextType === 'base') {
+      context = { baseId: entityId };
+    } else if (selectedContextType === 'partner') {
+      context = { partnerOrgId: entityId };
+    } else {
+      return;
+    }
+
     assignRoleMutation.mutate({
       roleId,
-      contextType: selectedContextType,
-      contextId: entityId,
+      context,
     });
   };
 
   // Group roles by context type
   const groupedRoles = roles.reduce(
     (acc, role) => {
-      const contextType = role.context_type || 'global';
+      let contextType: string;
+      if (role.is_global) {
+        contextType = 'global';
+      } else if (role.project_id) {
+        contextType = 'project';
+      } else if (role.base_id) {
+        contextType = 'base';
+      } else if (role.partner_org_id) {
+        contextType = 'partner';
+      } else {
+        contextType = 'global';
+      }
+
       if (!acc[contextType]) {
         acc[contextType] = [];
       }
@@ -78,7 +111,6 @@ export const UserRolesTable: React.FC<UserRolesTableProps> = ({
   );
 
   const contextTypeLabels: Record<string, string> = {
-    team: 'Teams',
     base: 'Bases',
     project: 'Projects',
     partner: 'Partner Orgs',
@@ -95,8 +127,7 @@ export const UserRolesTable: React.FC<UserRolesTableProps> = ({
           <button
             type='button'
             onClick={() => setShowAddRole(true)}
-            className='px-3 py-1.5 text-sm bg-primary-600 dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors flex items-center gap-2'
-          >
+            className='px-3 py-1.5 text-sm bg-primary-600 dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors flex items-center gap-2'>
             <Plus className='h-4 w-4' />
             Add Role
           </button>
@@ -115,8 +146,7 @@ export const UserRolesTable: React.FC<UserRolesTableProps> = ({
                 setShowAddRole(false);
                 setSelectedContextType(null);
               }}
-              className='p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700'
-            >
+              className='p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700'>
               <X className='h-4 w-4' />
             </button>
           </div>
@@ -130,24 +160,23 @@ export const UserRolesTable: React.FC<UserRolesTableProps> = ({
               onChange={e =>
                 setSelectedContextType(
                   e.target.value as
-                    | 'team'
                     | 'base'
                     | 'project'
                     | 'partner'
+                    | 'global'
                     | null
                 )
               }
-              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100'
-            >
+              className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100'>
               <option value=''>Select context type...</option>
-              <option value='team'>Team</option>
               <option value='base'>Base</option>
               <option value='project'>Project</option>
               <option value='partner'>Partner Org</option>
+              <option value='global'>Global</option>
             </select>
           </div>
 
-          {selectedContextType && (
+          {selectedContextType && selectedContextType !== 'global' && (
             <EntityRoleSelector
               contextType={selectedContextType}
               onAssign={handleAssign}
@@ -156,6 +185,11 @@ export const UserRolesTable: React.FC<UserRolesTableProps> = ({
                 setSelectedContextType(null);
               }}
             />
+          )}
+          {selectedContextType === 'global' && (
+            <div className='text-sm text-neutral-500 dark:text-neutral-400'>
+              Global roles apply system-wide. Select a role to assign.
+            </div>
           )}
         </div>
       )}
@@ -199,8 +233,7 @@ export const UserRolesTable: React.FC<UserRolesTableProps> = ({
                           <button
                             type='button'
                             onClick={() => handleRemove(role.id)}
-                            className='p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors'
-                          >
+                            className='p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors'>
                             <Trash2 className='h-4 w-4' />
                           </button>
                         </td>

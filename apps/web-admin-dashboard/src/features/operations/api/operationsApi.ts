@@ -1,7 +1,7 @@
 import { supabase } from '@/shared/services/supabase';
 import type { Tables, Enums } from '@everylanguage/shared-types';
 
-export type OperationBalance = Tables<'vw_operation_balances'>;
+export type OperationBalance = Tables<'operation_balances'>;
 export type Operation = Tables<'operations'>;
 export type OperationCost = Tables<'operation_costs'>;
 export type OperationCategory = Enums<'operation_category'>;
@@ -48,7 +48,7 @@ export interface UpdateOperationCostData {
 
 export const operationsApi = {
   /**
-   * Fetch operations with balance data from vw_operation_balances
+   * Fetch operations with balance data from operation_balances
    */
   async fetchOperations(params?: {
     searchQuery?: string;
@@ -74,7 +74,7 @@ export const operationsApi = {
     const sortAscending = sortDirection === 'asc';
 
     let query = supabase
-      .from('vw_operation_balances')
+      .from('operation_balances')
       .select('*', { count: 'exact' });
 
     // Apply search if provided

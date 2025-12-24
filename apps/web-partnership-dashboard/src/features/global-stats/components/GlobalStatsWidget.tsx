@@ -7,6 +7,7 @@ import {
 import { BibleTranslationStats } from './BibleTranslationStats';
 import { EveryLanguageProjectStats } from './EveryLanguageProjectStats';
 import { RecentActivityFeed } from './RecentActivityFeed';
+import { useProjectsEnabled } from '@/shared/hooks/useFeatureFlags';
 
 type GlobalStatsWidgetProps = {
   compact?: boolean; // For use in map inspector panel
@@ -15,14 +16,19 @@ type GlobalStatsWidgetProps = {
 export const GlobalStatsWidget: React.FC<GlobalStatsWidgetProps> = ({
   compact = false,
 }) => {
+  const projectsEnabled = useProjectsEnabled();
   const bibleStatsQuery = useGlobalStatistics();
-  const projectStatusQuery = useActiveProjectsWithProgress();
-  const activityFeedQuery = useRecentActivityFeed(12);
+  const projectStatusQuery = useActiveProjectsWithProgress({
+    enabled: projectsEnabled,
+  });
+  const activityFeedQuery = useRecentActivityFeed(12, {
+    enabled: projectsEnabled,
+  });
 
   const hasError =
     bibleStatsQuery.isError ||
-    projectStatusQuery.isError ||
-    activityFeedQuery.isError;
+    (projectsEnabled && projectStatusQuery.isError) ||
+    (projectsEnabled && activityFeedQuery.isError);
 
   return (
     <div className='space-y-6'>
@@ -39,16 +45,20 @@ export const GlobalStatsWidget: React.FC<GlobalStatsWidgetProps> = ({
         compact={compact}
       />
 
-      <EveryLanguageProjectStats
-        summary={projectStatusQuery.data?.summary}
-        projects={projectStatusQuery.data?.projects}
-        isLoading={projectStatusQuery.isLoading}
-      />
+      {projectsEnabled && (
+        <EveryLanguageProjectStats
+          summary={projectStatusQuery.data?.summary}
+          projects={projectStatusQuery.data?.projects}
+          isLoading={projectStatusQuery.isLoading}
+        />
+      )}
 
-      <RecentActivityFeed
-        items={activityFeedQuery.data?.items}
-        isLoading={activityFeedQuery.isLoading}
-      />
+      {projectsEnabled && (
+        <RecentActivityFeed
+          items={activityFeedQuery.data?.items}
+          isLoading={activityFeedQuery.isLoading}
+        />
+      )}
     </div>
   );
 };

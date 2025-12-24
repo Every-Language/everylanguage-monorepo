@@ -1,0 +1,139 @@
+name: Auto-Update PRs
+
+on:
+  push:
+    branches: [develop]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  update-prs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install jq
+        run: |
+          if ! command -v jq &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y jq
+          fi
+
+      - name: Get open PRs targeting develop
+        id: get-prs
+        run: |
+          # Get all open PRs targeting develop, excluding drafts and WIP labels
+          gh pr list --base develop --state open --json number,headRefName,isDraft,labels > prs.json
+          
+          # Filter out drafts and PRs with do-not-merge/WIP labels
+          jq '[.[] | select(.isDraft == false) | select([.labels[].name] | contains(["do-not-merge", "WIP", "wip"]) | not)]' prs.json > filtered_prs.json
+          
+          PR_COUNT=$(jq 'length' filtered_prs.json)
+          
+          if [ "$PR_COUNT" -eq "0" ]; then
+            echo "pr_count=0" >> $GITHUB_OUTPUT
+            echo "✅ No open PRs found to update"
+          else
+            echo "pr_count=$PR_COUNT" >> $GITHUB_OUTPUT
+            echo "📋 Found $PR_COUNT PR(s) to update:"
+            jq -r '.[] | "  - PR #\(.number) (\(.headRefName))"' filtered_prs.json
+          fi
+
+      - name: Update each PR branch
+        if: steps.get-prs.outputs.pr_count > 0
+        run: |
+          jq -r '.[] | "\(.number)|\(.headRefName)"' filtered_prs.json | while IFS='|' read -r PR_NUM BRANCH; do
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "Processing PR #$PR_NUM (branch: $BRANCH)"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            # Fetch latest
+            git fetch origin develop
+            git fetch origin "$BRANCH"
+            
+            # Check if branch is behind develop
+            BEHIND=$(git rev-list --count origin/develop ^origin/"$BRANCH" || echo "0")
+            
+            if [ "$BEHIND" -eq "0" ]; then
+              echo "✅ PR #$PR_NUM is already up to date with develop"
+              continue
+            fi
+            
+            echo "📥 PR #$PR_NUM is $BEHIND commit(s) behind develop"
+            
+            # Clean up any existing local BRANCH
+            git checkout develop || true
+            git branch -D "$BRANCH" 2>/dev/null || true
+            
+            # Checkout the branch
+            git checkout -b "$BRANCH" "origin/$BRANCH"
+            git reset --hard "origin/$BRANCH"
+            
+            # Configure git user for merge commit
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            
+            # Try merge (creates merge commit to preserve history)
+            if git merge --no-edit --no-ff origin/develop; then
+              echo "✅ Merge successful for PR #$PR_NUM"
+              
+              # Push the update
+              if git push origin "$BRANCH"; then
+                echo "✅ Successfully updated PR #$PR_NUM"
+                
+                # Comment on PR
+                gh pr comment "$PR_NUM" --body "🔄 **Auto-updated**: This PR has been automatically updated with the latest changes from \`develop\` ($BEHIND commit(s))."
+              else
+                echo "❌ Failed to push update for PR #$PR_NUM"
+                gh pr comment "$PR_NUM" --body "⚠️ **Auto-update failed**: Unable to push updates. Please update manually."
+              fi
+            else
+              echo "❌ Merge conflict detected for PR #$PR_NUM"
+              
+              # Abort merge
+              git merge --abort || true
+              
+              # Comment on PR about conflict
+              gh pr comment "$PR_NUM" --body "⚠️ **Merge conflict**: This PR has conflicts with \`develop\` ($BEHIND commit(s) behind). Please update manually:
+              
+              \`\`\`bash
+              git checkout $BRANCH
+              git pull origin develop
+              # Resolve conflicts, then:
+              git add .
+              git commit -m \"chore: resolve merge conflicts with develop\"
+              git push
+              \`\`\`"
+            fi
+            
+            # Cleanup
+            git checkout develop || true
+            git branch -D "$BRANCH" || true
+          done
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Auto-update workflow completed"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+

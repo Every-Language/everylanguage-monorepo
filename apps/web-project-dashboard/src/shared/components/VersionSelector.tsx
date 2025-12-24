@@ -88,8 +88,7 @@ export const VersionSelector: React.FC<VersionSelectorProps> = ({
                 <Select
                   value={selectedVersionId}
                   onValueChange={onVersionChange}
-                  disabled={versionsLoading}
-                >
+                  disabled={versionsLoading}>
                   {allowAllVersions && (
                     <SelectItem value='all'>All Versions</SelectItem>
                   )}

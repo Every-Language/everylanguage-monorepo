@@ -1,0 +1,97 @@
+---
+description: React, TanStack Query, Zustand patterns
+globs: ["apps/**/src/**/*.{ts,tsx}"]
+alwaysApply: false
+---
+
+## React / React Native Code Organization
+
+**Follow Bulletproof React principles for codebase organization and file naming:**
+
+### File Structure (Bulletproof React)
+- **Feature-based organization**: Group by feature/domain, not by file type
+- **Co-location**: Keep related files together (components, hooks, utils, types)
+- **File naming**: Use kebab-case for files (`user-profile.tsx`, `use-user-data.ts`)
+- **Component files**: Match component name to file name (`UserProfile.tsx` → `user-profile.tsx`)
+- **Index files**: Use `index.ts` for public API exports, avoid deep imports
+- **Barrel exports**: Export from feature root, not individual files
+
+### Directory Structure Pattern
+```
+features/
+  auth/
+    components/
+      login-form.tsx
+      signup-form.tsx
+    hooks/
+      use-auth.ts
+      use-login.ts
+    api/
+      auth-queries.ts
+    types.ts
+    index.ts          # Public API exports
+```
+
+### Import Rules
+- ✅ **DO**: Import from feature public API: `import { LoginForm } from '@/features/auth'`
+- ✅ **DO**: Use relative imports within same feature: `import { useAuth } from '../hooks/use-auth'`
+- ❌ **DON'T**: Deep imports across features: `import { Button } from '@/features/auth/components/button'`
+- ❌ **DON'T**: Import from feature internals: `import { validateEmail } from '@/features/auth/utils/validation'`
+
+## React
+- Function components only, no class components
+- Extract logic to custom hooks when component > 200 lines
+- Use React.memo for expensive pure components
+- Memoize callbacks with useCallback when passed as props
+
+## TanStack Query
+- Query keys as arrays: `['users', userId, { filter: 'active' }]`
+- Use query key factories for consistency
+- Set staleTime: 30s for dynamic data, Infinity for static
+- Always invalidate related queries after mutations
+- Use optimistic updates for better UX:
+  ```ts
+  useMutation({
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey })
+      const prev = queryClient.getQueryData(queryKey)
+      queryClient.setQueryData(queryKey, newData)
+      return { prev }
+    },
+    onError: (err, vars, context) => {
+      queryClient.setQueryData(queryKey, context?.prev)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+    },
+  })
+  ```
+
+## Zustand
+- One store per domain (auth, ui, etc.)
+- Use slices pattern for complex stores
+- Use selectors with `useShallow` to prevent re-renders:
+  ```ts
+  import { useShallow } from 'zustand/react/shallow'
+  const { user, isAuth } = useStore(useShallow(s => ({ user: s.user, isAuth: s.isAuth })))
+  ```
+- Server state → TanStack Query, UI state → Zustand
+
+## Forms (React Hook Form)
+- Use TypeScript interfaces for form data
+- Use zod with `@hookform/resolvers/zod` for validation
+- Use Controller for custom components
+- Reset form after successful submit
+
+## Styling
+- TailwindCSS utilities first
+- Extract repeated patterns to components
+- Use `cn()` helper (clsx + tailwind-merge) for conditional classes
+- No inline styles
+
+## State Management
+When to use what:
+- Server state (API/DB data) → TanStack Query
+- Global UI state (theme, modals) → Zustand
+- Local component state → useState
+- Form state → React Hook Form

@@ -16,6 +16,7 @@ import { useAuth } from '@/features/auth';
 import { useTheme } from '@/shared/theme';
 import { useDonateEnabled } from '@/shared/hooks/useFeatureFlags';
 import { ChevronDown } from 'lucide-react';
+import { DashboardBreadcrumbs } from './DashboardBreadcrumbs';
 
 const routeLabel = (pathname: string): string => {
   if (
@@ -37,8 +38,7 @@ const ThemeDropdown: React.FC = () => {
         variant='ghost'
         size='md'
         showChevron
-        className='border-0 focus:ring-0 focus:ring-offset-0'
-      >
+        className='border-0 focus:ring-0 focus:ring-offset-0'>
         <span className='inline-flex items-center gap-2'>
           <span className='h-5 w-5 inline-block'>🌓</span>
           <span className='hidden sm:inline'>Theme</span>
@@ -46,24 +46,20 @@ const ThemeDropdown: React.FC = () => {
       </DropdownTrigger>
       <DropdownContent
         align='end'
-        className='bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-lg'
-      >
+        className='bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-lg'>
         <DropdownItem
           onClick={() => setTheme('system')}
-          selected={theme === 'system'}
-        >
+          selected={theme === 'system'}>
           System
         </DropdownItem>
         <DropdownItem
           onClick={() => setTheme('light')}
-          selected={theme === 'light'}
-        >
+          selected={theme === 'light'}>
           Light
         </DropdownItem>
         <DropdownItem
           onClick={() => setTheme('dark')}
-          selected={theme === 'dark'}
-        >
+          selected={theme === 'dark'}>
           Dark
         </DropdownItem>
       </DropdownContent>
@@ -88,16 +84,14 @@ const AuthMenu: React.FC = () => {
     <Dropdown>
       <DropdownTrigger
         variant='ghost'
-        className='border-0 focus:ring-0 focus:ring-offset-0'
-      >
+        className='border-0 focus:ring-0 focus:ring-offset-0'>
         <div className='h-8 w-8 rounded-full bg-neutral-300 dark:bg-neutral-700 flex items-center justify-center text-sm font-semibold'>
           {first ? first[0] : (user.email?.[0] ?? 'U')}
         </div>
       </DropdownTrigger>
       <DropdownContent
         align='end'
-        className='bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-lg'
-      >
+        className='bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-lg'>
         <div className='px-2 py-1.5 text-sm text-neutral-600 dark:text-neutral-300'>
           {`${first} ${last}`.trim() || user.email || 'User'}
         </div>
@@ -109,8 +103,7 @@ const AuthMenu: React.FC = () => {
             void signOut();
             router.push('/map');
           }}
-          variant='destructive'
-        >
+          variant='destructive'>
           Log out
         </DropdownItem>
       </DropdownContent>
@@ -138,38 +131,43 @@ export const AppHeader: React.FC = () => {
 
   return (
     <header className='sticky top-0 z-30 h-14 px-3 sm:px-4 lg:px-6 bg-white/70 dark:bg-neutral-900/70 backdrop-blur border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-3'>
-      {/* Left: Brand + route switcher */}
-      <div className='flex items-baseline gap-1'>
-        <div className='font-semibold select-none text-base'>
-          Every Language
-        </div>
-        <Dropdown>
-          <DropdownTrigger
-            variant='ghost'
-            className='px-0 py-0 border-0 hover:bg-transparent focus:ring-0 focus:ring-offset-0'
-            showChevron={false}
-          >
-            <span className='inline-flex items-center gap-1'>
-              <span className='text-accent-600 text-base'>{label}</span>
-              <ChevronDown className='h-4 w-4' />
-            </span>
-          </DropdownTrigger>
-          <DropdownContent className='bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-lg'>
-            <DropdownItem
+      {/* Left: Brand + breadcrumbs or route switcher */}
+      {isDashboardRoute ? (
+        <DashboardBreadcrumbs />
+      ) : (
+        <div className='flex items-baseline gap-1'>
+          <div className='font-semibold select-none text-base'>
+            Every Language
+          </div>
+          <div className='flex items-center gap-1'>
+            <button
               onClick={() => router.push('/map')}
-              selected={label === 'Map'}
-            >
-              <span>Map</span>
-            </DropdownItem>
-            <DropdownItem
-              onClick={() => router.push('/dashboard')}
-              selected={label === 'Dashboard'}
-            >
-              <span>Dashboard</span>
-            </DropdownItem>
-          </DropdownContent>
-        </Dropdown>
-      </div>
+              className='text-primary-600 text-base hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors'>
+              {label === 'Map' ? 'Map' : 'Dashboard'}
+            </button>
+            <Dropdown>
+              <DropdownTrigger
+                variant='ghost'
+                className='px-1 py-1 border-0 hover:bg-transparent focus:ring-0 focus:ring-offset-0'
+                showChevron={false}>
+                <ChevronDown className='h-5 w-5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300' />
+              </DropdownTrigger>
+              <DropdownContent className='bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-lg'>
+                <DropdownItem
+                  onClick={() => router.push('/map')}
+                  selected={label === 'Map'}>
+                  <span>Map</span>
+                </DropdownItem>
+                <DropdownItem
+                  onClick={() => router.push('/dashboard')}
+                  selected={label === 'Dashboard'}>
+                  <span>Dashboard</span>
+                </DropdownItem>
+              </DropdownContent>
+            </Dropdown>
+          </div>
+        </div>
+      )}
 
       {/* Middle: Search (hidden on dashboard routes) */}
       {!isDashboardRoute && (
@@ -188,8 +186,7 @@ export const AppHeader: React.FC = () => {
 
       {/* Right: Theme + Auth */}
       <div
-        className={`flex items-center gap-2 ${isDashboardRoute ? 'ml-auto' : ''}`}
-      >
+        className={`flex items-center gap-2 ${isDashboardRoute ? 'ml-auto' : ''}`}>
         <ThemeDropdown />
         <AuthMenu />
         {/* Donate button to the right of the login/auth */}
@@ -197,8 +194,7 @@ export const AppHeader: React.FC = () => {
           <Button
             variant='primary'
             size='sm'
-            onClick={() => setDonateOpen(true)}
-          >
+            onClick={() => setDonateOpen(true)}>
             Donate
           </Button>
         )}

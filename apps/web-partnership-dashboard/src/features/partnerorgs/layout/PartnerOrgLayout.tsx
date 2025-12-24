@@ -3,13 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
-import {
-  useQuery,
-  useQueryClient,
-  keepPreviousData,
-} from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
-import { useAuth } from '@/features/auth';
 
 interface PartnerOrgLayoutProps {
   children: React.ReactNode;
@@ -23,8 +18,6 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
     projectId?: string;
   }>();
   const pathname = usePathname();
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
   const partner = useQuery({
     queryKey: ['partner-org', orgId],
     queryFn: async () => {
@@ -45,133 +38,17 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
     placeholderData: keepPreviousData,
   });
 
-  // Prefetch handlers for each tab
-  const prefetchTabData = React.useCallback(
-    (tabLabel: string) => {
-      if (!orgId) return;
-
-      switch (tabLabel) {
-        case 'Overview':
-          // Prefetch projects, progress, and distribution for overview
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-projects', orgId],
-            queryFn: async () => {
-              const { data, error } = await (supabase as any)
-                .from('vw_partner_org_projects_via_donations')
-                .select('*')
-                .eq('partner_org_id', orgId)
-                .order('language_name');
-              if (error) throw error;
-              return data ?? [];
-            },
-          });
-          queryClient.prefetchQuery({
-            queryKey: ['project-progress', 'all', orgId],
-            queryFn: async () => {
-              // Simplified prefetch - just trigger the query
-              // The actual query logic is in useProjectProgress hook
-              return null;
-            },
-          });
-          queryClient.prefetchQuery({
-            queryKey: ['project-distribution', 'all', orgId],
-            queryFn: async () => {
-              // Simplified prefetch - just trigger the query
-              return null;
-            },
-          });
-          break;
-        case 'Progress':
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-projects', orgId],
-            queryFn: async () => {
-              const { data, error } = await (supabase as any)
-                .from('vw_partner_org_projects_via_donations')
-                .select('*')
-                .eq('partner_org_id', orgId)
-                .order('language_name');
-              if (error) throw error;
-              return data ?? [];
-            },
-          });
-          queryClient.prefetchQuery({
-            queryKey: ['project-progress', 'all', orgId],
-            queryFn: async () => null,
-          });
-          break;
-        case 'Distribution':
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-projects', orgId],
-            queryFn: async () => {
-              const { data, error } = await (supabase as any)
-                .from('vw_partner_org_projects_via_donations')
-                .select('*')
-                .eq('partner_org_id', orgId)
-                .order('language_name');
-              if (error) throw error;
-              return data ?? [];
-            },
-          });
-          queryClient.prefetchQuery({
-            queryKey: ['project-distribution', 'all', orgId],
-            queryFn: async () => null,
-          });
-          break;
-        case 'Donations':
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-donations', orgId, user?.id ?? null],
-            queryFn: async () => {
-              const { data, error } = await (supabase as any).rpc(
-                'get_partner_org_donations',
-                {
-                  p_partner_org_id: orgId,
-                }
-              );
-              if (error) throw error;
-              return data ?? [];
-            },
-          });
-          break;
-        case 'Updates':
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-updates', orgId],
-            queryFn: async () => {
-              // Simplified - actual query logic is in usePartnerOrgUpdates
-              return null;
-            },
-          });
-          break;
-        case 'Members':
-          queryClient.prefetchQuery({
-            queryKey: ['partner-org-members', orgId],
-            queryFn: async () => {
-              const { data, error } = await (supabase as any).rpc(
-                'get_partner_org_members',
-                {
-                  p_partner_org_id: orgId,
-                }
-              );
-              if (error) throw error;
-              return data ?? [];
-            },
-          });
-          break;
-      }
-    },
-    [orgId, queryClient, user?.id]
-  );
-
   // Define tabs for partner org pages
   const tabs: Array<{ to: string; label: string }> = React.useMemo(() => {
-    const basePath = `/partner-org/${encodeURIComponent(orgId ?? '')}`;
+    const basePath = `/dashboard/partner-org/${encodeURIComponent(orgId ?? '')}`;
     return [
       {
         to: basePath,
         label: 'Overview',
       },
       {
-        to: `${basePath}/progress`,
-        label: 'Progress',
+        to: `${basePath}/projects`,
+        label: 'Projects',
       },
       {
         to: `${basePath}/distribution`,
@@ -192,46 +69,19 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
     ];
   }, [orgId]);
 
-  const activeTabLabel = React.useMemo(() => {
-    const current = tabs.find(t => {
-      if (t.to === `/partner-org/${encodeURIComponent(orgId ?? '')}`) {
-        // Exact match for overview - must be exactly the base path
-        return pathname === t.to;
-      }
-      // For other tabs, check if pathname starts with the tab path
-      return pathname.startsWith(t.to + '/') || pathname === t.to;
-    });
-    return current?.label;
-  }, [pathname, tabs, orgId]);
+  // If we're on a project route, don't render the partner org layout - just pass through
+  if (pathname?.includes('/project/')) {
+    return <>{children}</>;
+  }
 
   return (
     <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950'>
       <div className='mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-6'>
-        {/* Breadcrumbs and Back Button */}
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-4'>
-            <Link
-              href='/dashboard'
-              className='p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors'
-              aria-label='Back'
-            >
-              ←
-            </Link>
-            <div>
-              <div className='text-xs text-neutral-500'>
-                <Link href='/dashboard' className='hover:underline'>
-                  Dashboard
-                </Link>{' '}
-                / {(partner.data as any)?.name ?? '—'}
-                {activeTabLabel && activeTabLabel !== 'Overview' ? (
-                  <> / {activeTabLabel}</>
-                ) : null}
-              </div>
-              <h1 className='text-2xl font-bold'>
-                {(partner.data as any)?.name ?? 'Partner Organization'}
-              </h1>
-            </div>
-          </div>
+        {/* Title */}
+        <div>
+          <h1 className='text-2xl font-bold'>
+            {(partner.data as any)?.name ?? 'Partner Organization'}
+          </h1>
         </div>
 
         {/* Tabs */}
@@ -241,16 +91,15 @@ export const PartnerOrgLayout: React.FC<PartnerOrgLayoutProps> = ({
               // For overview tab, require exact match
               // For other tabs, check if pathname starts with the tab path
               const isActive =
-                t.to === `/partner-org/${encodeURIComponent(orgId ?? '')}`
+                t.to ===
+                `/dashboard/partner-org/${encodeURIComponent(orgId ?? '')}`
                   ? pathname === t.to
                   : pathname.startsWith(t.to + '/') || pathname === t.to;
               return (
                 <Link
                   key={t.to}
                   href={t.to}
-                  onMouseEnter={() => prefetchTabData(t.label)}
-                  className={`whitespace-nowrap px-3 py-2 text-sm border-b-2 ${isActive ? 'border-accent-600 text-neutral-900 dark:text-neutral-100' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}
-                >
+                  className={`whitespace-nowrap px-3 py-2 text-sm border-b-2 ${isActive ? 'border-accent-600 text-neutral-900 dark:text-neutral-100' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}>
                   {t.label}
                 </Link>
               );

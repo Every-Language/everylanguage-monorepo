@@ -145,8 +145,7 @@ export const BibleTextTable: React.FC<BibleTextTableProps> = ({
                         if (value !== 'bulk-action') {
                           executeBulkOperation(value);
                         }
-                      }}
-                    >
+                      }}>
                       <SelectItem value='bulk-action'>Change Status</SelectItem>
                       <SelectItem value='pending'>Set to Pending</SelectItem>
                       <SelectItem value='published'>
@@ -160,16 +159,14 @@ export const BibleTextTable: React.FC<BibleTextTableProps> = ({
                     <Button
                       variant='danger'
                       size='sm'
-                      onClick={() => executeBulkOperation('soft_delete')}
-                    >
+                      onClick={() => executeBulkOperation('soft_delete')}>
                       Delete Selected
                     </Button>
 
                     <Button
                       variant='outline'
                       size='sm'
-                      onClick={clearSelection}
-                    >
+                      onClick={clearSelection}>
                       Clear Selection
                     </Button>
                   </div>
@@ -198,8 +195,7 @@ export const BibleTextTable: React.FC<BibleTextTableProps> = ({
                     <th className='text-left p-3 font-medium text-gray-900 dark:text-gray-100'>
                       <button
                         onClick={() => handleSort('verse_reference')}
-                        className='flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400'
-                      >
+                        className='flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400'>
                         <span>Verse Reference</span>
                         {sortField === 'verse_reference' && (
                           <span className='text-blue-600 dark:text-blue-400'>
@@ -228,8 +224,7 @@ export const BibleTextTable: React.FC<BibleTextTableProps> = ({
                         text.deleted_at
                           ? 'bg-red-50/50 dark:bg-red-900/10 opacity-75'
                           : ''
-                      }`}
-                    >
+                      }`}>
                       <td className='p-3'>
                         <Checkbox
                           checked={selectedItems.includes(text.id)}
@@ -260,8 +255,7 @@ export const BibleTextTable: React.FC<BibleTextTableProps> = ({
                             value={text.publish_status || 'pending'}
                             onValueChange={value =>
                               handlePublishStatusChange(text.id, value)
-                            }
-                          >
+                            }>
                             <SelectItem value='pending'>Pending</SelectItem>
                             <SelectItem value='published'>Published</SelectItem>
                             <SelectItem value='archived'>Archived</SelectItem>
@@ -278,8 +272,7 @@ export const BibleTextTable: React.FC<BibleTextTableProps> = ({
                               handleRowSelect(text.id);
                               executeBulkOperation('restore');
                             }}
-                            className='text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200'
-                          >
+                            className='text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200'>
                             <span className='text-sm'>Restore</span>
                           </Button>
                         ) : (
@@ -289,8 +282,7 @@ export const BibleTextTable: React.FC<BibleTextTableProps> = ({
                               variant='outline'
                               size='sm'
                               onClick={() => handleEditClick(text)}
-                              className='text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200'
-                            >
+                              className='text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200'>
                               <PencilIcon className='h-4 w-4 mr-1' />
                               Edit
                             </Button>
@@ -298,8 +290,7 @@ export const BibleTextTable: React.FC<BibleTextTableProps> = ({
                               variant='outline'
                               size='sm'
                               onClick={() => handleDelete(text.id)}
-                              className='text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200'
-                            >
+                              className='text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200'>
                               <TrashIcon className='h-4 w-4' />
                             </Button>
                           </div>

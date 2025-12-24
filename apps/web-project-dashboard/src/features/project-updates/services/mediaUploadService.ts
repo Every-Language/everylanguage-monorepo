@@ -100,11 +100,13 @@ export class ProjectUpdateMediaUploadService {
     );
 
     if (error) {
+      console.error('Failed to get upload URLs:', error);
       throw new Error(`Failed to get upload URLs: ${error.message}`);
     }
 
     const functionResponse = data?.data;
     if (!functionResponse) {
+      console.error('Invalid response format from Edge function:', data);
       throw new Error('Invalid response format from Edge function');
     }
 
@@ -122,6 +124,7 @@ export class ProjectUpdateMediaUploadService {
       const errorDetails = Object.entries(response.errors || {})
         .map(([id, error]) => `${id}: ${error}`)
         .join('; ');
+      console.error('Failed to get upload URLs:', errorDetails);
       throw new Error(`Failed to get upload URLs: ${errorDetails}`);
     }
 
@@ -137,18 +140,35 @@ export class ProjectUpdateMediaUploadService {
    * Upload a single file to R2
    */
   async uploadFile(file: File, uploadUrl: string): Promise<void> {
-    const response = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type,
-      },
-    });
+    try {
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error(
-        `Upload failed: ${response.status} ${response.statusText}`
-      );
+      if (!response.ok) {
+        const responseText = await response
+          .text()
+          .catch(() => 'Unable to read response');
+        console.error('Upload failed:', {
+          fileName: file.name,
+          status: response.status,
+          statusText: response.statusText,
+          responseBody: responseText,
+        });
+        throw new Error(
+          `Upload failed: ${response.status} ${response.statusText}`
+        );
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`Upload failed: ${String(error)}`);
     }
   }
 

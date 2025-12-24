@@ -58,12 +58,10 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
                   size={compact ? 80 : 96}
                   strokeWidth={8}
                   color='accent'
-                  showPercentage={false}
-                >
+                  showPercentage={false}>
                   <div className='text-center'>
                     <div
-                      className={`${compact ? 'text-lg' : 'text-xl'} font-bold text-accent-600 dark:text-accent-500`}
-                    >
+                      className={`${compact ? 'text-lg' : 'text-xl'} font-bold text-accent-600 dark:text-accent-500`}>
                       {(data?.full_audio_bible_percentage ?? 0)
                         .toFixed(1)
                         .replace(/\.0$/, '')}
@@ -73,8 +71,7 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
                 </CircularProgress>
                 <div className='flex-1'>
                   <h3
-                    className={`${compact ? 'text-lg' : 'text-2xl'} font-bold text-accent-600 dark:text-accent-500`}
-                  >
+                    className={`${compact ? 'text-lg' : 'text-2xl'} font-bold text-accent-600 dark:text-accent-500`}>
                     Full Audio Bible
                   </h3>
                   <p className='mt-2 text-sm text-neutral-500'>
@@ -108,12 +105,10 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
                     size={compact ? 64 : 80}
                     strokeWidth={6}
                     color='secondary'
-                    showPercentage={false}
-                  >
+                    showPercentage={false}>
                     <div className='text-center'>
                       <div
-                        className={`${compact ? 'text-sm' : 'text-base'} font-bold text-secondary-600 dark:text-secondary-500`}
-                      >
+                        className={`${compact ? 'text-sm' : 'text-base'} font-bold text-secondary-600 dark:text-secondary-500`}>
                         {(data?.audio_portions_percentage ?? 0)
                           .toFixed(1)
                           .replace(/\.0$/, '')}
@@ -123,8 +118,7 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
                   </CircularProgress>
                   <div className='flex-1'>
                     <p
-                      className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-secondary-600 dark:text-secondary-500`}
-                    >
+                      className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-secondary-600 dark:text-secondary-500`}>
                       Audio Portions
                     </p>
                     <p className='mt-1 text-xs text-neutral-500'>
@@ -155,12 +149,10 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
                     size={compact ? 64 : 80}
                     strokeWidth={6}
                     color='primary'
-                    showPercentage={false}
-                  >
+                    showPercentage={false}>
                     <div className='text-center'>
                       <div
-                        className={`${compact ? 'text-sm' : 'text-base'} font-bold text-primary-600 dark:text-primary-500`}
-                      >
+                        className={`${compact ? 'text-sm' : 'text-base'} font-bold text-primary-600 dark:text-primary-500`}>
                         {(data?.text_portions_percentage ?? 0)
                           .toFixed(1)
                           .replace(/\.0$/, '')}
@@ -170,8 +162,7 @@ export const BibleTranslationStats: React.FC<BibleTranslationStatsProps> = ({
                   </CircularProgress>
                   <div className='flex-1'>
                     <p
-                      className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-primary-600 dark:text-primary-500`}
-                    >
+                      className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-primary-600 dark:text-primary-500`}>
                       Text Portions
                     </p>
                     <p className='mt-1 text-xs text-neutral-500'>

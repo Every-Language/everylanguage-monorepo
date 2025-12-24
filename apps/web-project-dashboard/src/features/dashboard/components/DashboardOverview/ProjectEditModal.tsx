@@ -11,27 +11,42 @@ import { Input } from '../../../../shared/design-system/components/Input';
 import { LoadingSpinner } from '../../../../shared/design-system/components/LoadingSpinner';
 import { FormLabel } from '../../../../shared/design-system/components/Form';
 import {
+  Select,
+  SelectItem,
+} from '../../../../shared/design-system/components/Select';
+import {
   FuzzySearchSelector,
   type SearchResultItem,
 } from '../../../../shared/components/FuzzySearchSelector';
+import { LocationPicker } from '../../../../shared/components/LocationPicker/LocationPicker';
 import { useUpdateProject } from '../../../../shared/hooks/query/project-mutations';
 import { useSelectedProject } from '../../hooks/useSelectedProject';
 import { useToast } from '../../../../shared/design-system/hooks/useToast';
+import { useQueryClient } from '@tanstack/react-query';
+import { locationToPostGIS } from '../../../../shared/utils/locationUtils';
 import type { Project } from '../../../../shared/stores/types';
+import type { ProjectMetadata } from '../../../../shared/hooks/query/dashboard';
+import type { Database } from '@everylanguage/shared-types';
+
+type ProjectStatus = Database['public']['Enums']['project_status'];
+type PublishStatus = Database['public']['Enums']['publish_status'];
 
 interface ProjectEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   project: Project | null;
+  projectMetadata?: ProjectMetadata;
 }
 
 export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
   isOpen,
   onClose,
   project,
+  projectMetadata,
 }) => {
   const { setSelectedProject } = useSelectedProject();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const updateProject = useUpdateProject();
 
   // Form state
@@ -41,27 +56,59 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
     sourceLanguage: null as SearchResultItem | null,
     targetLanguage: null as SearchResultItem | null,
     region: null as SearchResultItem | null,
+    location: null as { lat: number; lng: number } | null,
+    projectStatus: 'precreated' as ProjectStatus,
+    publishStatus: 'pending' as PublishStatus,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize form data when project changes
+  // Initialize form data when project or metadata changes
   useEffect(() => {
-    if (project && isOpen) {
+    if (project && projectMetadata && isOpen) {
       setFormData({
         name: project.name || '',
         description: project.description || '',
-        sourceLanguage: null, // Will be populated if needed
-        targetLanguage: null, // Will be populated if needed
-        region: null, // Will be populated if needed
+        sourceLanguage: projectMetadata.sourceLanguage
+          ? {
+              id: projectMetadata.sourceLanguage.id,
+              name: projectMetadata.sourceLanguage.name,
+            }
+          : null,
+        targetLanguage: projectMetadata.targetLanguage
+          ? {
+              id: projectMetadata.targetLanguage.id,
+              name: projectMetadata.targetLanguage.name,
+            }
+          : null,
+        region: projectMetadata.region
+          ? {
+              id: projectMetadata.region.id,
+              name: projectMetadata.region.name,
+            }
+          : null,
+        location: projectMetadata.location || null,
+        projectStatus:
+          (projectMetadata.projectStatus as ProjectStatus) || 'precreated',
+        publishStatus:
+          (projectMetadata.publishStatus as PublishStatus) || 'pending',
       });
       setErrors({});
     }
-  }, [project, isOpen]);
+  }, [project, projectMetadata, isOpen]);
 
   // Form field handlers
   const handleFieldChange = useCallback(
-    (field: string, value: string | SearchResultItem | null) => {
+    (
+      field: string,
+      value:
+        | string
+        | SearchResultItem
+        | { lat: number; lng: number }
+        | null
+        | ProjectStatus
+        | PublishStatus
+    ) => {
       setFormData(prev => ({ ...prev, [field]: value }));
       // Clear error when user starts typing
       if (errors[field]) {
@@ -114,6 +161,11 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
       setIsSubmitting(true);
 
       try {
+        // Convert location to PostGIS format
+        const locationValue = formData.location
+          ? locationToPostGIS(formData.location)
+          : null;
+
         const updatedProject = await updateProject.mutateAsync({
           id: project.id,
           updates: {
@@ -121,8 +173,16 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
             description: formData.description.trim(),
             source_language_entity_id: formData.sourceLanguage?.id || '',
             target_language_entity_id: formData.targetLanguage?.id || '',
-            region_id: formData.region?.id || '',
+            region_id: formData.region?.id || null,
+            location: locationValue,
+            project_status: formData.projectStatus,
+            publish_status: formData.publishStatus,
           },
+        });
+
+        // Invalidate project metadata query to refresh dashboard
+        queryClient.invalidateQueries({
+          queryKey: ['project-metadata', project.id],
         });
 
         toast({
@@ -161,6 +221,7 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
       validateForm,
       project,
       updateProject,
+      queryClient,
       toast,
       setSelectedProject,
       onClose,
@@ -212,12 +273,17 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
             <FormLabel className='text-neutral-900 dark:text-neutral-100'>
               Description *
             </FormLabel>
-            <Input
+            <textarea
               value={formData.description}
               onChange={e => handleFieldChange('description', e.target.value)}
               placeholder='Enter project description'
               disabled={isSubmitting}
-              className={errors.description ? 'border-red-500' : ''}
+              rows={4}
+              className={`flex w-full rounded-lg border transition-colors duration-200 px-3 py-2 ${
+                errors.description
+                  ? 'border-red-500'
+                  : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800'
+              } text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-50`}
             />
             {errors.description && (
               <p className='text-sm text-red-600'>{errors.description}</p>
@@ -260,13 +326,61 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
             disabled={isSubmitting}
           />
 
+          {/* Location */}
+          <div className='space-y-2'>
+            <FormLabel className='text-neutral-900 dark:text-neutral-100'>
+              Location
+            </FormLabel>
+            <LocationPicker
+              location={formData.location}
+              onLocationChange={location =>
+                handleFieldChange('location', location)
+              }
+              height='400px'
+            />
+          </div>
+
+          {/* Project Status */}
+          <div className='space-y-2'>
+            <FormLabel className='text-neutral-900 dark:text-neutral-100'>
+              Project Status
+            </FormLabel>
+            <Select
+              value={formData.projectStatus}
+              onValueChange={value =>
+                handleFieldChange('projectStatus', value as ProjectStatus)
+              }
+              disabled={isSubmitting}>
+              <SelectItem value='precreated'>Precreated</SelectItem>
+              <SelectItem value='active'>Active</SelectItem>
+              <SelectItem value='completed'>Completed</SelectItem>
+              <SelectItem value='cancelled'>Cancelled</SelectItem>
+            </Select>
+          </div>
+
+          {/* Publish Status */}
+          <div className='space-y-2'>
+            <FormLabel className='text-neutral-900 dark:text-neutral-100'>
+              Publish Status
+            </FormLabel>
+            <Select
+              value={formData.publishStatus}
+              onValueChange={value =>
+                handleFieldChange('publishStatus', value as PublishStatus)
+              }
+              disabled={isSubmitting}>
+              <SelectItem value='pending'>Pending</SelectItem>
+              <SelectItem value='published'>Published</SelectItem>
+              <SelectItem value='archived'>Archived</SelectItem>
+            </Select>
+          </div>
+
           <DialogFooter>
             <Button
               type='button'
               variant='ghost'
               onClick={handleClose}
-              disabled={isSubmitting}
-            >
+              disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type='submit' disabled={isSubmitting}>

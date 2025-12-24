@@ -25,10 +25,7 @@ export interface ProjectUpdateWithRelations extends ProjectUpdateRow {
     } | null;
   } | null;
   media?: ProjectUpdateMediaRow[];
-  creator?: {
-    id: string;
-    full_name: string | null;
-  } | null;
+  creator?: null; // Removed nested select to avoid RLS recursion - use created_by ID instead
 }
 
 export interface CreateProjectUpdateData {
@@ -36,7 +33,6 @@ export interface CreateProjectUpdateData {
   title: string;
   body: string;
   created_by?: string | null;
-  visibility?: Database['public']['Enums']['update_visibility'];
 }
 
 export interface CreateProjectUpdateMediaData {

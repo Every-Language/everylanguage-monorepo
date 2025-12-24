@@ -77,7 +77,7 @@ async function fetchAudioSummariesByIds(
   if (versionIds.length === 0) return [];
   // Prefer MV, fallback to view
   const mv = await (supabase as any)
-    .from('mv_audio_version_progress_summary')
+    .from('audio_version_progress')
     .select(
       'audio_version_id,covered_verses,total_verses,chapters_with_audio,total_chapters,books_complete,total_books'
     )
@@ -90,7 +90,7 @@ async function fetchAudioSummariesByIds(
     >;
 
   const v = await (supabase as any)
-    .from('audio_version_progress_summary')
+    .from('audio_version_progress')
     .select(
       'audio_version_id,books_complete,books_total,chapters_complete,chapters_total,verses_complete,verses_total'
     )
@@ -110,7 +110,7 @@ async function fetchTextSummariesByIds(
 > {
   if (versionIds.length === 0) return [];
   const mv = await (supabase as any)
-    .from('mv_text_version_progress_summary')
+    .from('text_version_progress')
     .select(
       'text_version_id,covered_verses,total_verses,complete_chapters,total_chapters,books_complete,total_books'
     )
@@ -123,7 +123,7 @@ async function fetchTextSummariesByIds(
     >;
 
   const v = await (supabase as any)
-    .from('text_version_progress_summary')
+    .from('text_version_progress')
     .select(
       'text_version_id,books_complete,books_total,chapters_complete,chapters_total,verses_complete,verses_total'
     )

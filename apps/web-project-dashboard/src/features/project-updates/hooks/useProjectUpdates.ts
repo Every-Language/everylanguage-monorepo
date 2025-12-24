@@ -10,6 +10,32 @@ export function useProjectUpdates(projectId: string | null) {
         return [];
       }
 
+      const querySelect = `
+        *,
+        project:projects (
+          id,
+          name,
+          target_language_entity_id,
+          language_entity:language_entities!target_language_entity_id (
+            id,
+            name
+          )
+        ),
+        media:project_updates_media (
+          id,
+          media_type,
+          object_key,
+          storage_provider,
+          original_filename,
+          file_type,
+          file_size,
+          caption,
+          display_order,
+          duration_seconds,
+          thumbnail_object_key
+        )
+      `;
+
       const { data: updates, error } = await (
         supabase as unknown as {
           from: (table: string) => {
@@ -37,37 +63,7 @@ export function useProjectUpdates(projectId: string | null) {
         }
       )
         .from('project_updates')
-        .select(
-          `
-          *,
-          project:projects (
-            id,
-            name,
-            target_language_entity_id,
-            language_entity:language_entities (
-              id,
-              name
-            )
-          ),
-          media:project_updates_media (
-            id,
-            media_type,
-            object_key,
-            storage_provider,
-            original_filename,
-            file_type,
-            file_size,
-            caption,
-            display_order,
-            duration_seconds,
-            thumbnail_object_key
-          ),
-          creator:users (
-            id,
-            full_name
-          )
-        `
-        )
+        .select(querySelect)
         .eq('project_id', projectId)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })

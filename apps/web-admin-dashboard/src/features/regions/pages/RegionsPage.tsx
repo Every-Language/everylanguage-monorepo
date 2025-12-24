@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/query/query-client';
 import { regionsApi } from '../api/regionsApi';
@@ -13,46 +13,30 @@ type ModalStackItem =
   | { type: 'region'; region: RegionWithLanguages; id: string }
   | { type: 'language'; entity: LanguageEntityWithRegions; id: string };
 
-// Component for region row with descendant count and parent link
+// Component for region row with external IDs
 function RegionRow({
   region,
   onRegionClick,
-  onParentClick,
 }: {
   region: RegionWithLanguages;
   onRegionClick: (region: RegionWithLanguages) => void;
-  onParentClick: (parentId: string) => void;
 }) {
-  // Fetch descendant count
-  const { data: descendantCount } = useQuery({
-    queryKey: ['region-descendants', region.id],
-    queryFn: () => regionsApi.countRegionDescendants(region.id),
+  // Fetch region sources for external IDs
+  const { data: sources } = useQuery({
+    queryKey: ['region-sources', region.id],
+    queryFn: () => regionsApi.fetchRegionSources(region.id),
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  // Fetch parent region if parent_id exists
-  const { data: parentRegion } = useQuery({
-    queryKey: ['parent-region', region.parent_id],
-    queryFn: () => {
-      if (!region.parent_id) return null;
-      return regionsApi.fetchParentRegion(region.parent_id);
-    },
-    enabled: !!region.parent_id,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const handleParentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (region.parent_id) {
-      onParentClick(region.parent_id);
-    }
-  };
+  const externalIds =
+    sources
+      ?.filter(s => s.external_id && s.external_id_type)
+      .map(s => `${s.external_id_type}:${s.external_id}`) || [];
 
   return (
     <tr
       className='hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors'
-      onClick={() => onRegionClick(region)}
-    >
+      onClick={() => onRegionClick(region)}>
       <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100'>
         {region.name}
       </td>
@@ -64,19 +48,15 @@ function RegionRow({
       <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
         {region.language_count || 0} languages
       </td>
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-        {descendantCount ?? '...'}
-      </td>
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400'>
-        {parentRegion ? (
-          <button
-            onClick={handleParentClick}
-            className='text-secondary-600 dark:text-secondary-400 hover:text-secondary-900 dark:hover:text-secondary-300 hover:underline transition-colors'
-          >
-            {parentRegion.name}
-          </button>
-        ) : region.parent_id ? (
-          'Loading...'
+      <td className='px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400'>
+        {externalIds.length > 0 ? (
+          <div className='flex flex-col gap-1'>
+            {externalIds.map((id, idx) => (
+              <span key={idx} className='font-mono text-xs'>
+                {id}
+              </span>
+            ))}
+          </div>
         ) : (
           <span className='text-neutral-400 dark:text-neutral-600'>—</span>
         )}
@@ -95,6 +75,9 @@ export function RegionsPage() {
     Array<{ id: string; name: string }>
   >([]);
   const [languageSearchQuery, setLanguageSearchQuery] = useState('');
+  const [externalIdSearch, setExternalIdSearch] = useState('');
+  const [debouncedExternalIdSearch, setDebouncedExternalIdSearch] =
+    useState('');
 
   // Modal stack for layered modals
   const [modalStack, setModalStack] = useState<ModalStackItem[]>([]);
@@ -109,6 +92,16 @@ export function RegionsPage() {
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  // Debounce external ID search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedExternalIdSearch(externalIdSearch);
+      setPage(1); // Reset to page 1 on search
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [externalIdSearch]);
 
   // Fetch languages for filter
   const { data: searchedLanguages } = useQuery({
@@ -133,7 +126,8 @@ export function RegionsPage() {
       pageSize,
       debouncedSearch,
       levelFilter,
-      languageFilterIds.join(',')
+      languageFilterIds.join(','),
+      debouncedExternalIdSearch
     ),
     queryFn: () =>
       regionsApi.fetchRegions({
@@ -143,6 +137,10 @@ export function RegionsPage() {
         levelFilter: levelFilter !== 'all' ? levelFilter : undefined,
         languageFilters:
           languageFilterIds.length > 0 ? languageFilterIds : undefined,
+        externalIdSearch:
+          debouncedExternalIdSearch.trim().length > 0
+            ? debouncedExternalIdSearch.trim()
+            : undefined,
       }),
   });
 
@@ -223,7 +221,7 @@ export function RegionsPage() {
       </div>
 
       {/* Filters */}
-      <div className='mb-6 grid grid-cols-1 md:grid-cols-2 gap-4'>
+      <div className='mb-6 grid grid-cols-1 md:grid-cols-3 gap-4'>
         {/* Level Filter */}
         <Select
           label='Filter by Level'
@@ -231,8 +229,7 @@ export function RegionsPage() {
           onValueChange={value => {
             setLevelFilter(value);
             setPage(1);
-          }}
-        >
+          }}>
           <SelectItem value='all'>All Levels</SelectItem>
           <SelectItem value='continent'>Continent</SelectItem>
           <SelectItem value='world_region'>World Region</SelectItem>
@@ -243,6 +240,23 @@ export function RegionsPage() {
           <SelectItem value='town'>Town</SelectItem>
           <SelectItem value='village'>Village</SelectItem>
         </Select>
+
+        {/* External ID Search */}
+        <div>
+          <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+            Search by External ID
+          </label>
+          <div className='relative'>
+            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500' />
+            <input
+              type='text'
+              placeholder='Search external IDs...'
+              value={externalIdSearch}
+              onChange={e => setExternalIdSearch(e.target.value)}
+              className='w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-secondary-500 dark:focus:ring-secondary-600 focus:border-secondary-500 dark:focus:border-secondary-600'
+            />
+          </div>
+        </div>
 
         {/* Language Filter */}
         <div>
@@ -270,8 +284,7 @@ export function RegionsPage() {
                     }
                     setLanguageSearchQuery('');
                   }}
-                  className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 italic border-b border-neutral-200 dark:border-neutral-800'
-                >
+                  className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 italic border-b border-neutral-200 dark:border-neutral-800'>
                   No Languages
                 </button>
                 {searchedLanguages &&
@@ -288,8 +301,7 @@ export function RegionsPage() {
                         }
                         setLanguageSearchQuery('');
                       }}
-                      className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100'
-                    >
+                      className='w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100'>
                       {language.name}{' '}
                       <span className='text-neutral-500 dark:text-neutral-400'>
                         ({language.level})
@@ -306,8 +318,7 @@ export function RegionsPage() {
               {languageFilters.map(language => (
                 <span
                   key={language.id}
-                  className='inline-flex items-center gap-1 px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-300 rounded-full text-sm'
-                >
+                  className='inline-flex items-center gap-1 px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-300 rounded-full text-sm'>
                   {language.name}
                   <button
                     onClick={() => {
@@ -316,8 +327,7 @@ export function RegionsPage() {
                       );
                       setPage(1);
                     }}
-                    className='hover:text-secondary-900 dark:hover:text-secondary-100'
-                  >
+                    className='hover:text-secondary-900 dark:hover:text-secondary-100'>
                     ×
                   </button>
                 </span>
@@ -352,10 +362,7 @@ export function RegionsPage() {
                       Languages
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                      Subregions
-                    </th>
-                    <th className='px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider'>
-                      Parent Region
+                      External IDs
                     </th>
                   </tr>
                 </thead>
@@ -366,15 +373,13 @@ export function RegionsPage() {
                         key={region.id}
                         region={region}
                         onRegionClick={handleRegionClick}
-                        onParentClick={handleNavigateToRegion}
                       />
                     ))
                   ) : (
                     <tr>
                       <td
-                        colSpan={5}
-                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'
-                      >
+                        colSpan={4}
+                        className='px-6 py-8 text-center text-neutral-500 dark:text-neutral-400'>
                         {searchTerm
                           ? 'No regions found matching your search'
                           : 'No regions found'}
@@ -397,8 +402,7 @@ export function RegionsPage() {
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className='px-3 py-1 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronLeft className='h-4 w-4 text-neutral-600 dark:text-neutral-400' />
                   </button>
                   <span className='text-sm text-neutral-600 dark:text-neutral-400'>
@@ -407,8 +411,7 @@ export function RegionsPage() {
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className='px-3 py-1 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-                  >
+                    className='px-3 py-1 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
                     <ChevronRight className='h-4 w-4 text-neutral-600 dark:text-neutral-400' />
                   </button>
                 </div>
