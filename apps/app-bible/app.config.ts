@@ -2,12 +2,9 @@
 // This ensures values are available at runtime in release APKs (export:embed bundles)
 
 // Load .env for local builds — ensure we resolve from repo root even if CWD is android/
-import { config as dotenvConfig } from 'dotenv';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+const { config: dotenvConfig } = require('dotenv');
+const path = require('node:path');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 dotenvConfig({ path: path.resolve(__dirname, '.env') });
 
 // Base static config migrated from app.json to avoid duplicate static config warnings
@@ -201,7 +198,7 @@ const base = {
   owner: 'every-language',
 } as const;
 
-export default () => {
+module.exports = () => {
   const environment = process.env['EXPO_PUBLIC_ENVIRONMENT'] || 'development';
 
   const config = {
