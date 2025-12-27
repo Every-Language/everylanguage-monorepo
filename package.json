@@ -46,7 +46,18 @@
     "app-bible:build:dev:android": "pnpm --filter=app-bible run build:dev:android",
     "app-bible:build:prod": "pnpm --filter=app-bible run build:prod",
     "app-bible:build:prod:ios": "pnpm --filter=app-bible run build:prod:ios",
-    "app-bible:build:prod:android": "pnpm --filter=app-bible run build:prod:android"
+    "app-bible:build:prod:android": "pnpm --filter=app-bible run build:prod:android",
+    "app-record:dev": "turbo run start --filter=app-record",
+    "app-record:ios": "pnpm --filter=app-record run ios",
+    "app-record:android": "pnpm --filter=app-record run android",
+    "app-record:prebuild": "pnpm --filter=app-record run prebuild",
+    "app-record:prebuild:clean": "pnpm --filter=app-record run prebuild:clean",
+    "app-record:build:dev": "pnpm --filter=app-record run build:dev",
+    "app-record:build:dev:ios": "pnpm --filter=app-record run build:dev:ios",
+    "app-record:build:dev:android": "pnpm --filter=app-record run build:dev:android",
+    "app-record:build:prod": "pnpm --filter=app-record run build:prod",
+    "app-record:build:prod:ios": "pnpm --filter=app-record run build:prod:ios",
+    "app-record:build:prod:android": "pnpm --filter=app-record run build:prod:android"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

@@ -66,15 +66,14 @@ Thumbs.db
 # Turborepo
 .turbo
 
-# IDE files
-# .cursor/
-
 # Frontend tasks
 tasks.json
 tasks/
 
 # Backend data (large files)
 assets/
+# Exception: Allow app-bible assets (icons, images, data)
+!apps/app-bible/assets/
 # Exception: Allow app-bible generated book art registry
 !apps/app-bible/src/features/bible/assets/
 !apps/app-bible/src/features/bible/assets/bookArtRegistry.tsx
