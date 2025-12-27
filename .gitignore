@@ -66,9 +66,6 @@ Thumbs.db
 # Turborepo
 .turbo
 
-# IDE files
-# .cursor/
-
 # Frontend tasks
 tasks.json
 tasks/
