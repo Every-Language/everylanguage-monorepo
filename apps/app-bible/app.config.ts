@@ -1,11 +1,26 @@
 // Expo dynamic app config to inject runtime-friendly env into Constants.expoConfig.extra
 // This ensures values are available at runtime in release APKs (export:embed bundles)
 
-// Load .env for local builds — ensure we resolve from repo root even if CWD is android/
-const { config: dotenvConfig } = require('dotenv');
+// Load env for local builds.
+// For `app-bible` we intentionally prefer the app-local `.env` file so this app
+// can run independently inside the monorepo.
+//
+// NOTE: Expo CLI already loads `.env` files automatically for many workflows, but
+// we keep this fallback so `app.config.ts` can still populate `extra` reliably.
+let dotenvConfig:
+  | ((opts: { path: string; override?: boolean }) => void)
+  | null = null;
+try {
+  ({ config: dotenvConfig } = require('dotenv'));
+} catch {
+  // dotenv isn't installed in this workspace; skip explicit loading.
+}
 const path = require('node:path');
 
-dotenvConfig({ path: path.resolve(__dirname, '.env') });
+const appRoot = __dirname;
+
+// Load app-local `.env` and override any existing values (including shell env).
+dotenvConfig?.({ path: path.resolve(appRoot, '.env'), override: true });
 
 // Base static config migrated from app.json to avoid duplicate static config warnings
 const base = {
@@ -200,6 +215,8 @@ const base = {
 
 module.exports = () => {
   const environment = process.env['EXPO_PUBLIC_ENVIRONMENT'] || 'development';
+  const resolveEnv = (key: string, fallbackKey?: string) =>
+    process.env[key] ?? (fallbackKey ? process.env[fallbackKey] : undefined);
 
   const config = {
     ...base,
@@ -213,10 +230,20 @@ module.exports = () => {
       // Generic environment variables (set differently per environment in CI/CD)
       // Development environment: points to dev Supabase/PowerSync
       // Production environment: points to prod Supabase/PowerSync
-      EXPO_PUBLIC_SUPABASE_URL: process.env['EXPO_PUBLIC_SUPABASE_URL'],
-      EXPO_PUBLIC_SUPABASE_ANON_KEY:
-        process.env['EXPO_PUBLIC_SUPABASE_ANON_KEY'],
-      EXPO_PUBLIC_POWERSYNC_URL: process.env['EXPO_PUBLIC_POWERSYNC_URL'],
+      // Prefer already-prefixed EXPO_PUBLIC_* vars, but also support base vars in case
+      // someone uses SUPABASE_URL style keys in the app-local `.env`.
+      EXPO_PUBLIC_SUPABASE_URL: resolveEnv(
+        'EXPO_PUBLIC_SUPABASE_URL',
+        'SUPABASE_URL'
+      ),
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: resolveEnv(
+        'EXPO_PUBLIC_SUPABASE_ANON_KEY',
+        'SUPABASE_ANON_KEY'
+      ),
+      EXPO_PUBLIC_POWERSYNC_URL: resolveEnv(
+        'EXPO_PUBLIC_POWERSYNC_URL',
+        'POWERSYNC_URL'
+      ),
     },
   };
 
