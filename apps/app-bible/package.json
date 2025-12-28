@@ -1,5 +1,5 @@
 {
-  "name": "app-bible",
+  "name": "el-bible",
   "version": "1.0.0",
   "type": "module",
   "main": "index.ts",
@@ -9,6 +9,7 @@
     "start:tunnel": "expo start --tunnel",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "ios:clean": "expo prebuild --platform ios --clean && expo run:ios",
     "web": "expo start --web",
     "prebuild": "npx expo prebuild",
     "prebuild:clean": "npx expo prebuild --clean",
@@ -19,11 +20,15 @@
     "build:dev": "eas build --local --profile development",
     "build:dev:ios": "eas build --local --profile development --platform ios",
     "build:dev:android": "eas build --local --profile development --platform android",
+    "build:preview": "eas build --local --profile preview",
+    "build:preview:ios": "eas build --local --profile preview --platform ios",
+    "build:preview:android": "eas build --local --profile preview --platform android",
     "build:prod": "eas build --local --profile production",
     "build:prod:ios": "eas build --local --profile production --platform ios",
     "build:prod:android": "eas build --local --profile production --platform android",
     "build:dev:script": "./scripts/build-dev.sh",
     "update:dev": "eas update --branch development",
+    "update:preview": "eas update --branch preview",
     "update:prod": "eas update --branch production",
     "doctor": "npx expo-doctor",
     "verify": "./scripts/verify-managed-workflow.sh",
@@ -36,23 +41,22 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:run": "jest --watchAll=false --coverage=false",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "prepare": "husky",
     "powersync:generate-schema": "node scripts/generate-powersync-schema.cjs",
     "powersync:combine-schema": "node scripts/combine-powersync-schema.cjs",
-    "powersync:build-schema": "pnpm run powersync:generate-schema && pnpm run powersync:combine-schema",
+    "powersync:build-schema": "npm run powersync:generate-schema && npm run powersync:combine-schema",
     "powersync:verify-schema": "node scripts/verify-powersync-schema.cjs",
     "assets:books:png": "node scripts/convert-book-svgs-to-png.cjs",
     "assets:books-registry": "node scripts/generate-book-art-registry.cjs",
-    "assets:books": "pnpm run assets:books:png && pnpm run assets:books-registry",
+    "assets:books": "npm run assets:books:png && npm run assets:books-registry",
     "assets:generate-bible-structure": "node scripts/generate-bible-structure-json.cjs",
     "assets:generate-bible-seed-db": "node scripts/generate-bible-seed-db.cjs",
-    "assets:prepare-bible-seed": "pnpm run assets:generate-bible-structure && pnpm run assets:generate-bible-seed-db"
+    "assets:prepare-bible-seed": "npm run assets:generate-bible-structure && npm run assets:generate-bible-seed-db"
   },
   "private": true,
   "dependencies": {
-    "@everylanguage/shared-types": "workspace:*",
+    "@everylanguage/shared-types": "^1.0.11",
     "@expo/vector-icons": "^14.1.0",
     "@gorhom/bottom-sheet": "^5.1.6",
     "@hookform/resolvers": "^5.2.2",
@@ -128,14 +132,12 @@
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.2.0",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.10.5",
-    "@types/react": "^19.1.8",
+    "@types/react": "~19.0.10",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
     "babel-plugin-module-resolver": "^5.0.2",
     "babel-preset-expo": "~13.0.0",
     "better-sqlite3": "^11.8.1",
-    "dotenv": "^16.4.7",
     "eslint": "^9.29.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.0",
@@ -175,7 +177,6 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "coverageProvider": "v8",
     "testPathIgnorePatterns": [
       "/node_modules/",
       "/.expo/",
@@ -202,11 +203,11 @@
       "^@/shared/(.*)$": "<rootDir>/src/shared/$1"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(?:\\.pnpm/)?(@react-native|react-native|jest-react-native|@react-native-community|@react-native/js-polyfills|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|isows|@supabase|@powersync))"
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|isows|@supabase|@powersync)"
     ],
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.cjs"
     ]
   },
-  "packageManager": "pnpm@10.20.0"
+  "packageManager": "npm@11.5.2"
 }
