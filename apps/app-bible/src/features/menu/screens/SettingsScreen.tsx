@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '@/shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import type {
   SettingsScreenProps,
   MenuStackNavigationProp,

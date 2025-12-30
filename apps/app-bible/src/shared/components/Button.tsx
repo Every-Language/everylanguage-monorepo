@@ -9,7 +9,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
-import { getButtonStyle, getShadowStyle } from '@/shared/utils/theme';
+import {
+  getButtonStyle,
+  getShadowStyle,
+} from '@everylanguage/shared-native-ui';
 
 interface ButtonProps {
   title: string;
