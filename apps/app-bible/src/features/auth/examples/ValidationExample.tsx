@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/shared/hooks';
-import { createThemedStyles } from '@/shared';
+import { createThemedStyles } from '@everylanguage/shared-native-ui';
 import { CodeValidationScreen } from '../screens/CodeValidationScreen';
 import { useValidationFlow } from '../hooks/useValidationFlow';
 

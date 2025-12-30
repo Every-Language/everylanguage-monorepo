@@ -14,8 +14,7 @@ import { useLocalization } from '@/shared/hooks';
 import { useUserVersions } from '@/features/languages/hooks/useUserVersions';
 import { AudioVersion, TextVersion } from '@/features/languages/types/entities';
 import { logger } from '@/shared/utils/logger';
-import { ModalHeader } from '@/shared/components/ModalHeader';
-import { Button } from '@/shared/components/Button';
+import { ModalHeader, Button } from '@everylanguage/shared-native-ui';
 
 // Logging configuration for this module
 const ENABLE_LOGGING = true;

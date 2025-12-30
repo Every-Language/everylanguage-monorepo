@@ -7,9 +7,9 @@ import type {
   SettingsScreenProps,
   MenuStackNavigationProp,
 } from '../navigation/MenuStackNavigator';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
-import type { ThemeMode } from '@/shared/types/theme';
+import type { ThemeMode } from '@everylanguage/shared-native-ui';
 import { useLocalization } from '@/shared/hooks';
 import { useMediaSettingsStore } from '@/features/settings';
 

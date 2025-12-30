@@ -1,5 +1,5 @@
 import React from 'react';
-import { Header } from '@/shared/components';
+import { Header } from '@everylanguage/shared-native-ui';
 import { useChapterVersesLogic } from '../hooks/useChapterVersesLogic';
 
 export const ChapterVersesHeader: React.FC = () => {

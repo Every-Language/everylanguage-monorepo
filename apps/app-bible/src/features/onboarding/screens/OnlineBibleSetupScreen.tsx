@@ -7,7 +7,7 @@ import { useNetworkForAction } from '@/shared/hooks/useNetworkState';
 // Logging configuration for this module
 const ENABLE_LOGGING = true;
 
-import { NoInternetModal } from '@/shared/components';
+import { NoInternetModal } from '@everylanguage/shared-native-ui';
 import {
   VersionSelectionCard,
   NetworkWarning,

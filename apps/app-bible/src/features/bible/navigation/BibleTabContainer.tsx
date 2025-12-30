@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { TopBar } from '@/shared/components/TopBar';
+import { TopBar } from '@everylanguage/shared-native-ui';
 import { useNavigation } from '@react-navigation/native';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
 import { BibleContainer } from '../components/BibleContainer';

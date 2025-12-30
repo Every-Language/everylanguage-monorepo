@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput as RNTextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
-import { createThemedStyles } from '@/shared';
+import { createThemedStyles } from '@everylanguage/shared-native-ui';
 
 const themedStyles = createThemedStyles({
   container: theme => ({

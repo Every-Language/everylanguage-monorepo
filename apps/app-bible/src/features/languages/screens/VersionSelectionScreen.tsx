@@ -20,7 +20,7 @@ import type {
 import { SavedVersionItem } from '../components/SavedVersionItem';
 import { logger } from '@/shared/utils/logger';
 import { StyleSheet } from 'react-native';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 
 // Logging configuration for this module
 const ENABLE_LOGGING = true;

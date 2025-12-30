@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
 import { useTheme } from '@/shared/hooks';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 import { useLocalization } from '@/shared/hooks';
 import {
   historyManager,
