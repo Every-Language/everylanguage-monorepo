@@ -18,19 +18,22 @@
 // });
 
 // Silence React Native Animated warning: "useNativeDriver"
+// Uncomment when needed:
 // jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper', () => ({}));
 
 // Mock AsyncStorage for predictable behavior in tests
-// Uncomment when @react-native-async-storage/async-storage is added:
-// jest.mock('@react-native-async-storage/async-storage', () =>
-//   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
-// );
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
 
 // Mock NetInfo for tests that rely on network state
 // Uncomment when @react-native-community/netinfo is added:
 // jest.mock('@react-native-community/netinfo', () =>
 //   require('@react-native-community/netinfo/jest/netinfo-mock')
 // );
+
+// Mock react-native-url-polyfill
+jest.mock('react-native-url-polyfill/auto', () => ({}));
 
 
 
