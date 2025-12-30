@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
-import type { Theme } from '@/shared/types/theme';
+import type { Theme } from '@everylanguage/shared-native-ui';
 
 export interface HeaderProps {
   onBackPress: () => void;

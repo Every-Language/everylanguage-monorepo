@@ -6,7 +6,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useTheme } from '../../../shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import type { AudioVersion, TextVersion } from '../types/entities';
 import { StyleSheet } from 'react-native';
 import { useVersionCompleteness } from '../hooks/useVersionCompleteness';

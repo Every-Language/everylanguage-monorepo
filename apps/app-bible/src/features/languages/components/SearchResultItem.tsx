@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { TouchableOpacity, View, Text } from 'react-native';
 import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../../shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import type { LanguageSearchResult } from '../services/fuzzySearchService';
 import { StyleSheet } from 'react-native';
 

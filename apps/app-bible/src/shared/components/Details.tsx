@@ -12,7 +12,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { PlayButton } from './PlayButton';
 import { useTheme } from '@/shared/hooks';
-import type { Theme } from '@/shared/types/theme';
+import type { Theme } from '@everylanguage/shared-native-ui';
 
 export interface DetailsProps {
   title: string;
