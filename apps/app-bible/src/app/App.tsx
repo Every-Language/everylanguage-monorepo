@@ -14,12 +14,12 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { NavigationContainer } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import { SystemBars } from 'react-native-edge-to-edge';
-import { useTheme } from '@/shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
 import { useOnboardingStore } from '@/features/onboarding/store/onboardingStore';
 import { useAuthStore } from '@/shared/store/authStore';
 import { useLocalizationStore } from '@/shared/store/localizationStore';
-import { useThemeStore } from '@/shared/store/themeStore';
+import { useThemeStore } from '@everylanguage/shared-native-ui';
 import { permissionsService } from '@/features/permissions/services/PermissionsService';
 import { powerSyncSystem } from '@/shared/services/powersync';
 import { authService } from '@/features/auth';
@@ -36,7 +36,7 @@ import {
 } from '@/features/downloads/services';
 import { ShareService } from '@/features/sharing/services/ShareService';
 import { DeepLinkState } from '@/shared/services/deeplink/DeepLinkState';
-import { Toast } from '@/shared/components/Toast';
+import { Toast } from '@everylanguage/shared-native-ui';
 import { useSearchInitialization } from '@/features/search/hooks';
 
 // Logging configuration for this module
