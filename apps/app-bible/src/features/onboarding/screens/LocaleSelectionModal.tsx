@@ -8,7 +8,7 @@ import {
   type ParamListBase,
 } from '@react-navigation/native';
 import { useTheme, useLocalization } from '@/shared/hooks';
-import { COLOR_VARIATIONS } from '@/shared/constants/theme';
+import { COLOR_VARIATIONS } from '@everylanguage/shared-native-ui';
 
 export const LocaleSelectionModal: React.FC = () => {
   const navigation = useNavigation<NavigationProp<ParamListBase>>();

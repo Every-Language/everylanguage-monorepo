@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 
 import { useTheme, useLocalization } from '@/shared/hooks';
-import { GradientBackground } from '@/shared/components';
+import { GradientBackground } from '@everylanguage/shared-native-ui';
 import { PlaylistList } from '../components/PlaylistList';
 import { usePlaylistsPS } from '../hooks/usePlaylistsPS';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,7 +17,7 @@ import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
 import { Playlist } from '../types';
 import { PlaylistGroupsTabs } from '../components/PlaylistGroupsTabs';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Theme } from '@/shared';
+import type { Theme } from '@everylanguage/shared-native-ui';
 import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
 import { mediaPlayerService } from '@/features/media';
 import type { PlaylistItem } from '../types';
@@ -27,7 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Logging configuration for this module
 const ENABLE_LOGGING = true;
-import ModalHeader from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 
 export const PlaylistsScreen: React.FC = () => {
   const { theme } = useTheme();

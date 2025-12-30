@@ -1,5 +1,5 @@
 import React from 'react';
-import { Details } from '@/shared/components';
+import { Details } from '@everylanguage/shared-native-ui';
 import { getBookImageByNumber } from '../assets/bookArtRegistry';
 import { useLocalization } from '@/shared/hooks';
 import { useChapterVersesLogic } from '../hooks/useChapterVersesLogic';

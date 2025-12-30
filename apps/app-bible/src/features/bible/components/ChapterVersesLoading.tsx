@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
-import type { Theme } from '@/shared/types/theme';
+import type { Theme } from '@everylanguage/shared-native-ui';
 
 interface ChapterVersesLoadingProps {
   theme?: Theme;

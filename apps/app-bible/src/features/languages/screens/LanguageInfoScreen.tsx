@@ -19,7 +19,7 @@ import type {
 } from '../navigation/VersionSelectionStackNavigator';
 import type { AudioVersion, TextVersion } from '../types/entities';
 import { fuzzySearchService } from '../services/fuzzySearchService';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 import { useVersionsStore } from '../store/versionsStore';
 import { logger } from '@/shared/utils/logger';
 

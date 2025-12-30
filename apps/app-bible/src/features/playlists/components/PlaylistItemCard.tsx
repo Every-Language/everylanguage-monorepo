@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useLocalization, useTheme } from '@/shared/hooks';
 import type { PlaylistItemWithVerses } from '../types';
-import { Theme } from '@/shared';
+import type { Theme } from '@everylanguage/shared-native-ui';
 import { VerseCard } from '@/features/bible';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 

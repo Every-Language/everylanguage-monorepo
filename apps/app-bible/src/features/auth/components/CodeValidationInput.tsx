@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
-import { createThemedStyles } from '@/shared';
+import { createThemedStyles } from '@everylanguage/shared-native-ui';
 import { useTranslations } from '@/shared/hooks';
 
 const themedStyles = createThemedStyles({

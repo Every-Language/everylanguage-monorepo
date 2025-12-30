@@ -16,7 +16,7 @@ import type {
   VersionSelectionStackNavigationProp,
 } from '../navigation/VersionSelectionStackNavigator';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 import { useVersionCompleteness } from '../hooks/useVersionCompleteness';
 import type { AudioVersion, TextVersion } from '../types/entities';
 import { useVersionsStore } from '../store/versionsStore';

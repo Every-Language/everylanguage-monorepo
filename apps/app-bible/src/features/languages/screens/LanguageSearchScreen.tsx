@@ -21,7 +21,7 @@ import type {
 import { SearchResultItem } from '../components/SearchResultItem';
 //
 import { StyleSheet } from 'react-native';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 
 export const LanguageSearchScreen: React.FC<LanguageSearchScreenProps> = ({
   route,
