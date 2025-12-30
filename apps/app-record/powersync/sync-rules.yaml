@@ -1,0 +1,61 @@
+bucket_definitions:
+  # ====================
+  # TWO-WAY SYNC - User's Projects and Related Data
+  # ====================
+  # IMPORTANT: These sync rules assume public.users.id = auth.users.id
+  # Two-way sync buckets only work for authenticated users (NOT anonymous users)
+  # Client must pass 'is_authenticated' = 'true' parameter to sync user data
+
+  # User's project assignments (denormalized table)
+  user_projects:
+    parameters: SELECT request.user_id() as user_id
+    data:
+      - SELECT * FROM user_projects WHERE user_id = bucket.user_id
+
+  # User's projects (full project data)
+  user_projects_full:
+    parameters: SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+    data:
+      - SELECT * FROM projects WHERE id = bucket.project_id
+
+  # User's sequences (within their projects)
+  user_sequences:
+    parameters: SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+    data:
+      - SELECT * FROM sequences WHERE project_id = bucket.project_id
+
+  # User's sequences_segments (junction table with denormalized project_id)
+  user_sequences_segments:
+    parameters: SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+    data:
+      - SELECT * FROM sequences_segments WHERE project_id = bucket.project_id
+
+  # User's segments (within their projects via sequences_segments)
+  user_segments:
+    parameters: SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+    data:
+      - SELECT * FROM segments WHERE project_id = bucket.project_id
+
+  # User's sequence tags
+  user_sequences_tags:
+    parameters: SELECT sequence_id FROM sequences WHERE project_id IN (
+      SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+      )
+    data:
+      - SELECT * FROM sequences_tags WHERE sequence_id = bucket.sequence_id
+
+  # User's sequence targets
+  user_sequences_targets:
+    parameters: SELECT sequence_id FROM sequences WHERE project_id IN (
+      SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+      )
+    data:
+      - SELECT * FROM sequences_targets WHERE sequence_id = bucket.sequence_id
+
+  # User's segment targets
+  user_segments_targets:
+    parameters: SELECT segment_id FROM segments WHERE project_id IN (
+      SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+      )
+    data:
+      - SELECT * FROM segments_targets WHERE segment_id = bucket.segment_id
