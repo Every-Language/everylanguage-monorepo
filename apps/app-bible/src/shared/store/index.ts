@@ -8,13 +8,14 @@ export {
   type OnboardingActions,
 } from '../../features/onboarding/store/onboardingStore';
 
+// Re-export theme store from shared-native-ui package
 export {
   useThemeStore,
   initializeThemeStore,
   type ThemeStore,
   type ThemeState,
   type ThemeActions,
-} from './themeStore';
+} from '@everylanguage/shared-native-ui';
 
 export {
   useLocalizationStore,
@@ -35,14 +36,15 @@ export {
 export { useNetworkStore } from './networkStore';
 export type { NetworkStore, NetworkCapabilities } from './networkStore';
 
-export { useToastStore } from './toastStore';
-export type { ToastStore } from './toastStore';
+// Re-export toast store from shared-native-ui package
+export { useToastStore } from '@everylanguage/shared-native-ui';
+export type { ToastStore } from '@everylanguage/shared-native-ui';
 
 // Initialize all stores
 export const initializeAllStores = async () => {
   try {
     // Import the initialization functions
-    const { initializeThemeStore } = await import('./themeStore');
+    const { initializeThemeStore } = await import('@everylanguage/shared-native-ui');
     const { initializeI18n } = await import('../services/i18n/config');
     const { initializeLocalizationStore } = await import('./localizationStore');
     const { initializeAuthStore } = await import('./authStore');
