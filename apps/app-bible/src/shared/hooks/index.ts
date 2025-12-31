@@ -3,7 +3,8 @@ export { useUserProfile } from './useUserProfile';
 export { useProfileOperations } from './useProfileOperations';
 export { useAuthProfileSync } from './useAuthProfileSync';
 export { useLocalization, useTranslations } from './useLocalizationFromStore';
-export { useTheme } from './useThemeFromStore';
+// Re-export useTheme from shared-native-ui package
+export { useTheme } from '@everylanguage/shared-native-ui';
 export { useNetworkState } from './useNetworkState';
 export { useOptimisticNetwork } from './useOptimisticNetwork';
 export { useLocation } from './useLocation';

@@ -7,8 +7,8 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useTheme } from '@/shared/hooks';
-import type { Theme } from '@/shared/types/theme';
+import { useTheme } from '../hooks';
+import type { Theme } from '../types/theme';
 
 export interface HeaderProps {
   onBackPress: () => void;

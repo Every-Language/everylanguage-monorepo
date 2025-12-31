@@ -9,7 +9,7 @@ import {
 import { useTheme } from '@/shared/hooks';
 import type { Playlist } from '../types';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Theme } from '@/shared';
+import type { Theme } from '@everylanguage/shared-native-ui';
 
 type PlaylistCardProps = {
   playlist: Playlist;

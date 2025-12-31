@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useForm, Controller } from 'react-hook-form';
 import { useTheme } from '@/shared/hooks';
-import { Button, createThemedStyles } from '@/shared';
+import { Button, createThemedStyles } from '@everylanguage/shared-native-ui';
 import { useTranslations } from '@/shared/hooks';
 import { authService } from '../services/authService';
 import { CodeValidationInput } from './CodeValidationInput';

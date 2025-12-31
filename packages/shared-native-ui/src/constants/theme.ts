@@ -4,7 +4,7 @@ import {
   ThemeSpacing,
   ThemeTypography,
   ThemeBorderRadius,
-} from '@/shared/types/theme';
+} from '../types/theme';
 
 // Brand Colors from Brandkit
 export const BRAND_COLORS = {

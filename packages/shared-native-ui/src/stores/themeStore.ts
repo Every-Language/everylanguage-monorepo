@@ -4,10 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appearance } from 'react-native';
 import { Theme, ThemeMode } from '../types/theme';
 import { themes } from '../constants/theme';
-import { logger } from '../utils/logger';
-
-// Logging configuration for this module
-const ENABLE_LOGGING = true;
 
 // Types
 export interface ThemeState {
@@ -45,7 +41,9 @@ export const useThemeStore = create<ThemeStore>()(
         set({ mode, error: null });
         // Save to AsyncStorage
         AsyncStorage.setItem(THEME_STORAGE_KEY, mode).catch(error => {
-          logger.error(ENABLE_LOGGING, 'Error saving theme preference:', error);
+          if (__DEV__) {
+            console.error('Error saving theme preference:', error);
+          }
           set({ error: 'Failed to save theme preference' });
         });
       },
@@ -80,7 +78,7 @@ export const useThemeStore = create<ThemeStore>()(
 );
 
 // Initialize theme from system preference
-export const initializeThemeStore = async () => {
+export const initializeThemeStore = async (): Promise<void> => {
   const store = useThemeStore.getState();
 
   try {
@@ -109,9 +107,14 @@ export const initializeThemeStore = async () => {
     };
     Appearance.addChangeListener(listener);
   } catch (error) {
-    logger.error(ENABLE_LOGGING, 'Error loading theme preference:', error);
+    if (__DEV__) {
+      console.error('Error loading theme preference:', error);
+    }
     store.setTheme('light'); // Fallback to light theme
   } finally {
     store.setLoading(false);
   }
 };
+
+// Global declaration for React Native __DEV__ variable
+declare const __DEV__: boolean;

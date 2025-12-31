@@ -1,5 +1,5 @@
 import { ViewStyle, TextStyle, ImageStyle, StyleSheet } from 'react-native';
-import { Theme } from '@/shared/types/theme';
+import { Theme } from '../types/theme';
 
 // Type for style functions that take theme as parameter
 export type ThemedStyle<T> = (theme: Theme) => T;

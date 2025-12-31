@@ -17,7 +17,7 @@ import {
   handleVerseMenuAction,
 } from '@/features/bible/utils/verseMenu';
 import type { Verse, VerseText } from '../types';
-import type { Theme } from '@/shared/types/theme';
+import type { Theme } from '@everylanguage/shared-native-ui';
 
 interface VerseCardProps {
   verse: Verse;

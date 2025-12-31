@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@/shared/hooks';
-import { COLOR_VARIATIONS } from '@/shared/constants/theme';
+import { COLOR_VARIATIONS } from '@everylanguage/shared-native-ui';
 
 interface DatabaseInitProgress {
   stage: string;

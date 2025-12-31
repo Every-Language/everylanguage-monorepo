@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useTranslations } from '@/shared/hooks';
-import { Button, createThemedStyles } from '@/shared';
+import { Button, createThemedStyles } from '@everylanguage/shared-native-ui';
 
 interface SignOutConfirmationModalProps {
   visible: boolean;

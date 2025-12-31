@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme, useLocalization } from '@/shared/hooks';
 import { usePlaylistMutations } from '../hooks/usePlaylistMutations';
-import { useToastStore } from '@/shared/store/toastStore';
+import { useToastStore } from '@everylanguage/shared-native-ui';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
 
 interface AddCustomTextToPlaylistScreenProps {

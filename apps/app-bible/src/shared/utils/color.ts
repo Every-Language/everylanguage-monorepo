@@ -1,5 +1,5 @@
-import { BRAND_COLORS } from '@/shared/constants/theme';
-import type { ThemeMode } from '@/shared/types/theme';
+import { BRAND_COLORS } from '@everylanguage/shared-native-ui';
+import type { ThemeMode } from '@everylanguage/shared-native-ui';
 
 export const hexToRgba = (hex: string, alpha: number): string => {
   const sanitized = hex.replace('#', '');
