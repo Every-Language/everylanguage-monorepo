@@ -59,6 +59,8 @@ const base = {
         'This app uses location to provide region-specific Bible content and language recommendations.',
       NSLocationWhenInUseUsageDescription:
         'This app uses location to provide region-specific Bible content and language recommendations.',
+      NSLocationAlwaysUsageDescription:
+        'This app uses location to provide region-specific Bible content and language recommendations.',
       NSLocationAlwaysAndWhenInUseUsageDescription:
         'This app uses location to provide region-specific Bible content and language recommendations.',
       NSContactsUsageDescription: 'This app does not access your contacts.',

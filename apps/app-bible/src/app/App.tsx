@@ -44,7 +44,7 @@ const ENABLE_LOGGING = true;
 
 const StatusBarWrapper: React.FC = () => {
   const { mode } = useTheme();
-  const { systemScheme } = useThemeStore();
+  const systemScheme = useThemeStore(state => state.systemScheme);
 
   // Handle system mode by checking the effective theme mode
   const effectiveMode = mode === 'system' ? systemScheme : mode;

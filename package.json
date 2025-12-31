@@ -79,7 +79,8 @@
       "glob": ">=10.5.0",
       "rimraf": ">=6.0.0",
       "@modelcontextprotocol/sdk": ">=1.24.0",
-      "react-server-dom-webpack": ">=19.2.2"
+      "react-server-dom-webpack": ">=19.2.2",
+      "react": "19.0.0"
     }
   }
 }
