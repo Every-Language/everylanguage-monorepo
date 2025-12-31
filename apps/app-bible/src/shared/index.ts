@@ -1,7 +1,6 @@
 export * from './components';
-export * from './constants/theme';
+// constants/theme has been moved to @everylanguage/shared-native-ui
 export * from './hooks';
 export * from './services';
 export * from './store';
-export * from './types/theme';
-export * from './utils/theme';
+// types/theme and utils/theme have been moved to @everylanguage/shared-native-ui
