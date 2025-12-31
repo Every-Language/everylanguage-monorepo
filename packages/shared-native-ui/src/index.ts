@@ -20,7 +20,7 @@ export {
   type ThemeState,
   type ThemeActions,
 } from './stores';
-export type { Toast } from './stores/toastStore';
+export type { Toast as ToastItem } from './stores/toastStore';
 
 // Constants
 export * from './constants';
