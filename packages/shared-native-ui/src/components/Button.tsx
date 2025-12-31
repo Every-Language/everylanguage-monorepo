@@ -154,4 +154,3 @@ export function Button({
     </TouchableOpacity>
   );
 }
-

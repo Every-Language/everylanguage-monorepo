@@ -14,7 +14,11 @@ const ENABLE_LOGGING = true;
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
-import { Header, Details, GradientBackground } from '@everylanguage/shared-native-ui';
+import {
+  Header,
+  Details,
+  GradientBackground,
+} from '@everylanguage/shared-native-ui';
 import { useChaptersWithMetadata } from '../hooks/useChaptersWithMetadata';
 import { useAudioAvailabilityInvalidation } from '../hooks';
 import { ChapterCard } from '../components/ChapterCard';

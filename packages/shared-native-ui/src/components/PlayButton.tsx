@@ -81,4 +81,3 @@ export const PlayButton: React.FC<PlayButtonProps> = ({
     </TouchableOpacity>
   );
 };
-

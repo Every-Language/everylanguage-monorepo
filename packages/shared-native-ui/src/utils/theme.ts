@@ -188,4 +188,3 @@ export function getInputStyle(theme: Theme): TextStyle {
     color: theme.colors.text,
   };
 }
-

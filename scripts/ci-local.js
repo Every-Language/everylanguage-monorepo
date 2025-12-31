@@ -192,7 +192,7 @@ async function runLint(changes) {
     filters.push('--filter=web-admin-dashboard');
   }
   if (changes.frontendAppBible) {
-    filters.push('--filter=app-bible');
+    filters.push('--filter=el-bible');
   }
 
   if (filters.length === 0) {
@@ -223,7 +223,7 @@ async function runTypeCheck(changes) {
     filters.push('--filter=web-admin-dashboard');
   }
   if (changes.frontendAppBible) {
-    filters.push('--filter=app-bible');
+    filters.push('--filter=el-bible');
   }
 
   if (filters.length === 0) {
@@ -292,7 +292,7 @@ async function runTests(changes, mode) {
     filters.push('--filter=web-admin-dashboard');
   }
   if (changes.frontendAppBible) {
-    filters.push('--filter=app-bible');
+    filters.push('--filter=el-bible');
   }
 
   if (filters.length === 0) {
@@ -310,7 +310,7 @@ async function runTests(changes, mode) {
 
   // Special handling for app-bible in PR mode
   if (changes.frontendAppBible && mode === 'pr') {
-    const appBibleIndex = filters.indexOf('--filter=app-bible');
+    const appBibleIndex = filters.indexOf('--filter=el-bible');
     if (appBibleIndex !== -1) {
       filters.splice(appBibleIndex, 1);
 
@@ -361,7 +361,7 @@ async function runBuild(changes, mode) {
     filters.push('--filter=web-admin-dashboard');
   }
   if (changes.frontendAppBible) {
-    filters.push('--filter=app-bible');
+    filters.push('--filter=el-bible');
   }
 
   if (filters.length === 0) {

@@ -7,7 +7,3 @@ module.exports = (async () => {
   const config = await getDefaultConfig(__dirname);
   return config;
 })();
-
-
-
-

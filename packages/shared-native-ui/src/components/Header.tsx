@@ -89,4 +89,3 @@ const createStyles = (theme: Theme, transparent: boolean = false) => {
     },
   });
 };
-

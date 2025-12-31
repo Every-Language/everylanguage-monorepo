@@ -92,4 +92,3 @@ export interface ThemeContextType {
   toggleTheme: () => void;
   setTheme: (mode: ThemeMode) => void;
 }
-
