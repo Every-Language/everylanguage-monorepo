@@ -44,7 +44,8 @@ export type { ToastStore } from '@everylanguage/shared-native-ui';
 export const initializeAllStores = async () => {
   try {
     // Import the initialization functions
-    const { initializeThemeStore } = await import('@everylanguage/shared-native-ui');
+    const { initializeThemeStore } =
+      await import('@everylanguage/shared-native-ui');
     const { initializeI18n } = await import('../services/i18n/config');
     const { initializeLocalizationStore } = await import('./localizationStore');
     const { initializeAuthStore } = await import('./authStore');

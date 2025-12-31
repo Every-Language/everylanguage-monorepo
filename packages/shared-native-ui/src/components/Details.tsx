@@ -210,4 +210,3 @@ const createStyles = (theme: Theme, albumArtSize: number = 200) => {
     },
   });
 };
-

@@ -118,4 +118,3 @@ export const initializeThemeStore = async (): Promise<void> => {
 
 // Global declaration for React Native __DEV__ variable
 declare const __DEV__: boolean;
-
