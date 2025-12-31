@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useForm } from 'react-hook-form';
 import { useTheme, useTranslations } from '@/shared/hooks';
-import { Button, createThemedStyles } from '@/shared';
+import { Button, createThemedStyles } from '@everylanguage/shared-native-ui';
 import {
   ControlledEmailInput,
   ControlledPhoneInput,

@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -8,8 +7,8 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/shared/hooks';
-import { getButtonStyle, getShadowStyle } from '@/shared/utils/theme';
+import { useTheme } from '../hooks';
+import { getButtonStyle, getShadowStyle } from '../utils/theme';
 
 interface ButtonProps {
   title: string;

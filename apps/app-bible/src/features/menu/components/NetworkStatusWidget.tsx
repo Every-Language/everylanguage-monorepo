@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
 import { useNetwork } from '@/shared/hooks/useNetworkState';
-import { NoInternetModal } from '@/shared/components/NoInternetModal';
+import { NoInternetModal } from '@everylanguage/shared-native-ui';
 
 export interface NetworkStatusWidgetProps {
   onPress?: () => void;

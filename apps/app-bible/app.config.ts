@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 // Expo dynamic app config to inject runtime-friendly env into Constants.expoConfig.extra
 // This ensures values are available at runtime in release APKs (export:embed bundles)
 
@@ -58,6 +60,8 @@ const base = {
       NSLocationUsageDescription:
         'This app uses location to provide region-specific Bible content and language recommendations.',
       NSLocationWhenInUseUsageDescription:
+        'This app uses location to provide region-specific Bible content and language recommendations.',
+      NSLocationAlwaysUsageDescription:
         'This app uses location to provide region-specific Bible content and language recommendations.',
       NSLocationAlwaysAndWhenInUseUsageDescription:
         'This app uses location to provide region-specific Bible content and language recommendations.',

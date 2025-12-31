@@ -6,7 +6,7 @@ import { useTheme, useLocalization } from '@/shared/hooks';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
 import { PlaylistForm } from './PlaylistForm';
 import { usePlaylistMutations } from '../hooks/usePlaylistMutations';
-import { useToastStore } from '@/shared/store/toastStore';
+import { useToastStore } from '@everylanguage/shared-native-ui';
 import type { Playlist } from '../types';
 
 type RouteParams = { playlist: Playlist };

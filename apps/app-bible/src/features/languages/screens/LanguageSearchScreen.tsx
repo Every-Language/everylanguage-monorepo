@@ -9,7 +9,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '@/shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
 import { useLanguageSearch } from '../hooks/useLanguageSearch';
 // import { useVersionsStore } from '../store/versionsStore';
@@ -21,7 +21,7 @@ import type {
 import { SearchResultItem } from '../components/SearchResultItem';
 //
 import { StyleSheet } from 'react-native';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 
 export const LanguageSearchScreen: React.FC<LanguageSearchScreenProps> = ({
   route,

@@ -7,7 +7,7 @@ import {
   RefreshControlProps,
 } from 'react-native';
 import { useTheme, useLocalization } from '@/shared/hooks';
-import { Theme } from '@/shared';
+import type { Theme } from '@everylanguage/shared-native-ui';
 
 import { PlaylistCard } from './PlaylistCard';
 import type { Playlist } from '../types';

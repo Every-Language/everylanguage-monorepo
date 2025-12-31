@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useTheme } from '@/shared/hooks';
+import { useTheme } from '../hooks';
 
 export type PlayableType = 'book' | 'chapter' | 'verse';
 

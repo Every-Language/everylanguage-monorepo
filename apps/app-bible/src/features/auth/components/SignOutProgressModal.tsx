@@ -3,8 +3,7 @@ import { View, Text, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useTranslations } from '@/shared/hooks';
-import { createThemedStyles } from '@/shared';
-import { Button } from '@/shared/components/Button';
+import { createThemedStyles, Button } from '@everylanguage/shared-native-ui';
 
 interface SignOutProgressModalProps {
   visible: boolean;

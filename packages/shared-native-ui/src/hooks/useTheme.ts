@@ -1,4 +1,4 @@
-import { useThemeStore } from '../store/themeStore';
+import { useThemeStore } from '../stores/themeStore';
 import type { Theme } from '../types/theme';
 
 /**

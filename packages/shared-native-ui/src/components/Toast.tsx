@@ -7,12 +7,23 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useToastStore } from '@/shared/store/toastStore';
-import { useTheme } from '@/shared/hooks';
+import { initialWindowMetrics } from 'react-native-safe-area-context';
+import { useToastStore } from '../stores/toastStore';
+import { useTheme } from '../hooks';
 
 export const Toast: React.FC = () => {
-  const insets = useSafeAreaInsets();
+  // Use initialWindowMetrics directly - it's always available and provides
+  // the initial safe area insets. This prevents errors when SafeAreaProvider
+  // isn't ready during initial render.
+  // Note: This won't be reactive to safe area changes, but that's acceptable
+  // for Toast positioning since safe area insets rarely change during app usage.
+  const insets = initialWindowMetrics?.insets ?? {
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  };
+
   const { toasts, hideToast } = useToastStore();
   const styles = StyleSheet.create({
     container: {

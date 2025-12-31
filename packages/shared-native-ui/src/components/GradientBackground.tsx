@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '@/shared/hooks';
+import { useTheme } from '../hooks';
 
 interface GradientBackgroundProps {
   children: React.ReactNode;

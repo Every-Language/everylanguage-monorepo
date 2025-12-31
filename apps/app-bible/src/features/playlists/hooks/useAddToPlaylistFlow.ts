@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useLocalization } from '@/shared/hooks';
-import { useToastStore } from '@/shared/store/toastStore';
+import { useToastStore } from '@everylanguage/shared-native-ui';
 import { usePlaylistMutations } from './usePlaylistMutations';
 import type {
   RootStackNavigationProp,

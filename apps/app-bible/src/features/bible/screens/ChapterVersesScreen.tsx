@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, RefreshControl, ScrollView } from 'react-native';
 import { useTheme } from '@/shared/hooks';
-import { GradientBackground } from '@/shared/components';
+import { GradientBackground } from '@everylanguage/shared-native-ui';
 import { useChapterVersesLogic } from '../hooks/useChapterVersesLogic';
 import { useChapterMediaActions } from '../hooks/useChapterMediaActions';
 import { useChapterDeepLinkHandler } from '../hooks/useChapterDeepLinkHandler';
