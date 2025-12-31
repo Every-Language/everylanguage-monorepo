@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 // Expo dynamic app config to inject runtime-friendly env into Constants.expoConfig.extra
 // This ensures values are available at runtime in release APKs (export:embed bundles)
 

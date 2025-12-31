@@ -1,4 +1,5 @@
 #!/usr/bin/env ts-node
+/// <reference types="node" />
 
 /**
  * Script to add query logging to all PowerSync queries across the app
@@ -49,7 +50,10 @@ function findPowerSyncFiles(dir: string): PowerSyncFile[] {
                   const queryMatch = match.match(/[`'"]([^`'"]*)[`'"]/);
                   return queryMatch ? queryMatch[1] : '';
                 })
-                .filter((q): q is string => q !== undefined && q.length > 0)
+                .filter(
+                  (q: string | undefined): q is string =>
+                    q !== undefined && q.length > 0
+                )
             : [];
 
           results.push({
