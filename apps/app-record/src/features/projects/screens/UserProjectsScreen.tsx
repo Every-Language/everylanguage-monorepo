@@ -49,7 +49,13 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ userProject, onPress }) => {
   );
 };
 
-export const UserProjectsScreen: React.FC = () => {
+interface UserProjectsScreenProps {
+  onBack?: () => void;
+}
+
+export const UserProjectsScreen: React.FC<UserProjectsScreenProps> = ({
+  onBack,
+}) => {
   const { projects, loading, error } = useUserProjects();
   const { signOut } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
@@ -70,7 +76,18 @@ export const UserProjectsScreen: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>My Projects</Text>
+          <View style={styles.headerLeft}>
+            {onBack ? (
+              <TouchableOpacity
+                onPress={onBack}
+                style={styles.backButton}
+                accessibilityRole='button'
+                accessibilityLabel='Back to profile'>
+                <Text style={styles.backButtonText}>← Back</Text>
+              </TouchableOpacity>
+            ) : null}
+            <Text style={styles.title}>My Projects</Text>
+          </View>
           <TouchableOpacity onPress={signOut} style={styles.signOutButton}>
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -87,7 +104,18 @@ export const UserProjectsScreen: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>My Projects</Text>
+          <View style={styles.headerLeft}>
+            {onBack ? (
+              <TouchableOpacity
+                onPress={onBack}
+                style={styles.backButton}
+                accessibilityRole='button'
+                accessibilityLabel='Back to profile'>
+                <Text style={styles.backButtonText}>← Back</Text>
+              </TouchableOpacity>
+            ) : null}
+            <Text style={styles.title}>My Projects</Text>
+          </View>
           <TouchableOpacity onPress={signOut} style={styles.signOutButton}>
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -109,7 +137,18 @@ export const UserProjectsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>My Projects</Text>
+        <View style={styles.headerLeft}>
+          {onBack ? (
+            <TouchableOpacity
+              onPress={onBack}
+              style={styles.backButton}
+              accessibilityRole='button'
+              accessibilityLabel='Back to profile'>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+          ) : null}
+          <Text style={styles.title}>My Projects</Text>
+        </View>
         <TouchableOpacity onPress={signOut} style={styles.signOutButton}>
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
@@ -119,7 +158,7 @@ export const UserProjectsScreen: React.FC = () => {
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No projects found</Text>
           <Text style={styles.emptySubtext}>
-            You don't have access to any projects yet.
+            You don&apos;t have access to any projects yet.
           </Text>
         </View>
       ) : (
@@ -162,6 +201,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  backButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: '600',
   },
   title: {
     fontSize: 28,

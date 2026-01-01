@@ -1,10 +1,15 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { useState } from 'react';
 import { AuthProvider, useAuth, LoginScreen } from '@/features/auth';
 import { UserProjectsScreen } from '@/features/projects';
+import { UserProfileScreen } from '@/features/profile';
+
+type Screen = 'profile' | 'projects';
 
 function AppContent() {
   const { user, loading } = useAuth();
+  const [currentScreen, setCurrentScreen] = useState<Screen>('profile');
 
   if (loading) {
     return (
@@ -24,10 +29,22 @@ function AppContent() {
     );
   }
 
-  // User is authenticated - show user projects screen
+  // User is authenticated - show user profile screen first
+  if (currentScreen === 'profile') {
+    return (
+      <>
+        <UserProfileScreen
+          onViewProjects={() => setCurrentScreen('projects')}
+        />
+        <StatusBar style='auto' />
+      </>
+    );
+  }
+
+  // Show projects screen
   return (
     <>
-      <UserProjectsScreen />
+      <UserProjectsScreen onBack={() => setCurrentScreen('profile')} />
       <StatusBar style='auto' />
     </>
   );

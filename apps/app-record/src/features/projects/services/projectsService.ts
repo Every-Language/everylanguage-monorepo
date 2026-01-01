@@ -26,6 +26,16 @@ export class ProjectsService {
    */
   async getUserProjects(): Promise<UserProject[]> {
     try {
+      // Verify user is authenticated before querying
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data: userProjectsData, error: userProjectsError } =
         await supabase
           .from('user_projects')
@@ -44,8 +54,19 @@ export class ProjectsService {
       // Type assert user_projects data
       const userProjects = userProjectsData as unknown as UserProjectRow[];
 
-      // Get unique project IDs
-      const projectIds = [...new Set(userProjects.map(up => up.project_id))];
+      // Get unique project IDs, filtering out any undefined/null values
+      const projectIds = [
+        ...new Set(
+          userProjects
+            .map(up => up.project_id)
+            .filter((id): id is string => Boolean(id))
+        ),
+      ];
+
+      // If no valid project IDs, return empty array
+      if (projectIds.length === 0) {
+        return [];
+      }
 
       // Fetch full project details
       const { data: projectsData, error: projectsError } = await supabase
