@@ -48,7 +48,9 @@ describe('LoginScreen', () => {
   });
 
   it('should show error when password is empty', async () => {
-    const { getByText, getByPlaceholderText } = render(<LoginScreen />);
+    const { getByText, getByPlaceholderText, getByRole } = render(
+      <LoginScreen />
+    );
 
     const emailInput = getByPlaceholderText('Enter your email');
     fireEvent.changeText(emailInput, 'test@example.com');

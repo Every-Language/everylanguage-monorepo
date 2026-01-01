@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth, LoginScreen } from '@/features/auth';
+import { UserProjectsScreen } from '@/features/projects';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -23,13 +24,12 @@ function AppContent() {
     );
   }
 
-  // User is authenticated - show main app content
+  // User is authenticated - show user projects screen
   return (
-    <View style={styles.container}>
-      <Text style={styles.welcomeText}>Welcome! You are signed in.</Text>
-      <Text style={styles.userText}>User: {user.email}</Text>
+    <>
+      <UserProjectsScreen />
       <StatusBar style='auto' />
-    </View>
+    </>
   );
 }
 
@@ -48,17 +48,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-  },
-  welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  userText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
   },
 });
