@@ -440,8 +440,13 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
           return;
         }
 
+        // Detect mobile for expanded touch area
+        const isMobile =
+          typeof window !== 'undefined' && window.innerWidth < 768;
+
         const features = map.queryRenderedFeatures(e.point, {
           layers: layerIds,
+          ...(isMobile && { radius: 25 }), // Expand touch area on mobile
         });
 
         // Update cursor style
@@ -522,8 +527,13 @@ export const MapLanguagesLayer: React.FC<MapLanguagesLayerProps> = ({
           return;
         }
 
+        // Detect mobile for expanded touch area
+        const isMobile =
+          typeof window !== 'undefined' && window.innerWidth < 768;
+
         const features = map.queryRenderedFeatures(e.point, {
           layers: layerIds,
+          ...(isMobile && { radius: 25 }), // Expand touch area on mobile
         });
 
         if (features.length > 0) {
