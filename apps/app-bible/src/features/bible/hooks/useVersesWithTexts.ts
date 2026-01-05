@@ -76,19 +76,17 @@ export const useVersesWithTexts = (
               updated_at: row.updated_at,
             };
 
+            // Only require verse_text to be present - publish_status and version may be null/0
+            // but we still want to display the text if it exists
             const verseText =
-              row.verse_text_id &&
-              row.text_version_id &&
-              row.verse_text &&
-              row.publish_status &&
-              row.version
+              row.verse_text_id && row.text_version_id && row.verse_text
                 ? {
                     id: row.verse_text_id,
                     verse_id: row.id,
                     text_version_id: row.text_version_id,
                     verse_text: row.verse_text,
-                    publish_status: row.publish_status,
-                    version: row.version,
+                    publish_status: row.publish_status || null,
+                    version: row.version ?? null,
                     created_at: row.text_created_at || row.created_at || '',
                     updated_at: row.text_updated_at || row.updated_at || '',
                   }
