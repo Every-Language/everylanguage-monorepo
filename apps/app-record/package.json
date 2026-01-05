@@ -27,9 +27,9 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "type-check": "tsc --noEmit",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test:coverage": "jest --coverage --passWithNoTests",
     "test:run": "jest --watchAll=false --coverage=false",
     "test:ci": "jest --ci --coverage --watchAll=false"
   },

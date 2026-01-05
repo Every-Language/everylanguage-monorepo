@@ -57,7 +57,6 @@ const createStyles = (theme: Theme, transparent: boolean = false) => {
   const backgroundColor = transparent ? 'transparent' : theme.colors.background;
 
   return StyleSheet.create({
-    /* eslint-disable */
     safeArea: {
       backgroundColor,
       zIndex: 1000,

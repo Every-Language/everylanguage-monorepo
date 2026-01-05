@@ -25,7 +25,7 @@ interface PlayButtonProps {
 }
 
 export const PlayButton: React.FC<PlayButtonProps> = ({
-  id: _id,
+  id: _id, // eslint-disable-line @typescript-eslint/no-unused-vars
   size = 'medium',
   onPress,
   disabled = false,
