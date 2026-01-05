@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useLocalization } from '@/shared/hooks';
 import { useNetworkForAction } from '@/shared/hooks/useNetworkState';
@@ -7,7 +14,7 @@ import { useNetworkForAction } from '@/shared/hooks/useNetworkState';
 // Logging configuration for this module
 const ENABLE_LOGGING = true;
 
-import { NoInternetModal } from '@everylanguage/shared-native-ui';
+import { NoInternetModal } from '@everylanguage/shared-native-ui/components';
 import {
   VersionSelectionCard,
   NetworkWarning,
@@ -15,6 +22,7 @@ import {
 } from '../components';
 import { logger } from '@/shared/utils/logger';
 import { useVersionsStore } from '@/features/languages/store/versionsStore';
+import { preloadVersionContent, type PreloadProgress } from '../services';
 
 interface OnlineBibileSetupScreenProps {
   onBack: () => void;
@@ -39,6 +47,9 @@ export const OnlineBibleSetupScreen: React.FC<OnlineBibileSetupScreenProps> = ({
 
   // State for modals
   const [showNoInternetModal, setShowNoInternetModal] = useState(false);
+  const [isPreloading, setIsPreloading] = useState(false);
+  const [preloadProgress, setPreloadProgress] =
+    useState<PreloadProgress | null>(null);
 
   useEffect(() => {
     if (!isOnline) {
@@ -81,8 +92,32 @@ export const OnlineBibleSetupScreen: React.FC<OnlineBibileSetupScreenProps> = ({
 
     try {
       // Ensure network is available before proceeding
-      await ensureNetworkAvailable(() => {
-        // Complete onboarding directly
+      await ensureNetworkAvailable(async () => {
+        // Show loading state
+        setIsPreloading(true);
+
+        try {
+          // Preload content before completing onboarding
+          await preloadVersionContent(
+            currentTextVersion.id,
+            currentAudioVersion.id,
+            progress => {
+              setPreloadProgress(progress);
+            }
+          );
+        } catch (preloadError) {
+          // Log error but continue - graceful degradation
+          logger.warn(
+            ENABLE_LOGGING,
+            'Preload failed, continuing anyway:',
+            preloadError
+          );
+        } finally {
+          setIsPreloading(false);
+          setPreloadProgress(null);
+        }
+
+        // Complete onboarding
         onComplete();
       });
     } catch (error) {
@@ -98,8 +133,33 @@ export const OnlineBibleSetupScreen: React.FC<OnlineBibileSetupScreenProps> = ({
   const handleRetryConnection = async () => {
     try {
       // Use the retry and execute method
-      await retryAndExecute(() => {
+      await retryAndExecute(async () => {
         setShowNoInternetModal(false);
+
+        // Show loading state
+        setIsPreloading(true);
+
+        try {
+          // Preload content before completing onboarding
+          await preloadVersionContent(
+            currentTextVersion?.id ?? null,
+            currentAudioVersion?.id ?? null,
+            progress => {
+              setPreloadProgress(progress);
+            }
+          );
+        } catch (preloadError) {
+          // Log error but continue - graceful degradation
+          logger.warn(
+            ENABLE_LOGGING,
+            'Preload failed, continuing anyway:',
+            preloadError
+          );
+        } finally {
+          setIsPreloading(false);
+          setPreloadProgress(null);
+        }
+
         onComplete();
       });
     } catch (error) {
@@ -168,6 +228,54 @@ export const OnlineBibleSetupScreen: React.FC<OnlineBibileSetupScreenProps> = ({
             {t('onboarding.onlineSetup.helpText')}
           </Text>
         </View>
+
+        {/* Progress Indicator */}
+        {isPreloading && preloadProgress && (
+          <View
+            style={[
+              styles.progressContainer,
+              { backgroundColor: theme.colors.surface },
+            ]}>
+            <View style={styles.progressHeader}>
+              <ActivityIndicator
+                size='small'
+                color={theme.colors.primary}
+                style={styles.progressSpinner}
+              />
+              <Text style={[styles.progressText, { color: theme.colors.text }]}>
+                {preloadProgress.type === 'verse_texts'
+                  ? t('onboarding.onlineSetup.downloadingVerses', {
+                      defaultValue: 'Downloading verses',
+                    })
+                  : t('onboarding.onlineSetup.downloadingMedia', {
+                      defaultValue: 'Downloading media',
+                    })}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.progressBar,
+                { backgroundColor: theme.colors.border },
+              ]}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${(preloadProgress.current / preloadProgress.total) * 100}%`,
+                    backgroundColor: theme.colors.primary,
+                  },
+                ]}
+              />
+            </View>
+            <Text
+              style={[
+                styles.progressCount,
+                { color: theme.colors.textSecondary },
+              ]}>
+              {preloadProgress.current} / {preloadProgress.total}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View
@@ -176,18 +284,28 @@ export const OnlineBibleSetupScreen: React.FC<OnlineBibileSetupScreenProps> = ({
           style={[
             styles.continueButton,
             {
-              backgroundColor: canContinue
-                ? theme.colors.primary
-                : theme.colors.interactiveDisabled,
+              backgroundColor:
+                canContinue && !isPreloading
+                  ? theme.colors.primary
+                  : theme.colors.interactiveDisabled,
             },
           ]}
-          onPress={canContinue ? handleContinue : handleDisabledButtonPress}>
+          onPress={
+            canContinue && !isPreloading
+              ? handleContinue
+              : handleDisabledButtonPress
+          }
+          disabled={!canContinue || isPreloading}>
           <Text
             style={[
               styles.continueButtonText,
               { color: theme.colors.textInverse },
             ]}>
-            {t('onboarding.onlineSetup.continue')}
+            {isPreloading
+              ? t('onboarding.onlineSetup.loading', {
+                  defaultValue: 'Loading...',
+                })
+              : t('onboarding.onlineSetup.continue')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -229,6 +347,37 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     flex: 1,
+  },
+  progressContainer: {
+    marginTop: 24,
+    padding: 16,
+    borderRadius: 12,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  progressSpinner: {
+    marginRight: 8,
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressCount: {
+    fontSize: 12,
+    textAlign: 'center',
   },
   footer: {
     position: 'absolute',
