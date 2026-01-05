@@ -133,8 +133,8 @@
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.2.0",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.10.2",
-    "@types/react": "^19.1.8",
+    "@types/node": "^22.10.5",
+    "@types/react": "~19.0.10",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
     "babel-plugin-module-resolver": "^5.0.2",
@@ -179,6 +179,7 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "coverageProvider": "v8",
     "testPathIgnorePatterns": [
       "/node_modules/",
       "/.expo/",
@@ -205,11 +206,10 @@
       "^@/shared/(.*)$": "<rootDir>/src/shared/$1"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|isows|@supabase|@powersync)"
+      "node_modules/(?!(?:\\.pnpm/)?(@react-native|react-native|jest-react-native|@react-native-community|@react-native\\+js-polyfills|@react-native/js-polyfills|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|isows|@supabase|@powersync))"
     ],
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.cjs"
     ]
-  },
-  "packageManager": "npm@11.5.2"
+  }
 }

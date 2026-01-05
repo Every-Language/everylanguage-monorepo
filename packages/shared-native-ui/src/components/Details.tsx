@@ -152,7 +152,6 @@ export const Details: React.FC<DetailsProps> = ({
 
 const createStyles = (theme: Theme, albumArtSize: number = 200) => {
   return StyleSheet.create({
-    /* eslint-disable */
     container: {
       paddingBottom: 20,
     },
