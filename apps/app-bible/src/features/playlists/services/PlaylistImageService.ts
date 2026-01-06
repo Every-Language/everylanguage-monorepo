@@ -59,7 +59,10 @@ export class PlaylistImageService {
         .from('images')
         .insert({
           id: imageId,
-          target_type: 'playlist',
+          // Type assertion: 'playlist' was added to target_type enum in migration
+          // 20251231171838_add_playlist_to_target_type_and_images_rls.sql
+          // Types will be correct after TypeScript re-reads updated shared-types
+          target_type: 'playlist' as any,
           target_id: playlistId,
           set_id: null,
           created_by: userId,
