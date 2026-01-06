@@ -13,6 +13,7 @@ export type UserPlaylistGroup = Tables<'user_playlist_groups'>;
 export interface PlaylistFormData {
   title: string;
   description?: string;
+  image_id?: string | null;
 }
 export interface PlaylistWithItems extends Playlist {
   items: PlaylistItem[];
