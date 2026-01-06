@@ -3,9 +3,19 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { config: dotenvConfig } = require('dotenv');
 
 const SYNC_RULES_FILE = 'powersync/sync-rules.yaml';
 const SCHEMA_OUTPUT_FILE = 'powersync/AppSchema.generated.ts';
+
+// Load .env.local file from app-record directory
+const envLocalPath = path.resolve(__dirname, '../.env.local');
+if (fs.existsSync(envLocalPath)) {
+  dotenvConfig({ path: envLocalPath });
+  console.log('📁 Loaded credentials from .env.local');
+} else {
+  console.log('⚠️  .env.local not found, using environment variables');
+}
 
 function normalizeSchema(content) {
   // Normalize whitespace and line endings for comparison
@@ -24,11 +34,48 @@ function generateSchema() {
       throw new Error(`Sync rules file not found: ${SYNC_RULES_FILE}`);
     }
 
-    // Generate schema using PowerSync CLI
+    // Map environment variables to PowerSync CLI format
+    // Support both POWERSYNC_* prefix and direct variable names
+    const projectId =
+      process.env.POWERSYNC_PROJECT_ID || process.env.PROJECT_ID;
+    const authToken =
+      process.env.POWERSYNC_AUTH_TOKEN || process.env.AUTH_TOKEN;
+    const orgId = process.env.POWERSYNC_ORG_ID || process.env.ORG_ID;
+    const instanceId =
+      process.env.POWERSYNC_INSTANCE_ID || process.env.INSTANCE_ID;
+
+    // Validate required credentials
+    if (!projectId || !authToken || !orgId) {
+      throw new Error(
+        'Missing PowerSync credentials. Please set in .env.local:\n' +
+          '  POWERSYNC_PROJECT_ID (or PROJECT_ID)\n' +
+          '  POWERSYNC_AUTH_TOKEN (or AUTH_TOKEN)\n' +
+          '  POWERSYNC_ORG_ID (or ORG_ID)\n' +
+          '  POWERSYNC_INSTANCE_ID (or INSTANCE_ID) - optional'
+      );
+    }
+
+    // Prepare environment for PowerSync CLI
+    const env = {
+      ...process.env,
+      PROJECT_ID: projectId,
+      AUTH_TOKEN: authToken,
+      ORG_ID: orgId,
+    };
+
+    if (instanceId) {
+      env.INSTANCE_ID = instanceId;
+    }
+
     console.log('📄 Running PowerSync CLI to generate schema...');
+    console.log(`   PROJECT_ID: ${projectId ? 'set' : 'not set'}`);
+    console.log(`   ORG_ID: ${orgId ? 'set' : 'not set'}`);
+    console.log(`   AUTH_TOKEN: ${authToken ? 'set' : 'not set'}`);
+    console.log(`   INSTANCE_ID: ${instanceId ? 'set' : 'not set'}`);
+
     const output = execSync(
       `npx powersync instance sync-rules generate-schema -f "${SYNC_RULES_FILE}" -l js`,
-      { encoding: 'utf8' }
+      { encoding: 'utf8', env }
     );
 
     // Extract the generated schema (skip the import line and modify it)
