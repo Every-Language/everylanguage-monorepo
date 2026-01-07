@@ -21,7 +21,10 @@ const PlaylistsStack = createNativeStackNavigator<PlaylistsStackParamList>();
 
 export const PlaylistsStackNavigator: React.FC = () => {
   return (
-    <PlaylistsStack.Navigator screenOptions={{ headerShown: false }}>
+    <PlaylistsStack.Navigator
+      screenOptions={{
+        headerShown: false, // Always hide React Navigation header - use TopBar/ModalHeader in components
+      }}>
       <PlaylistsStack.Screen name='PlaylistsHome' component={PlaylistsScreen} />
       <PlaylistsStack.Screen
         name='PlaylistItems'
