@@ -41,14 +41,6 @@ export async function preloadVersionContent(
   audioVersionId: string | null,
   onProgress?: (progress: PreloadProgress) => void
 ): Promise<PreloadResult> {
-  // Direct console log to ensure we see it's being called
-  console.log(
-    '[preloadVersionContent] 🚀 STARTING - textVersionId:',
-    textVersionId,
-    'audioVersionId:',
-    audioVersionId
-  );
-
   logger.info(
     ENABLE_LOGGING,
     `[preloadVersionContent] Starting preload - textVersionId: ${textVersionId}, audioVersionId: ${audioVersionId}`
@@ -62,32 +54,43 @@ export async function preloadVersionContent(
 
   // Preload verse_texts if text version selected
   if (textVersionId) {
-    console.log('[preloadVersionContent] Preloading verse_texts...');
+    logger.debug(
+      ENABLE_LOGGING,
+      '[preloadVersionContent] Preloading verse_texts...'
+    );
     const count = await preloadVerseTexts(textVersionId, onProgress);
     result.verseTexts = count;
-    console.log(`[preloadVersionContent] ✅ Preloaded ${count} verse_texts`);
+    logger.info(
+      ENABLE_LOGGING,
+      `[preloadVersionContent] Preloaded ${count} verse_texts`
+    );
   } else {
-    console.log('[preloadVersionContent] ⚠️ No textVersionId provided');
+    logger.warn(
+      ENABLE_LOGGING,
+      '[preloadVersionContent] No textVersionId provided'
+    );
   }
 
   // Preload media_files and media_files_verses if audio version selected
   if (audioVersionId) {
-    console.log('[preloadVersionContent] Preloading media_files...');
+    logger.debug(
+      ENABLE_LOGGING,
+      '[preloadVersionContent] Preloading media_files...'
+    );
     const { mediaFiles, mediaFilesVerses } =
       await preloadMediaFiles(audioVersionId);
     result.mediaFiles = mediaFiles;
     result.mediaFilesVerses = mediaFilesVerses;
-    console.log(
-      `[preloadVersionContent] ✅ Preloaded ${mediaFiles} media_files and ${mediaFilesVerses} media_files_verses`
+    logger.info(
+      ENABLE_LOGGING,
+      `[preloadVersionContent] Preloaded ${mediaFiles} media_files and ${mediaFilesVerses} media_files_verses`
     );
   } else {
-    console.log('[preloadVersionContent] ⚠️ No audioVersionId provided');
+    logger.warn(
+      ENABLE_LOGGING,
+      '[preloadVersionContent] No audioVersionId provided'
+    );
   }
-
-  console.log(
-    '[preloadVersionContent] ✅ COMPLETE - Result:',
-    JSON.stringify(result, null, 2)
-  );
 
   logger.info(
     ENABLE_LOGGING,
@@ -106,11 +109,6 @@ async function preloadVerseTexts(
   textVersionId: string,
   onProgress?: (progress: PreloadProgress) => void
 ): Promise<number> {
-  // Direct console log to ensure visibility
-  console.log(
-    `[preloadVerseTexts] 🚀 STARTING for text_version_id: ${textVersionId}`
-  );
-
   try {
     logger.info(
       ENABLE_LOGGING,
@@ -118,8 +116,9 @@ async function preloadVerseTexts(
     );
 
     // DIAGNOSTIC: Check text_version status first
-    console.log(
-      `[preloadVerseTexts] 🔍 DIAGNOSTIC: Checking text_version status...`
+    logger.debug(
+      ENABLE_LOGGING,
+      `[preloadVerseTexts] DIAGNOSTIC: Checking text_version status...`
     );
     try {
       const { data: textVersionData, error: tvError } = await supabase
@@ -129,30 +128,35 @@ async function preloadVerseTexts(
         .single();
 
       if (tvError) {
-        console.error(
-          `[preloadVerseTexts] ❌ Failed to fetch text_version:`,
-          JSON.stringify(tvError, null, 2)
+        logger.error(
+          ENABLE_LOGGING,
+          `[preloadVerseTexts] Failed to fetch text_version:`,
+          tvError
         );
       } else if (textVersionData) {
-        console.log(
-          `[preloadVerseTexts] 📋 Text Version Info:`,
-          JSON.stringify(textVersionData, null, 2)
+        logger.debug(
+          ENABLE_LOGGING,
+          `[preloadVerseTexts] Text Version Info:`,
+          textVersionData
         );
       } else {
-        console.warn(
-          `[preloadVerseTexts] ⚠️ Text version ${textVersionId} not found`
+        logger.warn(
+          ENABLE_LOGGING,
+          `[preloadVerseTexts] Text version ${textVersionId} not found`
         );
       }
     } catch (tvErr) {
-      console.error(
-        `[preloadVerseTexts] ❌ Exception checking text_version:`,
+      logger.error(
+        ENABLE_LOGGING,
+        `[preloadVerseTexts] Exception checking text_version:`,
         tvErr
       );
     }
 
     // DIAGNOSTIC: Check verse_texts counts with different filters
-    console.log(
-      `[preloadVerseTexts] 🔍 DIAGNOSTIC: Checking verse_texts counts...`
+    logger.debug(
+      ENABLE_LOGGING,
+      `[preloadVerseTexts] DIAGNOSTIC: Checking verse_texts counts...`
     );
     try {
       // Total count (no filters)
@@ -183,51 +187,49 @@ async function preloadVerseTexts(
         .eq('publish_status', 'published')
         .is('deleted_at', null);
 
-      console.log(
-        `[preloadVerseTexts] 📊 DIAGNOSTIC Counts:`,
-        JSON.stringify(
-          {
-            total: totalCount ?? 'error',
-            totalError: totalError ? totalError.message : null,
-            published: publishedCount ?? 'error',
-            publishedError: publishedError ? publishedError.message : null,
-            notDeleted: notDeletedCount ?? 'error',
-            notDeletedError: notDeletedError ? notDeletedError.message : null,
-            available: availableCount ?? 'error',
-            availableError: availableError ? availableError.message : null,
-          },
-          null,
-          2
-        )
-      );
+      logger.debug(ENABLE_LOGGING, `[preloadVerseTexts] DIAGNOSTIC Counts:`, {
+        total: totalCount ?? 'error',
+        totalError: totalError ? totalError.message : null,
+        published: publishedCount ?? 'error',
+        publishedError: publishedError ? publishedError.message : null,
+        notDeleted: notDeletedCount ?? 'error',
+        notDeletedError: notDeletedError ? notDeletedError.message : null,
+        available: availableCount ?? 'error',
+        availableError: availableError ? availableError.message : null,
+      });
 
       if (totalError) {
-        console.error(
-          `[preloadVerseTexts] ❌ Total count error:`,
-          JSON.stringify(totalError, null, 2)
+        logger.error(
+          ENABLE_LOGGING,
+          `[preloadVerseTexts] Total count error:`,
+          totalError
         );
       }
       if (publishedError) {
-        console.error(
-          `[preloadVerseTexts] ❌ Published count error:`,
-          JSON.stringify(publishedError, null, 2)
+        logger.error(
+          ENABLE_LOGGING,
+          `[preloadVerseTexts] Published count error:`,
+          publishedError
         );
       }
       if (notDeletedError) {
-        console.error(
-          `[preloadVerseTexts] ❌ Not deleted count error:`,
-          JSON.stringify(notDeletedError, null, 2)
+        logger.error(
+          ENABLE_LOGGING,
+          `[preloadVerseTexts] Not deleted count error:`,
+          notDeletedError
         );
       }
       if (availableError) {
-        console.error(
-          `[preloadVerseTexts] ❌ Available count error:`,
-          JSON.stringify(availableError, null, 2)
+        logger.error(
+          ENABLE_LOGGING,
+          `[preloadVerseTexts] Available count error:`,
+          availableError
         );
       }
     } catch (diagErr) {
-      console.error(
-        `[preloadVerseTexts] ❌ Exception in diagnostic queries:`,
+      logger.error(
+        ENABLE_LOGGING,
+        `[preloadVerseTexts] Exception in diagnostic queries:`,
         diagErr
       );
     }
@@ -245,15 +247,12 @@ async function preloadVerseTexts(
         .is('deleted_at', null);
 
       if (countError) {
-        console.error(
-          `[preloadVerseTexts] ❌ Count error with publish_status filter:`,
-          JSON.stringify(countError, null, 2)
-        );
         logger.warn(ENABLE_LOGGING, 'Failed to count verse_texts:', countError);
 
         // Fallback: Try without publish_status filter
-        console.log(
-          `[preloadVerseTexts] 🔄 Fallback: Trying count without publish_status filter...`
+        logger.debug(
+          ENABLE_LOGGING,
+          `[preloadVerseTexts] Fallback: Trying count without publish_status filter...`
         );
         const { count: fallbackCount, error: fallbackError } = await supabase
           .from('verse_texts')
@@ -262,32 +261,27 @@ async function preloadVerseTexts(
           .is('deleted_at', null);
 
         if (fallbackError) {
-          console.error(
-            `[preloadVerseTexts] ❌ Fallback count error:`,
-            JSON.stringify(fallbackError, null, 2)
+          logger.error(
+            ENABLE_LOGGING,
+            `[preloadVerseTexts] Fallback count error:`,
+            fallbackError
           );
         } else {
           totalCount = fallbackCount ?? null;
           usePublishStatusFilter = false;
-          console.log(
-            `[preloadVerseTexts] ⚠️ Using fallback count (without publish_status filter): ${totalCount}`
+          logger.warn(
+            ENABLE_LOGGING,
+            `[preloadVerseTexts] Using fallback count (without publish_status filter): ${totalCount}`
           );
         }
       } else {
         totalCount = count ?? null;
-        console.log(
-          `[preloadVerseTexts] 📊 Found ${totalCount} verse_texts (with publish_status='published') for text_version_id: ${textVersionId}`
-        );
         logger.info(
           ENABLE_LOGGING,
-          `[preloadVerseTexts] Found ${totalCount} verse_texts for text_version_id: ${textVersionId}`
+          `[preloadVerseTexts] Found ${totalCount} verse_texts (with publish_status='published') for text_version_id: ${textVersionId}`
         );
       }
     } catch (countErr) {
-      console.error(
-        `[preloadVerseTexts] ❌ Exception while counting verse_texts:`,
-        countErr
-      );
       logger.warn(
         ENABLE_LOGGING,
         'Exception while counting verse_texts:',
@@ -313,9 +307,6 @@ async function preloadVerseTexts(
       let fetchSuccess = false;
       let pageData: VerseTextRow[] = [];
 
-      console.log(
-        `[preloadVerseTexts] 📥 Fetching page ${pageNumber} (offset: ${offset}, limit: ${FETCH_PAGE_SIZE})`
-      );
       logger.info(
         ENABLE_LOGGING,
         `[preloadVerseTexts] Fetching page ${pageNumber} (offset: ${offset}, limit: ${FETCH_PAGE_SIZE})`
@@ -342,11 +333,13 @@ async function preloadVerseTexts(
           const { data, error } = await query;
 
           if (error) {
-            console.error(
-              `[preloadVerseTexts] ❌ Supabase query error:`,
-              JSON.stringify(error, null, 2)
+            logger.error(
+              ENABLE_LOGGING,
+              `[preloadVerseTexts] Supabase query error:`,
+              error
             );
-            console.error(
+            logger.debug(
+              ENABLE_LOGGING,
               `[preloadVerseTexts] Query details: text_version_id=${textVersionId}, publish_status filter=${usePublishStatusFilter}, offset=${offset}, limit=${FETCH_PAGE_SIZE}`
             );
             throw error;
@@ -364,19 +357,12 @@ async function preloadVerseTexts(
 
           pageData = data;
           fetchSuccess = true;
-          console.log(
-            `[preloadVerseTexts] ✅ Fetched ${pageData.length} verse_texts from page ${pageNumber}`
-          );
           logger.info(
             ENABLE_LOGGING,
             `[preloadVerseTexts] Fetched ${pageData.length} verse_texts from page ${pageNumber}`
           );
         } catch (fetchError) {
           retryCount++;
-          console.error(
-            `[preloadVerseTexts] ❌ Fetch error (retry ${retryCount}/${MAX_RETRIES}):`,
-            JSON.stringify(fetchError, null, 2)
-          );
           logger.warn(
             ENABLE_LOGGING,
             `Failed to fetch verse_texts page (offset ${offset}, retry ${retryCount}/${MAX_RETRIES}):`,
@@ -385,20 +371,18 @@ async function preloadVerseTexts(
 
           if (retryCount < MAX_RETRIES) {
             // Exponential backoff
-            console.log(
-              `[preloadVerseTexts] ⏳ Waiting ${RETRY_DELAY * retryCount}ms before retry...`
+            logger.debug(
+              ENABLE_LOGGING,
+              `[preloadVerseTexts] Waiting ${RETRY_DELAY * retryCount}ms before retry...`
             );
             await new Promise(resolve =>
               setTimeout(resolve, RETRY_DELAY * retryCount)
             );
           } else {
-            console.error(
-              `[preloadVerseTexts] ❌ Failed to fetch verse_texts after ${MAX_RETRIES} retries. Final error:`,
-              JSON.stringify(fetchError, null, 2)
-            );
             logger.error(
               ENABLE_LOGGING,
-              `Failed to fetch verse_texts after ${MAX_RETRIES} retries`
+              `Failed to fetch verse_texts after ${MAX_RETRIES} retries`,
+              fetchError
             );
             throw fetchError;
           }
@@ -411,9 +395,6 @@ async function preloadVerseTexts(
 
       // Process fetched data in optimized batches
       const batchCount = Math.ceil(pageData.length / INSERT_BATCH_SIZE);
-      console.log(
-        `[preloadVerseTexts] 🔄 Processing page ${pageNumber} in ${batchCount} batches of ${INSERT_BATCH_SIZE}`
-      );
       logger.info(
         ENABLE_LOGGING,
         `[preloadVerseTexts] Processing page ${pageNumber} in ${batchCount} batches of ${INSERT_BATCH_SIZE}`
@@ -425,9 +406,6 @@ async function preloadVerseTexts(
         let insertRetryCount = 0;
         let insertSuccess = false;
 
-        console.log(
-          `[preloadVerseTexts] 💾 Inserting batch ${batchNumber}/${batchCount} (${batch.length} verses) into verse_texts table`
-        );
         logger.info(
           ENABLE_LOGGING,
           `[preloadVerseTexts] Inserting batch ${batchNumber}/${batchCount} (${batch.length} verses) into verse_texts table`
@@ -470,12 +448,9 @@ async function preloadVerseTexts(
               ? ((inserted / totalCount) * 100).toFixed(1)
               : '?';
 
-            console.log(
-              `[preloadVerseTexts] ✅ Batch ${batchNumber} complete. Progress: ${inserted}/${totalCount ?? '?'} (${progressPercent}%)`
-            );
             logger.info(
               ENABLE_LOGGING,
-              `[preloadVerseTexts] ✅ Batch ${batchNumber} complete. Progress: ${inserted}/${totalCount ?? '?'} (${progressPercent}%)`
+              `[preloadVerseTexts] Batch ${batchNumber} complete. Progress: ${inserted}/${totalCount ?? '?'} (${progressPercent}%)`
             );
 
             // Report progress after each batch
@@ -531,18 +506,12 @@ async function preloadVerseTexts(
       }
     }
 
-    console.log(
-      `[preloadVerseTexts] 🎉 COMPLETE: Preloaded ${inserted} verse_texts for text_version_id: ${textVersionId}`
-    );
     logger.info(
       ENABLE_LOGGING,
-      `[preloadVerseTexts] ✅ COMPLETE: Preloaded ${inserted} verse_texts for text_version_id: ${textVersionId}`
+      `[preloadVerseTexts] COMPLETE: Preloaded ${inserted} verse_texts for text_version_id: ${textVersionId}`
     );
     if (totalCount !== null) {
-      const matchStatus = inserted === totalCount ? '✅' : '⚠️';
-      console.log(
-        `[preloadVerseTexts] Expected: ${totalCount}, Inserted: ${inserted}, Match: ${matchStatus}`
-      );
+      const matchStatus = inserted === totalCount ? 'match' : 'mismatch';
       logger.info(
         ENABLE_LOGGING,
         `[preloadVerseTexts] Expected: ${totalCount}, Inserted: ${inserted}, Match: ${matchStatus}`
