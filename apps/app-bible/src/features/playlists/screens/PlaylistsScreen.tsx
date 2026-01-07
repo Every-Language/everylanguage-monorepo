@@ -26,7 +26,7 @@ import { logger } from '@/shared/utils/logger';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 import { ModalHeader } from '@everylanguage/shared-native-ui';
 
 export const PlaylistsScreen: React.FC = () => {

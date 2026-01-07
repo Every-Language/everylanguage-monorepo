@@ -14,7 +14,7 @@ import type {
 import type { BibleTrack, ChapterMediaOptions } from '@/features/media/types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Service for integrating playlists with the media player queue system

@@ -3,7 +3,7 @@ import { logger } from '@/shared/utils/logger';
 import type { BibleTrack } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface HistoryItem {
   id: string;

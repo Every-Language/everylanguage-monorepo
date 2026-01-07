@@ -25,7 +25,7 @@ import type { VerseWithTiming as GlobalVerseWithTiming } from '../types';
 import type { PlaylistItemQueueRef } from '@/features/playlists/types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import type { BibleTrack, ChapterMediaOptions } from '../types';
 import type { PlaylistItem } from '@/features/playlists/types';

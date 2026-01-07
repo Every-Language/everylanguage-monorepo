@@ -2,7 +2,7 @@ import { powerSyncSystem } from './PowerSyncSystem';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 function ensureDbReady(): void {
   if (!powerSyncSystem.isInitialized) {

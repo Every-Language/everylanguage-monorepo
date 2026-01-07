@@ -16,7 +16,7 @@ import { logger } from '@/shared/utils/logger';
 import { PermissionsScreenProps } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
   onComplete,

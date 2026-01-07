@@ -10,7 +10,7 @@ import { logger } from '@/shared/utils/logger';
 import { generateUUID } from '@/shared/utils/uuid';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface GeoJSONPoint {
   type: 'Point';

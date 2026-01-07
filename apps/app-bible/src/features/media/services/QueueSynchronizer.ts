@@ -4,7 +4,7 @@ import { getPlaybackStore } from '../store/PlaybackStore';
 import { getQueueStore } from '../store/QueueStore';
 import type { BibleTrack } from '../types';
 
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * QueueSynchronizer - Keeps app state synchronized with RNTP's actual queue state

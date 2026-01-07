@@ -14,7 +14,7 @@ import { downloadToFile } from './fileDownloader';
 import { queueManager } from './QueueManager';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 const BACKGROUND_TASK_NAME = 'downloads-background-task';
 

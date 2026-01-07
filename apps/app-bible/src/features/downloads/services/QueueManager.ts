@@ -4,7 +4,7 @@ import { logger } from '@/shared/utils/logger';
 import { useDownloadsStore } from '@/shared/store/downloadsStore';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Handles download queue management and prioritization

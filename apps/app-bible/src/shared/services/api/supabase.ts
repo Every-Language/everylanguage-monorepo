@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@everylanguage/shared-types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import {
   env,

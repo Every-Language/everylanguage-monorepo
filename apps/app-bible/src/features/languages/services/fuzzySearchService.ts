@@ -3,7 +3,7 @@ import { logger } from '../../../shared/utils/logger';
 import type { AudioVersion, TextVersion } from '../types/entities';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Version detail types from API response
 export interface AudioVersionDetail {

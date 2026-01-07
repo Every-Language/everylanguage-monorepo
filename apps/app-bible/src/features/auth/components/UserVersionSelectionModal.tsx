@@ -17,7 +17,7 @@ import { logger } from '@/shared/utils/logger';
 import { ModalHeader, Button } from '@everylanguage/shared-native-ui';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface UserVersionSelectionModalProps {
   visible: boolean;

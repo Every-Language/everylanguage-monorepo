@@ -22,7 +22,7 @@ import type { AudioVersion, TextVersion } from '../types/entities';
 import { useVersionsStore } from '../store/versionsStore';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import { MaterialIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
