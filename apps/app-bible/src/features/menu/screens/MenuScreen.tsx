@@ -17,7 +17,6 @@ import {
   ProfileMenuItem,
   AuthMenuItem,
   NetworkStatusWidget,
-  PlaylistMenuItem,
 } from '../components';
 import type {
   MenuScreenProps,
@@ -65,7 +64,6 @@ export const MenuScreen: React.FC<MenuScreenProps> = () => {
 
           <AudioVersionMenuItem />
           <TextVersionMenuItem />
-          <PlaylistMenuItem />
           <NetworkStatusWidget />
           <SettingsMenuItem />
           <ExportBiblePackageMenuItem />
