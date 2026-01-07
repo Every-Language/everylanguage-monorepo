@@ -226,12 +226,7 @@ export const BookChaptersScreen: React.FC = () => {
             opts.textVersionId = currentTextVersion.id;
           await playChapter(firstWithAudio.id, opts);
         } else {
-          Alert.alert(
-            t('audio.unavailableTitle', { defaultValue: 'No Audio Available' }),
-            t('audio.unavailableBook', {
-              defaultValue: 'This book has no audio available to play.',
-            })
-          );
+          Alert.alert(t('audio.unavailableTitle'), t('audio.unavailableBook'));
         }
       } finally {
         DeepLinkState.clear();

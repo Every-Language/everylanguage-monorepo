@@ -90,7 +90,7 @@ export const useAddToPlaylistFlow = ({ params }: UseAddToPlaylistFlowProps) => {
           if (!chapterId) {
             Alert.alert(
               t('common.error', 'Error'),
-              t('playlists.noChapterSelected', 'No chapter selected')
+              t('playlists.noChapterSelected')
             );
             return;
           }

@@ -178,12 +178,12 @@ export const StandaloneTabBar: React.FC = () => {
     {
       name: 'Bible',
       icon: 'book-outline',
-      label: t('bible.title', { defaultValue: 'Bible' }),
+      label: t('bible.title'),
     },
     {
       name: 'Playlists',
       icon: 'list-outline',
-      label: t('playlists.title', { defaultValue: 'Playlists' }),
+      label: t('playlists.title'),
     },
   ];
 

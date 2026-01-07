@@ -87,10 +87,8 @@ export const useChapterDeepLinkHandler = ({
 
         if (!chapter || !chapter.hasMediaFiles) {
           Alert.alert(
-            t('audio.unavailableTitle', { defaultValue: 'No Audio Available' }),
-            t('audio.unavailableChapter', {
-              defaultValue: 'This chapter has no audio available to play.',
-            })
+            t('audio.unavailableTitle'),
+            t('audio.unavailableChapter')
           );
           return;
         }
