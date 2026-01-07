@@ -133,6 +133,10 @@ export class PlaylistService {
         updateFields.push('description = ?');
         updateValues.push(updates.description);
       }
+      if (updates.image_id !== undefined) {
+        updateFields.push('image_id = ?');
+        updateValues.push(updates.image_id);
+      }
 
       if (updateFields.length === 0) {
         logger.warn(ENABLE_LOGGING, '[PlaylistService] No fields to update');

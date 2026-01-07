@@ -59,7 +59,6 @@ export type RootStackParamList = {
     bookId?: string;
     bookName?: string;
     chapterNumber?: number;
-    audioVersionId?: string;
   };
   CreatePlaylistModal:
     | {
@@ -67,7 +66,6 @@ export type RootStackParamList = {
         chapterId?: string;
         bookName?: string;
         chapterNumber?: number;
-        audioVersionId?: string;
         // For verse range addition
         startVerseId?: string;
         endVerseId?: string;

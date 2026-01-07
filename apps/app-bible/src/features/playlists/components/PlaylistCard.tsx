@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   GestureResponderEvent,
+  Image,
 } from 'react-native';
 import { useTheme } from '@/shared/hooks';
 import type { Playlist } from '../types';
 import { MaterialIcons } from '@expo/vector-icons';
 import type { Theme } from '@everylanguage/shared-native-ui';
+import { imageDownloadManager } from '@/features/downloads/services';
 
 type PlaylistCardProps = {
   playlist: Playlist;
@@ -30,9 +32,32 @@ const PlaylistCardBase: React.FC<PlaylistCardProps> = ({
   showMetadata: _showMetadata = false,
 }) => {
   const { theme } = useTheme();
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
   // Create theme-aware styles
   const styles = createStyles(theme);
+
+  // Resolve playlist image URI
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      if (!playlist.image_id) {
+        if (isMounted) setImageUri(null);
+        return;
+      }
+      try {
+        const uri = await imageDownloadManager.resolveImageUrl(
+          playlist.image_id
+        );
+        if (isMounted) setImageUri(uri);
+      } catch {
+        if (isMounted) setImageUri(null);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [playlist.image_id]);
 
   const handlePlayPress = (e: GestureResponderEvent) => {
     e.stopPropagation(); // Prevent triggering onPress
@@ -43,8 +68,18 @@ const PlaylistCardBase: React.FC<PlaylistCardProps> = ({
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
-      <View style={styles.image}>
-        {/* <View style={styles.imageInner}></View> */}
+      <View style={styles.imageContainer}>
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} style={styles.image} />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <MaterialIcons
+              name='queue-music'
+              size={32}
+              color={theme.colors.textSecondary}
+            />
+          </View>
+        )}
       </View>
       <View style={styles.textContent}>
         <Text
@@ -91,11 +126,22 @@ const createStyles = (theme: Theme) =>
       padding: 8,
       flex: 1,
     },
-    image: {
+    imageContainer: {
       height: 64,
       aspectRatio: 1,
-      backgroundColor: theme.colors.primary,
       borderRadius: 12,
+      overflow: 'hidden',
+    },
+    image: {
+      width: '100%',
+      height: '100%',
+    },
+    imagePlaceholder: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: theme.colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     textContent: {
       paddingHorizontal: 12,
@@ -124,6 +170,7 @@ const createStyles = (theme: Theme) =>
 export const PlaylistCard = React.memo(PlaylistCardBase, (prev, next) => {
   return (
     prev.playlist.id === next.playlist.id &&
+    prev.playlist.image_id === next.playlist.image_id &&
     prev.onPress === next.onPress &&
     prev.onPlayPress === next.onPlayPress &&
     prev.hasPlayableItems === next.hasPlayableItems

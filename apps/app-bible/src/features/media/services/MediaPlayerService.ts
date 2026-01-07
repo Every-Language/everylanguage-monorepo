@@ -777,9 +777,6 @@ export class MediaPlayerService {
         // Track not in queue, need to build and add it
         const { trackBuilder } = await import('./TrackBuilder');
         const options: ChapterMediaOptions = {};
-        if (playlistItemRef.audioVersionId) {
-          options.audioVersionId = playlistItemRef.audioVersionId;
-        }
         if (playlistItemRef.textVersionId) {
           options.textVersionId = playlistItemRef.textVersionId;
         }
