@@ -24,6 +24,7 @@ export interface ErrorClassificationResult {
     | 'network_error'
     | 'auth_error'
     | 'schema_error'
+    | 'transaction_conflict'
     | 'unknown';
 }
 
@@ -44,6 +45,7 @@ export interface PowerSyncErrorStats {
     network_error: number;
     auth_error: number;
     schema_error: number;
+    transaction_conflict: number;
     unknown: number;
   };
 }
@@ -63,6 +65,7 @@ export class PowerSyncErrorHandler {
       network_error: 0,
       auth_error: 0,
       schema_error: 0,
+      transaction_conflict: 0,
       unknown: 0,
     },
   };
@@ -558,6 +561,7 @@ export class PowerSyncErrorHandler {
         network_error: 0,
         auth_error: 0,
         schema_error: 0,
+        transaction_conflict: 0,
         unknown: 0,
       },
     };
