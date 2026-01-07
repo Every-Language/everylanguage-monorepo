@@ -6,7 +6,7 @@ import { QueueManager } from './QueueManager';
 import type { BibleTrack } from '../types';
 import type { TrackMetadata } from '../store/QueueStore';
 
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * QueueWatcher - Monitors RNTP queue and adds tracks incrementally

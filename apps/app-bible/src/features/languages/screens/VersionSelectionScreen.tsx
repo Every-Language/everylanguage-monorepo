@@ -23,7 +23,7 @@ import { StyleSheet } from 'react-native';
 import { ModalHeader } from '@everylanguage/shared-native-ui';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const VersionsScreen: React.FC<VersionsScreenProps> = ({ route }) => {
   const { versionType, title } = route.params;

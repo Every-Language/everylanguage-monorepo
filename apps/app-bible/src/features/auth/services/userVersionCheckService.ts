@@ -3,7 +3,7 @@ import { userVersionsService } from '../../languages/services/userVersionsServic
 import { powerSyncSystem } from '../../../shared/services/powersync/PowerSyncSystem';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface UserVersionCheckResult {
   needsVersionSelection: boolean;

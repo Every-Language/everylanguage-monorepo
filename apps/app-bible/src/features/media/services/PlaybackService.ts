@@ -7,7 +7,7 @@ import TrackPlayer, {
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Use proper type for timeout
 type TimeoutHandle = ReturnType<typeof setTimeout>;

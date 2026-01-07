@@ -5,7 +5,7 @@ import type {} from '@redux-devtools/extension';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // ==========================================
 // Media Player UI Store State Interface

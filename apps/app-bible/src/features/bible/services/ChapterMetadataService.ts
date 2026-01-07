@@ -9,7 +9,7 @@ import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
 import { logger } from '@/shared/utils/logger';
 import type { ChapterMetadataRecord } from '../../../../powersync/LocalSchema';
 
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface ChapterMetadataInput {
   chapterId: string;

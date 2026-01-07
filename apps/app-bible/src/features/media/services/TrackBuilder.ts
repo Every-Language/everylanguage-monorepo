@@ -6,7 +6,7 @@ import { Image } from 'react-native';
 import { getBookImageByNumber } from '@/features/bible/assets/bookArtRegistry';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import type {
   ChapterMedia,

@@ -5,7 +5,7 @@ import { powerSyncSystem } from './PowerSyncSystem';
 import type { ConnectionState, ConnectionConfig } from './types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Manages PowerSync connection lifecycle following best practices:

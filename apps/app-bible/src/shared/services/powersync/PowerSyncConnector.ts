@@ -11,7 +11,7 @@ import type {
 } from './types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * PowerSync Backend Connector

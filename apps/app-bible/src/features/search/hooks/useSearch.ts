@@ -5,7 +5,7 @@ import { useVersionsStore } from '@/features/languages/store/versionsStore';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface UseSearchOptions {
   debounceMs?: number;

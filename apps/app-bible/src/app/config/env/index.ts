@@ -1,7 +1,7 @@
 import { logger } from '../../../shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Ensure TS knows about the specific EXPO_PUBLIC_* keys so we can use dot access
 declare const process: {

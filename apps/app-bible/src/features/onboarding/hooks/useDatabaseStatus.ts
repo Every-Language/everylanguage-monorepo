@@ -3,7 +3,7 @@ import { logger } from '@/shared/utils/logger';
 import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const useDatabaseStatus = () => {
   const [databaseStatus, setDatabaseStatus] = useState<
