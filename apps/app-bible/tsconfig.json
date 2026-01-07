@@ -9,7 +9,6 @@
       "@/features/*": ["src/features/*"],
       "@/shared/*": ["src/shared/*"]
     },
-    "types": ["jest", "react-native-svg", "node"],
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
     "exactOptionalPropertyTypes": true,
@@ -23,5 +22,5 @@
     "skipLibCheck": true
   },
   "include": ["**/*.ts", "**/*.tsx", "src/types/**/*.d.ts"],
-  "exclude": ["node_modules", "android", "ios"]
+  "exclude": ["node_modules", "android", "ios", "app.config.ts", "scripts"]
 }

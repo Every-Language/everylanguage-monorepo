@@ -9,6 +9,10 @@ import type { DonationWithAllocations, AllocationWithDetails } from '@/types';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
 import { languagesApi } from '../../languages/api/languagesApi';
+import { subscriptionsApi } from '../../subscriptions/api/subscriptionsApi';
+import { UserModal } from '../../users/components/UserModal';
+import { PartnerOrgModal } from '../../users/components/PartnerOrgModal';
+import type { UserWithRoles, PartnerOrgWithUsers } from '../../users/types';
 
 type DonationSortField = 'date' | 'amount' | 'remaining' | 'donor';
 type SortDirection = 'asc' | 'desc';
@@ -50,10 +54,16 @@ export function DonationsPage() {
     name: string;
     category?: string | null;
   } | null>(null);
+  const [regionFilter, setRegionFilter] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [languageSearchTerm, setLanguageSearchTerm] = useState('');
   const [operationSearchTerm, setOperationSearchTerm] = useState('');
+  const [regionSearchTerm, setRegionSearchTerm] = useState('');
   const [debouncedLanguageSearch, setDebouncedLanguageSearch] = useState('');
   const [debouncedOperationSearch, setDebouncedOperationSearch] = useState('');
+  const [debouncedRegionSearch, setDebouncedRegionSearch] = useState('');
   const [showOperationDropdown, setShowOperationDropdown] = useState(false);
   const [operationPage, setOperationPage] = useState(1);
   const [accumulatedOperations, setAccumulatedOperations] = useState<
@@ -67,6 +77,9 @@ export function DonationsPage() {
   const [selectedAllocation, setSelectedAllocation] =
     useState<AllocationWithDetails | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
+  const [selectedPartnerOrg, setSelectedPartnerOrg] =
+    useState<PartnerOrgWithUsers | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -86,6 +99,14 @@ export function DonationsPage() {
     return () => clearTimeout(timer);
   }, [operationSearchTerm]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedRegionSearch(regionSearchTerm);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [regionSearchTerm]);
+
   const { data: languageSearchResults = [] } = useQuery({
     queryKey: ['donation-language-filter', debouncedLanguageSearch],
     queryFn: () => languagesApi.searchLanguageEntities(debouncedLanguageSearch),
@@ -96,6 +117,12 @@ export function DonationsPage() {
     queryKey: ['donation-operation-filter', debouncedOperationSearch],
     queryFn: () => donationsApi.searchOperations(debouncedOperationSearch, 20),
     enabled: debouncedOperationSearch.length >= 2,
+  });
+
+  const { data: regionSearchResults = [] } = useQuery({
+    queryKey: ['donation-region-filter', debouncedRegionSearch],
+    queryFn: () => subscriptionsApi.searchRegions(debouncedRegionSearch, 50),
+    enabled: debouncedRegionSearch.length >= 2,
   });
 
   // Fetch paginated operations (when no search query)
@@ -168,6 +195,7 @@ export function DonationsPage() {
       onlyUnallocated,
       languageFilter?.id ?? null,
       operationFilter?.id ?? null,
+      regionFilter?.id ?? null,
       sortField,
       sortDirection,
     ],
@@ -180,6 +208,7 @@ export function DonationsPage() {
           intentTypeFilter !== 'all' ? intentTypeFilter : undefined,
         intentLanguageId: languageFilter?.id,
         intentOperationId: operationFilter?.id,
+        intentRegionId: regionFilter?.id,
         sortField,
         sortDirection,
         onlyUnallocated,
@@ -219,6 +248,40 @@ export function DonationsPage() {
 
   const handleDonationClick = (donation: DonationWithAllocations) => {
     setSelectedDonation(donation);
+  };
+
+  const handleUserClick = async (
+    e: React.MouseEvent,
+    userId: string | null
+  ) => {
+    e.stopPropagation();
+    if (!userId) return;
+    const { usersApi } = await import('../../users/api/usersApi');
+    try {
+      const user = await usersApi.fetchUserById(userId);
+      if (user) {
+        setSelectedUser(user);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+    }
+  };
+
+  const handlePartnerOrgClick = async (
+    e: React.MouseEvent,
+    partnerOrgId: string | null
+  ) => {
+    e.stopPropagation();
+    if (!partnerOrgId) return;
+    const { partnerOrgsApi } = await import('../../users/api/partnerOrgsApi');
+    try {
+      const org = await partnerOrgsApi.fetchPartnerOrgById(partnerOrgId);
+      if (org) {
+        setSelectedPartnerOrg(org);
+      }
+    } catch (error) {
+      console.error('Failed to fetch partner org:', error);
+    }
   };
 
   const handleCloseModal = () => {
@@ -353,7 +416,7 @@ export function DonationsPage() {
 
       {/* Filters */}
       <div className='mb-6 space-y-4'>
-        <div className='grid grid-cols-1 lg:grid-cols-4 gap-4'>
+        <div className='grid grid-cols-1 lg:grid-cols-5 gap-4'>
           {/* Status Filter */}
           <Select
             label='Status'
@@ -545,6 +608,75 @@ export function DonationsPage() {
               </div>
             )}
           </div>
+
+          {/* Region filter */}
+          <div>
+            <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1'>
+              Region Intent
+            </label>
+            {regionFilter ? (
+              <div className='flex items-center justify-between px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900'>
+                <div>
+                  <p className='text-sm font-medium text-neutral-900 dark:text-neutral-100'>
+                    {regionFilter.name}
+                  </p>
+                  <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+                    Region
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  onClick={() => {
+                    setRegionFilter(null);
+                    setPage(1);
+                  }}
+                  className='text-xs text-primary-600 dark:text-primary-400 hover:underline'>
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <div className='relative'>
+                <input
+                  type='text'
+                  value={regionSearchTerm}
+                  onChange={e => setRegionSearchTerm(e.target.value)}
+                  placeholder='Search regions...'
+                  className='w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600'
+                />
+                {debouncedRegionSearch.length >= 2 && (
+                  <div className='absolute z-20 w-full mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg max-h-60 overflow-y-auto'>
+                    {regionSearchResults.length === 0 ? (
+                      <div className='px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400'>
+                        No matches
+                      </div>
+                    ) : (
+                      regionSearchResults.map(region => (
+                        <button
+                          key={region.id}
+                          type='button'
+                          onClick={() => {
+                            setRegionFilter({
+                              id: region.id,
+                              name: region.name,
+                            });
+                            setRegionSearchTerm('');
+                            setDebouncedRegionSearch('');
+                            setIntentTypeFilter('region');
+                            setPage(1);
+                          }}
+                          className='w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'>
+                          {region.name}{' '}
+                          <span className='text-xs text-neutral-500 dark:text-neutral-400'>
+                            ({region.level})
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div>
@@ -599,9 +731,12 @@ export function DonationsPage() {
                       type='button'
                       onClick={() => handleSort('donor')}
                       className='flex items-center gap-1 text-neutral-600 dark:text-neutral-300'>
-                      Donor
+                      User
                       <span>{getSortIndicator('donor')}</span>
                     </button>
+                  </th>
+                  <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
+                    Partner Org
                   </th>
                   <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400'>
                     <button
@@ -655,7 +790,9 @@ export function DonationsPage() {
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
                         {donation.user ? (
-                          <div>
+                          <button
+                            onClick={e => handleUserClick(e, donation.user_id)}
+                            className='text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'>
                             <div className='font-medium'>
                               {donation.user.first_name}{' '}
                               {donation.user.last_name}
@@ -663,19 +800,30 @@ export function DonationsPage() {
                             <div className='text-neutral-500 dark:text-neutral-400 text-xs'>
                               {donation.user.email}
                             </div>
-                          </div>
-                        ) : donation.partner_org ? (
-                          <div>
+                          </button>
+                        ) : (
+                          <span className='text-neutral-500 dark:text-neutral-400'>
+                            —
+                          </span>
+                        )}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100'>
+                        {donation.partner_org ? (
+                          <button
+                            onClick={e =>
+                              handlePartnerOrgClick(e, donation.partner_org_id)
+                            }
+                            className='text-left text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline transition-colors'>
                             <div className='font-medium'>
                               {donation.partner_org.name}
                             </div>
                             <div className='text-neutral-500 dark:text-neutral-400 text-xs'>
                               Partner Org
                             </div>
-                          </div>
+                          </button>
                         ) : (
                           <span className='text-neutral-500 dark:text-neutral-400'>
-                            Unknown
+                            —
                           </span>
                         )}
                       </td>
@@ -821,6 +969,29 @@ export function DonationsPage() {
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['donations'] });
             setShowAddModal(false);
+          }}
+        />
+      )}
+
+      {/* User Modal */}
+      {selectedUser && (
+        <UserModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          onUpdate={() => {
+            queryClient.invalidateQueries({ queryKey: ['donations'] });
+          }}
+        />
+      )}
+
+      {/* Partner Org Modal */}
+      {selectedPartnerOrg && (
+        <PartnerOrgModal
+          org={selectedPartnerOrg}
+          isCreating={false}
+          onClose={() => setSelectedPartnerOrg(null)}
+          onUpdate={() => {
+            queryClient.invalidateQueries({ queryKey: ['donations'] });
           }}
         />
       )}

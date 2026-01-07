@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useAuthContext } from '@/features/auth/hooks/useAuthFromStore';
 import { logger } from '../../../shared/utils/logger';
 import { useTheme } from '@/shared/hooks';
-import { Button, createThemedStyles } from '@/shared';
+import { Button, createThemedStyles } from '@everylanguage/shared-native-ui';
 import { useTranslations } from '@/shared/hooks';
 import {
   ControlledTextInput,

@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
-import { useTheme } from '@/shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
 import type {
   LanguageInfoScreenProps,
@@ -19,7 +19,7 @@ import type {
 } from '../navigation/VersionSelectionStackNavigator';
 import type { AudioVersion, TextVersion } from '../types/entities';
 import { fuzzySearchService } from '../services/fuzzySearchService';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 import { useVersionsStore } from '../store/versionsStore';
 import { logger } from '@/shared/utils/logger';
 

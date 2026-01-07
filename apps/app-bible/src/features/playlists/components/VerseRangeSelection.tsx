@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useLocalization } from '@/shared/hooks';
-import { Theme } from '@/shared';
+import type { Theme } from '@everylanguage/shared-native-ui';
 import { useVersesPS } from '@/features/bible/hooks/useBible';
 
 // Calculate columns for grid layout

@@ -3,7 +3,7 @@ import { View, StyleSheet, SafeAreaView } from 'react-native';
 // import { useNavigation } from '@react-navigation/native'; // No longer needed
 import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 import { SearchBar } from './SearchBar';
 import { SearchFilters } from './SearchFilters';
 import { SearchResults } from './SearchResults';

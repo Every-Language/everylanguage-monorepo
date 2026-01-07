@@ -9,7 +9,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '@/shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
 import { useVersionsStore } from '../store/versionsStore';
 import type { AudioVersion, TextVersion } from '../types/entities';
@@ -20,7 +20,7 @@ import type {
 import { SavedVersionItem } from '../components/SavedVersionItem';
 import { logger } from '@/shared/utils/logger';
 import { StyleSheet } from 'react-native';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 
 // Logging configuration for this module
 const ENABLE_LOGGING = true;

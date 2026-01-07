@@ -373,13 +373,65 @@ Deno.serve(async (req: Request) => {
         break;
       }
 
+      case 'invoice.payment_succeeded':
       case 'invoice.paid': {
-        // Handle recurring donation subscription payments
+        // Handle subscription payment invoices (both initial and recurring)
+        // invoice.paid covers successful payments AND out-of-band payments
+        // invoice.payment_succeeded only fires for successful payments (not out-of-band)
+        // Handling both provides redundancy and better coverage
         const inv = event.data.object as Stripe.Invoice;
-        const stripeSubscriptionId =
-          typeof inv.subscription === 'string' ? inv.subscription : null;
 
-        if (!stripeSubscriptionId) break;
+        // Handle subscription field: can be string ID, expanded Subscription object, or undefined
+        let stripeSubscriptionId: string | null = null;
+        if (typeof inv.subscription === 'string') {
+          stripeSubscriptionId = inv.subscription;
+        } else if (inv.subscription && typeof inv.subscription === 'object') {
+          stripeSubscriptionId = inv.subscription.id;
+        }
+
+        console.log(`Processing ${event.type} event`, {
+          invoice_id: inv.id,
+          invoice_status: inv.status,
+          invoice_amount_paid: inv.amount_paid,
+          billing_reason: inv.billing_reason,
+          subscription_id: stripeSubscriptionId,
+          subscription_type: typeof inv.subscription,
+          subscription_value: inv.subscription,
+        });
+
+        // If subscription ID is missing from webhook payload, retrieve invoice from Stripe
+        if (!stripeSubscriptionId) {
+          console.warn(
+            `Invoice ${inv.id} has no subscription ID in webhook payload, retrieving from Stripe`
+          );
+          try {
+            const retrievedInvoice = await stripe.invoices.retrieve(inv.id);
+            if (typeof retrievedInvoice.subscription === 'string') {
+              stripeSubscriptionId = retrievedInvoice.subscription;
+            } else if (
+              retrievedInvoice.subscription &&
+              typeof retrievedInvoice.subscription === 'object'
+            ) {
+              stripeSubscriptionId = retrievedInvoice.subscription.id;
+            }
+            console.log(
+              'Retrieved subscription ID from Stripe:',
+              stripeSubscriptionId
+            );
+          } catch (retrieveErr) {
+            console.error(
+              `Failed to retrieve invoice ${inv.id} from Stripe`,
+              retrieveErr
+            );
+          }
+        }
+
+        if (!stripeSubscriptionId) {
+          console.warn(
+            `Invoice ${inv.id} has no subscription ID after retrieval, skipping ${event.type} processing`
+          );
+          break;
+        }
 
         // Find subscription record
         const { data: subscription, error: subErr } = await supabase
@@ -391,74 +443,261 @@ Deno.serve(async (req: Request) => {
         if (subErr || !subscription) {
           console.error(
             `Subscription not found for Stripe subscription ID: ${stripeSubscriptionId}`,
-            subErr
+            {
+              error: subErr,
+              invoice_id: inv.id,
+              subscription_id: stripeSubscriptionId,
+            }
           );
           break;
         }
+
+        console.log('Found subscription record', {
+          subscription_id: subscription.id,
+          original_donation_id: subscription.original_donation_id,
+          status: subscription.status,
+        });
 
         // Get payment_intent from invoice
-        const paymentIntentId =
-          typeof inv.payment_intent === 'string' ? inv.payment_intent : null;
+        // For subscription invoices, payment_intent may be null, a string ID, or in the payments array
+        // With newer Stripe API versions supporting partial payments, invoices can have multiple payments
+        let paymentIntentId: string | null = null;
 
-        if (!paymentIntentId) {
-          console.warn(
-            `No payment_intent found in invoice ${inv.id} for subscription ${stripeSubscriptionId}`
+        // Try direct payment_intent field first
+        if (typeof inv.payment_intent === 'string') {
+          paymentIntentId = inv.payment_intent;
+        } else if (
+          inv.payment_intent &&
+          typeof inv.payment_intent === 'object'
+        ) {
+          paymentIntentId = inv.payment_intent.id;
+        }
+
+        // Fallback: check payments array (for newer API versions with partial payments)
+        if (!paymentIntentId && 'payments' in inv && (inv as any).payments) {
+          const payments = Array.isArray((inv as any).payments)
+            ? (inv as any).payments
+            : ((inv as any).payments as any).data || [];
+
+          // Find the first succeeded/paid payment
+          const succeededPayment = payments.find(
+            (p: any) =>
+              (p.status === 'paid' || p.status === 'succeeded') &&
+              p.payment_intent
           );
-          break;
+
+          if (succeededPayment?.payment_intent) {
+            paymentIntentId =
+              typeof succeededPayment.payment_intent === 'string'
+                ? succeededPayment.payment_intent
+                : succeededPayment.payment_intent.id;
+          }
         }
 
-        // Create new donation record for this subscription payment
-        const { data: newDonation, error: donationErr } = await supabase
-          .from('donations')
-          .insert({
-            user_id: subscription.user_id,
-            partner_org_id: subscription.partner_org_id,
-            intent_type: subscription.intent_type,
-            intent_language_entity_id: subscription.intent_language_entity_id,
-            intent_region_id: subscription.intent_region_id,
-            intent_operation_id: subscription.intent_operation_id,
-            amount_cents: inv.amount_paid, // Amount actually paid (may differ from subscription amount due to prorations)
-            currency_code: (inv.currency ?? 'usd').toUpperCase(),
-            status: 'completed',
-            payment_method: 'card', // Default, can be enhanced later
-            is_recurring: true,
-            subscription_id: subscription.id,
-            completed_at: new Date().toISOString(),
-            created_by: subscription.user_id,
-          })
-          .select('id')
-          .single();
+        // Final fallback: retrieve invoice with expanded payments
+        if (!paymentIntentId) {
+          try {
+            const retrievedInvoice = await stripe.invoices.retrieve(inv.id, {
+              expand: ['payments'],
+            });
 
-        if (donationErr || !newDonation) {
-          console.error('Failed to create donation for subscription payment', {
-            error: donationErr,
-            subscriptionId: subscription.id,
-          });
-          break;
+            if (retrievedInvoice.payment_intent) {
+              paymentIntentId =
+                typeof retrievedInvoice.payment_intent === 'string'
+                  ? retrievedInvoice.payment_intent
+                  : retrievedInvoice.payment_intent.id;
+            } else if (
+              'payments' in retrievedInvoice &&
+              (retrievedInvoice as any).payments
+            ) {
+              const payments = Array.isArray((retrievedInvoice as any).payments)
+                ? (retrievedInvoice as any).payments
+                : ((retrievedInvoice as any).payments as any).data || [];
+
+              const succeededPayment = payments.find(
+                (p: any) =>
+                  (p.status === 'paid' || p.status === 'succeeded') &&
+                  p.payment_intent
+              );
+
+              if (succeededPayment?.payment_intent) {
+                paymentIntentId =
+                  typeof succeededPayment.payment_intent === 'string'
+                    ? succeededPayment.payment_intent
+                    : succeededPayment.payment_intent.id;
+              }
+            }
+          } catch (retrieveErr) {
+            console.error(
+              `Failed to retrieve invoice ${inv.id} with payments`,
+              retrieveErr
+            );
+          }
         }
 
-        // Create payment_attempt record
-        const { error: attemptErr } = await supabase
-          .from('payment_attempts')
-          .insert({
-            donation_id: newDonation.id,
-            stripe_payment_intent_id: paymentIntentId,
-            stripe_customer_id: subscription.stripe_customer_id,
-            stripe_subscription_id: stripeSubscriptionId,
-            amount_cents: inv.amount_paid,
-            amount_received_cents: inv.amount_paid, // For subscriptions, amount_paid is net
-            currency_code: (inv.currency ?? 'usd').toUpperCase(),
-            status: 'succeeded',
-            stripe_event_id: event.id,
-            succeeded_at: new Date().toISOString(),
-            created_by: subscription.user_id,
-          });
+        // For $0 invoices or invoices paid via other means (e.g., customer balance), payment_intent may be null
+        // Only proceed if we have a payment_intent or if this is a $0 invoice
+        if (!paymentIntentId && inv.amount_paid > 0) {
+          console.warn(
+            `No payment_intent found in invoice ${inv.id} for subscription ${stripeSubscriptionId}`,
+            {
+              invoice_id: inv.id,
+              invoice_status: inv.status,
+              invoice_amount_paid: inv.amount_paid,
+              invoice_amount_due: inv.amount_due,
+              billing_reason: inv.billing_reason,
+              payment_intent_type: typeof inv.payment_intent,
+              payment_intent_value: inv.payment_intent,
+              has_payments_array: !!(
+                'payments' in inv && (inv as any).payments
+              ),
+            }
+          );
+          // Don't break - continue processing even without payment_intent for $0 invoices
+          // or invoices paid via customer balance
+        }
 
-        if (attemptErr) {
-          console.error('Failed to create payment_attempt for subscription', {
-            error: attemptErr,
-            donationId: newDonation.id,
-          });
+        // Check billing_reason to differentiate initial payment vs recurring payment
+        const isInitialPayment = inv.billing_reason === 'subscription_create';
+
+        if (isInitialPayment) {
+          // INITIAL SUBSCRIPTION PAYMENT: Update existing donation
+          // The donation was created when the subscription was created (in create-donation-checkout)
+          // We just need to mark it as completed and create payment_attempt
+
+          if (!subscription.original_donation_id) {
+            console.error(
+              `Subscription ${subscription.id} missing original_donation_id for initial payment`
+            );
+            break;
+          }
+
+          // Update existing donation to completed status
+          const { error: donationUpdateErr } = await supabase
+            .from('donations')
+            .update({
+              status: 'completed',
+              completed_at: new Date().toISOString(),
+            })
+            .eq('id', subscription.original_donation_id);
+
+          if (donationUpdateErr) {
+            console.error(
+              'Failed to update donation for initial subscription payment',
+              {
+                error: donationUpdateErr,
+                donationId: subscription.original_donation_id,
+              }
+            );
+            break;
+          }
+
+          // Create payment_attempt record for initial payment (only if payment_intent exists)
+          if (paymentIntentId) {
+            const { error: attemptErr } = await supabase
+              .from('payment_attempts')
+              .insert({
+                donation_id: subscription.original_donation_id,
+                stripe_payment_intent_id: paymentIntentId,
+                stripe_customer_id: subscription.stripe_customer_id,
+                stripe_subscription_id: stripeSubscriptionId,
+                amount_cents: inv.amount_paid,
+                amount_received_cents: inv.amount_paid,
+                currency_code: (inv.currency ?? 'usd').toUpperCase(),
+                status: 'succeeded',
+                stripe_event_id: event.id,
+                succeeded_at: new Date().toISOString(),
+              });
+
+            if (attemptErr) {
+              console.error(
+                'Failed to create payment_attempt for initial subscription payment',
+                {
+                  error: attemptErr,
+                  donationId: subscription.original_donation_id,
+                }
+              );
+            }
+          } else {
+            console.log(
+              `Skipping payment_attempt creation for initial payment (no payment_intent, likely $0 invoice or customer balance payment)`
+            );
+          }
+
+          console.log(
+            `Updated donation ${subscription.original_donation_id} for initial subscription payment ${stripeSubscriptionId}`
+          );
+        } else {
+          // RECURRING SUBSCRIPTION PAYMENT: Create new donation record
+          // This is a renewal payment (billing_reason === 'subscription_cycle')
+          // Subsequent donations are linked to the subscription via subscription_id field
+          const { data: newDonation, error: donationErr } = await supabase
+            .from('donations')
+            .insert({
+              user_id: subscription.user_id,
+              partner_org_id: subscription.partner_org_id,
+              intent_type: subscription.intent_type,
+              intent_language_entity_id: subscription.intent_language_entity_id,
+              intent_region_id: subscription.intent_region_id,
+              intent_operation_id: subscription.intent_operation_id,
+              amount_cents: inv.amount_paid, // Amount actually paid (may differ from subscription amount due to prorations)
+              currency_code: (inv.currency ?? 'usd').toUpperCase(),
+              status: 'completed',
+              payment_method: 'card', // Default, can be enhanced later
+              is_recurring: true,
+              subscription_id: subscription.id, // Link recurring donation to subscription
+              completed_at: new Date().toISOString(),
+              created_by: subscription.user_id,
+            })
+            .select('id')
+            .single();
+
+          if (donationErr || !newDonation) {
+            console.error(
+              'Failed to create donation for recurring subscription payment',
+              {
+                error: donationErr,
+                subscriptionId: subscription.id,
+              }
+            );
+            break;
+          }
+
+          // Create payment_attempt record for recurring payment (only if payment_intent exists)
+          if (paymentIntentId) {
+            const { error: attemptErr } = await supabase
+              .from('payment_attempts')
+              .insert({
+                donation_id: newDonation.id,
+                stripe_payment_intent_id: paymentIntentId,
+                stripe_customer_id: subscription.stripe_customer_id,
+                stripe_subscription_id: stripeSubscriptionId,
+                amount_cents: inv.amount_paid,
+                amount_received_cents: inv.amount_paid, // For subscriptions, amount_paid is net
+                currency_code: (inv.currency ?? 'usd').toUpperCase(),
+                status: 'succeeded',
+                stripe_event_id: event.id,
+                succeeded_at: new Date().toISOString(),
+              });
+
+            if (attemptErr) {
+              console.error(
+                'Failed to create payment_attempt for recurring subscription payment',
+                {
+                  error: attemptErr,
+                  donationId: newDonation.id,
+                }
+              );
+            }
+          } else {
+            console.log(
+              `Skipping payment_attempt creation for recurring payment (no payment_intent, likely $0 invoice or customer balance payment)`
+            );
+          }
+
+          console.log(
+            `Created donation ${newDonation.id} for recurring subscription payment ${stripeSubscriptionId} (linked via subscription_id: ${subscription.id})`
+          );
         }
 
         // Update subscription current_period_start and current_period_end
@@ -483,9 +722,6 @@ Deno.serve(async (req: Request) => {
           })
           .eq('id', subscription.id);
 
-        console.log(
-          `Created donation ${newDonation.id} for subscription payment ${stripeSubscriptionId}`
-        );
         break;
       }
 

@@ -49,6 +49,7 @@ export interface UpdateProjectData {
   region_id?: string | null;
   location?: { lat: number; lng: number } | null;
   project_status?: Database['public']['Enums']['project_status'];
+  publish_status?: Database['public']['Enums']['publish_status'];
 }
 
 export const projectsApi = {
@@ -713,6 +714,9 @@ export const projectsApi = {
       updateData.region_id = updates.region_id;
     if (updates.project_status !== undefined) {
       updateData.project_status = updates.project_status;
+    }
+    if (updates.publish_status !== undefined) {
+      updateData.publish_status = updates.publish_status;
     }
     if (locationValue !== undefined) updateData.location = locationValue;
 

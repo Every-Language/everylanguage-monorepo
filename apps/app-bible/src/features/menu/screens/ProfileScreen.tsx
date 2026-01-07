@@ -13,7 +13,7 @@ import { useTheme, useLocalization, useUserProfile } from '@/shared/hooks';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
 import { useAuthContext } from '@/features/auth/hooks/useAuthFromStore';
 import { useOnboardingStore } from '@/features/onboarding/store/onboardingStore';
-import { Button } from '@/shared/components/Button';
+import { Button } from '@everylanguage/shared-native-ui';
 import type {
   ProfileScreenProps,
   MenuStackNavigationProp,

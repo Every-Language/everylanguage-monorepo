@@ -446,15 +446,30 @@ Deno.serve(async (req: Request) => {
         });
 
         // Get payment_intent from latest_invoice for client_secret
+        // Since we expanded 'latest_invoice.payment_intent', it should be a PaymentIntent object
         const latestInvoice = subscription.latest_invoice as Stripe.Invoice;
         const paymentIntent =
           latestInvoice.payment_intent as Stripe.PaymentIntent;
 
-        if (!paymentIntent?.client_secret) {
+        if (!paymentIntent || typeof paymentIntent === 'string') {
           throw new Error(
-            'Failed to get client_secret from subscription invoice'
+            'Failed to get payment_intent from subscription invoice (not expanded)'
           );
         }
+
+        if (!paymentIntent.client_secret) {
+          throw new Error(
+            'Failed to get client_secret from subscription invoice payment intent'
+          );
+        }
+
+        // Set receipt_email on the PaymentIntent for automatic receipt sending
+        // This ensures the initial subscription payment receipt is sent
+        await retryWithBackoff(() =>
+          stripe.paymentIntents.update(paymentIntent.id, {
+            receipt_email: donor.email,
+          })
+        );
 
         clientSecret = paymentIntent.client_secret;
         paymentIntentId = paymentIntent.id;
@@ -542,6 +557,7 @@ Deno.serve(async (req: Request) => {
             currency: 'usd',
             customer: customer.id,
             automatic_payment_methods: { enabled: true },
+            receipt_email: donor.email, // Enable automatic receipt sending
             metadata: {
               purpose: 'donation',
               donation_ids: allDonationIds.join(','), // Store all donation IDs
@@ -558,6 +574,7 @@ Deno.serve(async (req: Request) => {
             currency: 'usd',
             customer: customer.id,
             payment_method_types: ['us_bank_account'],
+            receipt_email: donor.email, // Enable automatic receipt sending
             metadata: {
               purpose: 'donation',
               donation_ids: allDonationIds.join(','), // Store all donation IDs

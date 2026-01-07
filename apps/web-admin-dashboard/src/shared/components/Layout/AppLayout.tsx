@@ -20,6 +20,7 @@ import {
   Headphones,
   FileText,
   Shield,
+  Repeat,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -91,6 +92,13 @@ const navigationItems: NavItem[] = [
     path: '/donations',
     section: 'Budgets',
     icon: <HandCoins className='h-5 w-5' />,
+  },
+  {
+    id: 'subscriptions',
+    label: 'Subscriptions',
+    path: '/budgets/subscriptions',
+    section: 'Budgets',
+    icon: <Repeat className='h-5 w-5' />,
   },
   {
     id: 'projects',

@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../../shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import type { AudioVersion, TextVersion } from '../types/entities';
 import { VersionMenuButton } from './VersionMenuButton';
 import { useLocalization } from '@/shared/hooks';

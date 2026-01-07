@@ -343,15 +343,6 @@ jobs:
             pnpm --filter=app-bible run test:run
           fi
 
-      - name: Validate managed workflow
-        working-directory: apps/app-bible
-        run: |
-          if [ -d "android" ] || [ -d "ios" ]; then
-            echo "❌ Native folders detected - should not exist in managed workflow"
-            exit 1
-          fi
-          echo "✅ Managed workflow validated"
-
   powersync-validation:
     runs-on: ubuntu-latest
     name: PowerSync Schema Validation

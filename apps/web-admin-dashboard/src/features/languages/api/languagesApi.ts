@@ -62,9 +62,40 @@ export const languagesApi = {
             entity_parent_id: string | null;
             alias_name: string;
             alias_similarity_score: number;
-            region_count?: number;
-          }) =>
-            ({
+            regions: unknown; // RPC returns Json type
+          }) => {
+            // Extract regions from JSONB array
+            const regionsArray = Array.isArray(result.regions)
+              ? (result.regions as Array<{
+                  region_id: string;
+                  region_name: string;
+                  region_level: string;
+                  region_parent_id: string | null;
+                  dominance_level: number | null;
+                }>)
+              : [];
+            const regions: Region[] = regionsArray.map(
+              r =>
+                ({
+                  id: r.region_id,
+                  name: r.region_name,
+                  level: r.region_level,
+                  parent_id: r.region_parent_id,
+                  created_at: '',
+                  updated_at: '',
+                  deleted_at: null,
+                  bbox_max_lat: null,
+                  bbox_max_lon: null,
+                  bbox_min_lat: null,
+                  bbox_min_lon: null,
+                  boundary: null,
+                  boundary_simplified: null,
+                  center_lat: null,
+                  center_lon: null,
+                }) as Region
+            );
+
+            return {
               id: result.entity_id,
               name: result.entity_name,
               level: result.entity_level as
@@ -73,12 +104,14 @@ export const languagesApi = {
                 | 'dialect'
                 | 'mother_tongue',
               parent_id: result.entity_parent_id,
-              region_count: result.region_count || 0,
+              regions,
+              region_count: regions.length,
               created_at: '',
               updated_at: '',
               deleted_at: null,
               funding_status: null,
-            }) as LanguageEntityWithRegions
+            } as LanguageEntityWithRegions;
+          }
         );
 
         // Apply external_id search filter if provided
@@ -191,7 +224,7 @@ export const languagesApi = {
       .select(
         `
         *,
-        language_entities_regions(region_id),
+        language_entities_regions(regions(*)),
         language_funding(*)
       `,
         { count: 'exact' }
@@ -238,7 +271,8 @@ export const languagesApi = {
 
         const transformedData = paginatedData.map(item => ({
           ...item,
-          region_count: 0, // By definition, these have no regions
+          regions: [], // By definition, these have no regions
+          region_count: 0,
           language_funding:
             Array.isArray(item.language_funding) &&
             item.language_funding.length > 0
@@ -288,16 +322,32 @@ export const languagesApi = {
 
     if (error) throw error;
 
-    const transformedData = (data || []).map(item => ({
-      ...item,
-      region_count: Array.isArray(item.language_entities_regions)
-        ? item.language_entities_regions.length
-        : 0,
-      language_funding:
-        Array.isArray(item.language_funding) && item.language_funding.length > 0
-          ? item.language_funding[0]
-          : null,
-    })) as LanguageEntityWithRegions[];
+    const transformedData = (data || []).map(item => {
+      // Extract regions from language_entities_regions
+      // Supabase returns: language_entities_regions: [{ regions: {...} }, ...]
+      const regions: Region[] = Array.isArray(item.language_entities_regions)
+        ? item.language_entities_regions
+            .map((ler: { regions: Region | null }) => {
+              // Handle nested regions - regions is a single object (not array) from Supabase
+              if (!ler || !ler.regions) return null;
+              // Check if region is deleted
+              if (ler.regions.deleted_at) return null;
+              return ler.regions;
+            })
+            .filter((r: Region | null): r is Region => r !== null)
+        : [];
+
+      return {
+        ...item,
+        regions,
+        region_count: regions.length,
+        language_funding:
+          Array.isArray(item.language_funding) &&
+          item.language_funding.length > 0
+            ? item.language_funding[0]
+            : null,
+      };
+    }) as LanguageEntityWithRegions[];
 
     return {
       data: transformedData,
@@ -664,9 +714,21 @@ export const languagesApi = {
       external_id_type?: string | null;
     }
   ): Promise<void> {
+    // Get current authenticated user for created_by field (required by constraint)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user && !sourceData.is_external) {
+      throw new Error(
+        'User must be authenticated to create a non-external language source'
+      );
+    }
+
     const { error } = await supabase.from('language_entity_sources').insert({
       language_entity_id: entityId,
       ...sourceData,
+      created_by: sourceData.is_external ? null : user?.id || null,
     });
 
     if (error) throw error;
@@ -685,9 +747,40 @@ export const languagesApi = {
       external_id_type?: string | null;
     }
   ): Promise<void> {
+    // If is_external is being set to false, we need to ensure created_by is set
+    // If is_external is being set to true, we can set created_by to null
+    const updateData: {
+      source?: string;
+      version?: string | null;
+      is_external?: boolean;
+      external_id?: string | null;
+      external_id_type?: string | null;
+      created_by?: string | null;
+    } = { ...updates };
+
+    if (updates.is_external !== undefined) {
+      if (updates.is_external === false) {
+        // Get current authenticated user for created_by field (required by constraint)
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          throw new Error(
+            'User must be authenticated to update a language source to non-external'
+          );
+        }
+
+        updateData.created_by = user.id;
+      } else {
+        // For external sources, created_by should be null
+        updateData.created_by = null;
+      }
+    }
+
     const { error } = await supabase
       .from('language_entity_sources')
-      .update(updates)
+      .update(updateData)
       .eq('id', sourceId);
 
     if (error) throw error;
@@ -813,6 +906,15 @@ export const languagesApi = {
       location_source?: string | null;
     }>;
   }): Promise<LanguageEntity> {
+    // Get current authenticated user for created_by field (required by constraint)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('User must be authenticated to create a language entity');
+    }
+
     // Create the main language entity
     const { data: entity, error: entityError } = await supabase
       .from('language_entities')
@@ -844,6 +946,7 @@ export const languagesApi = {
           external_id_type: source.is_external
             ? source.external_id_type?.trim() || null
             : null,
+          created_by: source.is_external ? null : user.id,
         }));
 
       if (sourcesToInsert.length > 0) {

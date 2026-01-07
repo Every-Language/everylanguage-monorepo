@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '@/shared';
+import { useTheme } from '@everylanguage/shared-native-ui';
 import { StyleSheet, TouchableOpacity, Text, ScrollView } from 'react-native';
 import { usePlaylistGroupsPS } from '../hooks/usePlaylistGroupsPS';
 

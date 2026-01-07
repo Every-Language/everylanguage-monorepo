@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
-import { PlayButton } from '@/shared/components';
+import { PlayButton } from '@everylanguage/shared-native-ui';
 import type { ChapterWithMetadata } from '../types';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { useShare } from '@/features/sharing/hooks/useShare';
