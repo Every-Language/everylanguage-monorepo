@@ -97,14 +97,26 @@ export const OnlineBibleSetupScreen: React.FC<OnlineBibileSetupScreenProps> = ({
         setIsPreloading(true);
 
         try {
+          console.log(
+            '[OnlineBibleSetupScreen] 🚀 Starting preloadVersionContent',
+            {
+              textVersionId: currentTextVersion.id,
+              audioVersionId: currentAudioVersion.id,
+            }
+          );
           // Preload content before completing onboarding
           await preloadVersionContent(
             currentTextVersion.id,
             currentAudioVersion.id,
             progress => {
+              console.log(
+                '[OnlineBibleSetupScreen] 📊 Progress update:',
+                progress
+              );
               setPreloadProgress(progress);
             }
           );
+          console.log('[OnlineBibleSetupScreen] ✅ Preload complete');
         } catch (preloadError) {
           // Log error but continue - graceful degradation
           logger.warn(
