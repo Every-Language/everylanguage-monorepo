@@ -55,10 +55,7 @@ export class PlaylistQueueService {
 
       for (const item of playlist.items) {
         try {
-          const track = await this.buildTrackForPlaylistItem(
-            item,
-            playlist.audioVersionId
-          );
+          const track = await this.buildTrackForPlaylistItem(item);
           if (track) {
             tracks.push(track);
           }
@@ -83,9 +80,7 @@ export class PlaylistQueueService {
       // Start playing the first track
       // The existing queue system will handle the rest
       if (tracks.length > 0 && tracks[0]) {
-        await mediaPlayerService.playChapter(tracks[0].chapterId, {
-          audioVersionId: playlist.audioVersionId,
-        });
+        await mediaPlayerService.playChapter(tracks[0].chapterId);
 
         logger.info(
           ENABLE_LOGGING,
@@ -111,8 +106,7 @@ export class PlaylistQueueService {
    * Build a track for a playlist item
    */
   private async buildTrackForPlaylistItem(
-    item: PlaylistItem,
-    audioVersionId: string
+    item: PlaylistItem
   ): Promise<BibleTrack | null> {
     try {
       // Extract chapter ID from verse ID
@@ -126,13 +120,9 @@ export class PlaylistQueueService {
         return null;
       }
 
-      // Resolve chapter media
-      const chapterMedia = await this.chapterMediaResolver.resolveChapterMedia(
-        chapterId,
-        {
-          audioVersionId,
-        }
-      );
+      // Resolve chapter media (will use user's current audio version preference)
+      const chapterMedia =
+        await this.chapterMediaResolver.resolveChapterMedia(chapterId);
 
       if (!chapterMedia) {
         logger.warn(
@@ -143,10 +133,8 @@ export class PlaylistQueueService {
         return null;
       }
 
-      // Build track
-      const track = await this.trackBuilder.buildChapterTrack(chapterId, {
-        audioVersionId,
-      });
+      // Build track (will use user's current audio version preference)
+      const track = await this.trackBuilder.buildChapterTrack(chapterId);
 
       return track || null;
     } catch (error) {
@@ -181,9 +169,7 @@ export class PlaylistQueueService {
         if (!chapterId) continue;
 
         const chapterMedia =
-          await this.chapterMediaResolver.resolveChapterMedia(chapterId, {
-            audioVersionId: playlist.audioVersionId,
-          });
+          await this.chapterMediaResolver.resolveChapterMedia(chapterId);
 
         if (chapterMedia) {
           totalDuration += chapterMedia.totalDuration;
@@ -239,9 +225,7 @@ export class PlaylistQueueService {
         }
 
         const chapterMedia =
-          await this.chapterMediaResolver.resolveChapterMedia(chapterId, {
-            audioVersionId: playlist.audioVersionId,
-          });
+          await this.chapterMediaResolver.resolveChapterMedia(chapterId);
 
         if (chapterMedia && chapterMedia.hasStreamingAvailable) {
           availableItems.push(item);
@@ -312,9 +296,7 @@ export class PlaylistQueueService {
         }
 
         const chapterMedia =
-          await this.chapterMediaResolver.resolveChapterMedia(chapterId, {
-            audioVersionId: playlist.audioVersionId,
-          });
+          await this.chapterMediaResolver.resolveChapterMedia(chapterId);
 
         itemsWithStatus.push({
           item,
@@ -511,9 +493,6 @@ export class PlaylistQueueService {
         startVerseId: playlistItem.start_verse_id,
         endVerseId: playlistItem.end_verse_id,
         chapterId: chapterId,
-        ...(options.audioVersionId
-          ? { audioVersionId: options.audioVersionId }
-          : {}),
         ...(options.textVersionId
           ? { textVersionId: options.textVersionId }
           : {}),
