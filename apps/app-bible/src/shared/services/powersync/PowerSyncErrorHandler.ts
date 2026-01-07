@@ -210,6 +210,24 @@ export class PowerSyncErrorHandler {
     _context: 'edge_function' | 'direct_upload',
     errorCode?: string
   ): ErrorClassificationResult {
+    // Transaction nesting errors (retryable - will succeed after upload lock is released)
+    if (
+      errorMessage.includes(
+        'cannot start a transaction within a transaction'
+      ) ||
+      (errorMessage.includes('transaction') &&
+        (errorMessage.includes('already active') ||
+          errorMessage.includes('within a transaction') ||
+          errorMessage.includes('nested transaction')))
+    ) {
+      return {
+        isRetryable: true,
+        shouldSkip: false,
+        reason: 'Transaction conflict - concurrent upload attempt',
+        category: 'transaction_conflict',
+      };
+    }
+
     // RLS violations (non-retryable)
     if (
       errorMessage.includes('row-level security policy') ||
