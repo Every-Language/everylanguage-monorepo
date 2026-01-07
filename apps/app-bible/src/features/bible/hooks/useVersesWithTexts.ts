@@ -85,8 +85,8 @@ export const useVersesWithTexts = (
                     verse_id: row.id,
                     text_version_id: row.text_version_id,
                     verse_text: row.verse_text,
-                    publish_status: row.publish_status || null,
-                    version: row.version ?? null,
+                    publish_status: row.publish_status || 'published',
+                    version: row.version ?? 0,
                     created_at: row.text_created_at || row.created_at || '',
                     updated_at: row.text_updated_at || row.updated_at || '',
                   }
