@@ -10,7 +10,7 @@ import type {
 } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Service responsible for tracking playback progress, verse changes, and saving progress

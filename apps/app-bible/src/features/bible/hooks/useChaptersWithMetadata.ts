@@ -8,7 +8,7 @@ import { ChapterMetadataService } from '../services/ChapterMetadataService';
 import type { ChapterMetadataRecord } from '../../../../powersync/LocalSchema';
 import { logger } from '@/shared/utils/logger';
 
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface UseChaptersWithMetadataReturn {
   chapters: ChapterWithMetadata[];

@@ -11,7 +11,7 @@ import { useMediaPlayerUIStore } from '../../features/media/store/MediaPlayerUIS
 import { usePlaybackStore } from '../../features/media/store/PlaybackStore';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Service responsible for completely clearing all user data, downloads, and local files

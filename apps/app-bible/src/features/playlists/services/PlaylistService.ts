@@ -6,7 +6,7 @@ import { generateUUID } from '@/shared/utils/uuid';
 import { supabase } from '@/shared/services/api/supabase';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Service class for playlist operations

@@ -14,7 +14,7 @@ import {
 } from '@/features/media/utils/autoOpenHelper';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const useChapterMediaActions = (chapter: ChapterWithMetadata | null) => {
   const currentTrack = useCurrentTrack();

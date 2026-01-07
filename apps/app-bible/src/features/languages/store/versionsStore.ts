@@ -6,7 +6,7 @@ import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
 import { queryClient } from '@/shared/services/query/queryClient';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface VersionsStoreState {
   // Current selections

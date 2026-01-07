@@ -15,7 +15,7 @@ import type {
 } from '@/features/playlists/types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Minimal abort types to avoid dependency and linter issues
 type SimpleAbortSignal = { aborted?: boolean };

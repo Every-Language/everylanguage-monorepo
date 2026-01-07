@@ -11,7 +11,7 @@ import type {
 } from './types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * PowerSync Backend Connector
@@ -20,6 +20,12 @@ const ENABLE_LOGGING = true;
  * Supports both authenticated and unauthenticated users for public Bible data access.
  */
 export class PowerSyncConnector implements PowerSyncBackendConnector {
+  /**
+   * Upload lock to prevent concurrent upload attempts
+   * Prevents "cannot start a transaction within a transaction" errors
+   */
+  private isUploading = false;
+
   /**
    * Get credentials for connecting to PowerSync
    * Called every few minutes to refresh the connection
@@ -96,9 +102,25 @@ export class PowerSyncConnector implements PowerSyncBackendConnector {
    * Called when there are pending local changes to sync
    */
   async uploadData(database: AbstractPowerSyncDatabase) {
+    // Part 1: Prevent concurrent uploads to avoid transaction nesting errors
+    if (this.isUploading) {
+      // PowerSync will automatically retry later when the current upload completes
+      logger.debug(
+        ENABLE_LOGGING,
+        'PowerSync: Upload already in progress, skipping concurrent attempt'
+      );
+      return;
+    }
+
+    this.isUploading = true;
+    let transaction: Awaited<
+      ReturnType<AbstractPowerSyncDatabase['getNextCrudTransaction']>
+    > | null = null;
+    let transactionCompleted = false;
+
     try {
       // Get the next batch of CRUD operations to upload
-      const transaction = await database.getNextCrudTransaction();
+      transaction = await database.getNextCrudTransaction();
 
       if (!transaction) {
         return;
@@ -115,6 +137,7 @@ export class PowerSyncConnector implements PowerSyncBackendConnector {
         //   }
         // );
         await transaction.complete();
+        transactionCompleted = true;
         return;
       }
 
@@ -213,10 +236,29 @@ export class PowerSyncConnector implements PowerSyncBackendConnector {
 
       // Mark transaction as complete
       await transaction.complete();
+      transactionCompleted = true;
       // logger.info(ENABLE_LOGGING, 'PowerSync: Transaction completed successfully');
     } catch (error) {
       logger.error(ENABLE_LOGGING, 'PowerSync: Failed to upload data:', error);
       throw error;
+    } finally {
+      // Part 2: Always ensure transaction is completed and lock is released
+      // This prevents stuck transactions that block future uploads
+      if (transaction && !transactionCompleted) {
+        try {
+          await transaction.complete();
+        } catch (completeError) {
+          // Transaction might already be complete or in an invalid state
+          // Log but don't throw - we're in cleanup mode
+          logger.warn(
+            ENABLE_LOGGING,
+            'PowerSync: Failed to complete transaction in finally block (may already be complete):',
+            completeError
+          );
+        }
+      }
+      // Always release the upload lock
+      this.isUploading = false;
     }
   }
 

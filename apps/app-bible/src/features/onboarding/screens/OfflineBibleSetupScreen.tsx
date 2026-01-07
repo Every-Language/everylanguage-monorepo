@@ -16,7 +16,7 @@ import { ImportService } from '@/features/sharing/services/ImportService';
 import { OnboardingHeader } from '../components';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface OfflineBibleSetupScreenProps {
   onBack: () => void;

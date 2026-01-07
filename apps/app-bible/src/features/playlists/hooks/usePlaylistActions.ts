@@ -4,7 +4,7 @@ import { logger } from '../../../shared/utils/logger';
 import { Playlist, PlaylistWithItems } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 import { useAuthContext } from '@/features/auth';
 import { usePlaylistMutations } from './usePlaylistMutations';
 import { Alert } from 'react-native';

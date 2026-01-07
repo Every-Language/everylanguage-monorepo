@@ -1,7 +1,7 @@
 import { isValidNumber, parsePhoneNumber } from 'libphonenumber-js';
 import { logger } from './logger';
 
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Normalize a phone number to E.164 format for consistent storage/comparison

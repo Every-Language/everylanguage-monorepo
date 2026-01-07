@@ -1,15 +1,76 @@
 bucket_definitions:
   # ====================
-  # REMOTE TO LOCAL ONLY - Global Bible Content (available to all users)
+  # PRIORITY 1 - Critical Content (Syncs First)
   # ====================
+  # These buckets sync first to ensure essential content is available immediately
 
   global_bible_content:
+    priority: 1
     data:
-      # Core bible structure - always available
+      # Core bible structure - always available (foundation for all content)
       - SELECT * FROM bible_versions
       - SELECT * FROM books
       - SELECT * FROM chapters
       - SELECT * FROM verses
+
+  # High-priority: Verse texts for user's saved text versions
+  priority_verse_texts:
+    priority: 1
+    parameters: SELECT text_version_id FROM user_saved_text_versions
+      WHERE user_id = request.user_id() AND text_version_id IS NOT NULL
+    data:
+      - SELECT * FROM verse_texts WHERE text_version_id = bucket.text_version_id
+
+  # High-priority: Media files for user's saved audio versions
+  priority_media_files:
+    priority: 1
+    parameters: SELECT audio_version_id FROM user_saved_audio_versions
+      WHERE user_id = request.user_id() AND audio_version_id IS NOT NULL
+    data:
+      - SELECT * FROM media_files WHERE audio_version_id = bucket.audio_version_id AND publish_status = 'published'
+      - SELECT * FROM media_files_verses WHERE denormalized_audio_version_id = bucket.audio_version_id
+
+  # ====================
+  # PRIORITY 2 - Supporting Metadata (Syncs After Priority 1)
+  # ====================
+  # Metadata needed for content but less critical than the content itself
+
+  user_text_versions:
+    priority: 2
+    parameters: SELECT text_version_id FROM user_saved_text_versions
+      WHERE user_id = request.user_id() AND text_version_id IS NOT NULL
+    data:
+      - SELECT * FROM text_versions WHERE id = bucket.text_version_id
+
+  user_audio_versions:
+    priority: 2
+    parameters: SELECT audio_version_id FROM user_saved_audio_versions
+      WHERE user_id = request.user_id() AND audio_version_id IS NOT NULL
+    data:
+      - SELECT * FROM audio_versions WHERE id = bucket.audio_version_id
+
+  # ====================
+  # PRIORITY 3 - User Preferences (Syncs Last)
+  # ====================
+  # User preferences and settings sync after essential content
+
+  user_current_selections:
+    priority: 3
+    parameters: SELECT request.user_id() as user_id
+    data:
+      - SELECT * FROM user_current_selections WHERE user_id = bucket.user_id
+
+  user_saved_text_versions:
+    priority: 3
+    parameters: SELECT request.user_id() as user_id
+    data:
+      - SELECT * FROM user_saved_text_versions WHERE user_id = bucket.user_id
+
+  user_saved_audio_versions:
+    priority: 3
+    parameters: SELECT request.user_id() as user_id
+    data:
+      - SELECT * FROM user_saved_audio_versions WHERE user_id = bucket.user_id
 
   # ====================
   # LOCAL TO REMOTE ONLY - Analytics Data (Upload only, no download)
@@ -18,6 +79,7 @@ bucket_definitions:
   # These buckets use WHERE FALSE to prevent downloading data back to client
 
   analytics_sessions:
+    priority: 3
     data:
       - SELECT * FROM sessions WHERE FALSE
       - SELECT * FROM share_opens WHERE FALSE
@@ -27,44 +89,8 @@ bucket_definitions:
       - SELECT * FROM app_downloads WHERE FALSE
       - SELECT * FROM chapter_listens WHERE FALSE
 
-  # ====================
-  # TWO-WAY SYNC - Authenticated User Data
-  # ====================
-  # IMPORTANT: These sync rules assume public.users.id = auth.users.id
-  # Two-way sync buckets only work for authenticated users (NOT anonymous users)
-  # Client must pass 'is_authenticated' = 'true' parameter to sync user data
-
-  user_current_selections:
-    parameters: SELECT request.user_id() as user_id
-    data:
-      - SELECT * FROM user_current_selections WHERE user_id = bucket.user_id
-
-  user_saved_text_versions:
-    parameters: SELECT request.user_id() as user_id
-    data:
-      - SELECT * FROM user_saved_text_versions WHERE user_id = bucket.user_id
-
-  user_saved_audio_versions:
-    parameters: SELECT request.user_id() as user_id
-    data:
-      - SELECT * FROM user_saved_audio_versions WHERE user_id = bucket.user_id
-
-  user_audio_versions:
-    parameters: SELECT audio_version_id FROM user_saved_audio_versions
-      WHERE user_id = request.user_id() AND audio_version_id IS NOT NULL
-    data:
-      - SELECT * FROM audio_versions WHERE id = bucket.audio_version_id
-      - SELECT * FROM media_files WHERE audio_version_id = bucket.audio_version_id AND publish_status = 'published'
-      - SELECT * FROM media_files_verses WHERE denormalized_audio_version_id = bucket.audio_version_id
-
-  user_text_versions:
-    parameters: SELECT text_version_id FROM user_saved_text_versions
-      WHERE user_id = request.user_id() AND text_version_id IS NOT NULL
-    data:
-      - SELECT * FROM text_versions WHERE id = bucket.text_version_id
-      - SELECT * FROM verse_texts WHERE text_version_id = bucket.text_version_id
-
   user_bookmarks:
+    priority: 3
     parameters: SELECT request.user_id() as user_id
     data:
       - SELECT * FROM user_bookmarks WHERE user_id = bucket.user_id
@@ -72,12 +98,14 @@ bucket_definitions:
 
   # The list of image sets that the user has saved
   user_saved_image_sets:
+    priority: 3
     parameters: SELECT request.user_id() as user_id
     data:
       - SELECT * FROM user_saved_image_sets WHERE user_id = bucket.user_id
 
   # The actual images
   images:
+    priority: 3
     parameters: SELECT set_id FROM user_saved_image_sets
       WHERE user_id = request.user_id()
     data:
@@ -86,6 +114,7 @@ bucket_definitions:
 
   # The list of playlists that the user has saved
   user_playlists:
+    priority: 3
     parameters: SELECT request.user_id() as user_id
     data:
       - SELECT * FROM user_playlist_groups WHERE user_id = bucket.user_id
@@ -93,6 +122,7 @@ bucket_definitions:
 
   # The actual playlists
   playlists:
+    priority: 3
     parameters: SELECT playlist_id FROM user_playlists
       WHERE user_id = request.user_id()
     data:

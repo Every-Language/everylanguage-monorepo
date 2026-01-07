@@ -4,7 +4,7 @@ import { networkErrorClassifier } from '@/shared/services/network/NetworkErrorCl
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface UseOptimisticNetworkReturn {
   isOnline: boolean;

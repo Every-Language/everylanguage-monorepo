@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';

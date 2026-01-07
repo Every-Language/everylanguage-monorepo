@@ -7,7 +7,7 @@ import type { SettingsStore, MediaSettings } from '../types';
 import { DEFAULT_SETTINGS } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Settings store for managing app-wide settings

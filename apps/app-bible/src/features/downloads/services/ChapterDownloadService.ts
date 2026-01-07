@@ -5,7 +5,7 @@ import { downloadManager } from './DownloadManager';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 class ChapterDownloadService {
   /** Prioritize downloads for a single chapter and kick the manager */
