@@ -159,9 +159,12 @@ export class PrioritySyncMonitor {
     // Step 2: Check if any sync has occurred
     const status = powerSyncSystem.getStatus();
     if (!status.status?.lastSyncedAt) {
+      const elapsed = Date.now() - this.startTime;
+      // Show progress based on time elapsed, but cap at 15% until sync starts
+      const timeBasedProgress = Math.min((elapsed / 5000) * 0.15, 0.15);
       return {
         phase: 'syncing',
-        progress: 0.1,
+        progress: timeBasedProgress,
         message: 'Starting sync...',
         priority1Complete: false,
       };
@@ -174,17 +177,33 @@ export class PrioritySyncMonitor {
     // Step 4: Estimate overall progress
     // If complete, show 100%, otherwise show estimated progress based on time elapsed
     const elapsed = Date.now() - this.startTime;
-    const estimatedProgress = Math.min(
+    let estimatedProgress = Math.min(
       complete ? 1.0 : 0.3 + (elapsed / this.options.timeout) * 0.6,
       0.95
     );
 
+    // If we have data counts, use them to estimate progress
+    if (!complete && verseTextsCount !== undefined && verseTextsCount > 0) {
+      // If we have some data, we're making progress
+      estimatedProgress = Math.max(estimatedProgress, 0.4);
+    }
+
+    // Determine message based on progress
+    let message = 'Downloading essential content...';
+    if (complete) {
+      message = 'Essential content ready';
+    } else if (estimatedProgress >= 0.9) {
+      message = 'Almost done...';
+    } else if (estimatedProgress >= 0.5) {
+      message = 'Downloading content...';
+    } else if (estimatedProgress >= 0.2) {
+      message = 'Syncing data...';
+    }
+
     return {
       phase: complete ? 'complete' : 'syncing',
       progress: complete ? 1.0 : estimatedProgress,
-      message: complete
-        ? 'Essential content ready'
-        : 'Downloading essential content...',
+      message,
       priority1Complete: complete,
       verseTextsCount,
       mediaFilesCount,
@@ -247,8 +266,12 @@ export class PrioritySyncMonitor {
   /**
    * Wait for priority 1 sync to complete
    * Returns true if complete, false if timeout
+   * Starts monitoring immediately
    */
   async waitForPriority1Complete(): Promise<boolean> {
+    // Start monitoring immediately to get early progress updates
+    this.startMonitoring();
+
     return new Promise<boolean>(resolve => {
       const unsubscribe = this.subscribe(progress => {
         if (progress.priority1Complete) {
@@ -265,8 +288,6 @@ export class PrioritySyncMonitor {
           resolve(false);
         }
       });
-
-      this.startMonitoring();
     });
   }
 

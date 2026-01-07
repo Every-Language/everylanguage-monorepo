@@ -16,6 +16,27 @@ export interface PreloadProgress {
   type: 'verse_texts' | 'media_files';
 }
 
+export type PreloadPhase =
+  | 'preparing'
+  | 'fetching_verses'
+  | 'downloading_verses'
+  | 'fetching_media'
+  | 'downloading_media'
+  | 'retrying'
+  | 'almost_done'
+  | 'finalizing'
+  | 'complete';
+
+export interface PreloadStatus {
+  phase: PreloadPhase;
+  message: string;
+  progress: number; // 0-1
+  retryCount?: number;
+  retryMax?: number;
+  current?: number;
+  total?: number | undefined;
+}
+
 /**
  * Type for verse_texts row from Supabase
  */
@@ -39,12 +60,22 @@ interface VerseTextRow {
 export async function preloadVersionContent(
   textVersionId: string | null,
   audioVersionId: string | null,
-  onProgress?: (progress: PreloadProgress) => void
+  onProgress?: (progress: PreloadProgress) => void,
+  onStatus?: (status: PreloadStatus) => void
 ): Promise<PreloadResult> {
   logger.info(
     ENABLE_LOGGING,
     `[preloadVersionContent] Starting preload - textVersionId: ${textVersionId}, audioVersionId: ${audioVersionId}`
   );
+
+  // Report initial status
+  if (onStatus) {
+    onStatus({
+      phase: 'preparing',
+      message: 'Preparing to download content...',
+      progress: 0,
+    });
+  }
 
   const result: PreloadResult = {
     verseTexts: 0,
@@ -52,14 +83,37 @@ export async function preloadVersionContent(
     mediaFilesVerses: 0,
   };
 
+  const hasText = !!textVersionId;
+  const hasAudio = !!audioVersionId;
+  const totalPhases = (hasText ? 1 : 0) + (hasAudio ? 1 : 0);
+  let completedPhases = 0;
+
   // Preload verse_texts if text version selected
   if (textVersionId) {
     logger.debug(
       ENABLE_LOGGING,
       '[preloadVersionContent] Preloading verse_texts...'
     );
-    const count = await preloadVerseTexts(textVersionId, onProgress);
+    if (onStatus) {
+      onStatus({
+        phase: 'fetching_verses',
+        message: 'Fetching verses...',
+        progress: completedPhases / totalPhases,
+      });
+    }
+    const count = await preloadVerseTexts(textVersionId, onProgress, status => {
+      if (onStatus) {
+        // Adjust progress to account for this phase
+        const phaseProgress = status.progress;
+        const overallProgress = (completedPhases + phaseProgress) / totalPhases;
+        onStatus({
+          ...status,
+          progress: overallProgress,
+        });
+      }
+    });
     result.verseTexts = count;
+    completedPhases++;
     logger.info(
       ENABLE_LOGGING,
       `[preloadVersionContent] Preloaded ${count} verse_texts`
@@ -77,10 +131,31 @@ export async function preloadVersionContent(
       ENABLE_LOGGING,
       '[preloadVersionContent] Preloading media_files...'
     );
-    const { mediaFiles, mediaFilesVerses } =
-      await preloadMediaFiles(audioVersionId);
+    if (onStatus) {
+      onStatus({
+        phase: 'fetching_media',
+        message: 'Fetching media files...',
+        progress: completedPhases / totalPhases,
+      });
+    }
+    const { mediaFiles, mediaFilesVerses } = await preloadMediaFiles(
+      audioVersionId,
+      status => {
+        if (onStatus) {
+          // Adjust progress to account for this phase
+          const phaseProgress = status.progress;
+          const overallProgress =
+            (completedPhases + phaseProgress) / totalPhases;
+          onStatus({
+            ...status,
+            progress: overallProgress,
+          });
+        }
+      }
+    );
     result.mediaFiles = mediaFiles;
     result.mediaFilesVerses = mediaFilesVerses;
+    completedPhases++;
     logger.info(
       ENABLE_LOGGING,
       `[preloadVersionContent] Preloaded ${mediaFiles} media_files and ${mediaFilesVerses} media_files_verses`
@@ -90,6 +165,15 @@ export async function preloadVersionContent(
       ENABLE_LOGGING,
       '[preloadVersionContent] No audioVersionId provided'
     );
+  }
+
+  // Report completion
+  if (onStatus) {
+    onStatus({
+      phase: 'complete',
+      message: 'Download complete!',
+      progress: 1.0,
+    });
   }
 
   logger.info(
@@ -107,7 +191,8 @@ export async function preloadVersionContent(
  */
 async function preloadVerseTexts(
   textVersionId: string,
-  onProgress?: (progress: PreloadProgress) => void
+  onProgress?: (progress: PreloadProgress) => void,
+  onStatus?: (status: PreloadStatus) => void
 ): Promise<number> {
   try {
     logger.info(
@@ -299,6 +384,17 @@ async function preloadVerseTexts(
     let offset = 0;
     let hasMore = true;
 
+    // Report initial status
+    if (onStatus) {
+      onStatus({
+        phase: 'downloading_verses',
+        message: 'Downloading verses...',
+        progress: 0,
+        current: 0,
+        total: totalCount ?? undefined,
+      });
+    }
+
     // Fetch and insert in pages
     let pageNumber = 0;
     while (hasMore) {
@@ -315,6 +411,21 @@ async function preloadVerseTexts(
       // Retry logic for fetching from Supabase
       while (retryCount < MAX_RETRIES && !fetchSuccess) {
         try {
+          // Report retry status if retrying
+          if (retryCount > 0 && onStatus) {
+            onStatus({
+              phase: 'retrying',
+              message: `Retrying connection... (${retryCount}/${MAX_RETRIES})`,
+              progress: totalCount
+                ? Math.min(inserted / totalCount, 0.95)
+                : 0.5,
+              retryCount,
+              retryMax: MAX_RETRIES,
+              current: inserted,
+              total: totalCount ?? undefined,
+            });
+          }
+
           // Build query based on whether we should use publish_status filter
           let query = supabase
             .from('verse_texts')
@@ -444,17 +555,39 @@ async function preloadVerseTexts(
             inserted += batch.length;
             insertSuccess = true;
 
-            const progressPercent = totalCount
+            const progressPercentLog = totalCount
               ? ((inserted / totalCount) * 100).toFixed(1)
               : '?';
 
             logger.info(
               ENABLE_LOGGING,
-              `[preloadVerseTexts] Batch ${batchNumber} complete. Progress: ${inserted}/${totalCount ?? '?'} (${progressPercent}%)`
+              `[preloadVerseTexts] Batch ${batchNumber} complete. Progress: ${inserted}/${totalCount ?? '?'} (${progressPercentLog}%)`
             );
 
             // Report progress after each batch
             // Use inserted count as total if we don't have accurate count
+            const progressPercent = totalCount
+              ? inserted / totalCount
+              : Math.min(inserted / (inserted + 1000), 0.95); // Estimate if no total
+
+            // Determine if almost done
+            const isAlmostDone =
+              totalCount &&
+              inserted / totalCount >= 0.9 &&
+              inserted < totalCount;
+
+            if (onStatus) {
+              onStatus({
+                phase: isAlmostDone ? 'almost_done' : 'downloading_verses',
+                message: isAlmostDone
+                  ? 'Almost done...'
+                  : 'Downloading verses...',
+                progress: progressPercent,
+                current: inserted,
+                total: totalCount ?? undefined,
+              });
+            }
+
             if (onProgress) {
               onProgress({
                 current: inserted,
@@ -476,6 +609,22 @@ async function preloadVerseTexts(
                 `Failed to insert batch of verse_texts (${i}-${i + batch.length}, retry ${insertRetryCount}/${MAX_RETRIES}):`,
                 batchError
               );
+
+              // Report retry status
+              if (onStatus) {
+                onStatus({
+                  phase: 'retrying',
+                  message: `Retrying... (${insertRetryCount}/${MAX_RETRIES})`,
+                  progress: totalCount
+                    ? Math.min(inserted / totalCount, 0.95)
+                    : 0.5,
+                  retryCount: insertRetryCount,
+                  retryMax: MAX_RETRIES,
+                  current: inserted,
+                  total: totalCount ?? undefined,
+                });
+              }
+
               // Exponential backoff
               await new Promise(resolve =>
                 setTimeout(resolve, RETRY_DELAY * insertRetryCount)
@@ -518,6 +667,17 @@ async function preloadVerseTexts(
       );
     }
 
+    // Report finalizing status
+    if (onStatus) {
+      onStatus({
+        phase: 'finalizing',
+        message: 'Finalizing...',
+        progress: 0.98,
+        current: inserted,
+        total: totalCount ?? undefined,
+      });
+    }
+
     return inserted;
   } catch (error) {
     logger.error(ENABLE_LOGGING, 'Error preloading verse_texts:', error);
@@ -530,9 +690,19 @@ async function preloadVerseTexts(
  * Uses batched inserts with transactions to prevent queue overflow
  */
 async function preloadMediaFiles(
-  audioVersionId: string
+  audioVersionId: string,
+  onStatus?: (status: PreloadStatus) => void
 ): Promise<{ mediaFiles: number; mediaFilesVerses: number }> {
   try {
+    // Report initial status
+    if (onStatus) {
+      onStatus({
+        phase: 'downloading_media',
+        message: 'Downloading media files...',
+        progress: 0,
+      });
+    }
+
     // Fetch published media_files (limit initial fetch)
     const { data: mfData, error: mfError } = await supabase
       .from('media_files')
@@ -548,8 +718,17 @@ async function preloadMediaFiles(
     }
 
     if (!mfData || mfData.length === 0) {
+      if (onStatus) {
+        onStatus({
+          phase: 'complete',
+          message: 'Media files ready',
+          progress: 1.0,
+        });
+      }
       return { mediaFiles: 0, mediaFilesVerses: 0 };
     }
+
+    const totalMediaFiles = mfData.length;
 
     // Insert media_files in batches
     const BATCH_SIZE = 500;
@@ -605,6 +784,22 @@ async function preloadMediaFiles(
 
         await powerSyncSystem.execute('COMMIT');
         insertedMediaFiles += batch.length;
+
+        // Report progress
+        if (onStatus) {
+          const progress = insertedMediaFiles / totalMediaFiles;
+          const isAlmostDone =
+            progress >= 0.9 && insertedMediaFiles < totalMediaFiles;
+          onStatus({
+            phase: isAlmostDone ? 'almost_done' : 'downloading_media',
+            message: isAlmostDone
+              ? 'Almost done...'
+              : 'Downloading media files...',
+            progress: progress * 0.7, // Media files are 70% of media phase
+            current: insertedMediaFiles,
+            total: totalMediaFiles,
+          });
+        }
 
         // Small delay between batches
         if (i + BATCH_SIZE < mfData.length) {
@@ -672,6 +867,22 @@ async function preloadMediaFiles(
           await powerSyncSystem.execute('COMMIT');
           insertedVerses += batch.length;
 
+          // Report progress (media_files_verses are 30% of media phase)
+          if (onStatus && mfvData.length > 0) {
+            const versesProgress = insertedVerses / mfvData.length;
+            onStatus({
+              phase:
+                versesProgress >= 0.9 ? 'almost_done' : 'downloading_media',
+              message:
+                versesProgress >= 0.9
+                  ? 'Almost done...'
+                  : 'Downloading media files...',
+              progress: 0.7 + versesProgress * 0.3, // 70% + 30% of verses
+              current: insertedVerses,
+              total: mfvData.length,
+            });
+          }
+
           // Small delay between batches
           if (i + BATCH_SIZE < mfvData.length) {
             await new Promise(resolve => setTimeout(resolve, 10));
@@ -696,6 +907,15 @@ async function preloadMediaFiles(
       ENABLE_LOGGING,
       `Preloaded ${insertedMediaFiles} media_files and ${insertedVerses} media_files_verses for audio version ${audioVersionId}`
     );
+
+    // Report finalizing
+    if (onStatus) {
+      onStatus({
+        phase: 'finalizing',
+        message: 'Finalizing...',
+        progress: 0.98,
+      });
+    }
 
     return {
       mediaFiles: insertedMediaFiles,
