@@ -2,7 +2,7 @@
 
 /**
  * Script to check for missing i18n translation keys
- * 
+ *
  * This script:
  * 1. Scans TypeScript/TSX files for translation key usage (t() calls)
  * 2. Extracts all translation keys being used
@@ -64,9 +64,15 @@ const DEFAULT_VALUE_PATTERN = /defaultValue\s*:/g;
  * Recursively get all TypeScript/TSX files in a directory
  */
 function getAllSourceFiles(dir) {
-  const files = execSync(`find "${dir}" -type f \\( -name "*.ts" -o -name "*.tsx" \\) -not -path "*/node_modules/*" -not -path "*/.git/*"`, {
-    encoding: 'utf-8',
-  }).trim().split('\n').filter(Boolean);
+  const files = execSync(
+    `find "${dir}" -type f \\( -name "*.ts" -o -name "*.tsx" \\) -not -path "*/node_modules/*" -not -path "*/.git/*"`,
+    {
+      encoding: 'utf-8',
+    }
+  )
+    .trim()
+    .split('\n')
+    .filter(Boolean);
 
   return files;
 }
@@ -160,7 +166,9 @@ function keyExists(translations, key) {
  * Main function
  */
 function main() {
-  console.log(`🔍 Checking for missing i18n translation keys (${appName})...\n`);
+  console.log(
+    `🔍 Checking for missing i18n translation keys (${appName})...\n`
+  );
 
   // Load translations
   let translations;
@@ -181,7 +189,8 @@ function main() {
   const filesWithDefaultValue = [];
 
   for (const file of sourceFiles) {
-    const { keys, hasDefaultValue, defaultValueLines } = extractTranslationKeys(file);
+    const { keys, hasDefaultValue, defaultValueLines } =
+      extractTranslationKeys(file);
     keys.forEach(key => allKeys.add(key));
 
     if (hasDefaultValue) {
@@ -235,8 +244,12 @@ function main() {
     console.log(`❌ Found ${missingKeys.length} missing translation key(s)`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     console.log('💡 To fix:');
-    console.log(`   1. Add missing keys to: ${TRANSLATION_FILE.replace(process.cwd() + '/', '')}`);
-    console.log('   2. Remove defaultValue parameters from t() calls once keys are added');
+    console.log(
+      `   1. Add missing keys to: ${TRANSLATION_FILE.replace(process.cwd() + '/', '')}`
+    );
+    console.log(
+      '   2. Remove defaultValue parameters from t() calls once keys are added'
+    );
     console.log(`   3. Re-run this check: pnpm run check:i18n-${appName}\n`);
     process.exit(1);
   } else {
@@ -247,4 +260,3 @@ function main() {
 }
 
 main();
-
