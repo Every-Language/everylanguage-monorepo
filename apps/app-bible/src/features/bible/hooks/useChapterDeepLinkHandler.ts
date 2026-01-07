@@ -7,7 +7,7 @@ import { logger } from '@/shared/utils/logger';
 import { useLocalization } from '@/shared/hooks';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface UseChapterDeepLinkHandlerParams {
   effectiveChapterId: string | null;

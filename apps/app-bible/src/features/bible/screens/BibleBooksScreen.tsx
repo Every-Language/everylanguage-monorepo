@@ -16,7 +16,7 @@ import { useBibleNavigationV2 } from '../services/BibleNavigationServiceV2';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const BibleBooksScreen: React.FC = () => {
   const { theme } = useTheme();

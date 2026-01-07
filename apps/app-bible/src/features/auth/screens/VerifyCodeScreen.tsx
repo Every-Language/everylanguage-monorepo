@@ -17,7 +17,7 @@ import {
 } from '@/features/auth/components';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const VerifyCodeScreen: React.FC<VerifyCodeScreenProps> = ({
   route,

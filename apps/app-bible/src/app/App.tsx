@@ -39,7 +39,7 @@ import { Toast } from '@everylanguage/shared-native-ui';
 import { useSearchInitialization } from '@/features/search/hooks';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 // Media player service is now handled by AppInitializationService
 
 const StatusBarWrapper: React.FC = () => {

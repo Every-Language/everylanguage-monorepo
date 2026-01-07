@@ -12,7 +12,7 @@ import { ControlledTextInput } from '@/features/auth/components/ControlledTextIn
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Validation schema
 const editProfileSchema = z.object({

@@ -2,7 +2,7 @@ import { logger } from '@/shared/utils/logger';
 import type { ChapterMediaOptions } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Centralized helper to handle auto-open media player logic

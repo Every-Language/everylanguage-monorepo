@@ -6,7 +6,7 @@ import { logger } from '@/shared/utils/logger';
 import type { Book, Chapter, Verse } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface UseBibleReturn {
   books: Book[];

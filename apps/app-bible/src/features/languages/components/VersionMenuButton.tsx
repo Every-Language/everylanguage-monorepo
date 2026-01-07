@@ -8,7 +8,7 @@ import type { AudioVersion, TextVersion } from '../types/entities';
 import { useLocalization } from '@/shared/hooks';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface VersionMenuButtonProps {
   version: AudioVersion | TextVersion;

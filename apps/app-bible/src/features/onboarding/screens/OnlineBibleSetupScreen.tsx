@@ -12,7 +12,7 @@ import { useTheme, useLocalization } from '@/shared/hooks';
 import { useNetworkForAction } from '@/shared/hooks/useNetworkState';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import { NoInternetModal } from '@everylanguage/shared-native-ui/components';
 import {

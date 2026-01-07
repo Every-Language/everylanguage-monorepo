@@ -2,7 +2,7 @@ import { supabase } from '@/shared/services/api/supabase';
 import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
 import { logger } from '@/shared/utils/logger';
 
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface PreloadResult {
   verseTexts: number;
