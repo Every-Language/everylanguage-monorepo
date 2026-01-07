@@ -11,7 +11,7 @@ import {
 import { useVerseStore } from '../../store/VerseStore';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface PlaybackControlsProps {
   compact?: boolean;

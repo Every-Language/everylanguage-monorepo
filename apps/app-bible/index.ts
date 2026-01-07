@@ -9,7 +9,7 @@ enableScreens();
 
 // Logging configuration for this module
 import { logger } from '@/shared/utils/logger';
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Create a wrapper component that lazy-loads App to delay store initialization
 // This ensures the React Native bridge is ready before stores try to access AsyncStorage

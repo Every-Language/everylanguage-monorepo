@@ -13,7 +13,7 @@ import { EmailInput } from './EmailInput';
 import { PasswordInput } from './PasswordInput';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 const themedStyles = createThemedStyles({
   container: theme => ({

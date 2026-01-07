@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { searchIndexService } from '../services/SearchIndexService';
 import { logger } from '@/shared/utils/logger';
 
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const useSearchInitialization = () => {
   const [isInitialized, setIsInitialized] = useState(false);

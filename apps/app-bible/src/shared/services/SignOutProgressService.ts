@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface SignOutProgress {
   progress: number; // 0-100

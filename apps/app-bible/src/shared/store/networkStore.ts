@@ -8,7 +8,7 @@ import {
 import { logger } from '../utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Types
 export interface NetworkCapabilities {

@@ -5,7 +5,7 @@ import { useAuthStore } from '@/shared/store/authStore';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Wrapper component that listens to auth store and shows version selection modal when needed

@@ -8,7 +8,7 @@ import { open } from '@op-engineering/op-sqlite';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 const TARGET_PART_BYTES = 500 * 1024 * 1024; // 500 MB
 

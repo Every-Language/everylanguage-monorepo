@@ -18,7 +18,7 @@ import { CodeValidationInput } from './CodeValidationInput';
 import { logger } from '../../../shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 const themedStyles = createThemedStyles({
   container: theme => ({

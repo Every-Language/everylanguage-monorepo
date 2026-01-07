@@ -12,7 +12,7 @@ import { supabase } from '../services/api/supabase';
 import { userVersionCheckService } from '../../features/auth/services/userVersionCheckService';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Helper function to fetch profile data directly (not using hooks)
 const fetchUserProfile = async (userId: string) => {

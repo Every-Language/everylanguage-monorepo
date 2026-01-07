@@ -1,7 +1,7 @@
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface PowerSyncError {
   id: string;
@@ -24,6 +24,7 @@ export interface ErrorClassificationResult {
     | 'network_error'
     | 'auth_error'
     | 'schema_error'
+    | 'transaction_conflict'
     | 'unknown';
 }
 
@@ -44,6 +45,7 @@ export interface PowerSyncErrorStats {
     network_error: number;
     auth_error: number;
     schema_error: number;
+    transaction_conflict: number;
     unknown: number;
   };
 }
@@ -63,6 +65,7 @@ export class PowerSyncErrorHandler {
       network_error: 0,
       auth_error: 0,
       schema_error: 0,
+      transaction_conflict: 0,
       unknown: 0,
     },
   };
@@ -210,6 +213,24 @@ export class PowerSyncErrorHandler {
     _context: 'edge_function' | 'direct_upload',
     errorCode?: string
   ): ErrorClassificationResult {
+    // Transaction nesting errors (retryable - will succeed after upload lock is released)
+    if (
+      errorMessage.includes(
+        'cannot start a transaction within a transaction'
+      ) ||
+      (errorMessage.includes('transaction') &&
+        (errorMessage.includes('already active') ||
+          errorMessage.includes('within a transaction') ||
+          errorMessage.includes('nested transaction')))
+    ) {
+      return {
+        isRetryable: true,
+        shouldSkip: false,
+        reason: 'Transaction conflict - concurrent upload attempt',
+        category: 'transaction_conflict',
+      };
+    }
+
     // RLS violations (non-retryable)
     if (
       errorMessage.includes('row-level security policy') ||
@@ -540,6 +561,7 @@ export class PowerSyncErrorHandler {
         network_error: 0,
         auth_error: 0,
         schema_error: 0,
+        transaction_conflict: 0,
         unknown: 0,
       },
     };

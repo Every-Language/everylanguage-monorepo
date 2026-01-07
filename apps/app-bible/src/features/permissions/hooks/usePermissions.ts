@@ -8,7 +8,7 @@ import {
 } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const usePermissions = (): UsePermissionsReturn => {
   const [permissions, setPermissions] = useState<PermissionsState>({

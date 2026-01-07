@@ -1,7 +1,7 @@
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Global declaration for React Native __DEV__ variable
 declare const __DEV__: boolean;
