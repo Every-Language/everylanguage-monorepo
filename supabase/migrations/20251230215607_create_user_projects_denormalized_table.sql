@@ -11,13 +11,15 @@
 -- - Denormalized table allows efficient indexed queries by user_id
 -- - Triggers ensure data stays in sync automatically
 -- ============================================================================
--- CREATE USER_PROJECTS TABLE
+-- CREATE USER_PROJECTS DENORMALIZED TABLE
 -- ============================================================================
 -- Drop the existing view first (created in earlier migrations)
 DROP VIEW if EXISTS public.user_projects cascade;
 
 
-CREATE TABLE public.user_projects (
+-- Create the denormalized table with a different name to allow creating a view
+-- with the same name for backward compatibility
+CREATE TABLE public.user_projects_denormalized (
   id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
   user_id UUID REFERENCES public.users (id) ON DELETE CASCADE NOT NULL,
   project_id UUID REFERENCES public.projects (id) ON DELETE CASCADE NOT NULL,
@@ -31,32 +33,32 @@ CREATE TABLE public.user_projects (
 
 
 -- Create indexes for PowerSync query performance
-CREATE INDEX if NOT EXISTS idx_user_projects_user_id ON public.user_projects (user_id);
+CREATE INDEX if NOT EXISTS idx_user_projects_denormalized_user_id ON public.user_projects_denormalized (user_id);
 
 
-CREATE INDEX if NOT EXISTS idx_user_projects_project_id ON public.user_projects (project_id);
+CREATE INDEX if NOT EXISTS idx_user_projects_denormalized_project_id ON public.user_projects_denormalized (project_id);
 
 
-CREATE INDEX if NOT EXISTS idx_user_projects_role_id ON public.user_projects (role_id);
+CREATE INDEX if NOT EXISTS idx_user_projects_denormalized_role_id ON public.user_projects_denormalized (role_id);
 
 
 -- Add comments
-comment ON TABLE public.user_projects IS 'Denormalized table linking users to projects with role information. Maintained by triggers on user_roles table. Used by PowerSync for efficient user-scoped queries.';
+comment ON TABLE public.user_projects_denormalized IS 'Denormalized table linking users to projects with role information. Maintained by triggers on user_roles table. Used by PowerSync for efficient user-scoped queries.';
 
 
-comment ON COLUMN public.user_projects.user_id IS 'User ID from public.users table';
+comment ON COLUMN public.user_projects_denormalized.user_id IS 'User ID from public.users table';
 
 
-comment ON COLUMN public.user_projects.project_id IS 'Project ID from public.projects table';
+comment ON COLUMN public.user_projects_denormalized.project_id IS 'Project ID from public.projects table';
 
 
-comment ON COLUMN public.user_projects.role_id IS 'Role ID from public.roles table';
+comment ON COLUMN public.user_projects_denormalized.role_id IS 'Role ID from public.roles table';
 
 
-comment ON COLUMN public.user_projects.role_key IS 'Denormalized role key from roles table for efficient PowerSync queries';
+comment ON COLUMN public.user_projects_denormalized.role_key IS 'Denormalized role key from roles table for efficient PowerSync queries';
 
 
-comment ON COLUMN public.user_projects.role_name IS 'Denormalized role name from roles table for efficient PowerSync queries';
+comment ON COLUMN public.user_projects_denormalized.role_name IS 'Denormalized role name from roles table for efficient PowerSync queries';
 
 
 -- ============================================================================
@@ -85,9 +87,9 @@ BEGIN
   FROM public.roles r
   WHERE r.id = NEW.role_id;
   
-  -- Insert into user_projects if role found
+  -- Insert into user_projects_denormalized if role found
   IF v_role_key IS NOT NULL THEN
-    INSERT INTO public.user_projects (
+    INSERT INTO public.user_projects_denormalized (
       user_id,
       project_id,
       role_id,
@@ -113,7 +115,7 @@ END;
 $$;
 
 
-comment ON function public.sync_user_projects_on_user_role_insert () IS 'Trigger function to insert into user_projects when a project-scoped user_role is created. Uses SECURITY DEFINER with row_security disabled to prevent RLS recursion.';
+comment ON function public.sync_user_projects_on_user_role_insert () IS 'Trigger function to insert into user_projects_denormalized when a project-scoped user_role is created. Uses SECURITY DEFINER with row_security disabled to prevent RLS recursion.';
 
 
 -- Function: Sync user_projects on user_roles UPDATE
@@ -130,8 +132,8 @@ BEGIN
   
   -- Handle case where project_id changed or was removed
   IF OLD.project_id IS NOT NULL AND (NEW.project_id IS NULL OR NEW.project_id != OLD.project_id) THEN
-    -- Delete old user_projects record
-    DELETE FROM public.user_projects
+    -- Delete old user_projects_denormalized record
+    DELETE FROM public.user_projects_denormalized
     WHERE user_id = OLD.user_id
       AND project_id = OLD.project_id
       AND role_id = OLD.role_id;
@@ -145,9 +147,9 @@ BEGIN
     FROM public.roles r
     WHERE r.id = NEW.role_id;
     
-    -- Insert new user_projects record
+    -- Insert new user_projects_denormalized record
     IF v_role_key IS NOT NULL THEN
-      INSERT INTO public.user_projects (
+      INSERT INTO public.user_projects_denormalized (
         user_id,
         project_id,
         role_id,
@@ -179,7 +181,7 @@ BEGIN
      AND NEW.project_id = OLD.project_id 
      AND NEW.role_id != OLD.role_id THEN
     -- Delete old role record
-    DELETE FROM public.user_projects
+    DELETE FROM public.user_projects_denormalized
     WHERE user_id = OLD.user_id
       AND project_id = OLD.project_id
       AND role_id = OLD.role_id;
@@ -192,7 +194,7 @@ BEGIN
     
     -- Insert new role record
     IF v_role_key IS NOT NULL THEN
-      INSERT INTO public.user_projects (
+      INSERT INTO public.user_projects_denormalized (
         user_id,
         project_id,
         role_id,
@@ -231,7 +233,7 @@ BEGIN
     
     -- Update role information if changed
     IF v_role_key IS NOT NULL THEN
-      UPDATE public.user_projects
+      UPDATE public.user_projects_denormalized
       SET
         role_key = v_role_key,
         role_name = v_role_name,
@@ -247,7 +249,7 @@ END;
 $$;
 
 
-comment ON function public.sync_user_projects_on_user_role_update () IS 'Trigger function to update user_projects when a project-scoped user_role is updated. Uses SECURITY DEFINER with row_security disabled to prevent RLS recursion.';
+comment ON function public.sync_user_projects_on_user_role_update () IS 'Trigger function to update user_projects_denormalized when a project-scoped user_role is updated. Uses SECURITY DEFINER with row_security disabled to prevent RLS recursion.';
 
 
 -- Function: Sync user_projects on user_roles DELETE
@@ -264,8 +266,8 @@ BEGIN
     RETURN OLD;
   END IF;
   
-  -- Delete from user_projects
-  DELETE FROM public.user_projects
+  -- Delete from user_projects_denormalized
+  DELETE FROM public.user_projects_denormalized
   WHERE user_id = OLD.user_id
     AND project_id = OLD.project_id
     AND role_id = OLD.role_id;
@@ -275,7 +277,7 @@ END;
 $$;
 
 
-comment ON function public.sync_user_projects_on_user_role_delete () IS 'Trigger function to delete from user_projects when a project-scoped user_role is deleted. Uses SECURITY DEFINER with row_security disabled to prevent RLS recursion.';
+comment ON function public.sync_user_projects_on_user_role_delete () IS 'Trigger function to delete from user_projects_denormalized when a project-scoped user_role is deleted. Uses SECURITY DEFINER with row_security disabled to prevent RLS recursion.';
 
 
 -- Function: Sync user_projects when role information changes in roles table
@@ -287,8 +289,8 @@ BEGIN
   -- Disable RLS to prevent recursion
   SET LOCAL row_security = off;
   
-  -- Update all user_projects records with this role
-  UPDATE public.user_projects
+  -- Update all user_projects_denormalized records with this role
+  UPDATE public.user_projects_denormalized
   SET
     role_key = NEW.role_key,
     role_name = NEW.name,
@@ -300,7 +302,7 @@ END;
 $$;
 
 
-comment ON function public.sync_user_projects_on_role_update () IS 'Trigger function to update user_projects when role information (role_key or name) changes in roles table. Uses SECURITY DEFINER with row_security disabled to prevent RLS recursion.';
+comment ON function public.sync_user_projects_on_role_update () IS 'Trigger function to update user_projects_denormalized when role information (role_key or name) changes in roles table. Uses SECURITY DEFINER with row_security disabled to prevent RLS recursion.';
 
 
 -- ============================================================================
@@ -358,7 +360,7 @@ EXECUTE function public.sync_user_projects_on_role_update ();
 -- Grant SELECT to authenticated users (PowerSync will use this)
 GRANT
 SELECT
-  ON public.user_projects TO authenticated;
+  ON public.user_projects_denormalized TO authenticated;
 
 
 -- Grant EXECUTE on trigger functions to authenticated (for triggers)
@@ -381,9 +383,9 @@ EXECUTE ON function public.sync_user_projects_on_role_update () TO authenticated
 -- ============================================================================
 -- BACKFILL EXISTING DATA
 -- ============================================================================
--- Populate user_projects from existing user_roles where project_id IS NOT NULL
+-- Populate user_projects_denormalized from existing user_roles where project_id IS NOT NULL
 INSERT INTO
-  public.user_projects (
+  public.user_projects_denormalized (
     user_id,
     project_id,
     role_id,
@@ -412,12 +414,12 @@ ON CONFLICT (user_id, project_id, role_id) DO NOTHING;
 -- ============================================================================
 -- RLS POLICIES
 -- ============================================================================
--- Enable RLS on user_projects table
-ALTER TABLE public.user_projects enable ROW level security;
+-- Enable RLS on user_projects_denormalized table
+ALTER TABLE public.user_projects_denormalized enable ROW level security;
 
 
 -- Policy: Users can only see their own project assignments
-CREATE POLICY user_projects_select_own ON public.user_projects FOR
+CREATE POLICY user_projects_denormalized_select_own ON public.user_projects_denormalized FOR
 SELECT
   USING (
     user_id = (
@@ -427,4 +429,36 @@ SELECT
   );
 
 
-comment ON policy user_projects_select_own ON public.user_projects IS 'Users can only view their own project assignments. Used by PowerSync for user-scoped data sync.';
+comment ON policy user_projects_denormalized_select_own ON public.user_projects_denormalized IS 'Users can only view their own project assignments. Used by PowerSync for user-scoped data sync.';
+
+
+-- ============================================================================
+-- CREATE USER_PROJECTS VIEW FOR BACKWARD COMPATIBILITY
+-- ============================================================================
+-- Create a view that wraps the denormalized table and joins with projects
+-- This maintains backward compatibility with existing apps that expect
+-- user_projects to return project data with role information
+CREATE OR REPLACE VIEW public.user_projects
+WITH
+  (security_invoker = FALSE) AS
+SELECT
+  p.*,
+  upd.role_id,
+  upd.role_key,
+  upd.role_name AS role_name,
+  r.resource_type AS role_resource_type
+FROM
+  public.user_projects_denormalized upd
+  INNER JOIN public.projects p ON p.id = upd.project_id
+  INNER JOIN public.roles r ON r.id = upd.role_id
+WHERE
+  upd.user_id = auth.uid ();
+
+
+comment ON view public.user_projects IS 'Returns all projects where the authenticated user has a role, including role information. Filtered by auth.uid() for security. This view wraps the user_projects_denormalized table for backward compatibility with existing apps.';
+
+
+-- Grant SELECT on the view to authenticated users
+GRANT
+SELECT
+  ON public.user_projects TO authenticated;
