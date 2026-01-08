@@ -57,7 +57,8 @@
     "app-record:build:dev:android": "pnpm --filter=app-record run build:dev:android",
     "app-record:build:prod": "pnpm --filter=app-record run build:prod",
     "app-record:build:prod:ios": "pnpm --filter=app-record run build:prod:ios",
-    "app-record:build:prod:android": "pnpm --filter=app-record run build:prod:android"
+    "app-record:build:prod:android": "pnpm --filter=app-record run build:prod:android",
+    "check:i18n-app-bible": "node scripts/check-i18n-keys.js app-bible"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

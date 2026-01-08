@@ -101,7 +101,7 @@ export const PlaylistImageUpload: React.FC<PlaylistImageUploadProps> = ({
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
-          t('common.permissionRequired', 'Permission Required'),
+          t('common.permissionRequired'),
           t(
             'playlists.imagePermissionMessage',
             'We need permission to access your photos to upload playlist images.'
@@ -156,10 +156,7 @@ export const PlaylistImageUpload: React.FC<PlaylistImageUploadProps> = ({
       }
 
       setSelectedImageUri(null);
-      showToast(
-        t('playlists.imageUploaded', 'Image uploaded successfully!'),
-        'success'
-      );
+      showToast(t('playlists.imageUploaded'), 'success');
       onImageUploaded?.(imageId);
     } catch (error) {
       logger.error(true, '[PlaylistImageUpload] Error uploading image:', error);
@@ -196,10 +193,7 @@ export const PlaylistImageUpload: React.FC<PlaylistImageUploadProps> = ({
               // Clear the display image immediately
               setDisplayImageUri(null);
               setSelectedImageUri(null);
-              showToast(
-                t('playlists.imageRemoved', 'Image removed successfully!'),
-                'success'
-              );
+              showToast(t('playlists.imageRemoved'), 'success');
               onImageRemoved?.();
             } catch (error) {
               logger.error(
@@ -225,8 +219,7 @@ export const PlaylistImageUpload: React.FC<PlaylistImageUploadProps> = ({
   return (
     <View style={styles.container}>
       <Text style={[styles.label, { color: theme.colors.text }]}>
-        {t('playlists.playlistImage', 'Playlist Image')} (
-        {t('common.optional', 'Optional')})
+        {t('playlists.playlistImage')} ({t('common.optional', 'Optional')})
       </Text>
 
       <TouchableOpacity
@@ -289,7 +282,7 @@ export const PlaylistImageUpload: React.FC<PlaylistImageUploadProps> = ({
                 styles.placeholderText,
                 { color: theme.colors.textSecondary },
               ]}>
-              {t('playlists.noImage', 'No image')}
+              {t('playlists.noImage')}
             </Text>
           </View>
         )}

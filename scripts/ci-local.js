@@ -426,6 +426,37 @@ async function loadPowerSyncEnvForApp(appName) {
   return missing.length === 0;
 }
 
+async function runI18nValidation(changes) {
+  const checks = [];
+
+  if (changes.frontendAppBible) {
+    checks.push(
+      runStep('i18n: Check translation keys (app-bible)', () => {
+        execSync('node scripts/check-i18n-keys.js app-bible', {
+          stdio: 'inherit',
+        });
+      })
+    );
+  }
+
+  // Add app-record check when needed
+  // if (changes.frontendAppRecord) {
+  //   checks.push(
+  //     runStep('i18n: Check translation keys (app-record)', () => {
+  //       execSync('node scripts/check-i18n-keys.js app-record', {
+  //         stdio: 'inherit',
+  //       });
+  //     })
+  //   );
+  // }
+
+  if (checks.length === 0) {
+    return;
+  }
+
+  await Promise.all(checks);
+}
+
 async function runPowerSyncValidation(changes, mode) {
   if (mode !== 'pr') {
     return;
@@ -521,6 +552,7 @@ async function main() {
   await runBuild(changes, mode);
   // Skip App Bible validation - native folders expected locally for dev builds
   // CI will catch if native folders are committed
+  await runI18nValidation(changes);
   await runPowerSyncValidation(changes, mode);
   await runSecurityAudit(mode);
 

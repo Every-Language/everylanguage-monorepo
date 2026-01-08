@@ -166,9 +166,7 @@ export const OnboardingStackNavigator: React.FC = () => {
         name='SignInSync'
         component={SignInSyncScreen}
         options={{
-          title: i18n.t('auth.sync.title', {
-            defaultValue: 'Syncing Account',
-          }),
+          title: i18n.t('auth.sync.title'),
           gestureEnabled: false, // Prevent back navigation during sync
           animation: 'none', // No animation for sync screen
         }}
@@ -185,27 +183,21 @@ export const OnboardingStackNavigator: React.FC = () => {
         name='MotherTongueSearch'
         component={MotherTongueSearchScreenWrapper}
         options={{
-          title: i18n.t('onboarding.chooseLanguage', {
-            defaultValue: 'Choose Your Language',
-          }),
+          title: i18n.t('onboarding.chooseLanguage'),
         }}
       />
       <OnboardingStack.Screen
         name='ImportBible'
         component={ImportBibleScreenWrapper}
         options={{
-          title: i18n.t('onboarding.importBible', {
-            defaultValue: 'Import Bible',
-          }),
+          title: i18n.t('onboarding.importBible'),
         }}
       />
       <OnboardingStack.Screen
         name='Permissions'
         component={PermissionsScreenWrapper}
         options={{
-          title: i18n.t('onboarding.permissions.title', {
-            defaultValue: 'Permissions',
-          }),
+          title: i18n.t('onboarding.permissions.title'),
           gestureEnabled: false, // Disable swipe back on permissions
         }}
       />
