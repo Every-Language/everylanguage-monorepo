@@ -64,6 +64,157 @@ const verses = new Table(
     },
   }
 );
+const verse_texts = new Table(
+  {
+    // id column (text) is automatically included
+    verse_id: column.text,
+    text_version_id: column.text,
+    verse_text: column.text,
+    created_at: column.text,
+    created_by: column.text,
+    updated_at: column.text,
+    deleted_at: column.text,
+    version: column.integer,
+    publish_status: column.text,
+  },
+  {
+    indexes: {
+      idx_0: ['text_version_id'],
+      idx_1: ['verse_id'],
+      idx_2: ['verse_id', 'text_version_id'],
+    },
+  }
+);
+const media_files = new Table(
+  {
+    // id column (text) is automatically included
+    language_entity_id: column.text,
+    media_type: column.text,
+    file_size: column.integer,
+    duration_seconds: column.real,
+    upload_status: column.text,
+    publish_status: column.text,
+    check_status: column.text,
+    version: column.integer,
+    created_at: column.text,
+    created_by: column.text,
+    updated_at: column.text,
+    deleted_at: column.text,
+    is_bible_audio: column.integer,
+    start_verse_id: column.text,
+    end_verse_id: column.text,
+    audio_version_id: column.text,
+    chapter_id: column.text,
+    object_key: column.text,
+    storage_provider: column.text,
+    original_filename: column.text,
+    file_type: column.text,
+    local_path: column.text,
+    sequence_id: column.text,
+    project_id: column.text,
+  },
+  {
+    indexes: {
+      idx_0: ['audio_version_id'],
+      idx_1: ['chapter_id'],
+      idx_2: ['language_entity_id'],
+      idx_3: ['chapter_id', 'audio_version_id'],
+      idx_4: ['audio_version_id', 'chapter_id'],
+      idx_5: ['chapter_id', 'deleted_at'],
+      idx_6: ['id', 'chapter_id'],
+      idx_7: ['audio_version_id', 'deleted_at'],
+      idx_8: ['chapter_id', 'audio_version_id', 'deleted_at'],
+    },
+  }
+);
+const media_files_verses = new Table(
+  {
+    // id column (text) is automatically included
+    media_file_id: column.text,
+    verse_id: column.text,
+    start_time_seconds: column.real,
+    duration_seconds: column.real,
+    created_by: column.text,
+    created_at: column.text,
+    updated_at: column.text,
+    deleted_at: column.text,
+    denormalized_audio_version_id: column.text,
+    verse_checker_status: column.text,
+    verse_checker_comment: column.text,
+    project_id: column.text,
+  },
+  {
+    indexes: {
+      idx_0: ['media_file_id'],
+      idx_1: ['verse_id'],
+      idx_2: ['denormalized_audio_version_id'],
+      idx_3: ['media_file_id', 'verse_id'],
+      idx_4: ['verse_id', 'denormalized_audio_version_id'],
+    },
+  }
+);
+const text_versions = new Table(
+  {
+    // id column (text) is automatically included
+    language_entity_id: column.text,
+    bible_version_id: column.text,
+    name: column.text,
+    text_version_source: column.text,
+    created_at: column.text,
+    created_by: column.text,
+    updated_at: column.text,
+    deleted_at: column.text,
+    project_id: column.text,
+    publish_status: column.text,
+  },
+  { indexes: {} }
+);
+const audio_versions = new Table(
+  {
+    // id column (text) is automatically included
+    language_entity_id: column.text,
+    bible_version_id: column.text,
+    project_id: column.text,
+    name: column.text,
+    created_at: column.text,
+    created_by: column.text,
+    updated_at: column.text,
+    deleted_at: column.text,
+    publish_status: column.text,
+  },
+  { indexes: {} }
+);
+const user_current_selections = new Table(
+  {
+    // id column (text) is automatically included
+    user_id: column.text,
+    selected_audio_version: column.text,
+    selected_text_version: column.text,
+    created_at: column.text,
+    updated_at: column.text,
+  },
+  { indexes: { idx_0: ['user_id'] } }
+);
+const user_saved_text_versions = new Table(
+  {
+    // id column (text) is automatically included
+    user_id: column.text,
+    text_version_id: column.text,
+    created_at: column.text,
+    updated_at: column.text,
+  },
+  { indexes: { idx_0: ['user_id'], idx_1: ['text_version_id'] } }
+);
+const user_saved_audio_versions = new Table(
+  {
+    // id column (text) is automatically included
+    user_id: column.text,
+    audio_version_id: column.text,
+    created_at: column.text,
+    updated_at: column.text,
+  },
+  { indexes: { idx_0: ['user_id'], idx_1: ['audio_version_id'] } }
+);
 const sessions = new Table(
   {
     // id column (text) is automatically included
@@ -81,6 +232,7 @@ const sessions = new Table(
     continent_code: column.text,
     country_code: column.text,
     region_code: column.text,
+    language_entity_id: column.text,
   },
   { indexes: {} }
 );
@@ -91,7 +243,7 @@ const share_opens = new Table(
     user_id: column.text,
     session_id: column.text,
     opened_at: column.text,
-    origin_share_id: column.text,
+    parent_share_id: column.text,
     created_at: column.text,
   },
   { indexes: {} }
@@ -105,7 +257,7 @@ const shares = new Table(
     share_entity_type: column.text,
     share_entity_id: column.text,
     language_entity_id: column.text,
-    origin_share_id: column.text,
+    parent_share_id: column.text,
   },
   { indexes: {} }
 );
@@ -147,6 +299,9 @@ const app_downloads = new Table(
     platform: column.text,
     os: column.text,
     os_version: column.text,
+    country_code: column.text,
+    region_code: column.text,
+    continent_code: column.text,
   },
   { indexes: {} }
 );
@@ -161,147 +316,6 @@ const chapter_listens = new Table(
     origin_share_id: column.text,
   },
   { indexes: {} }
-);
-const user_current_selections = new Table(
-  {
-    // id column (text) is automatically included
-    user_id: column.text,
-    selected_audio_version: column.text,
-    selected_text_version: column.text,
-    created_at: column.text,
-    updated_at: column.text,
-  },
-  { indexes: { idx_0: ['user_id'] } }
-);
-const user_saved_text_versions = new Table(
-  {
-    // id column (text) is automatically included
-    user_id: column.text,
-    text_version_id: column.text,
-    created_at: column.text,
-    updated_at: column.text,
-  },
-  { indexes: { idx_0: ['user_id'], idx_1: ['text_version_id'] } }
-);
-const user_saved_audio_versions = new Table(
-  {
-    // id column (text) is automatically included
-    user_id: column.text,
-    audio_version_id: column.text,
-    created_at: column.text,
-    updated_at: column.text,
-  },
-  { indexes: { idx_0: ['user_id'], idx_1: ['audio_version_id'] } }
-);
-const audio_versions = new Table(
-  {
-    // id column (text) is automatically included
-    language_entity_id: column.text,
-    bible_version_id: column.text,
-    project_id: column.text,
-    name: column.text,
-    created_at: column.text,
-    created_by: column.text,
-    updated_at: column.text,
-    deleted_at: column.text,
-  },
-  { indexes: {} }
-);
-const media_files = new Table(
-  {
-    // id column (text) is automatically included
-    language_entity_id: column.text,
-    media_type: column.text,
-    file_size: column.integer,
-    duration_seconds: column.real,
-    upload_status: column.text,
-    publish_status: column.text,
-    check_status: column.text,
-    version: column.integer,
-    created_at: column.text,
-    created_by: column.text,
-    updated_at: column.text,
-    deleted_at: column.text,
-    is_bible_audio: column.integer,
-    start_verse_id: column.text,
-    end_verse_id: column.text,
-    audio_version_id: column.text,
-    chapter_id: column.text,
-    object_key: column.text,
-    storage_provider: column.text,
-    original_filename: column.text,
-    file_type: column.text,
-  },
-  {
-    indexes: {
-      idx_0: ['audio_version_id'],
-      idx_1: ['chapter_id'],
-      idx_2: ['language_entity_id'],
-      idx_3: ['chapter_id', 'audio_version_id'],
-      idx_4: ['audio_version_id', 'chapter_id'],
-      idx_5: ['chapter_id', 'deleted_at'],
-      idx_6: ['id', 'chapter_id'],
-    },
-  }
-);
-const media_files_verses = new Table(
-  {
-    // id column (text) is automatically included
-    media_file_id: column.text,
-    verse_id: column.text,
-    start_time_seconds: column.real,
-    duration_seconds: column.real,
-    created_by: column.text,
-    created_at: column.text,
-    updated_at: column.text,
-    deleted_at: column.text,
-    denormalized_audio_version_id: column.text,
-  },
-  {
-    indexes: {
-      idx_0: ['media_file_id'],
-      idx_1: ['verse_id'],
-      idx_2: ['denormalized_audio_version_id'],
-      idx_3: ['media_file_id', 'verse_id'],
-      idx_4: ['verse_id', 'denormalized_audio_version_id'],
-    },
-  }
-);
-const text_versions = new Table(
-  {
-    // id column (text) is automatically included
-    language_entity_id: column.text,
-    bible_version_id: column.text,
-    name: column.text,
-    text_version_source: column.text,
-    created_at: column.text,
-    created_by: column.text,
-    updated_at: column.text,
-    deleted_at: column.text,
-    project_id: column.text,
-  },
-  { indexes: {} }
-);
-const verse_texts = new Table(
-  {
-    // id column (text) is automatically included
-    verse_id: column.text,
-    text_version_id: column.text,
-    verse_text: column.text,
-    created_at: column.text,
-    created_by: column.text,
-    updated_at: column.text,
-    deleted_at: column.text,
-    version: column.integer,
-    publish_status: column.text,
-  },
-  {
-    indexes: {
-      idx_0: ['text_version_id'],
-      idx_1: ['verse_id'],
-      idx_2: ['verse_id', 'text_version_id'],
-    },
-  }
 );
 const user_bookmarks = new Table(
   {
@@ -429,6 +443,14 @@ export const SyncedSchema = new Schema({
   books,
   chapters,
   verses,
+  verse_texts,
+  media_files,
+  media_files_verses,
+  text_versions,
+  audio_versions,
+  user_current_selections,
+  user_saved_text_versions,
+  user_saved_audio_versions,
   sessions,
   share_opens,
   shares,
@@ -436,14 +458,6 @@ export const SyncedSchema = new Schema({
   media_file_listens,
   app_downloads,
   chapter_listens,
-  user_current_selections,
-  user_saved_text_versions,
-  user_saved_audio_versions,
-  audio_versions,
-  media_files,
-  media_files_verses,
-  text_versions,
-  verse_texts,
   user_bookmarks,
   user_bookmark_folders,
   user_saved_image_sets,
@@ -465,6 +479,14 @@ export const AppSchema = new Schema({
   books,
   chapters,
   verses,
+  verse_texts,
+  media_files,
+  media_files_verses,
+  text_versions,
+  audio_versions,
+  user_current_selections,
+  user_saved_text_versions,
+  user_saved_audio_versions,
   sessions,
   share_opens,
   shares,
@@ -472,14 +494,6 @@ export const AppSchema = new Schema({
   media_file_listens,
   app_downloads,
   chapter_listens,
-  user_current_selections,
-  user_saved_text_versions,
-  user_saved_audio_versions,
-  audio_versions,
-  media_files,
-  media_files_verses,
-  text_versions,
-  verse_texts,
   user_bookmarks,
   user_bookmark_folders,
   user_saved_image_sets,
@@ -488,7 +502,6 @@ export const AppSchema = new Schema({
   user_playlist_groups,
   user_playlists,
   playlists,
-  playlist_items,
   // Local-only tables
   ...__localTables,
 });
