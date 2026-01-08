@@ -31,7 +31,9 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --passWithNoTests",
     "test:run": "jest --watchAll=false --coverage=false",
-    "test:ci": "jest --ci --coverage --watchAll=false"
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "powersync:generate-schema": "node scripts/generate-powersync-schema.cjs",
+    "powersync:verify-schema": "node scripts/verify-powersync-schema.cjs"
   },
   "dependencies": {
     "expo": "53.0.23",
