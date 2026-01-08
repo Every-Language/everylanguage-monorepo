@@ -58,7 +58,9 @@ function detectEnvironment() {
   if (fs.existsSync(envFile)) {
     const envContent = fs.readFileSync(envFile, 'utf8');
     envContent.split('\n').forEach(line => {
-      const match = line.match(/^POWERSYNC_(PROJECT_ID|AUTH_TOKEN|ORG_ID|INSTANCE_ID)=(.*)$/);
+      const match = line.match(
+        /^POWERSYNC_(PROJECT_ID|AUTH_TOKEN|ORG_ID|INSTANCE_ID)=(.*)$/
+      );
       if (match) {
         const key = match[1];
         const value = match[2].trim().replace(/^["']|["']$/g, '');
@@ -105,7 +107,7 @@ function detectEnvironment() {
     `❌ PowerSync credentials not found for ${env} environment.\n\n` +
       `Please set one of the following:\n` +
       `  1. Environment variables: PROJECT_ID, AUTH_TOKEN, ORG_ID, INSTANCE_ID\n` +
-      `  2. Or in .env.local: POWERSYNC_PROJECT_ID, POWERSYNC_AUTH_TOKEN, POWERSYNC_ORG_ID, POWERSYNC_INSTANCE_ID\n` +
+      `  2. Or in .env: POWERSYNC_PROJECT_ID, POWERSYNC_AUTH_TOKEN, POWERSYNC_ORG_ID, POWERSYNC_INSTANCE_ID\n` +
       `  3. Or environment-specific: POWERSYNC_${prefix}_PROJECT_ID, POWERSYNC_${prefix}_AUTH_TOKEN, etc.\n\n` +
       `For local development on 'develop' branch, use development instance credentials.\n` +
       `For 'main' branch, use production instance credentials.`
