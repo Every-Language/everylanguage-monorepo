@@ -165,7 +165,8 @@
     "*.{json,md}": [
       "prettier --write"
     ],
-    "powersync/AppSchema.ts": []
+    "powersync/AppSchema.ts": [],
+    "powersync/AppSchema.generated.ts": []
   },
   "expo": {
     "doctor": {
