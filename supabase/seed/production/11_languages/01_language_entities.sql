@@ -1,4 +1,7 @@
 -- language_entities seed data (chunk 1/21)
+-- Temporarily disable foreign key constraints for bulk loading hierarchical data
+SET session_replication_role = replica;
+
 INSERT INTO
   language_entities (
     id,

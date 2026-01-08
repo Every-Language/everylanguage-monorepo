@@ -58,9 +58,9 @@ function detectEnvironment() {
   if (fs.existsSync(envFile)) {
     const envContent = fs.readFileSync(envFile, 'utf8');
     envContent.split('\n').forEach(line => {
-      // Support both old format (POWERSYNC_PROJECT_ID) and new format (POWERSYNC_BIBLE_PROJECT_ID)
+      // Support both old format (POWERSYNC_PROJECT_ID) and new format (POWERSYNC_RECORD_PROJECT_ID)
       const match = line.match(
-        /^POWERSYNC_(BIBLE_)?(PROJECT_ID|AUTH_TOKEN|ORG_ID|INSTANCE_ID)=(.*)$/
+        /^POWERSYNC_(RECORD_)?(PROJECT_ID|AUTH_TOKEN|ORG_ID|INSTANCE_ID)=(.*)$/
       );
       if (match) {
         const key = match[2]; // PROJECT_ID, AUTH_TOKEN, etc.
@@ -74,8 +74,8 @@ function detectEnvironment() {
   // Priority: Environment-specific app vars > App-specific vars > Generic vars
   const prefix = isProduction ? 'PROD' : 'DEV';
   const projectId =
-    process.env[`POWERSYNC_BIBLE_${prefix}_PROJECT_ID`] ||
-    process.env.POWERSYNC_BIBLE_PROJECT_ID ||
+    process.env[`POWERSYNC_RECORD_${prefix}_PROJECT_ID`] ||
+    process.env.POWERSYNC_RECORD_PROJECT_ID ||
     envVars[`${prefix}_PROJECT_ID`] ||
     envVars.PROJECT_ID ||
     process.env[`POWERSYNC_${prefix}_PROJECT_ID`] ||
@@ -91,8 +91,8 @@ function detectEnvironment() {
     envVars[`${prefix}_ORG_ID`] ||
     envVars.ORG_ID;
   const instanceId =
-    process.env[`POWERSYNC_BIBLE_${prefix}_INSTANCE_ID`] ||
-    process.env.POWERSYNC_BIBLE_INSTANCE_ID ||
+    process.env[`POWERSYNC_RECORD_${prefix}_INSTANCE_ID`] ||
+    process.env.POWERSYNC_RECORD_INSTANCE_ID ||
     envVars[`${prefix}_INSTANCE_ID`] ||
     envVars.INSTANCE_ID ||
     process.env[`POWERSYNC_${prefix}_INSTANCE_ID`] ||
@@ -113,8 +113,8 @@ function detectEnvironment() {
     `❌ PowerSync credentials not found for ${env} environment.\n\n` +
       `Please set one of the following:\n` +
       `  1. Environment variables: PROJECT_ID, AUTH_TOKEN, ORG_ID, INSTANCE_ID\n` +
-      `  2. Or in .env: POWERSYNC_BIBLE_PROJECT_ID, POWERSYNC_AUTH_TOKEN, POWERSYNC_ORG_ID, POWERSYNC_BIBLE_INSTANCE_ID\n` +
-      `  3. Or environment-specific: POWERSYNC_BIBLE_${prefix}_PROJECT_ID, POWERSYNC_BIBLE_${prefix}_INSTANCE_ID, etc.\n` +
+      `  2. Or in .env: POWERSYNC_RECORD_PROJECT_ID, POWERSYNC_AUTH_TOKEN, POWERSYNC_ORG_ID, POWERSYNC_RECORD_INSTANCE_ID\n` +
+      `  3. Or environment-specific: POWERSYNC_RECORD_${prefix}_PROJECT_ID, POWERSYNC_RECORD_${prefix}_INSTANCE_ID, etc.\n` +
       `  4. Or legacy format: POWERSYNC_PROJECT_ID, POWERSYNC_INSTANCE_ID (for backward compatibility)\n\n` +
       `For local development on 'develop' branch, use development instance credentials.\n` +
       `For 'main' branch, use production instance credentials.\n\n` +
