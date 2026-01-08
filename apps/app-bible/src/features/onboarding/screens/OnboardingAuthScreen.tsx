@@ -77,7 +77,7 @@ export const OnboardingAuthScreen: React.FC<OnboardingAuthScreenProps> = ({
                 styles.skipButtonText,
                 { color: theme.colors.textSecondary },
               ]}>
-              {t('auth.skip', { defaultValue: 'Skip for now' })}
+              {t('auth.skip')}
             </Text>
             <Ionicons
               name='arrow-forward'

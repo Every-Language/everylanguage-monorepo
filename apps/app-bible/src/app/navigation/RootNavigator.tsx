@@ -180,9 +180,7 @@ const MainAppNavigator: React.FC = () => {
           gestureEnabled: true,
           fullScreenGestureEnabled: true,
           animationMatchesGesture: true,
-          title: i18n.t('versions.selectVersions', {
-            defaultValue: 'Select Your Versions',
-          }),
+          title: i18n.t('versions.selectVersions'),
         }}
       />
 

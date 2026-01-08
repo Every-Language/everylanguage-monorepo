@@ -131,7 +131,7 @@ export const SignInScreen: React.FC<SignInScreenPropsWithOnboarding> = ({
                   styles.skipButtonText,
                   { color: theme.colors.textInverse },
                 ]}>
-                {t('common.skip', { defaultValue: 'Skip' })}
+                {t('common.skip')}
               </Text>
               <Ionicons
                 name='arrow-forward'

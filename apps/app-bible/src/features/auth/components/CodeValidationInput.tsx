@@ -195,11 +195,7 @@ export function CodeValidationInput({
 
       {showResendButton && onResend && (
         <View style={styles.resendContainer}>
-          <Text style={styles.resendText}>
-            {t('auth.didntReceiveCode', {
-              defaultValue: "Didn't receive the code?",
-            })}
-          </Text>
+          <Text style={styles.resendText}>{t('auth.didntReceiveCode')}</Text>
           <TouchableOpacity
             style={styles.resendButton}
             onPress={handleResend}
@@ -209,7 +205,7 @@ export function CodeValidationInput({
                 styles.resendButtonText,
                 !canResend && styles.resendButtonDisabled,
               ]}>
-              {t('auth.resendCode', { defaultValue: 'Resend' })}
+              {t('auth.resendCode')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -217,10 +213,7 @@ export function CodeValidationInput({
 
       {resendTimer > 0 && (
         <Text style={styles.countdownText}>
-          {t('auth.resendIn', {
-            defaultValue: 'Resend in {{seconds}}s',
-            seconds: resendTimer,
-          })}
+          {t('auth.resendIn', { seconds: resendTimer })}
         </Text>
       )}
     </View>

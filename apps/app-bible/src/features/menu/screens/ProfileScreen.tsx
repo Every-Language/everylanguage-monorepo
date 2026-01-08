@@ -241,16 +241,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = () => {
             ) : (
               <>
                 <Text style={[styles.userName, { color: theme.colors.text }]}>
-                  {t('profile.guestUser', { defaultValue: 'Guest User' })}
+                  {t('profile.guestUser')}
                 </Text>
                 <Text
                   style={[
                     styles.guestDescription,
                     { color: theme.colors.textSecondary },
                   ]}>
-                  {t('profile.signInPrompt', {
-                    defaultValue: 'Sign in to sync your data across devices',
-                  })}
+                  {t('profile.signInPrompt')}
                 </Text>
               </>
             )}
@@ -261,7 +259,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = () => {
         {!isAuthenticated && (
           <View style={styles.actionButtons}>
             <Button
-              title={t('auth.signIn', { defaultValue: 'Sign In' })}
+              title={t('auth.signIn')}
               onPress={() => navigation.getParent()?.navigate('AuthModal')}
               variant='primary'
               icon='log-in'
@@ -352,7 +350,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = () => {
         {isAuthenticated && (
           <View style={styles.signOutSection}>
             <Button
-              title={t('auth.signOut', { defaultValue: 'Sign Out' })}
+              title={t('auth.signOut')}
               onPress={handleSignOutPress}
               variant='outline'
               icon='log-out-outline'
