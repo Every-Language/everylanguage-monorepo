@@ -78,7 +78,12 @@ async function generateSignedUrl(
   const baseUrl = Deno.env.get('CDN_BASE_URL') ?? '';
   const secret = Deno.env.get('CDN_SIGNING_SECRET') ?? '';
 
-  let url = await createSignedCdnUrl(baseUrl, objectKey, secret, expiresInSeconds);
+  let url = await createSignedCdnUrl(
+    baseUrl,
+    objectKey,
+    secret,
+    expiresInSeconds
+  );
 
   // Add env param for development
   if ((Deno.env.get('ENV') ?? '').toLowerCase() === 'development') {
