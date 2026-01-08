@@ -126,7 +126,9 @@ if [ -z "$SUPABASE_ANON_KEY" ]; then
     SUPABASE_ANON_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development" || true)
 fi
 
-POWERSYNC_URL=$(get_env_value "POWERSYNC_URL" "$SECRETS_DIR/.env.development" || true)
+# Get PowerSync URLs for each app (instance-specific URLs)
+POWERSYNC_BIBLE_URL=$(get_env_value "POWERSYNC_BIBLE_URL" "$SECRETS_DIR/.env.development" || true)
+POWERSYNC_RECORD_URL=$(get_env_value "POWERSYNC_RECORD_URL" "$SECRETS_DIR/.env.development" || true)
 
 # Deploy derived EXPO_PUBLIC_* variables
 if [ -n "$SUPABASE_URL" ]; then
@@ -135,8 +137,12 @@ fi
 if [ -n "$SUPABASE_ANON_KEY" ]; then
     deploy_github_secret "EXPO_PUBLIC_SUPABASE_ANON_KEY" "$SUPABASE_ANON_KEY" "development"
 fi
-if [ -n "$POWERSYNC_URL" ]; then
-    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_URL" "$POWERSYNC_URL" "development"
+# Deploy app-specific PowerSync URLs
+if [ -n "$POWERSYNC_BIBLE_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_BIBLE_URL" "$POWERSYNC_BIBLE_URL" "development"
+fi
+if [ -n "$POWERSYNC_RECORD_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_RECORD_URL" "$POWERSYNC_RECORD_URL" "development"
 fi
 
 # Deploy PowerSync instance IDs for development environment
@@ -185,7 +191,9 @@ if [ -z "$SUPABASE_ANON_KEY" ]; then
     SUPABASE_ANON_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production" || true)
 fi
 
-POWERSYNC_URL=$(get_env_value "POWERSYNC_URL" "$SECRETS_DIR/.env.production" || true)
+# Get PowerSync URLs for each app (instance-specific URLs)
+POWERSYNC_BIBLE_URL=$(get_env_value "POWERSYNC_BIBLE_URL" "$SECRETS_DIR/.env.production" || true)
+POWERSYNC_RECORD_URL=$(get_env_value "POWERSYNC_RECORD_URL" "$SECRETS_DIR/.env.production" || true)
 
 # Deploy derived EXPO_PUBLIC_* variables
 if [ -n "$SUPABASE_URL" ]; then
@@ -194,8 +202,12 @@ fi
 if [ -n "$SUPABASE_ANON_KEY" ]; then
     deploy_github_secret "EXPO_PUBLIC_SUPABASE_ANON_KEY" "$SUPABASE_ANON_KEY" "production"
 fi
-if [ -n "$POWERSYNC_URL" ]; then
-    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_URL" "$POWERSYNC_URL" "production"
+# Deploy app-specific PowerSync URLs
+if [ -n "$POWERSYNC_BIBLE_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_BIBLE_URL" "$POWERSYNC_BIBLE_URL" "production"
+fi
+if [ -n "$POWERSYNC_RECORD_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_RECORD_URL" "$POWERSYNC_RECORD_URL" "production"
 fi
 
 # Deploy PowerSync instance IDs for production environment

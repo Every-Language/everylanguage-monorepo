@@ -85,7 +85,8 @@ The following secrets are deployed to Vercel projects (both preview and producti
 
 - `SUPABASE_PROJECT_ID` or `SUPABASE_URL` (URL derived from PROJECT_ID if not set)
 - `SUPABASE_ANON_KEY` or `SUPABASE_PUBLISHABLE_KEY` (ANON_KEY preferred)
-- `POWERSYNC_URL` (for app-bible)
+- `POWERSYNC_BIBLE_URL` (for app-bible - instance-specific URL)
+- `POWERSYNC_RECORD_URL` (for app-record - instance-specific URL)
 - `STRIPE_PUBLISHABLE_KEY`
 
 **Derived Variables (automatically created):**
@@ -96,7 +97,8 @@ The following secrets are deployed to Vercel projects (both preview and producti
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` → from `SUPABASE_ANON_KEY` or `SUPABASE_PUBLISHABLE_KEY`
 - `EXPO_PUBLIC_SUPABASE_URL` → from `SUPABASE_URL` or `SUPABASE_PROJECT_ID` (GitHub only)
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY` → from `SUPABASE_ANON_KEY` or `SUPABASE_PUBLISHABLE_KEY` (GitHub only)
-- `EXPO_PUBLIC_POWERSYNC_URL` → from `POWERSYNC_URL` (GitHub only)
+- `EXPO_PUBLIC_POWERSYNC_BIBLE_URL` → from `POWERSYNC_BIBLE_URL` (GitHub only)
+- `EXPO_PUBLIC_POWERSYNC_RECORD_URL` → from `POWERSYNC_RECORD_URL` (GitHub only)
 - `VITE_STRIPE_PUBLISHABLE_KEY` → from `STRIPE_PUBLISHABLE_KEY`
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` → from `STRIPE_PUBLISHABLE_KEY`
 
@@ -121,11 +123,12 @@ The following secrets are deployed to GitHub Actions environments:
 
 **From `.env.development` (Development Environment):**
 
-- Base variables: `SUPABASE_PROJECT_ID`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `POWERSYNC_URL`, etc.
+- Base variables: `SUPABASE_PROJECT_ID`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `POWERSYNC_BIBLE_URL`, `POWERSYNC_RECORD_URL`, etc.
 - **Derived variables (automatically created):**
   - `EXPO_PUBLIC_SUPABASE_URL` → from `SUPABASE_URL` or `SUPABASE_PROJECT_ID`
   - `EXPO_PUBLIC_SUPABASE_ANON_KEY` → from `SUPABASE_ANON_KEY` or `SUPABASE_PUBLISHABLE_KEY`
-  - `EXPO_PUBLIC_POWERSYNC_URL` → from `POWERSYNC_URL`
+  - `EXPO_PUBLIC_POWERSYNC_BIBLE_URL` → from `POWERSYNC_BIBLE_URL`
+  - `EXPO_PUBLIC_POWERSYNC_RECORD_URL` → from `POWERSYNC_RECORD_URL`
 
 **From `.env.production` (Production Environment):**
 
