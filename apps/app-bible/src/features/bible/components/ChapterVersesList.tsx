@@ -10,7 +10,7 @@ import { logger } from '@/shared/utils/logger';
 import type { VerseWithText } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const ChapterVersesList: React.FC = () => {
   const { theme } = useTheme();

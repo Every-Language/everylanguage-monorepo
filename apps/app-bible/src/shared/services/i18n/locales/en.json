@@ -30,7 +30,13 @@
     "confirm": "Confirm",
     "add": "Add",
     "adding": "Adding...",
-    "optional": "Optional"
+    "optional": "Optional",
+    "skip": "Skip",
+    "on": "On",
+    "off": "Off",
+    "complete": "Complete",
+    "pleaseWait": "Please wait...",
+    "permissionRequired": "Permission Required"
   },
   "nav": {
     "home": "Home",
@@ -124,13 +130,23 @@
     "verifyCode": "Verify Code",
     "codeSentTo": "Code sent to:",
     "wrongEmail": "Wrong email address?",
-    "goBack": "Go back",
     "verifyEmail": "Verify Your Email",
     "emailVerificationMessage": "We've sent a 6-digit verification code to your email address.",
     "enterCode": "Enter 6-digit code",
     "verificationCode": "Verification Code*",
     "codeSent": "Code Sent",
     "checkEmailForCode": "Please check your email for the verification code",
+    "skip": "Skip for now",
+    "wrongPhone": "Wrong phone number?",
+    "phoneVerificationMessage": "We've sent a verification code to your phone number.",
+    "signOutCompleteMessage": "You are now signed out. You can sign in again or set up a new account.",
+    "getStarted": "Get Started",
+    "sync": {
+      "title": "Syncing Your Account",
+      "getStarted": "Get Started",
+      "skipOnboarding": "Skip Onboarding",
+      "continueOffline": "Continue Offline"
+    },
     "errors": {
       "fillAllFields": "Please fill in all fields",
       "invalidEmail": "Please enter a valid email",
@@ -159,7 +175,8 @@
       "noUserReturnedEmailVerification": "No user returned after email verification",
       "failedCreateAnonymousUser": "Failed to create anonymous user",
       "notAuthenticated": "Not authenticated",
-      "unknownError": "Unknown error"
+      "unknownError": "Unknown error",
+      "invalidCode": "Invalid verification code"
     }
   },
   "tabs": {
@@ -168,6 +185,7 @@
     "audio queue": "Audio Queue"
   },
   "bible": {
+    "title": "Bible",
     "oldTestament": "Old Testament",
     "newTestament": "New Testament",
     "books": "Books",
@@ -184,13 +202,17 @@
     "copy": "Copy",
     "copied": "Copied to clipboard",
     "shareBook": "Share Book",
+    "shareBookMessage": "Check out {{title}} in EveryLanguage Bible!",
     "queue": "Queue",
     "unknownBook": "Unknown Book",
+    "unknownChapter": "Unknown Chapter",
     "noVerseText": "Verse text not available"
   },
   "books": {
     "loading": "Loading books...",
-    "empty": "No books found"
+    "empty": "No books found",
+    "errorLoading": "Error loading books:",
+    "retry": "Retry"
   },
   "chapters": {
     "loading": "Loading chapters...",
@@ -268,9 +290,16 @@
     "deletePlaylistConfirmation": "Are you sure you want to delete this playlist? This action cannot be undone.",
     "unknownPlaylist": "Unknown Playlist",
     "noDescription": "No description available",
-    "noItems": "No items available for this playlist"
+    "noItems": "No items available for this playlist",
+    "playlistImage": "Playlist Image",
+    "noImage": "No image",
+    "imageUploaded": "Image uploaded successfully!",
+    "imageRemoved": "Image removed successfully!",
+    "noChapterSelected": "No chapter selected"
   },
   "languages": {
+    "infoTitle": "Language info",
+    "unknown": "Unknown Language",
     "search": {
       "header": "Search {{versionType}} versions",
       "searching": "Searching...",
@@ -297,6 +326,17 @@
     "notSelected": "Not selected",
     "audioVersion": "Audio Version",
     "textVersion": "Text Version",
+    "remove": "Remove version",
+    "audio": "Audio",
+    "text": "Text",
+    "welcomeTitle": "Welcome!",
+    "welcomeSubtitle": "Choose your preferred Bible versions for text and audio. You can change these later in settings.",
+    "selectVersions": "Select Your Versions",
+    "saveError": "Failed to save version selections",
+    "loadError": "Failed to load versions",
+    "noVersionsAvailable": "No versions are currently available. You can add versions later in the app.",
+    "textVersions": "Text Versions",
+    "audioVersions": "Audio Versions",
     "ring": {
       "oldTestament": "Old Testament",
       "newTestament": "New Testament"
@@ -322,7 +362,8 @@
     "status": "Status",
     "verified": "Verified",
     "unverified": "Unverified",
-    "signInPrompt": "Sign in to sync your data across devices"
+    "signInPrompt": "Sign in to sync your data across devices",
+    "guestUser": "Guest User"
   },
   "menu": {
     "appearance": "Appearance",
@@ -382,8 +423,9 @@
     "confirmDownloadEstimate": "Download {{name}}? This will take approximately {{sizeMB}}MB of space.",
     "downloadChapter": "Download chapter",
     "removeDownloadedChapter": "Remove download",
-    "downloading": "Downloading...",
-    "noDownloads": "No downloads"
+    "downloading": "{{active}} downloading pending {{pendingCount}}",
+    "noDownloads": "No downloads",
+    "queued": "{{queued}} queued"
   },
 
   "audio": {
@@ -438,7 +480,8 @@
     "forbidden": "Access forbidden",
     "timeout": "Request timeout",
     "offline": "You are offline",
-    "tryAgain": "Please try again"
+    "tryAgain": "Please try again",
+    "unknown": "Unknown error"
   },
   "offline": {
     "title": "Offline Mode",
@@ -528,8 +571,11 @@
       "selectAudioFirst": "Please select an audio version first to continue",
       "selectTextFirst": "Please select a text version first to continue",
       "continue": "Continue",
-      "continueDisabledTooltip": "Please select audio and text versions to continue"
+      "continueDisabledTooltip": "Please select audio and text versions to continue",
+      "loading": "Loading..."
     },
+    "chooseLanguage": "Choose Your Language",
+    "importBible": "Import Bible",
     "offlineSetup": {
       "title": "Offline Bible Setup",
       "subtitle": "Import your Bible files for offline use",

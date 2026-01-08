@@ -167,7 +167,7 @@ export const SignInSyncScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('auth.sync.title', { defaultValue: 'Syncing Your Account' })}
+          {t('auth.sync.title')}
         </Text>
       </View>
 
@@ -219,8 +219,8 @@ export const SignInSyncScreen: React.FC = () => {
           <Text
             style={[styles.networkText, { color: getNetworkStatusColor() }]}>
             {syncState.networkStatus === 'connected'
-              ? t('network.connected', { defaultValue: 'Connected' })
-              : t('network.disconnected', { defaultValue: 'No Internet' })}
+              ? t('network.connected')
+              : t('network.disconnected')}
           </Text>
         </View>
 
@@ -255,9 +255,7 @@ export const SignInSyncScreen: React.FC = () => {
                     styles.buttonText,
                     { color: theme.colors.background },
                   ]}>
-                  {t('auth.sync.skipOnboarding', {
-                    defaultValue: 'Skip Onboarding',
-                  })}
+                  {t('auth.sync.skipOnboarding')}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -273,7 +271,7 @@ export const SignInSyncScreen: React.FC = () => {
                     styles.buttonText,
                     { color: theme.colors.background },
                   ]}>
-                  {t('auth.sync.getStarted', { defaultValue: 'Get Started' })}
+                  {t('auth.sync.getStarted')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -295,7 +293,7 @@ export const SignInSyncScreen: React.FC = () => {
                     styles.buttonText,
                     { color: theme.colors.background },
                   ]}>
-                  {t('common.retry', { defaultValue: 'Retry' })}
+                  {t('common.retry')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -309,9 +307,7 @@ export const SignInSyncScreen: React.FC = () => {
                 ]}
                 onPress={handleContinueOffline}>
                 <Text style={[styles.buttonText, { color: theme.colors.text }]}>
-                  {t('auth.sync.continueOffline', {
-                    defaultValue: 'Continue Offline',
-                  })}
+                  {t('auth.sync.continueOffline')}
                 </Text>
               </TouchableOpacity>
             )}

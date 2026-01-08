@@ -103,7 +103,9 @@ class Logger {
 
     if (shouldShowError) {
       const formattedMessage = this.formatMessage('ERROR', message, ...args);
-      if (this.config.enableConsole) {
+      // In dev mode, always enable console for errors; otherwise respect config
+      const enableConsoleForError = __DEV__ || this.config.enableConsole;
+      if (enableConsoleForError) {
         console.error(formattedMessage);
       }
       // TODO: Send to remote logging service if enabled
@@ -155,7 +157,7 @@ class Logger {
 // Create default logger instance
 export const logger = new Logger({
   level: __DEV__ ? LogLevel.DEBUG : LogLevel.INFO,
-  enableConsole: true,
+  enableConsole: false,
 });
 
 // Export individual log methods for convenience

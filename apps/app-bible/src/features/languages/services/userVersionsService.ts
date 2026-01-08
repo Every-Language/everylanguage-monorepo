@@ -5,7 +5,7 @@ import { queryLogger } from '@/shared/utils/queryLogger';
 import { useAuthStore } from '@/shared/store/authStore';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import { generateUUID } from '@/shared/utils/uuid';
 

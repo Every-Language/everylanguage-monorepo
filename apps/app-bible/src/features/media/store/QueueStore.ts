@@ -8,7 +8,7 @@ import type { PlaylistItemQueueRef } from '@/features/playlists/types';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // ==========================================
 // Queue Store State Interface

@@ -32,10 +32,8 @@ export const SearchVersionItem: React.FC<SearchVersionItemProps> = ({
   const handlePress = useCallback(() => {
     if (isAlreadySaved) {
       Alert.alert(
-        t('versions.alreadySavedTitle', { defaultValue: 'Already saved' }),
-        t('versions.alreadySavedMessage', {
-          defaultValue: 'You have already saved this version.',
-        })
+        t('versions.alreadySavedTitle'),
+        t('versions.alreadySavedMessage')
       );
       return;
     }

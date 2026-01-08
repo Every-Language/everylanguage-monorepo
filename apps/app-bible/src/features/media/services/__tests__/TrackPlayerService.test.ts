@@ -43,7 +43,7 @@ describe('TrackPlayerService', () => {
 
       expect(mockTrackPlayer.updateOptions).toHaveBeenCalledTimes(1);
       expect(mockLogger.info).toHaveBeenCalledWith(
-        true,
+        false,
         'TrackPlayer initialized successfully'
       );
     });
@@ -59,7 +59,7 @@ describe('TrackPlayerService', () => {
       expect(mockTrackPlayer.setupPlayer).not.toHaveBeenCalled();
       expect(mockTrackPlayer.updateOptions).not.toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith(
-        true,
+        false,
         'TrackPlayer already initialized, skipping...'
       );
     });
@@ -95,7 +95,7 @@ describe('TrackPlayerService', () => {
       expect(mockTrackPlayer.setupPlayer).toHaveBeenCalledTimes(1);
       expect(mockTrackPlayer.updateOptions).toHaveBeenCalledTimes(1);
       expect(mockLogger.info).toHaveBeenCalledWith(
-        true,
+        false,
         'TrackPlayer already initialized, continuing with options setup...'
       );
     });
@@ -108,7 +108,7 @@ describe('TrackPlayerService', () => {
         'Setup failed'
       );
       expect(mockLogger.error).toHaveBeenCalledWith(
-        true,
+        false,
         'Failed to initialize TrackPlayer:',
         setupError
       );
@@ -156,7 +156,7 @@ describe('TrackPlayerService', () => {
 
       expect(mockTrackPlayer.reset).toHaveBeenCalledTimes(1);
       expect(mockLogger.info).toHaveBeenCalledWith(
-        true,
+        false,
         'TrackPlayer reset completed'
       );
 
@@ -176,7 +176,7 @@ describe('TrackPlayerService', () => {
 
       expect(mockTrackPlayer.reset).toHaveBeenCalledTimes(1);
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        true,
+        false,
         'TrackPlayer reset error (ignored):',
         resetError
       );

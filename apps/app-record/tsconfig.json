@@ -9,7 +9,7 @@
       "@/features/*": ["src/features/*"],
       "@/shared/*": ["src/shared/*"]
     },
-    "types": ["jest", "node"],
+    "types": ["jest", "react-native-svg", "node"],
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
     "exactOptionalPropertyTypes": true,

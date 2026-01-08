@@ -19,15 +19,13 @@ export const TextVersionMenuItem: React.FC = () => {
     });
   };
 
-  const subtitle =
-    currentTextVersion?.name ||
-    t('versions.notSelected', { defaultValue: 'Not selected' });
+  const subtitle = currentTextVersion?.name || t('versions.notSelected');
 
   return (
     <BaseMenuItem
       onPress={handlePress}
       icon='document-text'
-      title={t('versions.textVersion', { defaultValue: 'Text Version' })}
+      title={t('versions.textVersion')}
       subtitle={subtitle}
       iconColor={theme.colors.primary}
     />

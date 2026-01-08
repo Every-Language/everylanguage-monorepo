@@ -24,7 +24,7 @@ import { useVersionsStore } from '../store/versionsStore';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const LanguageInfoScreen: React.FC<LanguageInfoScreenProps> = ({
   route,
@@ -169,7 +169,7 @@ export const LanguageInfoScreen: React.FC<LanguageInfoScreenProps> = ({
         },
       ]}>
       <ModalHeader
-        title={t('languages.infoTitle', { defaultValue: 'Language info' })}
+        title={t('languages.infoTitle')}
         showBack
         onBack={handleBack}
         showClose

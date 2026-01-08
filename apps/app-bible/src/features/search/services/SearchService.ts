@@ -3,7 +3,7 @@ import { logger } from '@/shared/utils/logger';
 import { SearchResult } from '../types/index';
 import { searchIndexService } from './SearchIndexService';
 
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface SearchOptions {
   maxResults?: number;

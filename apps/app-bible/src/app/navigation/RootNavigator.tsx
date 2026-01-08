@@ -59,7 +59,6 @@ export type RootStackParamList = {
     bookId?: string;
     bookName?: string;
     chapterNumber?: number;
-    audioVersionId?: string;
   };
   CreatePlaylistModal:
     | {
@@ -67,7 +66,6 @@ export type RootStackParamList = {
         chapterId?: string;
         bookName?: string;
         chapterNumber?: number;
-        audioVersionId?: string;
         // For verse range addition
         startVerseId?: string;
         endVerseId?: string;
@@ -182,9 +180,7 @@ const MainAppNavigator: React.FC = () => {
           gestureEnabled: true,
           fullScreenGestureEnabled: true,
           animationMatchesGesture: true,
-          title: i18n.t('versions.selectVersions', {
-            defaultValue: 'Select Your Versions',
-          }),
+          title: i18n.t('versions.selectVersions'),
         }}
       />
 

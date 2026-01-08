@@ -18,7 +18,7 @@ import { CodeValidationInput } from './CodeValidationInput';
 import { logger } from '../../../shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 const themedStyles = createThemedStyles({
   container: theme => ({
@@ -253,22 +253,15 @@ export function EmailCodeValidation({
           <View style={styles.logo}>
             <Ionicons name='mail-outline' style={styles.logoIcon} />
           </View>
-          <Text style={styles.title}>
-            {t('auth.verifyEmail', { defaultValue: 'Verify Your Email' })}
-          </Text>
+          <Text style={styles.title}>{t('auth.verifyEmail')}</Text>
           <Text style={styles.subtitle}>
-            {t('auth.emailVerificationMessage', {
-              defaultValue:
-                "We've sent a 6-digit verification code to your email address.",
-            })}
+            {t('auth.emailVerificationMessage')}
           </Text>
         </View>
 
         {/* Email Display */}
         <View style={styles.emailContainer}>
-          <Text style={styles.emailLabel}>
-            {t('auth.codeSentTo', { defaultValue: 'Code sent to:' })}
-          </Text>
+          <Text style={styles.emailLabel}>{t('auth.codeSentTo')}</Text>
           <Text style={styles.emailText}>{email}</Text>
         </View>
 
@@ -283,12 +276,8 @@ export function EmailCodeValidation({
               onChangeText={onChange}
               onResend={handleResendCode}
               {...(error?.message ? { error: error.message } : {})}
-              placeholder={t('auth.enterCode', {
-                defaultValue: 'Enter 6-digit code',
-              })}
-              label={t('auth.verificationCode', {
-                defaultValue: 'Verification Code*',
-              })}
+              placeholder={t('auth.enterCode')}
+              label={t('auth.verificationCode')}
               maxLength={6}
               autoFocus={true}
               disabled={isLoading}
@@ -301,7 +290,7 @@ export function EmailCodeValidation({
         {/* Verify Button */}
         <View style={styles.buttonContainer}>
           <Button
-            title={t('auth.verifyEmail', { defaultValue: 'Verify Email' })}
+            title={t('auth.verifyEmailButton')}
             onPress={handleSubmit(onSubmit)}
             disabled={!isValid || isLoading}
             loading={isLoading}
@@ -315,10 +304,8 @@ export function EmailCodeValidation({
         {/* Back to Sign Up */}
         <TouchableOpacity style={styles.linkButton} onPress={onBack}>
           <Text style={styles.linkText}>
-            {t('auth.wrongEmail', { defaultValue: 'Wrong email address?' })}{' '}
-            <Text style={styles.linkTextHighlight}>
-              {t('auth.goBack', { defaultValue: 'Go back' })}
-            </Text>
+            {t('auth.wrongEmail')}{' '}
+            <Text style={styles.linkTextHighlight}>{t('auth.goBack')}</Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>

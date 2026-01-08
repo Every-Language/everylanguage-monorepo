@@ -22,7 +22,7 @@ import { useCurrentTrack } from '../../store/PlaybackStore';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Animation constants used only in this component
 const ANIMATION_TIMING = {

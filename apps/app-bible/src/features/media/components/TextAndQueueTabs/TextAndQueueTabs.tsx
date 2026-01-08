@@ -12,7 +12,7 @@ import type { DisplayQueueItem } from '../../store/QueueStore';
 import type { VerseRow } from '../../services/VerseDataService';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 type TabKey = 'text' | 'queue';
 

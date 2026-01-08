@@ -147,7 +147,8 @@ export class ImageService {
       | 'verse'
       | 'podcast'
       | 'film_segment'
-      | 'audio_segment',
+      | 'audio_segment'
+      | 'playlist',
     targetId: string
   ): Promise<Image> {
     const { data, error } = await supabase

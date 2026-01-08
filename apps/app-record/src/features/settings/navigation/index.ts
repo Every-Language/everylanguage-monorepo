@@ -1,0 +1,1 @@
+export { SettingsStackNavigator } from './SettingsStackNavigator';

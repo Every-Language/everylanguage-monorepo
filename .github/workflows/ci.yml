@@ -29,6 +29,7 @@ jobs:
       frontend-admin: ${{ steps.filter.outputs.frontend-admin }}
       frontend-app-bible: ${{ steps.filter.outputs.frontend-app-bible }}
       powersync-rules: ${{ steps.filter.outputs.powersync-rules }}
+      powersync-rules-record: ${{ steps.filter.outputs.powersync-rules-record }}
       is-pr: ${{ github.event_name == 'pull_request' }}
       is-push: ${{ github.event_name == 'push' }}
     steps:
@@ -56,6 +57,8 @@ jobs:
               - 'apps/app-bible/**'
             powersync-rules:
               - 'apps/app-bible/powersync/sync-rules.yaml'
+            powersync-rules-record:
+              - 'apps/app-record/powersync/sync-rules.yaml'
 
   backend:
     runs-on: ubuntu-latest
@@ -380,8 +383,52 @@ jobs:
         env:
           AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
           ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
-          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
-          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_BIBLE_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_BIBLE_INSTANCE_ID }}
+        run: |
+          echo "🔍 Checking if committed schema matches sync rules..."
+          pnpm run powersync:verify-schema
+          echo "✅ Schema verification completed"
+
+  powersync-validation-record:
+    runs-on: ubuntu-latest
+    name: PowerSync Schema Validation (App Record)
+    needs: detect-changes
+    # Only run on PRs and only if app-record sync-rules.yaml changed
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.detect-changes.outputs.powersync-rules-record == 'true'
+    # Use production environment for PRs to main, development for PRs to develop
+    environment: ${{ github.base_ref == 'main' && 'production' || 'development' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Validate sync rules syntax
+        run: |
+          python3 -c "import yaml; yaml.safe_load(open('apps/app-record/powersync/sync-rules.yaml'))"
+          echo "✅ Sync rules YAML syntax is valid"
+
+      - name: Verify schema is in sync with sync rules
+        working-directory: apps/app-record
+        env:
+          AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
+          ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_RECORD_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_RECORD_INSTANCE_ID }}
         run: |
           echo "🔍 Checking if committed schema matches sync rules..."
           pnpm run powersync:verify-schema

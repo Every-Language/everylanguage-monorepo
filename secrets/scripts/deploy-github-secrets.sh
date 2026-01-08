@@ -79,6 +79,18 @@ echo -e "${BLUE}1. Deploying Shared Secrets to GitHub Repository${NC}"
 while IFS='=' read -r key value; do
     deploy_github_secret "$key" "$value" "repo"
 done < <(parse_env_file "$SECRETS_DIR/.env.shared")
+
+# Deploy PowerSync project IDs as repository-level secrets (app-specific, same across environments)
+POWERSYNC_BIBLE_PROJECT_ID=$(get_env_value "POWERSYNC_BIBLE_PROJECT_ID" "$SECRETS_DIR/.env.shared" || true)
+POWERSYNC_RECORD_PROJECT_ID=$(get_env_value "POWERSYNC_RECORD_PROJECT_ID" "$SECRETS_DIR/.env.shared" || true)
+
+if [ -n "$POWERSYNC_BIBLE_PROJECT_ID" ]; then
+    deploy_github_secret "POWERSYNC_BIBLE_PROJECT_ID" "$POWERSYNC_BIBLE_PROJECT_ID" "repo"
+fi
+if [ -n "$POWERSYNC_RECORD_PROJECT_ID" ]; then
+    deploy_github_secret "POWERSYNC_RECORD_PROJECT_ID" "$POWERSYNC_RECORD_PROJECT_ID" "repo"
+fi
+
 echo ""
 
 # ============================================================
@@ -114,7 +126,9 @@ if [ -z "$SUPABASE_ANON_KEY" ]; then
     SUPABASE_ANON_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.development" || true)
 fi
 
-POWERSYNC_URL=$(get_env_value "POWERSYNC_URL" "$SECRETS_DIR/.env.development" || true)
+# Get PowerSync URLs for each app (instance-specific URLs)
+POWERSYNC_BIBLE_URL=$(get_env_value "POWERSYNC_BIBLE_URL" "$SECRETS_DIR/.env.development" || true)
+POWERSYNC_RECORD_URL=$(get_env_value "POWERSYNC_RECORD_URL" "$SECRETS_DIR/.env.development" || true)
 
 # Deploy derived EXPO_PUBLIC_* variables
 if [ -n "$SUPABASE_URL" ]; then
@@ -123,8 +137,23 @@ fi
 if [ -n "$SUPABASE_ANON_KEY" ]; then
     deploy_github_secret "EXPO_PUBLIC_SUPABASE_ANON_KEY" "$SUPABASE_ANON_KEY" "development"
 fi
-if [ -n "$POWERSYNC_URL" ]; then
-    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_URL" "$POWERSYNC_URL" "development"
+# Deploy app-specific PowerSync URLs
+if [ -n "$POWERSYNC_BIBLE_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_BIBLE_URL" "$POWERSYNC_BIBLE_URL" "development"
+fi
+if [ -n "$POWERSYNC_RECORD_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_RECORD_URL" "$POWERSYNC_RECORD_URL" "development"
+fi
+
+# Deploy PowerSync instance IDs for development environment
+POWERSYNC_BIBLE_INSTANCE_ID=$(get_env_value "POWERSYNC_BIBLE_INSTANCE_ID" "$SECRETS_DIR/.env.development" || true)
+POWERSYNC_RECORD_INSTANCE_ID=$(get_env_value "POWERSYNC_RECORD_INSTANCE_ID" "$SECRETS_DIR/.env.development" || true)
+
+if [ -n "$POWERSYNC_BIBLE_INSTANCE_ID" ]; then
+    deploy_github_secret "POWERSYNC_BIBLE_INSTANCE_ID" "$POWERSYNC_BIBLE_INSTANCE_ID" "development"
+fi
+if [ -n "$POWERSYNC_RECORD_INSTANCE_ID" ]; then
+    deploy_github_secret "POWERSYNC_RECORD_INSTANCE_ID" "$POWERSYNC_RECORD_INSTANCE_ID" "development"
 fi
 
 echo ""
@@ -162,7 +191,9 @@ if [ -z "$SUPABASE_ANON_KEY" ]; then
     SUPABASE_ANON_KEY=$(get_env_value "SUPABASE_PUBLISHABLE_KEY" "$SECRETS_DIR/.env.production" || true)
 fi
 
-POWERSYNC_URL=$(get_env_value "POWERSYNC_URL" "$SECRETS_DIR/.env.production" || true)
+# Get PowerSync URLs for each app (instance-specific URLs)
+POWERSYNC_BIBLE_URL=$(get_env_value "POWERSYNC_BIBLE_URL" "$SECRETS_DIR/.env.production" || true)
+POWERSYNC_RECORD_URL=$(get_env_value "POWERSYNC_RECORD_URL" "$SECRETS_DIR/.env.production" || true)
 
 # Deploy derived EXPO_PUBLIC_* variables
 if [ -n "$SUPABASE_URL" ]; then
@@ -171,8 +202,23 @@ fi
 if [ -n "$SUPABASE_ANON_KEY" ]; then
     deploy_github_secret "EXPO_PUBLIC_SUPABASE_ANON_KEY" "$SUPABASE_ANON_KEY" "production"
 fi
-if [ -n "$POWERSYNC_URL" ]; then
-    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_URL" "$POWERSYNC_URL" "production"
+# Deploy app-specific PowerSync URLs
+if [ -n "$POWERSYNC_BIBLE_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_BIBLE_URL" "$POWERSYNC_BIBLE_URL" "production"
+fi
+if [ -n "$POWERSYNC_RECORD_URL" ]; then
+    deploy_github_secret "EXPO_PUBLIC_POWERSYNC_RECORD_URL" "$POWERSYNC_RECORD_URL" "production"
+fi
+
+# Deploy PowerSync instance IDs for production environment
+POWERSYNC_BIBLE_INSTANCE_ID=$(get_env_value "POWERSYNC_BIBLE_INSTANCE_ID" "$SECRETS_DIR/.env.production" || true)
+POWERSYNC_RECORD_INSTANCE_ID=$(get_env_value "POWERSYNC_RECORD_INSTANCE_ID" "$SECRETS_DIR/.env.production" || true)
+
+if [ -n "$POWERSYNC_BIBLE_INSTANCE_ID" ]; then
+    deploy_github_secret "POWERSYNC_BIBLE_INSTANCE_ID" "$POWERSYNC_BIBLE_INSTANCE_ID" "production"
+fi
+if [ -n "$POWERSYNC_RECORD_INSTANCE_ID" ]; then
+    deploy_github_secret "POWERSYNC_RECORD_INSTANCE_ID" "$POWERSYNC_RECORD_INSTANCE_ID" "production"
 fi
 
 echo ""

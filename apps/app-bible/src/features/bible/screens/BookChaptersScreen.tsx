@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
@@ -226,12 +226,7 @@ export const BookChaptersScreen: React.FC = () => {
             opts.textVersionId = currentTextVersion.id;
           await playChapter(firstWithAudio.id, opts);
         } else {
-          Alert.alert(
-            t('audio.unavailableTitle', { defaultValue: 'No Audio Available' }),
-            t('audio.unavailableBook', {
-              defaultValue: 'This book has no audio available to play.',
-            })
-          );
+          Alert.alert(t('audio.unavailableTitle'), t('audio.unavailableBook'));
         }
       } finally {
         DeepLinkState.clear();

@@ -17,6 +17,8 @@ supabase/.branches/
 packages/shared-types/types/database.ts
 packages/shared-types/types/database.d.ts
 packages/shared-types/types/database.js
+apps/app-bible/powersync/AppSchema.generated.ts
+apps/app-record/powersync/AppSchema.generated.ts
 
 # GitHub Actions
 .github/workflows/

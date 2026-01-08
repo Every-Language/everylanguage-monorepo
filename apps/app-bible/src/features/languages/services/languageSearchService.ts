@@ -7,7 +7,7 @@ import {
 } from './fuzzySearchService';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Enhanced language search service with debouncing and optimizations

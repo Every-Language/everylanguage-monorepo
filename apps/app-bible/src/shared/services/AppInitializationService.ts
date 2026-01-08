@@ -6,7 +6,7 @@ import { authService } from '../../features/auth/services/authService';
 // Search initialization is handled by components using useSearchInitialization hook
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Service responsible for initializing the app from scratch

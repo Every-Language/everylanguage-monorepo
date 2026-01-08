@@ -5,7 +5,7 @@ import type {} from '@redux-devtools/extension'; // Required for devtools typing
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import type { BibleTrack, BibleAudioErrorDetails } from '../types';
 import type { PlaybackRate } from '../constants/playback';
