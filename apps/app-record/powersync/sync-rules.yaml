@@ -1,61 +1,100 @@
 bucket_definitions:
   # ====================
-  # TWO-WAY SYNC - User's Projects and Related Data
+  # REMOTE TO LOCAL ONLY - Global Bible Content (available to all users)
+  # ====================
+
+  global_bible_content:
+    data:
+      # Core bible structure - always available
+      - SELECT * FROM bible_versions
+      - SELECT * FROM books
+      - SELECT * FROM chapters
+      - SELECT * FROM verses
+
+  # ====================
+  # LOCAL TO REMOTE ONLY - Analytics Data (Upload only, no download)
+  # ====================
+
+  # These buckets use WHERE FALSE to prevent downloading data back to client
+
+  analytics_sessions:
+    data:
+      - SELECT * FROM sessions WHERE FALSE
+      - SELECT * FROM share_opens WHERE FALSE
+      - SELECT * FROM shares WHERE FALSE
+      - SELECT * FROM verse_listens WHERE FALSE
+      - SELECT * FROM media_file_listens WHERE FALSE
+      - SELECT * FROM app_downloads WHERE FALSE
+      - SELECT * FROM chapter_listens WHERE FALSE
+
+  # ====================
+  # TWO-WAY SYNC - Authenticated User Data
   # ====================
   # IMPORTANT: These sync rules assume public.users.id = auth.users.id
   # Two-way sync buckets only work for authenticated users (NOT anonymous users)
   # Client must pass 'is_authenticated' = 'true' parameter to sync user data
 
-  # User's project assignments (denormalized table)
-  user_projects:
+  user_current_selections:
     parameters: SELECT request.user_id() as user_id
     data:
-      - SELECT * FROM user_projects WHERE user_id = bucket.user_id
+      - SELECT * FROM user_current_selections WHERE user_id = bucket.user_id
 
-  # User's projects (full project data)
-  user_projects_full:
-    parameters: SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+  user_saved_text_versions:
+    parameters: SELECT request.user_id() as user_id
     data:
-      - SELECT * FROM projects WHERE id = bucket.project_id
+      - SELECT * FROM user_saved_text_versions WHERE user_id = bucket.user_id
 
-  # User's sequences (within their projects)
-  user_sequences:
-    parameters: SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+  user_saved_audio_versions:
+    parameters: SELECT request.user_id() as user_id
     data:
-      - SELECT * FROM sequences WHERE project_id = bucket.project_id
+      - SELECT * FROM user_saved_audio_versions WHERE user_id = bucket.user_id
 
-  # User's sequences_segments (junction table with denormalized project_id)
-  user_sequences_segments:
-    parameters: SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+  user_audio_versions:
+    parameters: SELECT audio_version_id FROM user_saved_audio_versions
+      WHERE user_id = request.user_id() AND audio_version_id IS NOT NULL
     data:
-      - SELECT * FROM sequences_segments WHERE project_id = bucket.project_id
+      - SELECT * FROM audio_versions WHERE id = bucket.audio_version_id
+      - SELECT * FROM media_files WHERE audio_version_id = bucket.audio_version_id AND publish_status = 'published'
+      - SELECT * FROM media_files_verses WHERE denormalized_audio_version_id = bucket.audio_version_id
 
-  # User's segments (within their projects via sequences_segments)
-  user_segments:
-    parameters: SELECT project_id FROM user_projects WHERE user_id = request.user_id()
+  user_text_versions:
+    parameters: SELECT text_version_id FROM user_saved_text_versions
+      WHERE user_id = request.user_id() AND text_version_id IS NOT NULL
     data:
-      - SELECT * FROM segments WHERE project_id = bucket.project_id
+      - SELECT * FROM text_versions WHERE id = bucket.text_version_id
+      - SELECT * FROM verse_texts WHERE text_version_id = bucket.text_version_id
 
-  # User's sequence tags
-  user_sequences_tags:
-    parameters: SELECT sequence_id FROM sequences WHERE project_id IN (
-      SELECT project_id FROM user_projects WHERE user_id = request.user_id()
-      )
+  user_bookmarks:
+    parameters: SELECT request.user_id() as user_id
     data:
-      - SELECT * FROM sequences_tags WHERE sequence_id = bucket.sequence_id
+      - SELECT * FROM user_bookmarks WHERE user_id = bucket.user_id
+      - SELECT * FROM user_bookmark_folders WHERE user_id = bucket.user_id
 
-  # User's sequence targets
-  user_sequences_targets:
-    parameters: SELECT sequence_id FROM sequences WHERE project_id IN (
-      SELECT project_id FROM user_projects WHERE user_id = request.user_id()
-      )
+  # The list of image sets that the user has saved
+  user_saved_image_sets:
+    parameters: SELECT request.user_id() as user_id
     data:
-      - SELECT * FROM sequences_targets WHERE sequence_id = bucket.sequence_id
+      - SELECT * FROM user_saved_image_sets WHERE user_id = bucket.user_id
 
-  # User's segment targets
-  user_segments_targets:
-    parameters: SELECT segment_id FROM segments WHERE project_id IN (
-      SELECT project_id FROM user_projects WHERE user_id = request.user_id()
-      )
+  # The actual images
+  images:
+    parameters: SELECT set_id FROM user_saved_image_sets
+      WHERE user_id = request.user_id()
     data:
-      - SELECT * FROM segments_targets WHERE segment_id = bucket.segment_id
+      - SELECT * FROM image_sets WHERE id = bucket.set_id
+      - SELECT * FROM images WHERE set_id = bucket.set_id
+
+  # The list of playlists that the user has saved
+  user_playlists:
+    parameters: SELECT request.user_id() as user_id
+    data:
+      - SELECT * FROM user_playlist_groups WHERE user_id = bucket.user_id
+      - SELECT * FROM user_playlists WHERE user_id = bucket.user_id
+
+  # The actual playlists
+  playlists:
+    parameters: SELECT playlist_id FROM user_playlists
+      WHERE user_id = request.user_id()
+    data:
+      - SELECT * FROM playlists WHERE id = bucket.playlist_id
+      - SELECT * FROM playlist_items WHERE playlist_id = bucket.playlist_id
