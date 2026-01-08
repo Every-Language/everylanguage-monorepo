@@ -1,26 +1,3 @@
-/**
- * Filename Parser Service
- *
- * Extracts book, chapter, and verse information from audio filenames
- * using configurable naming patterns.
- *
- * Supported formats:
- * - Format 1: {bookname}_{chapter}_{startverse}_{endverse}.mp3
- *   Example: Genesis_1_1_10.mp3
- *
- * - Format 2: {version}_{bookname}_{chapter}_{startverse}_{endverse}.mp3
- *   Example: KJV_Genesis_1_1_10.mp3
- *
- * - Format 3: {version}_{booknum}_{bookname}_{chapter}_{startverse}-{endverse}.mp3
- *   Example: KJV_01_Genesis_1_1-10.mp3
- *
- * - Format 4 (Legacy): Language_BookName_ChapterXXX_VXXX_XXX.mp3
- *   Example: Bajhangi_2 Kings_Chapter001_V001_018.mp3
- *
- * - Format 5 (BSB): BSB_XX_AAA_XXX_H.mp3
- *   Example: BSB_01_Gen_001_H.mp3
- */
-
 // Filename format types
 export type FilenameFormat =
   | 'format1_bookname_chapter_verses'
@@ -745,15 +722,7 @@ function parseFormat3VersionBooknumBooknameChapterVerses(
     return null;
   }
 
-  const [
-    ,
-    version,
-    bookNumStr,
-    bookNameRaw,
-    chapterStr,
-    startVerseStr,
-    endVerseStr,
-  ] = match;
+  const [, version, bookNumStr, chapterStr, startVerseStr, endVerseStr] = match;
   const bookNum = bookNumStr.padStart(2, '0');
   const bookName = BSB_BOOK_NUMBER_TO_NAME[bookNum];
 
@@ -969,7 +938,7 @@ export function parseFilename(
  * Parse multiple filenames and return results
  */
 export function parseFilenames(filenames: string[]): ParsedFilename[] {
-  return filenames.map(parseFilename);
+  return filenames.map(filename => parseFilename(filename));
 }
 
 /**
