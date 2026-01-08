@@ -167,24 +167,51 @@ export const AudioFileEditModal: React.FC<AudioFileEditModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className='block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300'>
-              Publish Status
-            </label>
-            <Select
-              value={editForm.data.publishStatus}
-              onValueChange={value =>
-                editForm.updateField('publishStatus', value)
-              }>
-              <SelectItem value='pending'>Pending</SelectItem>
-              <SelectItem value='published'>Published</SelectItem>
-              <SelectItem value='archived'>Archived</SelectItem>
-            </Select>
-            {editForm.errors.publishStatus && (
-              <p className='text-red-500 text-xs mt-1'>
-                {editForm.errors.publishStatus}
-              </p>
-            )}
+          <div className='grid grid-cols-2 gap-4'>
+            <div>
+              <label className='block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300'>
+                Publish Status
+              </label>
+              <Select
+                value={editForm.data.publishStatus}
+                onValueChange={value => {
+                  editForm.updateField('publishStatus', value);
+                  // If changing to pending, automatically reset community check status
+                  if (value === 'pending') {
+                    editForm.updateField('checkStatus', 'pending');
+                  }
+                }}>
+                <SelectItem value='pending'>Pending</SelectItem>
+                <SelectItem value='published'>Published</SelectItem>
+                <SelectItem value='archived'>Archived</SelectItem>
+              </Select>
+              {editForm.errors.publishStatus && (
+                <p className='text-red-500 text-xs mt-1'>
+                  {editForm.errors.publishStatus}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300'>
+                Community Check Status
+              </label>
+              <Select
+                value={editForm.data.checkStatus || 'pending'}
+                onValueChange={value =>
+                  editForm.updateField('checkStatus', value)
+                }>
+                <SelectItem value='pending'>Pending</SelectItem>
+                <SelectItem value='approved'>Community Checked</SelectItem>
+                <SelectItem value='requires_review'>Requires Review</SelectItem>
+                <SelectItem value='rejected'>Rejected</SelectItem>
+              </Select>
+              {editForm.errors.checkStatus && (
+                <p className='text-red-500 text-xs mt-1'>
+                  {editForm.errors.checkStatus}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

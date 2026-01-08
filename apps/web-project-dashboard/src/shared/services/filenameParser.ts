@@ -2,10 +2,88 @@
  * Filename Parser Service
  *
  * Extracts book, chapter, and verse information from audio filenames
- * using the specific naming pattern: Language_BookName_ChapterXXX_VXXX_XXX.mp3
+ * using configurable naming patterns.
  *
- * Example: Bajhangi_2 Kings_Chapter001_V001_018.mp3
+ * Supported formats:
+ * - Format 1: {bookname}_{chapter}_{startverse}_{endverse}.mp3
+ *   Example: Genesis_1_1_10.mp3
+ *
+ * - Format 2: {version}_{bookname}_{chapter}_{startverse}_{endverse}.mp3
+ *   Example: KJV_Genesis_1_1_10.mp3
+ *
+ * - Format 3: {version}_{booknum}_{bookname}_{chapter}_{startverse}-{endverse}.mp3
+ *   Example: KJV_01_Genesis_1_1-10.mp3
+ *
+ * - Format 4 (Legacy): Language_BookName_ChapterXXX_VXXX_XXX.mp3
+ *   Example: Bajhangi_2 Kings_Chapter001_V001_018.mp3
+ *
+ * - Format 5 (BSB): BSB_XX_AAA_XXX_H.mp3
+ *   Example: BSB_01_Gen_001_H.mp3
  */
+
+// Filename format types
+export type FilenameFormat =
+  | 'format1_bookname_chapter_verses'
+  | 'format2_version_bookname_chapter_verses'
+  | 'format3_version_booknum_bookname_chapter_verses'
+  | 'format4_legacy'
+  | 'format5_bsb'
+  | 'auto';
+
+export interface FilenameFormatOption {
+  id: FilenameFormat;
+  name: string;
+  description: string;
+  example: string;
+  pattern: string;
+}
+
+export const FILENAME_FORMAT_OPTIONS: FilenameFormatOption[] = [
+  {
+    id: 'format1_bookname_chapter_verses',
+    name: 'Book Name + Chapter + Verses',
+    description: '{bookname}_{chapter}_{startverse}_{endverse}',
+    example: 'Genesis_1_1_10.mp3',
+    pattern: '{bookname}_{chapter}_{startverse}_{endverse}.mp3',
+  },
+  {
+    id: 'format2_version_bookname_chapter_verses',
+    name: 'Version + Book Name + Chapter + Verses',
+    description: '{version}_{bookname}_{chapter}_{startverse}_{endverse}',
+    example: 'KJV_Genesis_1_1_10.mp3',
+    pattern: '{version}_{bookname}_{chapter}_{startverse}_{endverse}.mp3',
+  },
+  {
+    id: 'format3_version_booknum_bookname_chapter_verses',
+    name: 'Version + Book Number + Book Name + Chapter + Verses',
+    description:
+      '{version}_{booknum}_{bookname}_{chapter}_{startverse}-{endverse}',
+    example: 'KJV_01_Genesis_1_1-10.mp3',
+    pattern:
+      '{version}_{booknum}_{bookname}_{chapter}_{startverse}-{endverse}.mp3',
+  },
+  {
+    id: 'format4_legacy',
+    name: 'Legacy Format',
+    description: '{language}_{bookname}_Chapter{XXX}_V{XXX}_{XXX}',
+    example: 'Bajhangi_2 Kings_Chapter001_V001_018.mp3',
+    pattern: '{language}_{bookname}_Chapter{XXX}_V{XXX}_{XXX}.mp3',
+  },
+  {
+    id: 'format5_bsb',
+    name: 'BSB Format',
+    description: 'BSB_{booknum}_{abbrev}_{chapter}_{designation}',
+    example: 'BSB_01_Gen_001_H.mp3',
+    pattern: 'BSB_{booknum}_{abbrev}_{chapter}_{designation}.mp3',
+  },
+  {
+    id: 'auto',
+    name: 'Auto-detect',
+    description: 'Automatically detect the filename format',
+    example: 'Various formats',
+    pattern: 'Auto-detection',
+  },
+];
 
 export interface ParsedFilename {
   originalFilename: string;
@@ -20,6 +98,7 @@ export interface ParsedFilename {
   confidence: 'high' | 'medium' | 'low' | 'none';
   matchedPattern?: string;
   errors?: string[];
+  usedFormat?: FilenameFormat;
 }
 
 // OSIS Book mapping from bilbe_id_structure.md
@@ -524,25 +603,271 @@ function parseBSBFormat(filename: string): ParsedFilename | null {
 }
 
 /**
- * Main parsing function supporting multiple formats:
- * 1. BSB format: BSB_XX_AAA_XXX_H.mp3
- * 2. Original format: Language_BookName_ChapterXXX_VXXX_XXX.mp3
+ * Parse Format 1: {bookname}_{chapter}_{startverse}_{endverse}.mp3
+ * Example: Genesis_1_1_10.mp3, Psalms_23_1_6.mp3
  */
-export function parseFilename(filename: string): ParsedFilename {
+function parseFormat1BooknameChapterVerses(
+  filename: string
+): ParsedFilename | null {
+  const cleanFilename = filename.replace(/\.[^/.]+$/, '').trim();
+
+  // Pattern: BookName_Chapter_StartVerse_EndVerse
+  // Book names can contain spaces (e.g., "Song of Songs", "1 Kings")
+  // Match: one or more word characters/spaces, then _number_number_number
+  const pattern = /^([A-Za-z0-9\s]+)_(\d{1,3})_(\d{1,3})_(\d{1,3})$/i;
+  const match = cleanFilename.match(pattern);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, bookNameRaw, chapterStr, startVerseStr, endVerseStr] = match;
+  const bookNameClean = bookNameRaw.trim();
+
+  // Try to find the book name in our mappings
+  const upperBookName = bookNameClean.toUpperCase();
+  let bookName = BOOK_VARIATIONS[upperBookName];
+
+  // If not found directly, try case-insensitive match on BOOK_NAME_TO_OSIS keys
+  if (!bookName) {
+    for (const key of Object.keys(BOOK_NAME_TO_OSIS)) {
+      if (key.toUpperCase() === upperBookName) {
+        bookName = key;
+        break;
+      }
+    }
+  }
+
+  if (!bookName) {
+    return null;
+  }
+
+  const chapter = parseInt(chapterStr, 10);
+  const startVerse = parseInt(startVerseStr, 10);
+  const endVerse = parseInt(endVerseStr, 10);
+
+  return {
+    originalFilename: filename,
+    detectedBook: bookName,
+    detectedBookOsis: BOOK_NAME_TO_OSIS[bookName],
+    detectedChapter: chapter,
+    detectedStartVerse: startVerse,
+    detectedEndVerse: endVerse,
+    verseRange:
+      startVerse === endVerse ? `${startVerse}` : `${startVerse}-${endVerse}`,
+    isFullChapter: false,
+    confidence: 'high',
+    matchedPattern: 'format1_bookname_chapter_verses',
+    usedFormat: 'format1_bookname_chapter_verses',
+    errors: [],
+  };
+}
+
+/**
+ * Parse Format 2: {version}_{bookname}_{chapter}_{startverse}_{endverse}.mp3
+ * Example: KJV_Genesis_1_1_10.mp3, NIV_Psalms_23_1_6.mp3
+ */
+function parseFormat2VersionBooknameChapterVerses(
+  filename: string
+): ParsedFilename | null {
+  const cleanFilename = filename.replace(/\.[^/.]+$/, '').trim();
+
+  // Pattern: Version_BookName_Chapter_StartVerse_EndVerse
+  // First part is version (letters/numbers), then book name (can have spaces), then 3 numbers
+  const pattern =
+    /^([A-Za-z0-9]+)_([A-Za-z0-9\s]+)_(\d{1,3})_(\d{1,3})_(\d{1,3})$/i;
+  const match = cleanFilename.match(pattern);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, version, bookNameRaw, chapterStr, startVerseStr, endVerseStr] =
+    match;
+  const bookNameClean = bookNameRaw.trim();
+
+  // Try to find the book name in our mappings
+  const upperBookName = bookNameClean.toUpperCase();
+  let bookName = BOOK_VARIATIONS[upperBookName];
+
+  // If not found directly, try case-insensitive match on BOOK_NAME_TO_OSIS keys
+  if (!bookName) {
+    for (const key of Object.keys(BOOK_NAME_TO_OSIS)) {
+      if (key.toUpperCase() === upperBookName) {
+        bookName = key;
+        break;
+      }
+    }
+  }
+
+  if (!bookName) {
+    return null;
+  }
+
+  const chapter = parseInt(chapterStr, 10);
+  const startVerse = parseInt(startVerseStr, 10);
+  const endVerse = parseInt(endVerseStr, 10);
+
+  return {
+    originalFilename: filename,
+    detectedLanguage: version,
+    detectedBook: bookName,
+    detectedBookOsis: BOOK_NAME_TO_OSIS[bookName],
+    detectedChapter: chapter,
+    detectedStartVerse: startVerse,
+    detectedEndVerse: endVerse,
+    verseRange:
+      startVerse === endVerse ? `${startVerse}` : `${startVerse}-${endVerse}`,
+    isFullChapter: false,
+    confidence: 'high',
+    matchedPattern: 'format2_version_bookname_chapter_verses',
+    usedFormat: 'format2_version_bookname_chapter_verses',
+    errors: [],
+  };
+}
+
+/**
+ * Parse Format 3: {version}_{booknum}_{bookname}_{chapter}_{startverse}-{endverse}.mp3
+ * Example: KJV_01_Genesis_1_1-10.mp3, NIV_19_Psalms_23_1-6.mp3
+ */
+function parseFormat3VersionBooknumBooknameChapterVerses(
+  filename: string
+): ParsedFilename | null {
+  const cleanFilename = filename.replace(/\.[^/.]+$/, '').trim();
+
+  // Pattern: VERSION_XX_BookName_Chapter_StartVerse-EndVerse
+  // Also handle: VERSION_XX_BookName_Chapter_StartVerse (single verse)
+  const pattern =
+    /^([A-Za-z0-9]+)_(\d{1,2})_([A-Za-z0-9\s]+)_(\d{1,3})_(\d{1,3})(?:-(\d{1,3}))?$/i;
+  const match = cleanFilename.match(pattern);
+
+  if (!match) {
+    return null;
+  }
+
+  const [
+    ,
+    version,
+    bookNumStr,
+    bookNameRaw,
+    chapterStr,
+    startVerseStr,
+    endVerseStr,
+  ] = match;
+  const bookNum = bookNumStr.padStart(2, '0');
+  const bookName = BSB_BOOK_NUMBER_TO_NAME[bookNum];
+
+  if (!bookName) {
+    return null;
+  }
+
+  const chapter = parseInt(chapterStr, 10);
+  const startVerse = parseInt(startVerseStr, 10);
+  const endVerse = endVerseStr ? parseInt(endVerseStr, 10) : startVerse;
+
+  return {
+    originalFilename: filename,
+    detectedLanguage: version,
+    detectedBook: bookName,
+    detectedBookOsis: BOOK_NAME_TO_OSIS[bookName],
+    detectedChapter: chapter,
+    detectedStartVerse: startVerse,
+    detectedEndVerse: endVerse,
+    verseRange:
+      startVerse === endVerse ? `${startVerse}` : `${startVerse}-${endVerse}`,
+    isFullChapter: false,
+    confidence: 'high',
+    matchedPattern: 'format3_version_booknum_bookname_chapter_verses',
+    usedFormat: 'format3_version_booknum_bookname_chapter_verses',
+    errors: [],
+  };
+}
+
+/**
+ * Main parsing function supporting multiple formats:
+ * 1. Format 1: {bookname}_{chapter}_{startverse}_{endverse}.mp3
+ * 2. Format 2: {version}_{bookname}_{chapter}_{startverse}_{endverse}.mp3
+ * 3. Format 3: {version}_{booknum}_{bookname}_{chapter}_{startverse}-{endverse}.mp3
+ * 4. Legacy format: Language_BookName_ChapterXXX_VXXX_XXX.mp3
+ * 5. BSB format: BSB_XX_AAA_XXX_H.mp3
+ *
+ * @param filename - The filename to parse
+ * @param format - Optional format to use. If 'auto' or undefined, tries all formats.
+ */
+export function parseFilename(
+  filename: string,
+  format?: FilenameFormat
+): ParsedFilename {
   // Remove file extension for pattern matching
   const cleanFilename = filename.replace(/\.[^/.]+$/, '').trim();
 
-  // Try BSB format first
+  // If a specific format is requested (not auto), try only that format
+  if (format && format !== 'auto') {
+    switch (format) {
+      case 'format1_bookname_chapter_verses': {
+        const result = parseFormat1BooknameChapterVerses(filename);
+        if (result) return result;
+        break;
+      }
+      case 'format2_version_bookname_chapter_verses': {
+        const result = parseFormat2VersionBooknameChapterVerses(filename);
+        if (result) return result;
+        break;
+      }
+      case 'format3_version_booknum_bookname_chapter_verses': {
+        const result =
+          parseFormat3VersionBooknumBooknameChapterVerses(filename);
+        if (result) return result;
+        break;
+      }
+      case 'format5_bsb': {
+        const result = parseBSBFormat(cleanFilename);
+        if (result) {
+          result.usedFormat = 'format5_bsb';
+          return result;
+        }
+        break;
+      }
+      case 'format4_legacy':
+        // Fall through to legacy parsing below
+        break;
+    }
+  }
+
+  // Auto-detect mode: Try all formats in order of specificity
+
+  // Try Format 3 first (most specific with version + book number)
+  const format3Result =
+    parseFormat3VersionBooknumBooknameChapterVerses(filename);
+  if (format3Result) {
+    return format3Result;
+  }
+
+  // Try Format 2 (version + book name)
+  const format2Result = parseFormat2VersionBooknameChapterVerses(filename);
+  if (format2Result) {
+    return format2Result;
+  }
+
+  // Try Format 1 (book name only)
+  const format1Result = parseFormat1BooknameChapterVerses(filename);
+  if (format1Result) {
+    return format1Result;
+  }
+
+  // Try BSB format
   const bsbResult = parseBSBFormat(cleanFilename);
   if (bsbResult) {
+    bsbResult.usedFormat = 'format5_bsb';
     return bsbResult;
   }
 
-  // Fall back to original format parsing
+  // Fall back to legacy format parsing
   const result: ParsedFilename = {
     originalFilename: filename,
     confidence: 'none',
     errors: [],
+    usedFormat: 'format4_legacy',
   };
 
   try {

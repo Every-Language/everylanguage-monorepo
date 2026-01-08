@@ -3,6 +3,7 @@ import {
   resolveFullChapterEndVerse,
   resolveFullChapterEndVersesBatch,
   type ParsedFilename,
+  type FilenameFormat,
 } from './filenameParser';
 
 export interface AudioMetadata {
@@ -43,12 +44,13 @@ export interface ProcessedAudioFile {
 export class AudioFileProcessor {
   async processFile(
     file: File,
-    bibleVersionId?: string
+    bibleVersionId?: string,
+    filenameFormat?: FilenameFormat
   ): Promise<ProcessedAudioFile> {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Parse filename
-    let filenameParseResult = parseFilename(file.name);
+    // Parse filename with optional format
+    let filenameParseResult = parseFilename(file.name, filenameFormat);
 
     // Resolve full chapter end verses if needed and we have a bible version
     if (filenameParseResult.isFullChapter && bibleVersionId) {
@@ -210,21 +212,22 @@ export class AudioFileProcessor {
 
   async processFiles(
     files: File[],
-    bibleVersionId?: string
+    bibleVersionId?: string,
+    filenameFormat?: FilenameFormat
   ): Promise<ProcessedAudioFile[]> {
     if (files.length === 0) {
       return [];
     }
 
     console.log(
-      `📁 Processing ${files.length} files${bibleVersionId ? ' with bible version resolution' : ''}...`
+      `📁 Processing ${files.length} files${bibleVersionId ? ' with bible version resolution' : ''}${filenameFormat ? ` using format: ${filenameFormat}` : ''}...`
     );
     const startTime = Date.now();
 
     // Step 1: Parse all filenames first (no DB calls)
     const filenameParseResults = files.map(file => ({
       file,
-      parseResult: parseFilename(file.name),
+      parseResult: parseFilename(file.name, filenameFormat),
     }));
 
     // Step 2: Batch resolve full chapter end verses (single DB query for all)

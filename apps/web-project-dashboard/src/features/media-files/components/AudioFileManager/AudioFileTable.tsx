@@ -26,6 +26,7 @@ import { useMediaFilesVerseTimestamps } from '../../../../shared/hooks/query/med
 
 type SortField = 'created_at' | 'verse_reference';
 type PublishStatus = 'pending' | 'published' | 'archived';
+type CheckStatus = 'pending' | 'approved' | 'rejected' | 'requires_review';
 
 interface AudioFileTableProps {
   // Data
@@ -51,6 +52,7 @@ interface AudioFileTableProps {
   handleRowSelect: (id: string, checked?: boolean) => void;
   handleEditClick: (file: MediaFileWithVerseInfo) => void;
   handlePublishStatusChange: (id: string, status: PublishStatus) => void;
+  handleCheckStatusChange?: (id: string, status: CheckStatus) => void;
   handlePlay: (file: MediaFileWithVerseInfo) => void;
   handleDownload: (file: MediaFileWithVerseInfo) => void;
   handleVerseMarking: (file: MediaFileWithVerseInfo) => void;
@@ -95,6 +97,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
   handleRowSelect,
   handleEditClick,
   handlePublishStatusChange,
+  handleCheckStatusChange,
   handlePlay,
   handleDownload,
   handleVerseMarking,
@@ -153,6 +156,21 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
         return 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100';
       case 'processing':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
+    }
+  };
+
+  // Helper function to get check status colors
+  const getCheckStatusColor = (status: string | null | undefined) => {
+    switch (status) {
+      case 'approved':
+        return 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100';
+      case 'requires_review':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-800 dark:text-orange-100';
+      case 'pending':
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
     }
@@ -292,7 +310,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                               }
                             }}>
                             <SelectItem value='bulk-action'>
-                              Change Status
+                              Publish Status
                             </SelectItem>
                             <SelectItem value='pending'>
                               Set to Pending
@@ -304,6 +322,17 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                               Set to Archived
                             </SelectItem>
                           </Select>
+
+                          {/* Bulk Community Check Button */}
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() =>
+                              executeBulkOperation('community_checked')
+                            }
+                            className='text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200'>
+                            ✓ Approve Selected
+                          </Button>
 
                           {/* Delete Button */}
                           <Button
@@ -331,7 +360,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
               <table className='w-full border-collapse'>
                 <thead>
                   <tr className='border-b border-gray-200 dark:border-gray-700'>
-                    <th className='text-left p-3 font-medium text-gray-900 dark:text-gray-100'>
+                    <th className='text-left p-3 text-xs font-medium text-gray-900 dark:text-gray-100'>
                       <div className='flex items-center'>
                         <Checkbox
                           checked={allCurrentPageSelected}
@@ -344,7 +373,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                         )}
                       </div>
                     </th>
-                    <th className='text-left p-3 font-medium text-gray-900 dark:text-gray-100'>
+                    <th className='text-left p-3 text-xs font-medium text-gray-900 dark:text-gray-100'>
                       <button
                         onClick={() => handleSort('verse_reference')}
                         className='flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400'>
@@ -356,19 +385,22 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                         )}
                       </button>
                     </th>
-                    <th className='text-left p-3 font-medium text-gray-900 dark:text-gray-100'>
+                    <th className='text-left p-3 text-xs font-medium text-gray-900 dark:text-gray-100'>
                       <span>Filename</span>
                     </th>
-                    <th className='text-left p-3 font-medium text-gray-900 dark:text-gray-100'>
+                    <th className='text-left p-3 text-xs font-medium text-gray-900 dark:text-gray-100'>
                       <span>Verse Timestamps</span>
                     </th>
-                    <th className='text-left p-3 font-medium text-gray-900 dark:text-gray-100'>
+                    <th className='text-left p-3 text-xs font-medium text-gray-900 dark:text-gray-100'>
                       <span>Upload Status</span>
                     </th>
-                    <th className='text-left p-3 font-medium text-gray-900 dark:text-gray-100'>
+                    <th className='text-left p-3 text-xs font-medium text-gray-900 dark:text-gray-100'>
                       <span>Publish Status</span>
                     </th>
-                    <th className='text-left p-3 font-medium text-gray-900 dark:text-gray-100'>
+                    <th className='text-left p-3 text-xs font-medium text-gray-900 dark:text-gray-100'>
+                      <span>Community Check</span>
+                    </th>
+                    <th className='text-left p-3 text-xs font-medium text-gray-900 dark:text-gray-100'>
                       Actions
                     </th>
                   </tr>
@@ -450,12 +482,12 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                           <td className='p-3'>
                             <Select
                               value={file.publish_status || 'pending'}
-                              onValueChange={value =>
+                              onValueChange={value => {
                                 handlePublishStatusChange(
                                   file.id,
                                   value as PublishStatus
-                                )
-                              }
+                                );
+                              }}
                               disabled={!!file.deleted_at} // Disable publish status changes for deleted files
                             >
                               <SelectItem value='pending'>Pending</SelectItem>
@@ -464,6 +496,53 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                               </SelectItem>
                               <SelectItem value='archived'>Archived</SelectItem>
                             </Select>
+                          </td>
+                          <td className='p-3'>
+                            {(() => {
+                              const checkStatus =
+                                (file as unknown as { check_status?: string })
+                                  .check_status || 'pending';
+
+                              // Color classes based on status
+                              const getSelectClassName = (status: string) => {
+                                switch (status) {
+                                  case 'approved':
+                                    return 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 [&>span]:text-green-700 dark:[&>span]:text-green-300';
+                                  case 'rejected':
+                                    return 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 [&>span]:text-red-700 dark:[&>span]:text-red-300';
+                                  case 'requires_review':
+                                    return 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 [&>span]:text-amber-700 dark:[&>span]:text-amber-300';
+                                  default:
+                                    return 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300';
+                                }
+                              };
+
+                              return (
+                                <Select
+                                  value={checkStatus}
+                                  onValueChange={value =>
+                                    handleCheckStatusChange?.(
+                                      file.id,
+                                      value as CheckStatus
+                                    )
+                                  }
+                                  disabled={!!file.deleted_at}
+                                  className={`w-[120px] h-8 text-xs ${getSelectClassName(checkStatus)} ${file.deleted_at ? 'opacity-50' : ''}`}>
+                                  <SelectItem value='pending'>
+                                    Pending
+                                  </SelectItem>
+                                  <SelectItem value='approved'>
+                                    Approved
+                                  </SelectItem>
+                                  <SelectItem value='requires_review'>
+                                    Review
+                                  </SelectItem>
+                                  <SelectItem value='rejected'>
+                                    Rejected
+                                  </SelectItem>
+                                </Select>
+                              );
+                            })()}
                           </td>
                           <td className='p-3'>
                             <div className='flex items-center space-x-2'>
@@ -544,7 +623,7 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
                         {/* Expanded row showing verse timestamps */}
                         {isExpanded && timestampsStatus.hasTimestamps && (
                           <tr className='bg-gray-50 dark:bg-gray-800/30'>
-                            <td colSpan={8} className='p-0'>
+                            <td colSpan={9} className='p-0'>
                               <div className='px-6 py-4 border-l-4 border-blue-200 dark:border-blue-700'>
                                 <h4 className='text-sm font-medium text-gray-900 dark:text-gray-100 mb-3'>
                                   Verse Timestamps ({fileTimestamps.length})

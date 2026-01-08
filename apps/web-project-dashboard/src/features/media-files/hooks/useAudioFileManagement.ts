@@ -47,6 +47,7 @@ export interface AudioFileEditForm extends Record<string, unknown> {
   startVerseId: string;
   endVerseId: string;
   publishStatus: 'pending' | 'published' | 'archived';
+  checkStatus: 'pending' | 'approved' | 'rejected' | 'requires_review';
 }
 
 export interface AudioVersionForm extends Record<string, unknown> {
@@ -81,7 +82,7 @@ export function useAudioFileManagement(projectId: string | null) {
   const modalState = useModalState();
 
   // Audio player state
-  const { playFile } = useAudioPlayerStore();
+  const { playFile, setError: setAudioError } = useAudioPlayerStore();
   const [loadingAudioId, setLoadingAudioId] = useState<string | null>(null);
 
   // Project context
@@ -98,6 +99,7 @@ export function useAudioFileManagement(projectId: string | null) {
       startVerseId: '',
       endVerseId: '',
       publishStatus: 'pending',
+      checkStatus: 'pending',
     },
     validationRules: [
       { field: 'startVerseId', required: true },
@@ -301,6 +303,9 @@ export function useAudioFileManagement(projectId: string | null) {
         startVerseId: file.start_verse_id || '',
         endVerseId: file.end_verse_id || '',
         publishStatus: file.publish_status || 'pending',
+        checkStatus:
+          (file as unknown as { check_status?: string }).check_status ||
+          'pending',
       });
       modalState.openModal('edit', { currentMediaFile: file });
     },
@@ -315,13 +320,26 @@ export function useAudioFileManagement(projectId: string | null) {
     if (!currentMediaFile) return;
 
     try {
+      const updates: {
+        start_verse_id: string | null;
+        end_verse_id: string | null;
+        publish_status: PublishStatus;
+        check_status: string;
+      } = {
+        start_verse_id: enhancedEditForm.data.startVerseId || null,
+        end_verse_id: enhancedEditForm.data.endVerseId || null,
+        publish_status: enhancedEditForm.data.publishStatus,
+        check_status: enhancedEditForm.data.checkStatus,
+      };
+
+      // If changing to pending, reset community check status to pending
+      if (enhancedEditForm.data.publishStatus === 'pending') {
+        updates.check_status = 'pending';
+      }
+
       await updateMediaFile.mutateAsync({
         id: currentMediaFile.id,
-        updates: {
-          start_verse_id: enhancedEditForm.data.startVerseId || null,
-          end_verse_id: enhancedEditForm.data.endVerseId || null,
-          publish_status: enhancedEditForm.data.publishStatus,
-        },
+        updates,
       });
       modalState.closeModal();
       enhancedEditForm.resetForm();
@@ -334,15 +352,62 @@ export function useAudioFileManagement(projectId: string | null) {
   const handlePublishStatusChange = useCallback(
     async (fileId: string, newStatus: PublishStatus) => {
       try {
+        const updates: {
+          publish_status: PublishStatus;
+          check_status?: string;
+        } = {
+          publish_status: newStatus,
+        };
+
+        // If changing to pending, reset community check status to pending
+        if (newStatus === 'pending') {
+          updates.check_status = 'pending';
+        }
+
         await updateMediaFile.mutateAsync({
           id: fileId,
-          updates: { publish_status: newStatus },
+          updates,
         });
       } catch (error) {
         console.error('Error updating publish status:', error);
       }
     },
     [updateMediaFile]
+  );
+
+  const handleCheckStatusChange = useCallback(
+    async (
+      fileId: string,
+      newStatus: 'pending' | 'approved' | 'rejected' | 'requires_review'
+    ) => {
+      try {
+        await updateMediaFile.mutateAsync({
+          id: fileId,
+          updates: { check_status: newStatus },
+        });
+
+        const statusLabels: Record<string, string> = {
+          pending: 'Pending',
+          approved: 'Approved',
+          rejected: 'Rejected',
+          requires_review: 'Requires Review',
+        };
+
+        toast({
+          title: 'Community check status updated',
+          description: `Status changed to ${statusLabels[newStatus]}`,
+          variant: 'success',
+        });
+      } catch (error) {
+        console.error('Error updating community check status:', error);
+        toast({
+          title: 'Failed to update community check status',
+          description: 'An error occurred while updating the status',
+          variant: 'error',
+        });
+      }
+    },
+    [updateMediaFile, toast]
   );
 
   const handleCreateAudioVersion = useCallback(async () => {
@@ -406,6 +471,11 @@ export function useAudioFileManagement(projectId: string | null) {
     async (file: MediaFileWithVerseInfo) => {
       if (!file.id) {
         console.error('No media file id available for file');
+        toast({
+          title: 'Playback Error',
+          description: 'No media file ID available',
+          variant: 'error',
+        });
         return;
       }
 
@@ -416,12 +486,16 @@ export function useAudioFileManagement(projectId: string | null) {
         const downloadService =
           await import('../../../shared/services/downloadService');
         const service = new downloadService.DownloadService();
+
+        console.log('🎵 Getting download URL for file:', file.id);
         const result = await service.getDownloadUrlsById({
           mediaFileIds: [file.id],
         });
         const signedUrl = result.media?.[file.id];
 
         if (result.success && signedUrl) {
+          console.log('✅ Got signed URL, fetching audio blob...');
+
           // Convert the file to the audio player's expected type
           const audioFile = {
             ...file,
@@ -431,23 +505,58 @@ export function useAudioFileManagement(projectId: string | null) {
           // Use blob URL approach for Safari compatibility
           try {
             const blobResponse = await fetch(signedUrl);
+
+            if (!blobResponse.ok) {
+              throw new Error(
+                `HTTP ${blobResponse.status}: ${blobResponse.statusText}`
+              );
+            }
+
             const blob = await blobResponse.blob();
+            console.log(
+              '✅ Audio blob created, size:',
+              blob.size,
+              'type:',
+              blob.type
+            );
+
+            if (blob.size === 0) {
+              throw new Error('Audio file is empty');
+            }
+
             const blobUrl = URL.createObjectURL(blob);
             playFile(audioFile, blobUrl);
-          } catch {
+          } catch (blobError) {
+            console.warn('Blob download failed, trying direct URL:', blobError);
             // Fallback to direct URL if blob creation fails
             playFile(audioFile, signedUrl);
           }
         } else {
-          console.error('Failed to get streaming URL');
+          const errorMsg =
+            result.errors?.[file.id] || 'Failed to get streaming URL';
+          console.error('Failed to get streaming URL:', errorMsg);
+          setAudioError(errorMsg);
+          toast({
+            title: 'Playback Error',
+            description: errorMsg,
+            variant: 'error',
+          });
         }
       } catch (error) {
+        const errorMsg =
+          error instanceof Error ? error.message : 'Unknown error occurred';
         console.error('Error getting audio URL:', error);
+        setAudioError(errorMsg);
+        toast({
+          title: 'Playback Error',
+          description: `Could not load audio: ${errorMsg}`,
+          variant: 'error',
+        });
       } finally {
         setLoadingAudioId(null);
       }
     },
-    [playFile, setLoadingAudioId]
+    [playFile, setLoadingAudioId, setAudioError, toast]
   );
 
   const handleVerseMarking = useCallback(
@@ -533,6 +642,24 @@ export function useAudioFileManagement(projectId: string | null) {
       try {
         switch (action) {
           case 'pending':
+            // When changing to pending, also reset community check status
+            await Promise.all([
+              batchUpdatePublishStatus.mutateAsync({
+                fileIds: selectedIds,
+                status: 'pending',
+              }),
+              batchUpdateStatus.mutateAsync({
+                fileIds: selectedIds,
+                status: 'pending',
+              }),
+            ]);
+            toast({
+              title: 'Status updated',
+              description: `${selectedIds.length} files updated to pending (community check reset)`,
+              variant: 'success',
+            });
+            bulkOps.clearSelection();
+            break;
           case 'published':
           case 'archived':
             await batchUpdatePublishStatus.mutateAsync({
@@ -542,6 +669,18 @@ export function useAudioFileManagement(projectId: string | null) {
             toast({
               title: 'Status updated',
               description: `${selectedIds.length} files updated to ${action}`,
+              variant: 'success',
+            });
+            bulkOps.clearSelection();
+            break;
+          case 'community_checked':
+            await batchUpdateStatus.mutateAsync({
+              fileIds: selectedIds,
+              status: 'approved',
+            });
+            toast({
+              title: 'Community check status updated',
+              description: `${selectedIds.length} files marked as community checked`,
               variant: 'success',
             });
             bulkOps.clearSelection();
@@ -583,16 +722,32 @@ export function useAudioFileManagement(projectId: string | null) {
       if (bulkOps.selectedItems.size === 0) return;
 
       try {
-        await batchUpdatePublishStatus.mutateAsync({
-          fileIds: Array.from(bulkOps.selectedItems),
-          status,
-        });
+        const fileIds = Array.from(bulkOps.selectedItems);
+
+        // When changing to pending, also reset community check status
+        if (status === 'pending') {
+          await Promise.all([
+            batchUpdatePublishStatus.mutateAsync({
+              fileIds,
+              status: 'pending',
+            }),
+            batchUpdateStatus.mutateAsync({
+              fileIds,
+              status: 'pending',
+            }),
+          ]);
+        } else {
+          await batchUpdatePublishStatus.mutateAsync({
+            fileIds,
+            status,
+          });
+        }
         bulkOps.clearSelection();
       } catch (error) {
         console.error('Error updating publish status:', error);
       }
     },
-    [bulkOps, batchUpdatePublishStatus]
+    [bulkOps, batchUpdatePublishStatus, batchUpdateStatus]
   );
 
   const handleBulkDownload = useCallback(async () => {
@@ -771,6 +926,7 @@ export function useAudioFileManagement(projectId: string | null) {
     handleSaveEdit,
     handleEditFormChange,
     handlePublishStatusChange,
+    handleCheckStatusChange,
     handleCreateAudioVersion,
     handlePlay,
     handleDownload,
