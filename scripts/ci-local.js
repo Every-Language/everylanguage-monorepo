@@ -46,10 +46,7 @@ function detectChanges(changedPaths) {
     ),
     frontendAppBible: changedPaths.some(p => p.startsWith('apps/app-bible/')),
     powersyncRules: changedPaths.some(p =>
-      p.includes('app-bible/powersync/sync-rules.yaml')
-    ),
-    powersyncRulesRecord: changedPaths.some(p =>
-      p.includes('app-record/powersync/sync-rules.yaml')
+      p.includes('powersync/sync-rules.yaml')
     ),
   };
 }
@@ -110,10 +107,36 @@ function parseEnvFile(filePath) {
   return env;
 }
 
-// Legacy function kept for backward compatibility
-// Use loadPowerSyncEnvForApp() instead
 function loadPowerSyncEnv() {
-  return loadPowerSyncEnvForApp('bible');
+  const secretsDir = path.join(__dirname, '../secrets');
+  const sharedPath = path.join(secretsDir, '.env.shared');
+  const devPath = path.join(secretsDir, '.env.development');
+
+  const sharedEnv = parseEnvFile(sharedPath);
+  const devEnv = parseEnvFile(devPath);
+
+  // Merge shared and development env vars
+  const env = { ...sharedEnv, ...devEnv };
+
+  // Map to PowerSync CLI format
+  if (env.POWERSYNC_API_TOKEN) {
+    process.env.AUTH_TOKEN = env.POWERSYNC_API_TOKEN;
+  }
+  if (env.POWERSYNC_ORG_ID) {
+    process.env.ORG_ID = env.POWERSYNC_ORG_ID;
+  }
+  if (env.POWERSYNC_PROJECT_ID) {
+    process.env.PROJECT_ID = env.POWERSYNC_PROJECT_ID;
+  }
+  if (env.POWERSYNC_INSTANCE_ID) {
+    process.env.INSTANCE_ID = env.POWERSYNC_INSTANCE_ID;
+  }
+
+  // Check if all required vars are present
+  const required = ['AUTH_TOKEN', 'ORG_ID', 'PROJECT_ID', 'INSTANCE_ID'];
+  const missing = required.filter(key => !process.env[key]);
+
+  return missing.length === 0;
 }
 
 // ============================================================
@@ -220,7 +243,7 @@ async function runBackendChecks(changes) {
     return;
   }
 
-  // Deno type-check for Edge Functions (skip if deno not installed)
+  // Deno type-check for Edge Functions (only if Deno is installed)
   try {
     execSync('which deno', { stdio: 'ignore' });
     await runStep('Backend: Deno type-check', () => {
@@ -229,9 +252,7 @@ async function runBackendChecks(changes) {
       });
     });
   } catch (error) {
-    console.log(
-      '⏭️  Skipping Deno type-check (deno not installed - install with: curl -fsSL https://deno.land/install.sh | sh)'
-    );
+    console.log('⏭️  Skipping Deno type-check (Deno not installed)');
   }
 
   // Start Supabase
@@ -398,140 +419,39 @@ async function runAppBibleValidation(changes) {
   );
 }
 
-async function loadPowerSyncEnvForApp(appName) {
-  const secretsDir = path.join(__dirname, '../secrets');
-  const sharedPath = path.join(secretsDir, '.env.shared');
-  const devPath = path.join(secretsDir, '.env.development');
-
-  const sharedEnv = parseEnvFile(sharedPath);
-  const devEnv = parseEnvFile(devPath);
-
-  // Merge shared and development env vars
-  const env = { ...sharedEnv, ...devEnv };
-
-  // Map to PowerSync CLI format
-  if (env.POWERSYNC_API_TOKEN) {
-    process.env.AUTH_TOKEN = env.POWERSYNC_API_TOKEN;
-  }
-  if (env.POWERSYNC_ORG_ID) {
-    process.env.ORG_ID = env.POWERSYNC_ORG_ID;
-  }
-  // Use app-specific project ID
-  const projectIdKey = `POWERSYNC_${appName.toUpperCase()}_PROJECT_ID`;
-  const instanceIdKey = `POWERSYNC_${appName.toUpperCase()}_INSTANCE_ID`;
-  if (env[projectIdKey]) {
-    process.env.PROJECT_ID = env[projectIdKey];
-  }
-  if (env[instanceIdKey]) {
-    process.env.INSTANCE_ID = env[instanceIdKey];
-  }
-
-  // Check if all required vars are present
-  const required = ['AUTH_TOKEN', 'ORG_ID', 'PROJECT_ID', 'INSTANCE_ID'];
-  const missing = required.filter(key => !process.env[key]);
-
-  return missing.length === 0;
-}
-
-async function runI18nValidation(changes) {
-  const checks = [];
-
-  if (changes.frontendAppBible) {
-    checks.push(
-      runStep('i18n: Check translation keys (app-bible)', () => {
-        execSync('node scripts/check-i18n-keys.js app-bible', {
-          stdio: 'inherit',
-        });
-      })
-    );
-  }
-
-  // Add app-record check when needed
-  // if (changes.frontendAppRecord) {
-  //   checks.push(
-  //     runStep('i18n: Check translation keys (app-record)', () => {
-  //       execSync('node scripts/check-i18n-keys.js app-record', {
-  //         stdio: 'inherit',
-  //       });
-  //     })
-  //   );
-  // }
-
-  if (checks.length === 0) {
-    return;
-  }
-
-  await Promise.all(checks);
-}
-
 async function runPowerSyncValidation(changes, mode) {
-  if (mode !== 'pr') {
+  if (mode !== 'pr' || !changes.powersyncRules) {
     return;
   }
 
-  // Validate app-bible PowerSync
-  if (changes.powersyncRules) {
-    const envLoaded = await loadPowerSyncEnvForApp('bible');
-    if (!envLoaded) {
-      console.warn(
-        '⚠️  PowerSync Bible env vars not found - skipping validation'
-      );
-    } else {
-      // Validate syntax
-      await runStep('PowerSync (Bible): Validate sync rules syntax', () => {
-        execSync(
-          'python3 -c "import yaml; yaml.safe_load(open(\'apps/app-bible/powersync/sync-rules.yaml\'))"',
-          { stdio: 'inherit' }
-        );
-      });
-
-      // Verify schema (requires API access)
-      await runStep('PowerSync (Bible): Verify schema', () => {
-        execSync('cd apps/app-bible && pnpm run powersync:verify-schema', {
-          stdio: 'inherit',
-          env: {
-            ...process.env,
-            AUTH_TOKEN: process.env.AUTH_TOKEN,
-            ORG_ID: process.env.ORG_ID,
-            PROJECT_ID: process.env.PROJECT_ID,
-            INSTANCE_ID: process.env.INSTANCE_ID,
-          },
-        });
-      });
-    }
+  // Load PowerSync env vars
+  const envLoaded = loadPowerSyncEnv();
+  if (!envLoaded) {
+    console.warn('⚠️  PowerSync env vars not found - skipping validation');
+    return;
   }
 
-  // Validate app-record PowerSync
-  if (changes.powersyncRulesRecord) {
-    const envLoaded = await loadPowerSyncEnvForApp('record');
-    if (!envLoaded) {
-      console.warn(
-        '⚠️  PowerSync Record env vars not found - skipping validation'
-      );
-    } else {
-      // Validate syntax
-      await runStep('PowerSync (Record): Validate sync rules syntax', () => {
-        execSync(
-          'python3 -c "import yaml; yaml.safe_load(open(\'apps/app-record/powersync/sync-rules.yaml\'))"',
-          { stdio: 'inherit' }
-        );
-      });
+  // Validate syntax
+  await runStep('PowerSync: Validate sync rules syntax', () => {
+    execSync(
+      'python3 -c "import yaml; yaml.safe_load(open(\'apps/app-bible/powersync/sync-rules.yaml\'))"',
+      { stdio: 'inherit' }
+    );
+  });
 
-      // Verify schema (requires API access)
-      await runStep('PowerSync (Record): Verify schema', () => {
-        execSync('cd apps/app-record && pnpm run powersync:verify-schema', {
-          stdio: 'inherit',
-          env: {
-            ...process.env,
-            AUTH_TOKEN: process.env.AUTH_TOKEN,
-            ORG_ID: process.env.ORG_ID,
-            PROJECT_ID: process.env.PROJECT_ID,
-            INSTANCE_ID: process.env.INSTANCE_ID,
-          },
-        });
-      });
-    }
-  }
+  // Verify schema (requires API access)
+  return runStep('PowerSync: Verify schema', () => {
+    execSync('cd apps/app-bible && pnpm run powersync:verify-schema', {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        AUTH_TOKEN: process.env.AUTH_TOKEN,
+        ORG_ID: process.env.ORG_ID,
+        PROJECT_ID: process.env.PROJECT_ID,
+        INSTANCE_ID: process.env.INSTANCE_ID,
+      },
+    });
+  });
 }
 
 // ============================================================
@@ -559,7 +479,6 @@ async function main() {
   await runBuild(changes, mode);
   // Skip App Bible validation - native folders expected locally for dev builds
   // CI will catch if native folders are committed
-  await runI18nValidation(changes);
   await runPowerSyncValidation(changes, mode);
   await runSecurityAudit(mode);
 
