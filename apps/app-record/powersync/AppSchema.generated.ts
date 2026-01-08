@@ -63,6 +63,7 @@ const sessions = new Table(
     continent_code: column.text,
     country_code: column.text,
     region_code: column.text,
+    language_entity_id: column.text,
   },
   { indexes: {} }
 );
@@ -73,7 +74,7 @@ const share_opens = new Table(
     user_id: column.text,
     session_id: column.text,
     opened_at: column.text,
-    origin_share_id: column.text,
+    parent_share_id: column.text,
     created_at: column.text,
   },
   { indexes: {} }
@@ -87,7 +88,7 @@ const shares = new Table(
     share_entity_type: column.text,
     share_entity_id: column.text,
     language_entity_id: column.text,
-    origin_share_id: column.text,
+    parent_share_id: column.text,
   },
   { indexes: {} }
 );
@@ -129,6 +130,9 @@ const app_downloads = new Table(
     platform: column.text,
     os: column.text,
     os_version: column.text,
+    country_code: column.text,
+    region_code: column.text,
+    continent_code: column.text,
   },
   { indexes: {} }
 );
@@ -186,6 +190,7 @@ const audio_versions = new Table(
     created_by: column.text,
     updated_at: column.text,
     deleted_at: column.text,
+    publish_status: column.text,
   },
   { indexes: {} }
 );
@@ -213,6 +218,9 @@ const media_files = new Table(
     storage_provider: column.text,
     original_filename: column.text,
     file_type: column.text,
+    local_path: column.text,
+    sequence_id: column.text,
+    project_id: column.text,
   },
   { indexes: {} }
 );
@@ -228,6 +236,9 @@ const media_files_verses = new Table(
     updated_at: column.text,
     deleted_at: column.text,
     denormalized_audio_version_id: column.text,
+    verse_checker_status: column.text,
+    verse_checker_comment: column.text,
+    project_id: column.text,
   },
   { indexes: {} }
 );
@@ -243,6 +254,7 @@ const text_versions = new Table(
     updated_at: column.text,
     deleted_at: column.text,
     project_id: column.text,
+    publish_status: column.text,
   },
   { indexes: {} }
 );

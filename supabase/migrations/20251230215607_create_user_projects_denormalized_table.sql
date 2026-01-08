@@ -13,7 +13,11 @@
 -- ============================================================================
 -- CREATE USER_PROJECTS TABLE
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS public.user_projects (
+-- Drop the existing view first (created in earlier migrations)
+DROP VIEW if EXISTS public.user_projects cascade;
+
+
+CREATE TABLE public.user_projects (
   id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
   user_id UUID REFERENCES public.users (id) ON DELETE CASCADE NOT NULL,
   project_id UUID REFERENCES public.projects (id) ON DELETE CASCADE NOT NULL,
