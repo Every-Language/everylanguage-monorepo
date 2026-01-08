@@ -208,4 +208,3 @@ if (require.main === module) {
 }
 
 module.exports = { generateSchema };
-

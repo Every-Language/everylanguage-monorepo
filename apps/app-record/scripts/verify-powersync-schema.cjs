@@ -211,4 +211,3 @@ if (require.main === module) {
 }
 
 module.exports = { verifySchema };
-

@@ -435,7 +435,9 @@ async function runPowerSyncValidation(changes, mode) {
   if (changes.powersyncRules) {
     const envLoaded = await loadPowerSyncEnvForApp('bible');
     if (!envLoaded) {
-      console.warn('⚠️  PowerSync Bible env vars not found - skipping validation');
+      console.warn(
+        '⚠️  PowerSync Bible env vars not found - skipping validation'
+      );
     } else {
       // Validate syntax
       await runStep('PowerSync (Bible): Validate sync rules syntax', () => {
@@ -465,7 +467,9 @@ async function runPowerSyncValidation(changes, mode) {
   if (changes.powersyncRulesRecord) {
     const envLoaded = await loadPowerSyncEnvForApp('record');
     if (!envLoaded) {
-      console.warn('⚠️  PowerSync Record env vars not found - skipping validation');
+      console.warn(
+        '⚠️  PowerSync Record env vars not found - skipping validation'
+      );
     } else {
       // Validate syntax
       await runStep('PowerSync (Record): Validate sync rules syntax', () => {
