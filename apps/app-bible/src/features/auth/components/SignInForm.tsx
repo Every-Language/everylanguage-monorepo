@@ -13,7 +13,7 @@ import { EmailInput } from './EmailInput';
 import { PasswordInput } from './PasswordInput';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 const themedStyles = createThemedStyles({
   container: theme => ({
@@ -231,9 +231,6 @@ export function SignInForm({
           return;
         }
 
-        // Navigate to sync screen first, then start the sign-in process
-        navigation.navigate('SignInSync');
-
         // Try to sign in using fresh start method
         try {
           await signInWithFreshStart(email, password);
@@ -241,6 +238,8 @@ export function SignInForm({
             ENABLE_LOGGING,
             'SignInForm: User successfully authenticated with fresh start'
           );
+          // Navigate to sync screen only after successful authentication
+          navigation.navigate('SignInSync');
         } catch (error) {
           logger.error(ENABLE_LOGGING, 'Sign in error', error);
           const errorMessage =
@@ -260,7 +259,7 @@ export function SignInForm({
             return;
           }
 
-          // Other sign in error
+          // Other sign in error - stay on sign-in screen
           Alert.alert(t('common.error'), errorMessage);
         }
         return;

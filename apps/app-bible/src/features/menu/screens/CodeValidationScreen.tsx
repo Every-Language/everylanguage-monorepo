@@ -6,7 +6,7 @@ import { logger } from '@/shared/utils/logger';
 import type { MenuStackNavigationProp } from '../navigation/MenuStackNavigator';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface CodeValidationScreenProps {
   route: {

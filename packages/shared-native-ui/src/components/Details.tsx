@@ -35,6 +35,7 @@ export interface DetailsProps {
     progress?: number;
   };
   onPressAvailability?: () => void;
+  tintImage?: boolean;
 }
 
 const ALBUM_ART_PADDING = 40;
@@ -59,6 +60,7 @@ export const Details: React.FC<DetailsProps> = ({
   testID,
   availability,
   onPressAvailability,
+  tintImage = true,
 }) => {
   const { theme } = useTheme();
   const albumArtSize = getAlbumArtSize();
@@ -72,8 +74,11 @@ export const Details: React.FC<DetailsProps> = ({
           <View style={styles.albumArtContainer}>
             <Image
               source={albumArt}
-              style={styles.albumArt}
-              resizeMode='contain'
+              style={[
+                styles.albumArt,
+                { tintColor: tintImage ? theme.colors.primary : undefined },
+              ]}
+              resizeMode='cover'
             />
           </View>
         )}
@@ -176,7 +181,6 @@ const createStyles = (theme: Theme, albumArtSize: number = 200) => {
     albumArt: {
       width: '100%',
       height: '100%',
-      tintColor: theme.colors.primary,
     },
     detailsSection: {
       paddingHorizontal: DETAILS_PADDING,

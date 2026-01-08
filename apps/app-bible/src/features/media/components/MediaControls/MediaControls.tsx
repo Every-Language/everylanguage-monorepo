@@ -10,7 +10,7 @@ import { SpeedControl } from './SpeedControl';
 import type { PlaybackRate } from '../../constants/playback';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface MediaControlsProps {
   showAlbumArt?: boolean;

@@ -116,9 +116,7 @@ export const VersionSelectionStackNavigator: React.FC<
         name='LanguageInfo'
         component={LanguageInfoScreen}
         options={{
-          title: i18n.t('languages.infoTitle', {
-            defaultValue: 'Language info',
-          }),
+          title: i18n.t('languages.infoTitle'),
         }}
       />
       <VersionSelectionStack.Screen

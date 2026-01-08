@@ -27,7 +27,7 @@ export const useAddToPlaylistFlow = ({ params }: UseAddToPlaylistFlowProps) => {
   const { showToast } = useToastStore();
   const { addToPlaylist, addVerseRangeToPlaylist } = usePlaylistMutations();
 
-  const { chapterId, bookName, chapterNumber, audioVersionId } = params;
+  const { chapterId, bookName, chapterNumber } = params;
 
   // Determine if verse range selection should be shown
   const showVerseRangeSelection = Boolean(
@@ -90,7 +90,7 @@ export const useAddToPlaylistFlow = ({ params }: UseAddToPlaylistFlowProps) => {
           if (!chapterId) {
             Alert.alert(
               t('common.error', 'Error'),
-              t('playlists.noChapterSelected', 'No chapter selected')
+              t('playlists.noChapterSelected')
             );
             return;
           }
@@ -149,7 +149,6 @@ export const useAddToPlaylistFlow = ({ params }: UseAddToPlaylistFlowProps) => {
       chapterId?: string;
       bookName?: string;
       chapterNumber?: number;
-      audioVersionId?: string;
       startVerseId?: string;
       endVerseId?: string;
     } = {};
@@ -170,9 +169,6 @@ export const useAddToPlaylistFlow = ({ params }: UseAddToPlaylistFlowProps) => {
       if (chapterNumber !== undefined) {
         createPlaylistParams.chapterNumber = chapterNumber;
       }
-      if (audioVersionId) {
-        createPlaylistParams.audioVersionId = audioVersionId;
-      }
     }
 
     navigation.goBack();
@@ -184,7 +180,6 @@ export const useAddToPlaylistFlow = ({ params }: UseAddToPlaylistFlowProps) => {
     chapterId,
     bookName,
     chapterNumber,
-    audioVersionId,
     navigation,
   ]);
 
@@ -214,7 +209,6 @@ export const useAddToPlaylistFlow = ({ params }: UseAddToPlaylistFlowProps) => {
     chapterId,
     bookName,
     chapterNumber,
-    audioVersionId,
     // Handlers
     handleVerseRangeConfirm,
     handleAddToPlaylist,

@@ -47,13 +47,7 @@
     "powersync:generate-schema": "node scripts/generate-powersync-schema.cjs",
     "powersync:combine-schema": "node scripts/combine-powersync-schema.cjs",
     "powersync:build-schema": "npm run powersync:generate-schema && npm run powersync:combine-schema",
-    "powersync:verify-schema": "node scripts/verify-powersync-schema.cjs",
-    "assets:books:png": "node scripts/convert-book-svgs-to-png.cjs",
-    "assets:books-registry": "node scripts/generate-book-art-registry.cjs",
-    "assets:books": "npm run assets:books:png && npm run assets:books-registry",
-    "assets:generate-bible-structure": "node scripts/generate-bible-structure-json.cjs",
-    "assets:generate-bible-seed-db": "node scripts/generate-bible-seed-db.cjs",
-    "assets:prepare-bible-seed": "npm run assets:generate-bible-structure && npm run assets:generate-bible-seed-db"
+    "powersync:verify-schema": "node scripts/verify-powersync-schema.cjs"
   },
   "private": true,
   "dependencies": {

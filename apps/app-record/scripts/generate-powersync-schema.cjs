@@ -15,6 +15,116 @@ function normalizeSchema(content) {
     .trim();
 }
 
+function detectEnvironment() {
+  // 1. Check if env vars are already set (CI/CD or manual override)
+  if (
+    process.env.PROJECT_ID &&
+    process.env.AUTH_TOKEN &&
+    process.env.ORG_ID &&
+    process.env.INSTANCE_ID
+  ) {
+    console.log('🔧 Using PowerSync credentials from environment variables');
+    return {
+      PROJECT_ID: process.env.PROJECT_ID,
+      AUTH_TOKEN: process.env.AUTH_TOKEN,
+      ORG_ID: process.env.ORG_ID,
+      INSTANCE_ID: process.env.INSTANCE_ID,
+    };
+  }
+
+  // 2. Try to detect from git branch
+  let gitBranch = null;
+  try {
+    gitBranch = execSync('git branch --show-current', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .trim()
+      .toLowerCase();
+  } catch (error) {
+    // Not in a git repo or git command failed
+  }
+
+  // 3. Determine environment based on branch or default to dev
+  const isProduction =
+    gitBranch === 'main' || process.env.NODE_ENV === 'production';
+  const env = isProduction ? 'production' : 'development';
+
+  console.log(
+    `🔍 Detected environment: ${env}${gitBranch ? ` (branch: ${gitBranch})` : ''}`
+  );
+
+  // 4. Try to load from .env file in app directory
+  const envFile = path.join(__dirname, '..', '.env');
+  let envVars = {};
+
+  if (fs.existsSync(envFile)) {
+    const envContent = fs.readFileSync(envFile, 'utf8');
+    envContent.split('\n').forEach(line => {
+      // Support both old format (POWERSYNC_PROJECT_ID) and new format (POWERSYNC_RECORD_PROJECT_ID)
+      const match = line.match(
+        /^POWERSYNC_(RECORD_)?(PROJECT_ID|AUTH_TOKEN|ORG_ID|INSTANCE_ID)=(.*)$/
+      );
+      if (match) {
+        const key = match[2]; // PROJECT_ID, AUTH_TOKEN, etc.
+        const value = match[3].trim().replace(/^["']|["']$/g, '');
+        envVars[key] = value;
+      }
+    });
+  }
+
+  // 5. Check for environment-specific vars
+  // Priority: Environment-specific app vars > App-specific vars > Generic vars
+  const prefix = isProduction ? 'PROD' : 'DEV';
+  const projectId =
+    process.env[`POWERSYNC_RECORD_${prefix}_PROJECT_ID`] ||
+    process.env.POWERSYNC_RECORD_PROJECT_ID ||
+    envVars[`${prefix}_PROJECT_ID`] ||
+    envVars.PROJECT_ID ||
+    process.env[`POWERSYNC_${prefix}_PROJECT_ID`] ||
+    process.env.POWERSYNC_PROJECT_ID;
+  const authToken =
+    process.env[`POWERSYNC_${prefix}_AUTH_TOKEN`] ||
+    process.env.POWERSYNC_AUTH_TOKEN ||
+    envVars[`${prefix}_AUTH_TOKEN`] ||
+    envVars.AUTH_TOKEN;
+  const orgId =
+    process.env[`POWERSYNC_${prefix}_ORG_ID`] ||
+    process.env.POWERSYNC_ORG_ID ||
+    envVars[`${prefix}_ORG_ID`] ||
+    envVars.ORG_ID;
+  const instanceId =
+    process.env[`POWERSYNC_RECORD_${prefix}_INSTANCE_ID`] ||
+    process.env.POWERSYNC_RECORD_INSTANCE_ID ||
+    envVars[`${prefix}_INSTANCE_ID`] ||
+    envVars.INSTANCE_ID ||
+    process.env[`POWERSYNC_${prefix}_INSTANCE_ID`] ||
+    process.env.POWERSYNC_INSTANCE_ID;
+
+  if (projectId && authToken && orgId && instanceId) {
+    console.log(`✅ Loaded PowerSync credentials for ${env} environment`);
+    return {
+      PROJECT_ID: projectId,
+      AUTH_TOKEN: authToken,
+      ORG_ID: orgId,
+      INSTANCE_ID: instanceId,
+    };
+  }
+
+  // 6. If still no credentials, show helpful error
+  throw new Error(
+    `❌ PowerSync credentials not found for ${env} environment.\n\n` +
+      `Please set one of the following:\n` +
+      `  1. Environment variables: PROJECT_ID, AUTH_TOKEN, ORG_ID, INSTANCE_ID\n` +
+      `  2. Or in .env: POWERSYNC_RECORD_PROJECT_ID, POWERSYNC_AUTH_TOKEN, POWERSYNC_ORG_ID, POWERSYNC_RECORD_INSTANCE_ID\n` +
+      `  3. Or environment-specific: POWERSYNC_RECORD_${prefix}_PROJECT_ID, POWERSYNC_RECORD_${prefix}_INSTANCE_ID, etc.\n` +
+      `  4. Or legacy format: POWERSYNC_PROJECT_ID, POWERSYNC_INSTANCE_ID (for backward compatibility)\n\n` +
+      `For local development on 'develop' branch, use development instance credentials.\n` +
+      `For 'main' branch, use production instance credentials.\n\n` +
+      `Note: Project IDs should be in .env.shared, instance IDs should be in .env.development or .env.production`
+  );
+}
+
 function generateSchema() {
   console.log('🔄 Generating PowerSync schema from sync rules...');
 
@@ -24,11 +134,20 @@ function generateSchema() {
       throw new Error(`Sync rules file not found: ${SYNC_RULES_FILE}`);
     }
 
+    // Detect and load environment credentials
+    const credentials = detectEnvironment();
+
+    // Set environment variables for PowerSync CLI
+    process.env.PROJECT_ID = credentials.PROJECT_ID;
+    process.env.AUTH_TOKEN = credentials.AUTH_TOKEN;
+    process.env.ORG_ID = credentials.ORG_ID;
+    process.env.INSTANCE_ID = credentials.INSTANCE_ID;
+
     // Generate schema using PowerSync CLI
     console.log('📄 Running PowerSync CLI to generate schema...');
     const output = execSync(
       `npx powersync instance sync-rules generate-schema -f "${SYNC_RULES_FILE}" -l js`,
-      { encoding: 'utf8' }
+      { encoding: 'utf8', env: process.env }
     );
 
     // Extract the generated schema (skip the import line and modify it)

@@ -39,9 +39,7 @@ export const TabBar: React.FC<TabBarProps> = React.memo(function TabBar({
                     : theme.colors.text,
               },
             ]}>
-            {key === 'text'
-              ? t('common.text')
-              : t('bible.queue', { defaultValue: 'Queue' })}
+            {key === 'text' ? t('common.text') : t('bible.queue')}
           </Text>
         </TouchableOpacity>
       ))}

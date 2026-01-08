@@ -54,8 +54,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = () => {
 
   const mediaActions: MenuAction[] = useMemo(() => {
     const entries: Array<{ id: 'on' | 'off'; title: string }> = [
-      { id: 'on', title: t('common.on', { defaultValue: 'On' }) },
-      { id: 'off', title: t('common.off', { defaultValue: 'Off' }) },
+      { id: 'on', title: t('common.on') },
+      { id: 'off', title: t('common.off') },
     ];
     return entries.map(({ id, title }) => ({
       id,
@@ -121,7 +121,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = () => {
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-          {t('settings.mediaPlayer', { defaultValue: 'Media player' })}
+          {t('settings.mediaPlayer')}
         </Text>
 
         <MenuView onPressAction={onPressMediaAction} actions={mediaActions}>
@@ -129,15 +129,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = () => {
             style={[styles.row, { backgroundColor: theme.colors.surface }]}
             activeOpacity={0.7}>
             <Text style={[styles.rowTitle, { color: theme.colors.text }]}>
-              {t('settings.autoOpenMediaPlayer', {
-                defaultValue: 'Auto open media player',
-              })}
+              {t('settings.autoOpenMediaPlayer')}
             </Text>
             <Text
               style={[styles.rowValue, { color: theme.colors.textSecondary }]}>
-              {autoOpenOnPlay
-                ? t('common.on', { defaultValue: 'On' })
-                : t('common.off', { defaultValue: 'Off' })}
+              {autoOpenOnPlay ? t('common.on') : t('common.off')}
             </Text>
           </TouchableOpacity>
         </MenuView>
@@ -153,7 +149,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = () => {
           activeOpacity={0.7}
           onPress={() => navigation.getParent()?.navigate('LanguageSelector')}>
           <Text style={[styles.rowTitle, { color: theme.colors.text }]}>
-            {t('settings.appLanguage', { defaultValue: 'App language' })}
+            {t('settings.appLanguage')}
           </Text>
           <Text
             style={[styles.rowValue, { color: theme.colors.textSecondary }]}>

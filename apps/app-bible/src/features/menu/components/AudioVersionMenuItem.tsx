@@ -19,17 +19,13 @@ export const AudioVersionMenuItem: React.FC = () => {
     });
   };
 
-  const subtitle =
-    currentAudioVersion?.name ||
-    t('versions.notSelected', { defaultValue: 'Not selected' });
+  const subtitle = currentAudioVersion?.name || t('versions.notSelected');
 
   return (
     <BaseMenuItem
       onPress={handlePress}
       icon='volume-high'
-      title={t('versions.audioVersion', {
-        defaultValue: 'Audio Version',
-      })}
+      title={t('versions.audioVersion')}
       subtitle={subtitle}
       iconColor={theme.colors.primary}
     />

@@ -7,7 +7,7 @@ import { logger } from '@/shared/utils/logger';
 import { PermissionStatus, PermissionsState } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export class PermissionsService {
   private static instance: PermissionsService;

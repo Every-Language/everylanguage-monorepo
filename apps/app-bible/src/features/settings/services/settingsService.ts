@@ -3,7 +3,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import type { MediaSettings, AppSettings } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Settings service for managing app settings
