@@ -193,15 +193,12 @@ export function useActiveProjectsWithProgress(
           summaryResult.data.total_chapters_completed ?? 0,
       };
 
-      // Ensure projects is a flat array
-      const projectsData = projectsResult.data ?? [];
-      const projects = Array.isArray(projectsData[0])
-        ? projectsData[0]
-        : projectsData;
+      // Supabase RPC functions return flat arrays directly
+      const projects = (projectsResult.data ?? []) as ActiveProject[];
 
       return {
         summary,
-        projects: projects as ActiveProject[],
+        projects,
       };
     },
     staleTime: 30 * 60 * 1000, // 30 minutes
