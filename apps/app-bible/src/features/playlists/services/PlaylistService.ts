@@ -6,7 +6,7 @@ import { generateUUID } from '@/shared/utils/uuid';
 import { supabase } from '@/shared/services/api/supabase';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Service class for playlist operations
@@ -132,6 +132,10 @@ export class PlaylistService {
       if (updates.description !== undefined) {
         updateFields.push('description = ?');
         updateValues.push(updates.description);
+      }
+      if (updates.image_id !== undefined) {
+        updateFields.push('image_id = ?');
+        updateValues.push(updates.image_id);
       }
 
       if (updateFields.length === 0) {

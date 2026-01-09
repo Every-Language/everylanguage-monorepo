@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useAuthContext } from '@/features/auth/hooks/useAuthFromStore';
 import { logger } from '../../../shared/utils/logger';
 import { useTheme } from '@/shared/hooks';
-import { Button, createThemedStyles } from '@/shared';
+import { Button, createThemedStyles } from '@everylanguage/shared-native-ui';
 import { useTranslations } from '@/shared/hooks';
 import {
   ControlledTextInput,
@@ -21,7 +21,7 @@ import {
 } from '../types/signUpForm';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 const themedStyles = createThemedStyles({
   scrollView: theme => ({
@@ -248,19 +248,12 @@ export function SignUpForm({
           onNavigateToVerify('email', data.email);
         } else {
           // Fallback to old behavior
-          Alert.alert(
-            t('auth.signUpSuccess', { defaultValue: 'Account Created!' }),
-            t('auth.signUpSuccessMessage', {
-              defaultValue:
-                'Your account has been created. Please sign in to continue.',
-            }),
-            [
-              {
-                text: t('common.ok', { defaultValue: 'OK' }),
-                onPress: () => onSwitchToSignIn(),
-              },
-            ]
-          );
+          Alert.alert(t('auth.signUpSuccess'), t('auth.signUpSuccessMessage'), [
+            {
+              text: t('common.ok'),
+              onPress: () => onSwitchToSignIn(),
+            },
+          ]);
         }
         return;
       }
@@ -287,19 +280,12 @@ export function SignUpForm({
         onNavigateToVerify('phone', undefined, data.phone);
       } else {
         // Fallback to old behavior
-        Alert.alert(
-          t('auth.signUpSuccess', { defaultValue: 'Account Created!' }),
-          t('auth.signUpSuccessMessage', {
-            defaultValue:
-              'Your account has been created. Please sign in to continue.',
-          }),
-          [
-            {
-              text: t('common.ok', { defaultValue: 'OK' }),
-              onPress: () => onSwitchToSignIn(),
-            },
-          ]
-        );
+        Alert.alert(t('auth.signUpSuccess'), t('auth.signUpSuccessMessage'), [
+          {
+            text: t('common.ok'),
+            onPress: () => onSwitchToSignIn(),
+          },
+        ]);
       }
     } catch (error) {
       logger.error(ENABLE_LOGGING, 'Sign up error:', error);

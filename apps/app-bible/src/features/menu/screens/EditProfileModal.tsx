@@ -7,12 +7,12 @@ import { z } from 'zod';
 import { useTheme } from '@/shared/hooks';
 import { useUserProfile } from '@/shared/hooks';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
-import { Button } from '@/shared/components/Button';
+import { Button } from '@everylanguage/shared-native-ui';
 import { ControlledTextInput } from '@/features/auth/components/ControlledTextInput';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 // Validation schema
 const editProfileSchema = z.object({

@@ -9,20 +9,20 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '@/shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
 import type {
   VersionInfoScreenProps,
   VersionSelectionStackNavigationProp,
 } from '../navigation/VersionSelectionStackNavigator';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 import { useVersionCompleteness } from '../hooks/useVersionCompleteness';
 import type { AudioVersion, TextVersion } from '../types/entities';
 import { useVersionsStore } from '../store/versionsStore';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import { MaterialIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';

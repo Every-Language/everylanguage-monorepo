@@ -3,7 +3,7 @@ import { useEffect, useCallback } from 'react';
 import { logger } from '../utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Hook to access basic network state from the centralized store

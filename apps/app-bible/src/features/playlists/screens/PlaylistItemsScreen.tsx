@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import { MaterialIcons } from '@expo/vector-icons';
+import { imageDownloadManager } from '@/features/downloads/services';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type {
   NativeStackNavigationProp,
@@ -21,7 +22,12 @@ import { useTheme, useLocalization } from '@/shared/hooks';
 import { useCurrentVersions } from '../../languages/hooks';
 import { mediaPlayerService } from '@/features/media';
 import { PlaylistsStackParamList } from '../navigation';
-import { Details, GradientBackground, Header, Theme } from '@/shared';
+import {
+  Details,
+  GradientBackground,
+  Header,
+} from '@everylanguage/shared-native-ui';
+import type { Theme } from '@everylanguage/shared-native-ui';
 import { usePlaylistItemsPS } from '../hooks/usePlaylistItemsPS';
 import { PlaylistItemWithVerses } from '../types';
 import { DraggablePlaylistItem } from '../components/DraggablePlaylistItem';
@@ -51,6 +57,7 @@ export const PlaylistItemsScreen: React.FC = () => {
   // State for reorder mode and deletion
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [playlistImageUri, setPlaylistImageUri] = useState<string | null>(null);
 
   // Get fresh playlist data from database
   const { playlist: playlistData } = usePlaylistPS({
@@ -60,6 +67,28 @@ export const PlaylistItemsScreen: React.FC = () => {
 
   // Use playlist data or fallback to param (should always have a value due to initialData)
   const playlist = playlistData ?? playlistParam;
+
+  // Resolve playlist image URI
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      if (!playlist.image_id) {
+        if (isMounted) setPlaylistImageUri(null);
+        return;
+      }
+      try {
+        const uri = await imageDownloadManager.resolveImageUrl(
+          playlist.image_id
+        );
+        if (isMounted) setPlaylistImageUri(uri);
+      } catch {
+        if (isMounted) setPlaylistImageUri(null);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [playlist.image_id]);
 
   // Start reorder mode
   const startReorderMode = () => {
@@ -222,9 +251,6 @@ export const PlaylistItemsScreen: React.FC = () => {
     }
   };
 
-  // TODO
-  const playlistImage = { uri: 'https://picsum.photos/id/1/400/400' };
-
   // Handle back navigation
   const handleBack = () => {
     navigation.goBack();
@@ -276,7 +302,9 @@ export const PlaylistItemsScreen: React.FC = () => {
         playlist.description ||
         t('playlists.noDescription', 'No description available')
       }
-      albumArt={playlistImage}
+      albumArt={
+        playlist.image_id ? { uri: playlistImageUri as string } : undefined
+      }
       onSharePress={handleShare}
       playButtonProps={
         playlistItems.filter(item => item.playlist_item_type === 'passage')
@@ -297,6 +325,7 @@ export const PlaylistItemsScreen: React.FC = () => {
         );
         handleMenuAction(event);
       }}
+      tintImage={false}
       testID='chapter-screen-details'
     />
   );

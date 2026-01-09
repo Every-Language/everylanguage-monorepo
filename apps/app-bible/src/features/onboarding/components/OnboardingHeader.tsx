@@ -4,7 +4,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme, useLocalization } from '@/shared/hooks';
-import type { ThemeMode } from '@/shared/types/theme';
+import type { ThemeMode } from '@everylanguage/shared-native-ui';
 import type { OnboardingStackNavigationProp } from '../navigation/OnboardingStackNavigator';
 
 interface OnboardingHeaderProps {

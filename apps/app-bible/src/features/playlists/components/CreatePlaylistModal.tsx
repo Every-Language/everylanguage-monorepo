@@ -10,7 +10,7 @@ import type {
   RootStackParamList,
 } from '@/app/navigation/RootNavigator';
 import { usePlaylistMutations } from '../hooks/usePlaylistMutations';
-import { useToastStore } from '@/shared/store/toastStore';
+import { useToastStore } from '@everylanguage/shared-native-ui';
 import logger from '@/shared/utils/logger';
 
 type CreatePlaylistModalProps = NativeStackScreenProps<

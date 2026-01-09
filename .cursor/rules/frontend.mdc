@@ -4,6 +4,40 @@ globs: ["apps/**/src/**/*.{ts,tsx}"]
 alwaysApply: false
 ---
 
+## React / React Native Code Organization
+
+**Follow Bulletproof React principles for codebase organization and file naming:**
+
+### File Structure (Bulletproof React)
+- **Feature-based organization**: Group by feature/domain, not by file type
+- **Co-location**: Keep related files together (components, hooks, utils, types)
+- **File naming**: Use kebab-case for files (`user-profile.tsx`, `use-user-data.ts`)
+- **Component files**: Match component name to file name (`UserProfile.tsx` → `user-profile.tsx`)
+- **Index files**: Use `index.ts` for public API exports, avoid deep imports
+- **Barrel exports**: Export from feature root, not individual files
+
+### Directory Structure Pattern
+```
+features/
+  auth/
+    components/
+      login-form.tsx
+      signup-form.tsx
+    hooks/
+      use-auth.ts
+      use-login.ts
+    api/
+      auth-queries.ts
+    types.ts
+    index.ts          # Public API exports
+```
+
+### Import Rules
+- ✅ **DO**: Import from feature public API: `import { LoginForm } from '@/features/auth'`
+- ✅ **DO**: Use relative imports within same feature: `import { useAuth } from '../hooks/use-auth'`
+- ❌ **DON'T**: Deep imports across features: `import { Button } from '@/features/auth/components/button'`
+- ❌ **DON'T**: Import from feature internals: `import { validateEmail } from '@/features/auth/utils/validation'`
+
 ## React
 - Function components only, no class components
 - Extract logic to custom hooks when component > 200 lines

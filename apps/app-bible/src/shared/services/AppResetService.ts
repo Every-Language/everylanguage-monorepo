@@ -8,7 +8,7 @@ import { signOutProgressService } from './SignOutProgressService';
 // Store clearing is now handled by DataClearingService
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Service responsible for completely resetting the app to a clean state

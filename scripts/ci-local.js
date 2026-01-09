@@ -192,7 +192,7 @@ async function runLint(changes) {
     filters.push('--filter=web-admin-dashboard');
   }
   if (changes.frontendAppBible) {
-    filters.push('--filter=app-bible');
+    filters.push('--filter=el-bible');
   }
 
   if (filters.length === 0) {
@@ -223,7 +223,7 @@ async function runTypeCheck(changes) {
     filters.push('--filter=web-admin-dashboard');
   }
   if (changes.frontendAppBible) {
-    filters.push('--filter=app-bible');
+    filters.push('--filter=el-bible');
   }
 
   if (filters.length === 0) {
@@ -243,12 +243,17 @@ async function runBackendChecks(changes) {
     return;
   }
 
-  // Deno type-check for Edge Functions
-  await runStep('Backend: Deno type-check', () => {
-    execSync('cd supabase && pnpm run type-check:functions', {
-      stdio: 'inherit',
+  // Deno type-check for Edge Functions (only if Deno is installed)
+  try {
+    execSync('which deno', { stdio: 'ignore' });
+    await runStep('Backend: Deno type-check', () => {
+      execSync('cd supabase && pnpm run type-check:functions', {
+        stdio: 'inherit',
+      });
     });
-  });
+  } catch (error) {
+    console.log('⏭️  Skipping Deno type-check (Deno not installed)');
+  }
 
   // Start Supabase
   await runStep('Backend: Start Supabase', async () => {
@@ -292,7 +297,7 @@ async function runTests(changes, mode) {
     filters.push('--filter=web-admin-dashboard');
   }
   if (changes.frontendAppBible) {
-    filters.push('--filter=app-bible');
+    filters.push('--filter=el-bible');
   }
 
   if (filters.length === 0) {
@@ -310,7 +315,7 @@ async function runTests(changes, mode) {
 
   // Special handling for app-bible in PR mode
   if (changes.frontendAppBible && mode === 'pr') {
-    const appBibleIndex = filters.indexOf('--filter=app-bible');
+    const appBibleIndex = filters.indexOf('--filter=el-bible');
     if (appBibleIndex !== -1) {
       filters.splice(appBibleIndex, 1);
 
@@ -361,7 +366,7 @@ async function runBuild(changes, mode) {
     filters.push('--filter=web-admin-dashboard');
   }
   if (changes.frontendAppBible) {
-    filters.push('--filter=app-bible');
+    filters.push('--filter=el-bible');
   }
 
   if (filters.length === 0) {

@@ -714,9 +714,21 @@ export const languagesApi = {
       external_id_type?: string | null;
     }
   ): Promise<void> {
+    // Get current authenticated user for created_by field (required by constraint)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user && !sourceData.is_external) {
+      throw new Error(
+        'User must be authenticated to create a non-external language source'
+      );
+    }
+
     const { error } = await supabase.from('language_entity_sources').insert({
       language_entity_id: entityId,
       ...sourceData,
+      created_by: sourceData.is_external ? null : user?.id || null,
     });
 
     if (error) throw error;
@@ -735,9 +747,40 @@ export const languagesApi = {
       external_id_type?: string | null;
     }
   ): Promise<void> {
+    // If is_external is being set to false, we need to ensure created_by is set
+    // If is_external is being set to true, we can set created_by to null
+    const updateData: {
+      source?: string;
+      version?: string | null;
+      is_external?: boolean;
+      external_id?: string | null;
+      external_id_type?: string | null;
+      created_by?: string | null;
+    } = { ...updates };
+
+    if (updates.is_external !== undefined) {
+      if (updates.is_external === false) {
+        // Get current authenticated user for created_by field (required by constraint)
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          throw new Error(
+            'User must be authenticated to update a language source to non-external'
+          );
+        }
+
+        updateData.created_by = user.id;
+      } else {
+        // For external sources, created_by should be null
+        updateData.created_by = null;
+      }
+    }
+
     const { error } = await supabase
       .from('language_entity_sources')
-      .update(updates)
+      .update(updateData)
       .eq('id', sourceId);
 
     if (error) throw error;
@@ -863,6 +906,15 @@ export const languagesApi = {
       location_source?: string | null;
     }>;
   }): Promise<LanguageEntity> {
+    // Get current authenticated user for created_by field (required by constraint)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('User must be authenticated to create a language entity');
+    }
+
     // Create the main language entity
     const { data: entity, error: entityError } = await supabase
       .from('language_entities')
@@ -894,6 +946,7 @@ export const languagesApi = {
           external_id_type: source.is_external
             ? source.external_id_type?.trim() || null
             : null,
+          created_by: source.is_external ? null : user.id,
         }));
 
       if (sourcesToInsert.length > 0) {

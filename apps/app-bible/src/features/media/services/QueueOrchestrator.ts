@@ -8,7 +8,7 @@ import { logger } from '@/shared/utils/logger';
 import type { BibleTrack } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Stateless orchestrator that derives and applies the RNTP playback window

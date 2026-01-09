@@ -3,8 +3,7 @@ import { View, Text, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useTranslations } from '@/shared/hooks';
-import { createThemedStyles } from '@/shared';
-import { Button } from '@/shared/components/Button';
+import { createThemedStyles, Button } from '@everylanguage/shared-native-ui';
 
 interface SignOutProgressModalProps {
   visible: boolean;
@@ -141,19 +140,12 @@ export const SignOutProgressModal: React.FC<SignOutProgressModalProps> = ({
           <SafeAreaView edges={['bottom']}>
             <View style={styles.content}>
               <Text style={styles.title}>
-                {isComplete
-                  ? t('auth.signOutComplete', {
-                      defaultValue: 'Sign Out Complete',
-                    })
-                  : t('auth.signingOut', { defaultValue: 'Signing Out' })}
+                {isComplete ? t('auth.signOutComplete') : t('auth.signingOut')}
               </Text>
 
               {!isComplete && (
                 <Text style={styles.message}>
-                  {t('auth.signOutProgressMessage', {
-                    defaultValue:
-                      'Clearing your data and preparing for a fresh start...',
-                  })}
+                  {t('auth.signOutProgressMessage')}
                 </Text>
               )}
 
@@ -170,8 +162,7 @@ export const SignOutProgressModal: React.FC<SignOutProgressModalProps> = ({
                     />
                   </View>
                   <Text style={styles.progressText}>
-                    {Math.round(progress)}%{' '}
-                    {t('common.complete', { defaultValue: 'Complete' })}
+                    {Math.round(progress)}% {t('common.complete')}
                   </Text>
                 </View>
               )}
@@ -190,16 +181,11 @@ export const SignOutProgressModal: React.FC<SignOutProgressModalProps> = ({
                     />
                   </View>
                   <Text style={styles.completionMessage}>
-                    {t('auth.signOutCompleteMessage', {
-                      defaultValue:
-                        'You are now signed out. You can sign in again or set up a new account.',
-                    })}
+                    {t('auth.signOutCompleteMessage')}
                   </Text>
                   <View style={styles.buttonContainer}>
                     <Button
-                      title={t('auth.getStarted', {
-                        defaultValue: 'Get Started',
-                      })}
+                      title={t('auth.getStarted')}
                       onPress={onDismiss}
                       size='md'
                       variant='primary'
@@ -213,7 +199,7 @@ export const SignOutProgressModal: React.FC<SignOutProgressModalProps> = ({
                     color={theme.colors.primary}
                   />
                   <Text style={styles.loadingText}>
-                    {t('common.pleaseWait', { defaultValue: 'Please wait...' })}
+                    {t('common.pleaseWait')}
                   </Text>
                 </View>
               )}

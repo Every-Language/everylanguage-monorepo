@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import { useTheme, useLocalization } from '@/shared/hooks';
-import { GradientBackground } from '@/shared/components';
+import { useTheme } from '@/shared/hooks';
+import { GradientBackground } from '@everylanguage/shared-native-ui';
 import { PlaylistList } from '../components/PlaylistList';
 import { usePlaylistsPS } from '../hooks/usePlaylistsPS';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,7 +17,7 @@ import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
 import { Playlist } from '../types';
 import { PlaylistGroupsTabs } from '../components/PlaylistGroupsTabs';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Theme } from '@/shared';
+import type { Theme } from '@everylanguage/shared-native-ui';
 import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
 import { mediaPlayerService } from '@/features/media';
 import type { PlaylistItem } from '../types';
@@ -26,13 +26,12 @@ import { logger } from '@/shared/utils/logger';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
-import ModalHeader from '@/shared/components/ModalHeader';
+const ENABLE_LOGGING = false;
+import { TopBar } from '@everylanguage/shared-native-ui';
 
 export const PlaylistsScreen: React.FC = () => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { t } = useLocalization();
 
   const navigation =
     useNavigation<NativeStackNavigationProp<PlaylistsStackParamList>>();
@@ -118,10 +117,6 @@ export const PlaylistsScreen: React.FC = () => {
     }
   };
 
-  const handleClose = () => {
-    navigation.goBack();
-  };
-
   const styles = createStyles(theme);
 
   return (
@@ -135,10 +130,16 @@ export const PlaylistsScreen: React.FC = () => {
             paddingRight: insets.right,
           },
         ]}>
-        <ModalHeader
-          title={t('playlists.title', 'Playlists')}
-          showClose
-          onClose={handleClose}
+        <TopBar
+          onMenuPress={() =>
+            rootNavigation.navigate('MenuModal', {
+              screen: 'Menu',
+            })
+          }
+          onSearchPress={() => rootNavigation.navigate('SearchModal')}
+          onQuickSelectionPress={() =>
+            rootNavigation.navigate('QuickSelectionModal')
+          }
         />
 
         <View style={styles.content}>

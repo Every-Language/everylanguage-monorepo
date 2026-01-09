@@ -1,0 +1,8 @@
+export { SearchIcon } from './SearchIcon';
+export { SearchBar } from './SearchBar';
+export { SearchFilters } from './SearchFilters';
+export { SearchResultItem } from './SearchResultItem';
+export { SearchResults } from './SearchResults';
+export { RecentSearches } from './RecentSearches';
+export { SearchModal } from './SearchModal';
+export { HighlightedText } from './HighlightedText';

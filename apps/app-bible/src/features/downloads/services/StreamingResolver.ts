@@ -8,7 +8,7 @@ import {
 } from './urlCache';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Handles streaming URL resolution for media files

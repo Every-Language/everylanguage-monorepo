@@ -9065,7 +9065,7 @@ export type Database = {
             segment_type: "source" | "target";
             share_entity_type: "app" | "chapter" | "playlist" | "verse" | "passage";
             subscription_status: "active" | "canceled" | "past_due" | "unpaid" | "incomplete" | "incomplete_expired" | "trialing" | "paused";
-            target_type: "chapter" | "book" | "sermon" | "passage" | "verse" | "podcast" | "film_segment" | "audio_segment";
+            target_type: "chapter" | "book" | "sermon" | "passage" | "verse" | "podcast" | "film_segment" | "audio_segment" | "playlist";
             testament: "old" | "new";
             text_version_source: "official_translation" | "ai_transcription" | "user_submitted";
             transaction_kind: "payment" | "refund" | "adjustment" | "transfer";
@@ -9170,7 +9170,7 @@ export declare const Constants: {
             readonly segment_type: readonly ["source", "target"];
             readonly share_entity_type: readonly ["app", "chapter", "playlist", "verse", "passage"];
             readonly subscription_status: readonly ["active", "canceled", "past_due", "unpaid", "incomplete", "incomplete_expired", "trialing", "paused"];
-            readonly target_type: readonly ["chapter", "book", "sermon", "passage", "verse", "podcast", "film_segment", "audio_segment"];
+            readonly target_type: readonly ["chapter", "book", "sermon", "passage", "verse", "podcast", "film_segment", "audio_segment", "playlist"];
             readonly testament: readonly ["old", "new"];
             readonly text_version_source: readonly ["official_translation", "ai_transcription", "user_submitted"];
             readonly transaction_kind: readonly ["payment", "refund", "adjustment", "transfer"];

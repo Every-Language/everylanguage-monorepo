@@ -1,14 +1,28 @@
+/// <reference types="node" />
+
 // Expo dynamic app config to inject runtime-friendly env into Constants.expoConfig.extra
 // This ensures values are available at runtime in release APKs (export:embed bundles)
 
-// Load .env for local builds — ensure we resolve from repo root even if CWD is android/
-import { config as dotenvConfig } from 'dotenv';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+// Load env for local builds.
+// For `app-bible` we intentionally prefer the app-local `.env` file so this app
+// can run independently inside the monorepo.
+//
+// NOTE: Expo CLI already loads `.env` files automatically for many workflows, but
+// we keep this fallback so `app.config.ts` can still populate `extra` reliably.
+let dotenvConfig:
+  | ((opts: { path: string; override?: boolean }) => void)
+  | null = null;
+try {
+  ({ config: dotenvConfig } = require('dotenv'));
+} catch {
+  // dotenv isn't installed in this workspace; skip explicit loading.
+}
+const path = require('node:path');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenvConfig({ path: path.resolve(__dirname, '.env') });
+const appRoot = __dirname;
+
+// Load app-local `.env` and override any existing values (including shell env).
+dotenvConfig?.({ path: path.resolve(appRoot, '.env'), override: true });
 
 // Base static config migrated from app.json to avoid duplicate static config warnings
 const base = {
@@ -46,6 +60,8 @@ const base = {
       NSLocationUsageDescription:
         'This app uses location to provide region-specific Bible content and language recommendations.',
       NSLocationWhenInUseUsageDescription:
+        'This app uses location to provide region-specific Bible content and language recommendations.',
+      NSLocationAlwaysUsageDescription:
         'This app uses location to provide region-specific Bible content and language recommendations.',
       NSLocationAlwaysAndWhenInUseUsageDescription:
         'This app uses location to provide region-specific Bible content and language recommendations.',
@@ -201,8 +217,16 @@ const base = {
   owner: 'every-language',
 } as const;
 
-export default () => {
+module.exports = () => {
   const environment = process.env['EXPO_PUBLIC_ENVIRONMENT'] || 'development';
+  const resolveEnv = (...keys: string[]) => {
+    for (const key of keys) {
+      if (process.env[key]) {
+        return process.env[key];
+      }
+    }
+    return undefined;
+  };
 
   const config = {
     ...base,
@@ -216,10 +240,20 @@ export default () => {
       // Generic environment variables (set differently per environment in CI/CD)
       // Development environment: points to dev Supabase/PowerSync
       // Production environment: points to prod Supabase/PowerSync
-      EXPO_PUBLIC_SUPABASE_URL: process.env['EXPO_PUBLIC_SUPABASE_URL'],
-      EXPO_PUBLIC_SUPABASE_ANON_KEY:
-        process.env['EXPO_PUBLIC_SUPABASE_ANON_KEY'],
-      EXPO_PUBLIC_POWERSYNC_URL: process.env['EXPO_PUBLIC_POWERSYNC_URL'],
+      // Prefer already-prefixed EXPO_PUBLIC_* vars, but also support base vars in case
+      // someone uses SUPABASE_URL style keys in the app-local `.env`.
+      EXPO_PUBLIC_SUPABASE_URL: resolveEnv(
+        'EXPO_PUBLIC_SUPABASE_URL',
+        'SUPABASE_URL'
+      ),
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: resolveEnv(
+        'EXPO_PUBLIC_SUPABASE_ANON_KEY',
+        'SUPABASE_ANON_KEY'
+      ),
+      EXPO_PUBLIC_POWERSYNC_URL: resolveEnv(
+        'EXPO_PUBLIC_POWERSYNC_BIBLE_URL',
+        'POWERSYNC_BIBLE_URL'
+      ),
     },
   };
 

@@ -5,7 +5,7 @@ import {
   isValidNumber,
 } from 'react-native-phone-entry';
 import { useTheme } from '@/shared/hooks';
-import { createThemedStyles } from '@/shared';
+import { createThemedStyles } from '@everylanguage/shared-native-ui';
 
 const themedStyles = createThemedStyles({
   container: theme => ({

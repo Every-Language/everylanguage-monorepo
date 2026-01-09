@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
-import { Header, GradientBackground } from '@/shared/components';
+import { Header, GradientBackground } from '@everylanguage/shared-native-ui';
 import { useSettingsState, useSettingsActions } from '../store/settingsStore';
 import { MediaSettingsSection } from '../components';
 

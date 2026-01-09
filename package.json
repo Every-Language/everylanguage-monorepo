@@ -36,17 +36,29 @@
     "db:type-check:functions": "cd supabase/functions && deno check **/*.ts",
     "frontend:project:dev": "turbo run dev --filter=web-project-dashboard",
     "frontend:partnership:dev": "turbo run dev --filter=web-partnership-dashboard",
-    "app-bible:dev": "turbo run start --filter=app-bible",
-    "app-bible:ios": "pnpm --filter=app-bible run ios",
-    "app-bible:android": "pnpm --filter=app-bible run android",
-    "app-bible:prebuild": "pnpm --filter=app-bible run prebuild",
-    "app-bible:prebuild:clean": "pnpm --filter=app-bible run prebuild:clean",
-    "app-bible:build:dev": "pnpm --filter=app-bible run build:dev",
-    "app-bible:build:dev:ios": "pnpm --filter=app-bible run build:dev:ios",
-    "app-bible:build:dev:android": "pnpm --filter=app-bible run build:dev:android",
-    "app-bible:build:prod": "pnpm --filter=app-bible run build:prod",
-    "app-bible:build:prod:ios": "pnpm --filter=app-bible run build:prod:ios",
-    "app-bible:build:prod:android": "pnpm --filter=app-bible run build:prod:android"
+    "app-bible:dev": "turbo run start --filter=el-bible",
+    "app-bible:ios": "pnpm --filter=el-bible run ios",
+    "app-bible:android": "pnpm --filter=el-bible run android",
+    "app-bible:prebuild": "pnpm --filter=el-bible run prebuild",
+    "app-bible:prebuild:clean": "pnpm --filter=el-bible run prebuild:clean",
+    "app-bible:build:dev": "pnpm --filter=el-bible run build:dev",
+    "app-bible:build:dev:ios": "pnpm --filter=el-bible run build:dev:ios",
+    "app-bible:build:dev:android": "pnpm --filter=el-bible run build:dev:android",
+    "app-bible:build:prod": "pnpm --filter=el-bible run build:prod",
+    "app-bible:build:prod:ios": "pnpm --filter=el-bible run build:prod:ios",
+    "app-bible:build:prod:android": "pnpm --filter=el-bible run build:prod:android",
+    "app-record:dev": "turbo run start --filter=app-record",
+    "app-record:ios": "pnpm --filter=app-record run ios",
+    "app-record:android": "pnpm --filter=app-record run android",
+    "app-record:prebuild": "pnpm --filter=app-record run prebuild",
+    "app-record:prebuild:clean": "pnpm --filter=app-record run prebuild:clean",
+    "app-record:build:dev": "pnpm --filter=app-record run build:dev",
+    "app-record:build:dev:ios": "pnpm --filter=app-record run build:dev:ios",
+    "app-record:build:dev:android": "pnpm --filter=app-record run build:dev:android",
+    "app-record:build:prod": "pnpm --filter=app-record run build:prod",
+    "app-record:build:prod:ios": "pnpm --filter=app-record run build:prod:ios",
+    "app-record:build:prod:android": "pnpm --filter=app-record run build:prod:android",
+    "check:i18n-app-bible": "node scripts/check-i18n-keys.js app-bible"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
@@ -66,8 +78,14 @@
     "overrides": {
       "jws": ">=3.2.3",
       "glob": ">=10.5.0",
+      "rimraf": ">=6.0.0",
       "@modelcontextprotocol/sdk": ">=1.24.0",
-      "react-server-dom-webpack": ">=19.0.1"
+      "react-server-dom-webpack": ">=19.2.2",
+      "react": "19.0.0",
+      "react-dom": "19.0.0",
+      "@types/react": "19.1.8",
+      "qs": ">=6.14.1",
+      "preact": ">=10.28.2"
     }
   }
 }

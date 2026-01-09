@@ -77,7 +77,7 @@ export const handleBookMenuAction = async (
       const options = {
         title,
         customText: i18n.t('bible.shareBookMessage', {
-          defaultValue: `Check out ${title} in EveryLanguage Bible!`,
+          title,
         }) as string,
         ...(params.currentAudioVersionId
           ? { audioVersionId: params.currentAudioVersionId }

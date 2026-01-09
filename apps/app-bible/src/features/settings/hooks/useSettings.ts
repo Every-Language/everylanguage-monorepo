@@ -4,7 +4,7 @@ import { settingsService } from '../services/settingsService';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Hook for managing settings with service layer integration

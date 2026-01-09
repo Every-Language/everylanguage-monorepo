@@ -25,7 +25,7 @@ import type { VerseWithTiming as GlobalVerseWithTiming } from '../types';
 import type { PlaylistItemQueueRef } from '@/features/playlists/types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 import type { BibleTrack, ChapterMediaOptions } from '../types';
 import type { PlaylistItem } from '@/features/playlists/types';
@@ -777,9 +777,6 @@ export class MediaPlayerService {
         // Track not in queue, need to build and add it
         const { trackBuilder } = await import('./TrackBuilder');
         const options: ChapterMediaOptions = {};
-        if (playlistItemRef.audioVersionId) {
-          options.audioVersionId = playlistItemRef.audioVersionId;
-        }
         if (playlistItemRef.textVersionId) {
           options.textVersionId = playlistItemRef.textVersionId;
         }

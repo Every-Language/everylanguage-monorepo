@@ -7,7 +7,7 @@ import { getImageSignedUrlsById } from './urlCache';
 import { downloadToFile } from './fileDownloader';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 const BACKGROUND_TASK_NAME = 'images-downloads-background-task';
 

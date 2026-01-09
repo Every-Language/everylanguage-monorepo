@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
-import { GradientBackground } from '@/shared/components';
+import { GradientBackground } from '@everylanguage/shared-native-ui';
 import { BookGrid } from '../components/BookGrid';
 import { useBooks } from '../hooks/useBible';
 import type { BookWithMetadata } from '../types';
@@ -16,7 +16,7 @@ import { useBibleNavigationV2 } from '../services/BibleNavigationServiceV2';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export const BibleBooksScreen: React.FC = () => {
   const { theme } = useTheme();

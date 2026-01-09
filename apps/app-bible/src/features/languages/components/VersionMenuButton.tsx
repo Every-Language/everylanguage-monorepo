@@ -2,13 +2,13 @@ import React, { useMemo, useCallback } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
-import { useTheme } from '../../../shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import { logger } from '../../../shared/utils/logger';
 import type { AudioVersion, TextVersion } from '../types/entities';
 import { useLocalization } from '@/shared/hooks';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface VersionMenuButtonProps {
   version: AudioVersion | TextVersion;
@@ -31,7 +31,7 @@ export const VersionMenuButton: React.FC<VersionMenuButtonProps> = ({
       { id: 'info', title: t('versions.infoTitle'), image: 'info.circle' },
       {
         id: 'remove',
-        title: t('versions.remove', { defaultValue: 'Remove version' }),
+        title: t('versions.remove'),
         attributes: { destructive: true },
         image: 'trash',
       },

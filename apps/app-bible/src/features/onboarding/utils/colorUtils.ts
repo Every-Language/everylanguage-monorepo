@@ -1,4 +1,4 @@
-import { Theme } from '@/shared/types/theme';
+import type { Theme } from '@everylanguage/shared-native-ui';
 
 export const getContrastTextColor = (backgroundColor: string, theme: Theme) => {
   // Handle theme colors that might not be hex

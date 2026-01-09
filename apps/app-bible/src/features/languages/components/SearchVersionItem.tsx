@@ -6,7 +6,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useTheme } from '../../../shared/hooks/useThemeFromStore';
+import { useTheme } from '@/shared/hooks';
 import type { AudioVersion, TextVersion } from '../types/entities';
 import { StyleSheet } from 'react-native';
 import { useVersionCompleteness } from '../hooks/useVersionCompleteness';
@@ -32,10 +32,8 @@ export const SearchVersionItem: React.FC<SearchVersionItemProps> = ({
   const handlePress = useCallback(() => {
     if (isAlreadySaved) {
       Alert.alert(
-        t('versions.alreadySavedTitle', { defaultValue: 'Already saved' }),
-        t('versions.alreadySavedMessage', {
-          defaultValue: 'You have already saved this version.',
-        })
+        t('versions.alreadySavedTitle'),
+        t('versions.alreadySavedMessage')
       );
       return;
     }

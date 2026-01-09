@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useTheme, useLocalization } from '@/shared/hooks';
-import { useVersionsStore } from '@/features/languages/store/versionsStore';
+import { useTheme } from '@/shared/hooks';
 import { usePlaylistsPS } from '../hooks/usePlaylistsPS';
 import { useAddToPlaylistFlow } from '../hooks/useAddToPlaylistFlow';
 import { VerseRangeSelection } from './VerseRangeSelection';
@@ -20,9 +19,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
   route,
 }) => {
   const { theme } = useTheme();
-  const { t } = useLocalization();
   const insets = useSafeAreaInsets();
-  const { savedAudioVersions } = useVersionsStore();
 
   // Use the custom hook for all business logic
   const {
@@ -32,7 +29,6 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
     chapterId,
     bookName,
     chapterNumber,
-    audioVersionId,
     handleVerseRangeConfirm,
     handleAddToPlaylist,
     handleCreateNewPlaylist,
@@ -42,12 +38,6 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
   const { playlists, loading: playlistsLoading } = usePlaylistsPS({
     playlistGroupId: null,
   });
-
-  // Get audio version name for display
-  const audioVersionName = audioVersionId
-    ? (savedAudioVersions.find(v => v.id === audioVersionId)?.name ??
-      audioVersionId)
-    : undefined;
 
   // Render content based on current step
   const renderContent = () => {
@@ -63,7 +53,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
     return (
       <>
         {/* Chapter Info - Only show in playlist selection step */}
-        {bookName && chapterNumber && audioVersionId && (
+        {bookName && chapterNumber && (
           <View
             style={[
               styles.chapterInfo,
@@ -71,13 +61,6 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
             ]}>
             <Text style={[styles.chapterTitle, { color: theme.colors.text }]}>
               {bookName} {chapterNumber}
-            </Text>
-            <Text
-              style={[
-                styles.chapterSubtitle,
-                { color: theme.colors.textSecondary },
-              ]}>
-              {t('playlists.audioVersion', 'Audio Version')}: {audioVersionName}
             </Text>
           </View>
         )}
@@ -151,8 +134,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 4,
-  },
-  chapterSubtitle: {
-    fontSize: 14,
   },
 });

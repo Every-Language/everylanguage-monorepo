@@ -4,7 +4,7 @@ import { PlaylistFormData } from '../types';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * Hook for playlist mutations (create, edit, delete) with automatic cache invalidation

@@ -17,18 +17,12 @@ export const DownloadPill: React.FC<DownloadPillProps> = ({ onPress }) => {
 
   const getDownloadStatusText = () => {
     if (active > 0) {
-      return t('downloads.downloading', {
-        defaultValue: `${active} downloading pending ${pendingCount}`,
-      });
+      return t('downloads.downloading', { active, pendingCount });
     }
     if (queued > 0) {
-      return t('downloads.queued', {
-        defaultValue: `${queued} queued`,
-      });
+      return t('downloads.queued', { queued });
     }
-    return t('downloads.noDownloads', {
-      defaultValue: 'No downloads',
-    });
+    return t('downloads.noDownloads');
   };
 
   return (
@@ -44,7 +38,7 @@ export const DownloadPill: React.FC<DownloadPillProps> = ({ onPress }) => {
         />
         <View style={styles.downloadInfo}>
           <Text style={[styles.downloadTitle, { color: theme.colors.text }]}>
-            {t('downloads.title', { defaultValue: 'Downloads' })}
+            {t('downloads.title')}
           </Text>
           <Text
             style={[

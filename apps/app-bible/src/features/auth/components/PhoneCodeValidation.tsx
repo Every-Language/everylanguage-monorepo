@@ -11,14 +11,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useForm, Controller } from 'react-hook-form';
 import { useTheme } from '@/shared/hooks';
-import { Button, createThemedStyles } from '@/shared';
+import { Button, createThemedStyles } from '@everylanguage/shared-native-ui';
 import { useTranslations } from '@/shared/hooks';
 import { authService } from '../services/authService';
 import { CodeValidationInput } from './CodeValidationInput';
 import { logger } from '../../../shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 const themedStyles = createThemedStyles({
   container: theme => ({
@@ -236,22 +236,15 @@ export function PhoneCodeValidation({
           <View style={styles.logo}>
             <Ionicons name='call-outline' style={styles.logoIcon} />
           </View>
-          <Text style={styles.title}>
-            {t('auth.verifyPhone', { defaultValue: 'Verify Your Phone' })}
-          </Text>
+          <Text style={styles.title}>{t('auth.verifyPhone')}</Text>
           <Text style={styles.subtitle}>
-            {t('auth.phoneVerificationMessage', {
-              defaultValue:
-                "We've sent a verification code to your phone number.",
-            })}
+            {t('auth.phoneVerificationMessage')}
           </Text>
         </View>
 
         {/* Phone Display */}
         <View style={styles.phoneContainer}>
-          <Text style={styles.phoneLabel}>
-            {t('auth.codeSentTo', { defaultValue: 'Code sent to:' })}
-          </Text>
+          <Text style={styles.phoneLabel}>{t('auth.codeSentTo')}</Text>
           <Text style={styles.phoneText}>{phone}</Text>
         </View>
 
@@ -266,12 +259,8 @@ export function PhoneCodeValidation({
               onChangeText={onChange}
               onResend={handleResendCode}
               {...(error?.message ? { error: error.message } : {})}
-              placeholder={t('auth.enterCode', {
-                defaultValue: 'Enter verification code',
-              })}
-              label={t('auth.verificationCode', {
-                defaultValue: 'Verification Code*',
-              })}
+              placeholder={t('auth.enterCode')}
+              label={t('auth.verificationCode')}
               maxLength={6}
               autoFocus={true}
               disabled={isLoading}
@@ -284,7 +273,7 @@ export function PhoneCodeValidation({
         {/* Verify Button */}
         <View style={styles.buttonContainer}>
           <Button
-            title={t('auth.verifyPhone', { defaultValue: 'Verify Phone' })}
+            title={t('auth.verifyPhoneButton')}
             onPress={handleSubmit(onSubmit)}
             disabled={!isValid || isLoading}
             loading={isLoading}
@@ -298,10 +287,8 @@ export function PhoneCodeValidation({
         {/* Back to Sign Up */}
         <TouchableOpacity style={styles.linkButton} onPress={onBack}>
           <Text style={styles.linkText}>
-            {t('auth.wrongPhone', { defaultValue: 'Wrong phone number?' })}{' '}
-            <Text style={styles.linkTextHighlight}>
-              {t('auth.goBack', { defaultValue: 'Go back' })}
-            </Text>
+            {t('auth.wrongPhone')}{' '}
+            <Text style={styles.linkTextHighlight}>{t('auth.goBack')}</Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>

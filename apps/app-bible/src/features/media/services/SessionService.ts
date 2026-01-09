@@ -9,7 +9,7 @@ import { logger } from '@/shared/utils/logger';
 import type { BibleTrack, ChapterMediaOptions } from '../types';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * SessionService - Handles session restoration and checkpoint management

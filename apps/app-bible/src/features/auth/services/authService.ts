@@ -19,7 +19,7 @@ import { dataClearingService } from '@/shared/services/DataClearingService';
 import { userVersionCheckService } from '@/features/auth/services/userVersionCheckService';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 export interface AuthResult {
   success: boolean;

@@ -71,7 +71,7 @@ jobs:
           EXPO_PUBLIC_ENVIRONMENT=production
           EXPO_PUBLIC_SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-          EXPO_PUBLIC_POWERSYNC_URL=${{ secrets.EXPO_PUBLIC_POWERSYNC_URL }}
+          EXPO_PUBLIC_POWERSYNC_URL=${{ secrets.EXPO_PUBLIC_POWERSYNC_BIBLE_URL }}
           EOF
 
       - name: Build production

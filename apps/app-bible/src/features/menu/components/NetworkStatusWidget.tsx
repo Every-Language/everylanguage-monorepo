@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
 import { useNetwork } from '@/shared/hooks/useNetworkState';
-import { NoInternetModal } from '@/shared/components/NoInternetModal';
+import { NoInternetModal } from '@everylanguage/shared-native-ui';
 
 export interface NetworkStatusWidgetProps {
   onPress?: () => void;
@@ -30,7 +30,7 @@ export const NetworkStatusWidget: React.FC<NetworkStatusWidgetProps> = ({
     // Show checking state during initial load or when actively checking
     if (isChecking) {
       return {
-        text: t('network.checking', { defaultValue: 'Checking connection...' }),
+        text: t('network.checking'),
         icon: 'sync' as keyof typeof MaterialIcons.glyphMap,
         color: theme.colors.textSecondary,
       };
@@ -39,9 +39,7 @@ export const NetworkStatusWidget: React.FC<NetworkStatusWidgetProps> = ({
     // Only show "no connection" if we have confirmed network is unavailable
     if (!isConnected) {
       return {
-        text: t('network.disconnected', {
-          defaultValue: 'No network connection',
-        }),
+        text: t('network.disconnected'),
         icon: 'cloud-off' as keyof typeof MaterialIcons.glyphMap,
         color: theme.colors.error,
       };
@@ -50,7 +48,7 @@ export const NetworkStatusWidget: React.FC<NetworkStatusWidgetProps> = ({
     // Only show "no internet" if we have confirmed internet is unavailable
     if (isInternetReachable === false || !isOnline) {
       return {
-        text: t('network.noInternet', { defaultValue: 'No internet access' }),
+        text: t('network.noInternet'),
         icon: 'wifi-off' as keyof typeof MaterialIcons.glyphMap,
         color: theme.colors.error,
       };
@@ -60,31 +58,31 @@ export const NetworkStatusWidget: React.FC<NetworkStatusWidgetProps> = ({
     switch (connectionType) {
       case 'wifi':
         return {
-          text: t('network.wifi', { defaultValue: 'WiFi connected' }),
+          text: t('network.wifi'),
           icon: 'wifi' as keyof typeof MaterialIcons.glyphMap,
           color: theme.colors.success,
         };
       case 'cellular':
         return {
-          text: t('network.mobile', { defaultValue: 'Mobile data connected' }),
+          text: t('network.mobile'),
           icon: 'signal-cellular-4-bar' as keyof typeof MaterialIcons.glyphMap,
           color: theme.colors.success,
         };
       case 'bluetooth':
         return {
-          text: t('network.bluetooth', { defaultValue: 'Bluetooth connected' }),
+          text: t('network.bluetooth'),
           icon: 'bluetooth' as keyof typeof MaterialIcons.glyphMap,
           color: theme.colors.success,
         };
       case 'ethernet':
         return {
-          text: t('network.ethernet', { defaultValue: 'Ethernet connected' }),
+          text: t('network.ethernet'),
           icon: 'cable' as keyof typeof MaterialIcons.glyphMap,
           color: theme.colors.success,
         };
       default:
         return {
-          text: t('network.connected', { defaultValue: 'Network connected' }),
+          text: t('network.connected'),
           icon: 'language' as keyof typeof MaterialIcons.glyphMap,
           color: theme.colors.success,
         };
@@ -127,7 +125,7 @@ export const NetworkStatusWidget: React.FC<NetworkStatusWidgetProps> = ({
           />
           <View style={styles.networkInfo}>
             <Text style={[styles.networkTitle, { color: theme.colors.text }]}>
-              {t('network.title', { defaultValue: 'Network' })}
+              {t('network.title')}
             </Text>
             <Text style={[styles.networkSubtext, { color: statusInfo.color }]}>
               {statusInfo.text}

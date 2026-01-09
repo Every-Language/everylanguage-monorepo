@@ -14,11 +14,10 @@ import { useLocalization } from '@/shared/hooks';
 import { useUserVersions } from '@/features/languages/hooks/useUserVersions';
 import { AudioVersion, TextVersion } from '@/features/languages/types/entities';
 import { logger } from '@/shared/utils/logger';
-import { ModalHeader } from '@/shared/components/ModalHeader';
-import { Button } from '@/shared/components/Button';
+import { ModalHeader, Button } from '@everylanguage/shared-native-ui';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 interface UserVersionSelectionModalProps {
   visible: boolean;
@@ -80,13 +79,10 @@ const VersionOption: React.FC<VersionOptionProps> = ({
     <TouchableOpacity style={styles.container} onPress={handlePress}>
       <Text style={styles.title}>{version.name}</Text>
       <Text style={styles.subtitle}>
-        {version.languageName ||
-          t('languages.unknown', { defaultValue: 'Unknown Language' })}
+        {version.languageName || t('languages.unknown')}
       </Text>
       <Text style={styles.typeLabel}>
-        {type === 'audio'
-          ? t('versions.audio', { defaultValue: 'Audio' })
-          : t('versions.text', { defaultValue: 'Text' })}
+        {type === 'audio' ? t('versions.audio') : t('versions.text')}
       </Text>
     </TouchableOpacity>
   );
@@ -173,12 +169,7 @@ export const UserVersionSelectionModal: React.FC<
         'UserVersionSelectionModal: Error saving versions:',
         error
       );
-      Alert.alert(
-        t('common.error'),
-        t('versions.saveError', {
-          defaultValue: 'Failed to save version selections',
-        })
-      );
+      Alert.alert(t('common.error'), t('versions.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -277,17 +268,13 @@ export const UserVersionSelectionModal: React.FC<
     return (
       <View style={styles.container}>
         <ModalHeader
-          title={t('versions.selectVersions', {
-            defaultValue: 'Select Your Versions',
-          })}
+          title={t('versions.selectVersions')}
           showClose={true}
           onClose={handleClose}
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text style={styles.loadingText}>
-            {t('common.loading', { defaultValue: 'Loading...' })}
-          </Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       </View>
     );
@@ -297,20 +284,14 @@ export const UserVersionSelectionModal: React.FC<
     return (
       <View style={styles.container}>
         <ModalHeader
-          title={t('versions.selectVersions', {
-            defaultValue: 'Select Your Versions',
-          })}
+          title={t('versions.selectVersions')}
           showClose={true}
           onClose={handleClose}
         />
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>
-            {t('versions.loadError', {
-              defaultValue: 'Failed to load versions',
-            })}
-          </Text>
+          <Text style={styles.emptyText}>{t('versions.loadError')}</Text>
           <Button
-            title={t('common.retry', { defaultValue: 'Retry' })}
+            title={t('common.retry')}
             onPress={() => {
               // Refresh the versions data
               refreshVersions();
@@ -325,31 +306,19 @@ export const UserVersionSelectionModal: React.FC<
   return (
     <View style={styles.container}>
       <ModalHeader
-        title={t('versions.selectVersions', {
-          defaultValue: 'Select Your Versions',
-        })}
+        title={t('versions.selectVersions')}
         showClose={true}
         onClose={handleClose}
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>
-          {t('versions.welcomeTitle', { defaultValue: 'Welcome!' })}
-        </Text>
-        <Text style={styles.subtitle}>
-          {t('versions.welcomeSubtitle', {
-            defaultValue:
-              'Choose your preferred Bible versions for text and audio. You can change these later in settings.',
-          })}
-        </Text>
+        <Text style={styles.title}>{t('versions.welcomeTitle')}</Text>
+        <Text style={styles.subtitle}>{t('versions.welcomeSubtitle')}</Text>
 
         {!hasVersions ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>
-              {t('versions.noVersionsAvailable', {
-                defaultValue:
-                  'No versions are currently available. You can add versions later in the app.',
-              })}
+              {t('versions.noVersionsAvailable')}
             </Text>
           </View>
         ) : (
@@ -357,9 +326,7 @@ export const UserVersionSelectionModal: React.FC<
             {savedTextVersions.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
-                  {t('versions.textVersions', {
-                    defaultValue: 'Text Versions',
-                  })}
+                  {t('versions.textVersions')}
                 </Text>
                 {savedTextVersions.map(version => (
                   <VersionOption
@@ -376,9 +343,7 @@ export const UserVersionSelectionModal: React.FC<
             {savedAudioVersions.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
-                  {t('versions.audioVersions', {
-                    defaultValue: 'Audio Versions',
-                  })}
+                  {t('versions.audioVersions')}
                 </Text>
                 {savedAudioVersions.map(version => (
                   <VersionOption
@@ -396,14 +361,14 @@ export const UserVersionSelectionModal: React.FC<
 
         <View style={styles.buttonContainer}>
           <Button
-            title={t('common.skip', { defaultValue: 'Skip' })}
+            title={t('common.skip')}
             onPress={handleSkip}
             variant='secondary'
             style={styles.button}
             disabled={isSaving}
           />
           <Button
-            title={t('common.continue', { defaultValue: 'Continue' })}
+            title={t('common.continue')}
             onPress={handleComplete}
             variant='primary'
             style={styles.button}

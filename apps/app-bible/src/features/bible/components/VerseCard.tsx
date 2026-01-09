@@ -17,7 +17,7 @@ import {
   handleVerseMenuAction,
 } from '@/features/bible/utils/verseMenu';
 import type { Verse, VerseText } from '../types';
-import type { Theme } from '@/shared/types/theme';
+import type { Theme } from '@everylanguage/shared-native-ui';
 
 interface VerseCardProps {
   verse: Verse;
@@ -163,10 +163,7 @@ export const VerseCard: React.FC<VerseCardProps> = React.memo(
                 style={
                   styles.verseNumberInline
                 }>{`${verse.verse_number} `}</Text>
-              {verseText?.verse_text ||
-                t('bible.noVerseText', {
-                  defaultValue: 'Verse text not available',
-                })}
+              {verseText?.verse_text || t('bible.noVerseText')}
             </Text>
           </TouchableOpacity>
 

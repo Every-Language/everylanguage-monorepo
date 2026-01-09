@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { languagesApi } from '../api/languagesApi';
-import type { LanguageEntityWithRegions } from '@/types';
+import type { LanguageEntity, LanguageEntityWithRegions } from '@/types';
 import { X, Edit, Save, Plus, Trash2, Search } from 'lucide-react';
 import { Select, SelectItem } from '@everylanguage/shared-ui';
 import { LocationPicker } from '@/shared/components/LocationPicker/LocationPicker';
@@ -43,6 +43,7 @@ export function LanguageEntityModal({
   const [editingAliases, setEditingAliases] = useState(false);
   const [editingRegions, setEditingRegions] = useState(false);
   const [editingExternalIds, setEditingExternalIds] = useState(false);
+  const [editingHierarchy, setEditingHierarchy] = useState(false);
 
   // Form states for Language Info
   const [name, setName] = useState(entity.name);
@@ -50,6 +51,14 @@ export function LanguageEntityModal({
 
   // Hierarchy tree state
   const [openNodes, setOpenNodes] = useState<Record<string, boolean>>({});
+
+  // Parent language editing state
+  const [parentLanguageSearch, setParentLanguageSearch] = useState('');
+  const [selectedParentLanguageId, setSelectedParentLanguageId] = useState<
+    string | null
+  >(null);
+  const [selectedParentLanguage, setSelectedParentLanguage] =
+    useState<LanguageEntity | null>(null);
 
   useEffect(() => {
     // Trigger entrance animation
@@ -182,6 +191,34 @@ export function LanguageEntityModal({
     }
   }, [sources]);
 
+  // Initialize parent language from fullEntity when editing starts
+  useEffect(() => {
+    if (editingHierarchy && fullEntity) {
+      setSelectedParentLanguageId(fullEntity.parent_id || null);
+      // Try to find the parent language in hierarchy to set selectedParentLanguage
+      if (fullEntity.parent_id && hierarchy) {
+        const parentNode = hierarchy.find(
+          h => h.hierarchy_entity_id === fullEntity.parent_id
+        );
+        if (parentNode) {
+          setSelectedParentLanguage({
+            id: parentNode.hierarchy_entity_id,
+            name: parentNode.hierarchy_entity_name,
+            level: parentNode.hierarchy_entity_level as
+              | 'family'
+              | 'language'
+              | 'dialect'
+              | 'mother_tongue',
+            parent_id: parentNode.hierarchy_parent_id,
+            created_at: '',
+            updated_at: '',
+            deleted_at: null,
+          });
+        }
+      }
+    }
+  }, [editingHierarchy, fullEntity, hierarchy]);
+
   // Build tree structure from hierarchy
   const { nodesById, rootId } = useMemo(() => {
     const map = new Map<string, TreeNode>();
@@ -236,6 +273,13 @@ export function LanguageEntityModal({
     queryKey: ['search-regions', regionSearchQuery],
     queryFn: () => languagesApi.searchRegions(regionSearchQuery),
     enabled: editingRegions && regionSearchQuery.length >= 2,
+  });
+
+  // Search parent languages for hierarchy editing
+  const { data: searchedParentLanguages } = useQuery({
+    queryKey: ['search-parent-languages', parentLanguageSearch],
+    queryFn: () => languagesApi.searchLanguageEntities(parentLanguageSearch),
+    enabled: editingHierarchy && parentLanguageSearch.length >= 2,
   });
 
   // Mutations
@@ -387,6 +431,28 @@ export function LanguageEntityModal({
     },
   });
 
+  const updateHierarchyMutation = useMutation({
+    mutationFn: async () => {
+      await languagesApi.updateLanguageEntity(entity.id, {
+        parent_id: selectedParentLanguageId || null,
+      });
+    },
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ['language-entities'] });
+      queryClient.invalidateQueries({
+        queryKey: ['language-entity-full', entity.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['language-hierarchy', entity.id],
+      });
+      setEditingHierarchy(false);
+      setParentLanguageSearch('');
+      setSelectedParentLanguageId(null);
+      setSelectedParentLanguage(null);
+      onSave();
+    },
+  });
+
   const handleClose = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -497,19 +563,30 @@ export function LanguageEntityModal({
           ) : (
             <span className='w-5 h-5' />
           )}
-          <button
-            className={`text-sm underline-offset-2 hover:underline transition-colors ${
-              isCurrentEntity
-                ? 'text-primary-600 dark:text-primary-500 font-semibold'
-                : 'text-neutral-700 dark:text-neutral-300'
-            }`}
-            onClick={() => {
-              if (!isCurrentEntity && onNavigateToLanguage) {
-                onNavigateToLanguage(nodeId);
-              }
-            }}>
-            {node.name}
-          </button>
+          {editingHierarchy ? (
+            <span
+              className={`text-sm ${
+                isCurrentEntity
+                  ? 'text-primary-600 dark:text-primary-500 font-semibold'
+                  : 'text-neutral-700 dark:text-neutral-300'
+              }`}>
+              {node.name}
+            </span>
+          ) : (
+            <button
+              className={`text-sm underline-offset-2 hover:underline transition-colors ${
+                isCurrentEntity
+                  ? 'text-primary-600 dark:text-primary-500 font-semibold'
+                  : 'text-neutral-700 dark:text-neutral-300'
+              }`}
+              onClick={() => {
+                if (!isCurrentEntity && onNavigateToLanguage) {
+                  onNavigateToLanguage(nodeId);
+                }
+              }}>
+              {node.name}
+            </button>
+          )}
           <span
             className={`text-xs ${
               isCurrentEntity
@@ -646,10 +723,20 @@ export function LanguageEntityModal({
 
           {/* 2. Language Hierarchy */}
           <section>
-            <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
-              Language Hierarchy
-            </h3>
-            <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg'>
+            <div className='flex items-center justify-between mb-4'>
+              <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
+                Language Hierarchy
+              </h3>
+              {!editingHierarchy && (
+                <button
+                  onClick={() => setEditingHierarchy(true)}
+                  className='text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1'>
+                  <Edit className='h-4 w-4' />
+                  Edit
+                </button>
+              )}
+            </div>
+            <div className='bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg space-y-4'>
               {hierarchyLoading ? (
                 <div className='text-sm text-neutral-500 dark:text-neutral-400'>
                   Loading hierarchy...
@@ -660,6 +747,100 @@ export function LanguageEntityModal({
                 <p className='text-neutral-500 dark:text-neutral-400'>
                   No hierarchy available
                 </p>
+              )}
+
+              {editingHierarchy && (
+                <>
+                  <div className='pt-4 border-t border-neutral-200 dark:border-neutral-700'>
+                    <label className='block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2'>
+                      Parent Language
+                    </label>
+                    <div className='space-y-2'>
+                      <div className='relative'>
+                        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400' />
+                        <input
+                          type='text'
+                          placeholder='Search for parent language...'
+                          value={parentLanguageSearch}
+                          onChange={e =>
+                            setParentLanguageSearch(e.target.value)
+                          }
+                          className='w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                        />
+                      </div>
+                      {parentLanguageSearch &&
+                        searchedParentLanguages &&
+                        searchedParentLanguages.length > 0 && (
+                          <div className='max-h-40 overflow-y-auto border border-neutral-300 dark:border-neutral-700 rounded-lg'>
+                            {searchedParentLanguages
+                              .filter(lang => lang.id !== entity.id) // Don't allow selecting self
+                              .map(lang => (
+                                <button
+                                  key={lang.id}
+                                  type='button'
+                                  onClick={() => {
+                                    setSelectedParentLanguageId(lang.id);
+                                    setSelectedParentLanguage(lang);
+                                    setParentLanguageSearch('');
+                                  }}
+                                  className={`w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors ${
+                                    selectedParentLanguageId === lang.id
+                                      ? 'bg-primary-50 dark:bg-primary-900/20'
+                                      : ''
+                                  }`}>
+                                  <span className='text-sm text-neutral-900 dark:text-neutral-100'>
+                                    {lang.name}
+                                    <span className='text-xs text-neutral-500 dark:text-neutral-400 ml-2'>
+                                      ({lang.level})
+                                    </span>
+                                  </span>
+                                </button>
+                              ))}
+                          </div>
+                        )}
+                      {selectedParentLanguageId && selectedParentLanguage && (
+                        <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+                          Selected: {selectedParentLanguage.name}
+                          <button
+                            type='button'
+                            onClick={() => {
+                              setSelectedParentLanguageId(null);
+                              setSelectedParentLanguage(null);
+                              setParentLanguageSearch('');
+                            }}
+                            className='ml-2 text-red-600 dark:text-red-400 hover:underline'>
+                            Clear
+                          </button>
+                        </p>
+                      )}
+                      {selectedParentLanguageId === null &&
+                        fullEntity?.parent_id === null && (
+                          <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+                            No parent language (root level)
+                          </p>
+                        )}
+                    </div>
+                  </div>
+                  <div className='flex gap-2 pt-2'>
+                    <button
+                      onClick={() => {
+                        setEditingHierarchy(false);
+                        setParentLanguageSearch('');
+                        setSelectedParentLanguageId(null);
+                        setSelectedParentLanguage(null);
+                      }}
+                      className='px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300'>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => updateHierarchyMutation.mutate()}
+                      disabled={updateHierarchyMutation.isPending}
+                      className='px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-1'>
+                      <Save className='h-4 w-4' />
+                      {updateHierarchyMutation.isPending ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </section>

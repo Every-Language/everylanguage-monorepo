@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
-import { ModalHeader } from '@/shared/components/ModalHeader';
+import { ModalHeader } from '@everylanguage/shared-native-ui';
 import { useAuthContext } from '@/features/auth/hooks/useAuthFromStore';
 import { DownloadPill } from '@/features/downloads/components/DownloadPill';
 import {
@@ -17,7 +17,6 @@ import {
   ProfileMenuItem,
   AuthMenuItem,
   NetworkStatusWidget,
-  PlaylistMenuItem,
 } from '../components';
 import type {
   MenuScreenProps,
@@ -65,7 +64,6 @@ export const MenuScreen: React.FC<MenuScreenProps> = () => {
 
           <AudioVersionMenuItem />
           <TextVersionMenuItem />
-          <PlaylistMenuItem />
           <NetworkStatusWidget />
           <SettingsMenuItem />
           <ExportBiblePackageMenuItem />
