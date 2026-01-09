@@ -49,13 +49,20 @@ export const TextVersionsPage: React.FC = () => {
   const isLoading = projectLoading || versionsLoading;
 
   const handleCreateVersion = async () => {
-    if (!newVersionName.trim() || !selectedBibleVersionId || !project) return;
+    if (
+      !newVersionName.trim() ||
+      !selectedBibleVersionId ||
+      !project ||
+      !projectId
+    )
+      return;
 
     try {
       await createMutation.mutateAsync({
         name: newVersionName.trim(),
         language_entity_id: project.target_language_entity_id,
         bible_version_id: selectedBibleVersionId,
+        project_id: projectId,
         text_version_source: textVersionSource,
         created_by: user?.id,
       });
