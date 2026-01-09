@@ -6,57 +6,91 @@ import {
   Navigate,
 } from 'react-router-dom';
 import { AuthProvider, ProtectedRoute } from './features/auth';
-import { ProjectProvider } from './features/dashboard';
 import {
   LoginPage,
   RegisterPage,
   ForgotPasswordPage,
   UnauthorizedPage,
 } from './features/auth/pages';
-import { DashboardPage } from './app/pages/DashboardPage';
-import { AppLayout } from './shared/components/Layout';
-import { GlobalAudioPlayer } from './shared/components/GlobalAudioPlayer';
-import { GlobalUploadProgress } from './shared/components/GlobalUploadProgress';
+import { ProjectLayout } from './shared/components/Layout';
 import { ThemeProvider } from './shared/theme';
 import { ToastManager } from './shared/design-system/hooks/useToast';
 import { LoadingSpinner } from './shared/design-system';
+import { GlobalAudioPlayer } from './shared/components/GlobalAudioPlayer';
+import { GlobalUploadProgress } from './shared/components/GlobalUploadProgress';
 import { TextUploadProgress } from './features/upload/components/TextUploadProgress';
 import { UploadResumeHandler } from './features/upload/components/UploadResumeHandler';
 
-// Lazy load non-critical pages for better performance
+// Lazy load pages for better performance
+const ProjectsPage = React.lazy(() =>
+  import('./app/pages/ProjectsPage').then(module => ({
+    default: module.ProjectsPage,
+  }))
+);
+
+const DashboardPage = React.lazy(() =>
+  import('./app/pages/DashboardPage').then(module => ({
+    default: module.DashboardPage,
+  }))
+);
+
+const ProjectUpdatesPage = React.lazy(() =>
+  import('./features/project-updates').then(module => ({
+    default: module.ProjectUpdatesPage,
+  }))
+);
+
+const ProgressPage = React.lazy(() =>
+  import('./app/pages/ProgressPage').then(module => ({
+    default: module.ProgressPage,
+  }))
+);
+
 const BibleProgressPage = React.lazy(() =>
   import('./app/pages/BibleProgressPage').then(module => ({
     default: module.BibleProgressPage,
   }))
 );
+
+const AudioVersionsPage = React.lazy(() =>
+  import('./app/pages/AudioVersionsPage').then(module => ({
+    default: module.AudioVersionsPage,
+  }))
+);
+
 const AudioFilesPage = React.lazy(() =>
   import('./app/pages/AudioFilesPage').then(module => ({
     default: module.AudioFilesPage,
   }))
 );
+
+const TextVersionsPage = React.lazy(() =>
+  import('./app/pages/TextVersionsPage').then(module => ({
+    default: module.TextVersionsPage,
+  }))
+);
+
 const BibleTextPage = React.lazy(() =>
   import('./app/pages/BibleTextPage').then(module => ({
     default: module.BibleTextPage,
   }))
 );
-const ImagesPage = React.lazy(() =>
-  import('./features/image-management/pages').then(module => ({
-    default: module.ImagesPage,
+
+const CommunityCheckSelectorPage = React.lazy(() =>
+  import('./app/pages/CommunityCheckSelectorPage').then(module => ({
+    default: module.CommunityCheckSelectorPage,
   }))
 );
+
 const CommunityCheckPage = React.lazy(() =>
   import('./features/community-check').then(module => ({
     default: module.CommunityCheckPage,
   }))
 );
+
 const UsersPage = React.lazy(() =>
   import('./features/user-management/pages').then(module => ({
     default: module.UsersPage,
-  }))
-);
-const ProjectUpdatesPage = React.lazy(() =>
-  import('./features/project-updates').then(module => ({
-    default: module.ProjectUpdatesPage,
   }))
 );
 
@@ -72,13 +106,6 @@ const LandingPage = React.lazy(() =>
   }))
 );
 
-// Helper component to reduce repetition
-const ProtectedLayoutRoute = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute>
-    <AppLayout>{children}</AppLayout>
-  </ProtectedRoute>
-);
-
 // Loading fallback component
 const PageLoadingFallback = () => (
   <div className='flex items-center justify-center min-h-screen'>
@@ -91,132 +118,224 @@ function App() {
     <ThemeProvider>
       <ToastManager>
         <AuthProvider>
-          <ProjectProvider>
-            <Router>
-              <GlobalAudioPlayer />
-              <GlobalUploadProgress />
-              <TextUploadProgress />
-              <UploadResumeHandler />
-              <Routes>
-                {/* Public routes */}
-                <Route path='/login' element={<LoginPage />} />
-                <Route path='/register' element={<RegisterPage />} />
-                <Route
-                  path='/forgot-password'
-                  element={<ForgotPasswordPage />}
-                />
-                <Route path='/unauthorized' element={<UnauthorizedPage />} />
+          <Router>
+            <GlobalAudioPlayer />
+            <GlobalUploadProgress />
+            <TextUploadProgress />
+            <UploadResumeHandler />
+            <Routes>
+              {/* Public routes */}
+              <Route path='/login' element={<LoginPage />} />
+              <Route path='/register' element={<RegisterPage />} />
+              <Route path='/forgot-password' element={<ForgotPasswordPage />} />
+              <Route path='/unauthorized' element={<UnauthorizedPage />} />
 
-                {/* Protected routes with layout */}
-                <Route
-                  path='/dashboard'
-                  element={
-                    <ProtectedLayoutRoute>
-                      <DashboardPage />
-                    </ProtectedLayoutRoute>
-                  }
-                />
-                <Route
-                  path='/profile'
-                  element={
-                    <ProtectedLayoutRoute>
-                      <Suspense fallback={<PageLoadingFallback />}>
-                        <MyProfilePage />
-                      </Suspense>
-                    </ProtectedLayoutRoute>
-                  }
-                />
-                <Route
-                  path='/bible-progress'
-                  element={
-                    <ProtectedLayoutRoute>
-                      <Suspense fallback={<PageLoadingFallback />}>
-                        <BibleProgressPage />
-                      </Suspense>
-                    </ProtectedLayoutRoute>
-                  }
-                />
-                <Route
-                  path='/audio-files'
-                  element={
-                    <ProtectedLayoutRoute>
-                      <Suspense fallback={<PageLoadingFallback />}>
-                        <AudioFilesPage />
-                      </Suspense>
-                    </ProtectedLayoutRoute>
-                  }
-                />
-                <Route
-                  path='/bible-text'
-                  element={
-                    <ProtectedLayoutRoute>
-                      <Suspense fallback={<PageLoadingFallback />}>
-                        <BibleTextPage />
-                      </Suspense>
-                    </ProtectedLayoutRoute>
-                  }
-                />
-                <Route
-                  path='/images'
-                  element={
-                    <ProtectedLayoutRoute>
-                      <Suspense fallback={<PageLoadingFallback />}>
-                        <ImagesPage />
-                      </Suspense>
-                    </ProtectedLayoutRoute>
-                  }
-                />
-                <Route
-                  path='/community-check'
-                  element={
-                    <ProtectedLayoutRoute>
-                      <Suspense fallback={<PageLoadingFallback />}>
-                        <CommunityCheckPage />
-                      </Suspense>
-                    </ProtectedLayoutRoute>
-                  }
-                />
-                <Route
-                  path='/users'
-                  element={
-                    <ProtectedLayoutRoute>
-                      <Suspense fallback={<PageLoadingFallback />}>
-                        <UsersPage />
-                      </Suspense>
-                    </ProtectedLayoutRoute>
-                  }
-                />
-                <Route
-                  path='/project-updates'
-                  element={
-                    <ProtectedLayoutRoute>
-                      <Suspense fallback={<PageLoadingFallback />}>
-                        <ProjectUpdatesPage />
-                      </Suspense>
-                    </ProtectedLayoutRoute>
-                  }
-                />
+              {/* Landing Page (public) */}
+              <Route
+                path='/'
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <LandingPage />
+                  </Suspense>
+                }
+              />
 
-                {/* Other protected routes without layout */}
+              {/* Projects Page (protected, full-screen project selection) */}
+              <Route
+                path='/projects'
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <ProjectsPage />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
 
-                {/* Default route - Landing Page */}
+              {/* Profile Page (protected, outside project context) */}
+              <Route
+                path='/profile'
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <MyProfilePage />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Project routes (protected, with project context from URL) */}
+              <Route
+                path='/project/:projectId'
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <ProjectLayout />
+                    </Suspense>
+                  </ProtectedRoute>
+                }>
+                {/* Dashboard */}
                 <Route
-                  path='/'
+                  path='dashboard'
                   element={
                     <Suspense fallback={<PageLoadingFallback />}>
-                      <LandingPage />
+                      <DashboardPage />
                     </Suspense>
                   }
                 />
 
-                {/* Catch all - redirect to dashboard */}
+                {/* Project Updates */}
                 <Route
-                  path='*'
-                  element={<Navigate to='/dashboard' replace />}
+                  path='updates'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <ProjectUpdatesPage />
+                    </Suspense>
+                  }
                 />
-              </Routes>
-            </Router>
-          </ProjectProvider>
+
+                {/* Progress - Version Selector */}
+                <Route
+                  path='progress'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <ProgressPage />
+                    </Suspense>
+                  }
+                />
+
+                {/* Progress - Audio Version specific */}
+                <Route
+                  path='progress/audio-version/:versionId'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <BibleProgressPage />
+                    </Suspense>
+                  }
+                />
+
+                {/* Progress - Text Version specific */}
+                <Route
+                  path='progress/text-version/:versionId'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <BibleProgressPage />
+                    </Suspense>
+                  }
+                />
+
+                {/* Audio Versions - List/Create */}
+                <Route
+                  path='audio-versions'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <AudioVersionsPage />
+                    </Suspense>
+                  }
+                />
+
+                {/* Audio Version - Files Page */}
+                <Route
+                  path='audio-versions/:versionId'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <AudioFilesPage />
+                    </Suspense>
+                  }
+                />
+
+                {/* Text Versions - List/Create */}
+                <Route
+                  path='text-versions'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <TextVersionsPage />
+                    </Suspense>
+                  }
+                />
+
+                {/* Text Version - Content Page */}
+                <Route
+                  path='text-versions/:versionId'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <BibleTextPage />
+                    </Suspense>
+                  }
+                />
+
+                {/* Community Check - Version Selector */}
+                <Route
+                  path='community-check'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <CommunityCheckSelectorPage />
+                    </Suspense>
+                  }
+                />
+
+                {/* Community Check - Audio Version specific */}
+                <Route
+                  path='community-check/audio-version/:versionId'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <CommunityCheckPage />
+                    </Suspense>
+                  }
+                />
+
+                {/* Members */}
+                <Route
+                  path='members'
+                  element={
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <UsersPage />
+                    </Suspense>
+                  }
+                />
+
+                {/* Default project route - redirect to dashboard */}
+                <Route index element={<Navigate to='dashboard' replace />} />
+              </Route>
+
+              {/* Legacy routes - redirect to new structure */}
+              <Route
+                path='/dashboard'
+                element={<Navigate to='/projects' replace />}
+              />
+              <Route
+                path='/bible-progress'
+                element={<Navigate to='/projects' replace />}
+              />
+              <Route
+                path='/audio-files'
+                element={<Navigate to='/projects' replace />}
+              />
+              <Route
+                path='/bible-text'
+                element={<Navigate to='/projects' replace />}
+              />
+              <Route
+                path='/community-check'
+                element={<Navigate to='/projects' replace />}
+              />
+              <Route
+                path='/users'
+                element={<Navigate to='/projects' replace />}
+              />
+              <Route
+                path='/project-updates'
+                element={<Navigate to='/projects' replace />}
+              />
+              <Route
+                path='/images'
+                element={<Navigate to='/projects' replace />}
+              />
+
+              {/* Catch all - redirect to projects */}
+              <Route path='*' element={<Navigate to='/projects' replace />} />
+            </Routes>
+          </Router>
         </AuthProvider>
       </ToastManager>
     </ThemeProvider>

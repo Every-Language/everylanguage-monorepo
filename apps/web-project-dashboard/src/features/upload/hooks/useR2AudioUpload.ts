@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/shared/design-system/hooks/useToast';
 import { useR2UploadStore } from '@/shared/stores/mediaFileUpload';
-import { useSelectedProject } from '@/features/dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '@/features/dashboard/hooks/useCurrentProject';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useOptimisticMediaFileUpdates } from '@/shared/hooks/query/media-files';
 import type { ProcessedAudioFile } from '@/shared/services/audioFileProcessor';
 
 export function useR2AudioUpload() {
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const { user } = useAuth();
   const { toast } = useToast();
   const { addOptimisticUploads, removeOptimisticUploads } =

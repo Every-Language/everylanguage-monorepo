@@ -161,21 +161,6 @@ export const AudioFileTable: React.FC<AudioFileTableProps> = ({
     }
   };
 
-  // Helper function to get check status colors
-  const getCheckStatusColor = (status: string | null | undefined) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100';
-      case 'rejected':
-        return 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100';
-      case 'requires_review':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-800 dark:text-orange-100';
-      case 'pending':
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
-    }
-  };
-
   // Helper function to truncate filenames
   const truncateFilename = (filename: string, maxLength: number = 30) => {
     if (filename.length <= maxLength) return filename;

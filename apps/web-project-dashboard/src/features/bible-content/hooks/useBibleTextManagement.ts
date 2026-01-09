@@ -22,7 +22,7 @@ import {
 } from '../../../shared/hooks/query/bible-structure';
 import { useBibleVersions } from '../../../shared/stores/project';
 import { useAuth } from '../../auth/hooks/useAuth';
-import { useSelectedProject } from '../../dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '../../dashboard/hooks/useCurrentProject';
 import { useToast } from '../../../shared/design-system/hooks/useToast';
 import { useMemo, useCallback, useState, useEffect } from 'react';
 import type { TextVersionForm } from '../components/BibleTextManager/TextVersionModal';
@@ -121,7 +121,7 @@ export function useBibleTextManagement(projectId: string | null) {
 
   // External dependencies
   const { user } = useAuth();
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const { toast } = useToast();
 
   // Data fetching using paginated hook

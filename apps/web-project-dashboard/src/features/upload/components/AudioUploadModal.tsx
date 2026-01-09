@@ -14,7 +14,7 @@ import {
 } from '../../../shared/design-system/components';
 import { AudioFileRow } from './AudioFileRow';
 import { useToast } from '../../../shared/design-system/hooks/useToast';
-import { useSelectedProject } from '../../dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '../../dashboard/hooks/useCurrentProject';
 import {
   AudioFileProcessor,
   type ProcessedAudioFile,
@@ -64,7 +64,7 @@ export function AudioUploadModal({
   onUploadComplete,
   selectedAudioVersionId,
 }: AudioUploadModalProps) {
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const [audioFiles, setAudioFiles] = useState<ProcessedAudioFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(

@@ -1,10 +1,12 @@
-import React, { useEffect, useCallback } from 'react';
-import { useSelectedProject } from '../../../features/dashboard/hooks/useSelectedProject';
+import React, { useEffect, useCallback, useContext } from 'react';
+import { ProjectRouteContext } from '../../../features/dashboard/context/ProjectRouteContext';
 import { useProjectStore } from '../../stores/project';
 import { Select, SelectItem } from '../../design-system';
 
 export const SidebarBibleVersionSelector: React.FC = () => {
-  const { selectedProject } = useSelectedProject();
+  // Use route context in project layout
+  const routeContext = useContext(ProjectRouteContext);
+  const hasProject = routeContext?.isProjectSelected ?? false;
 
   // Use direct store access to avoid selector instability
   const bibleVersions = useProjectStore(state => state.bibleVersions);
@@ -33,7 +35,7 @@ export const SidebarBibleVersionSelector: React.FC = () => {
   }, []); // Remove dependencies to prevent infinite loop
 
   // Don't show if no project is selected
-  if (!selectedProject) {
+  if (!hasProject) {
     return null;
   }
 

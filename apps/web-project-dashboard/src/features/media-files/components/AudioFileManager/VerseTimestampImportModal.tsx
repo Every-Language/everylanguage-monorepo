@@ -14,7 +14,7 @@ import {
   Progress,
 } from '../../../../shared/design-system/components';
 import { useToast } from '../../../../shared/design-system/hooks/useToast';
-import { useSelectedProject } from '../../../dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '../../../dashboard/hooks/useCurrentProject';
 import {
   useBulkInsertVerseTimestamps,
   useMediaFilesByProject,
@@ -194,7 +194,7 @@ export function VerseTimestampImportModal({
   selectedAudioVersionId,
 }: VerseTimestampImportModalProps) {
   const { toast } = useToast();
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const { data: allMediaFiles } = useMediaFilesByProject(
     selectedProject?.id || null
   );

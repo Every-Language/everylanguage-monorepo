@@ -4,20 +4,28 @@ import { cn } from '../utils';
 export interface SidebarProps {
   children: React.ReactNode;
   className?: string;
+  collapsed?: boolean;
 }
 
 export const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
-  ({ children, className, ...props }, ref) => {
+  ({ children, className, collapsed = false, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={cn(
-          'fixed left-0 top-0 z-40 h-screen w-64 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-700',
-          'shadow-sidebar transition-theme',
+          'fixed left-0 top-0 z-40 h-screen bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-700',
+          'shadow-sidebar transition-all duration-300 ease-in-out',
+          collapsed ? 'w-0 -translate-x-full' : 'w-64 translate-x-0',
           className
         )}
         {...props}>
-        {children}
+        <div
+          className={cn(
+            'h-full flex flex-col transition-opacity duration-200',
+            collapsed ? 'opacity-0' : 'opacity-100'
+          )}>
+          {children}
+        </div>
       </div>
     );
   }

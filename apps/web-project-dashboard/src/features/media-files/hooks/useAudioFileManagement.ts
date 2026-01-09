@@ -25,7 +25,7 @@ import { useAuth } from '../../../features/auth/hooks/useAuth';
 import { useToast } from '../../../shared/design-system/hooks/useToast';
 import { useDownload } from '../../../shared/hooks/useDownload';
 import { useAudioPlayerStore } from '../../../shared/stores/audioPlayer';
-import { useSelectedProject } from '../../../features/dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '../../../features/dashboard/hooks/useCurrentProject';
 import { useVerseMarking } from './useVerseMarking';
 import { useMemo, useCallback, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -86,7 +86,7 @@ export function useAudioFileManagement(projectId: string | null) {
   const [loadingAudioId, setLoadingAudioId] = useState<string | null>(null);
 
   // Project context
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
 
   // Verse marking functionality
   const verseMarking = useVerseMarking();
@@ -303,9 +303,12 @@ export function useAudioFileManagement(projectId: string | null) {
         startVerseId: file.start_verse_id || '',
         endVerseId: file.end_verse_id || '',
         publishStatus: file.publish_status || 'pending',
-        checkStatus:
-          (file as unknown as { check_status?: string }).check_status ||
-          'pending',
+        checkStatus: ((file as unknown as { check_status?: string })
+          .check_status || 'pending') as
+          | 'pending'
+          | 'approved'
+          | 'rejected'
+          | 'requires_review',
       });
       modalState.openModal('edit', { currentMediaFile: file });
     },
@@ -324,7 +327,7 @@ export function useAudioFileManagement(projectId: string | null) {
         start_verse_id: string | null;
         end_verse_id: string | null;
         publish_status: PublishStatus;
-        check_status: string;
+        check_status: 'pending' | 'approved' | 'rejected' | 'requires_review';
       } = {
         start_verse_id: enhancedEditForm.data.startVerseId || null,
         end_verse_id: enhancedEditForm.data.endVerseId || null,
@@ -334,7 +337,15 @@ export function useAudioFileManagement(projectId: string | null) {
 
       // If changing to pending, reset community check status to pending
       if (enhancedEditForm.data.publishStatus === 'pending') {
-        updates.check_status = 'pending';
+        (
+          updates as {
+            check_status?:
+              | 'pending'
+              | 'approved'
+              | 'rejected'
+              | 'requires_review';
+          }
+        ).check_status = 'pending';
       }
 
       await updateMediaFile.mutateAsync({
@@ -354,7 +365,11 @@ export function useAudioFileManagement(projectId: string | null) {
       try {
         const updates: {
           publish_status: PublishStatus;
-          check_status?: string;
+          check_status?:
+            | 'pending'
+            | 'approved'
+            | 'rejected'
+            | 'requires_review';
         } = {
           publish_status: newStatus,
         };
