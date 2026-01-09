@@ -873,14 +873,35 @@ export function ViewDonationModal({
                         {displayDonation.allocations.map(allocation => (
                           <tr key={allocation.id}>
                             <td className='px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100'>
-                              {allocation.operation_id ? (
-                                <span className='font-medium'>
-                                  Operation: {allocation.operation_id}
-                                </span>
-                              ) : allocation.project_id ? (
-                                <span className='font-medium'>
-                                  Project: {allocation.project_id}
-                                </span>
+                              {allocation.operation ? (
+                                <>
+                                  <div className='font-medium'>
+                                    {allocation.operation.name}
+                                  </div>
+                                  {allocation.operation.category && (
+                                    <div className='text-neutral-500 dark:text-neutral-400 text-xs mt-0.5'>
+                                      Operation ·{' '}
+                                      {allocation.operation.category}
+                                    </div>
+                                  )}
+                                </>
+                              ) : allocation.project ? (
+                                <>
+                                  <div className='font-medium'>
+                                    {allocation.project.name}
+                                    {allocation.project.target_language && (
+                                      <span className='text-neutral-500 dark:text-neutral-400 font-normal'>
+                                        {' '}
+                                        (
+                                        {
+                                          allocation.project.target_language
+                                            .name
+                                        }
+                                        )
+                                      </span>
+                                    )}
+                                  </div>
+                                </>
                               ) : (
                                 <span className='text-neutral-500 dark:text-neutral-400'>
                                   Unspecified
