@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { useProject, type Project } from '../../../shared/hooks/query/projects';
 import { ProjectContext } from '../context/ProjectContext';
-import { ProjectRouteContext } from '../context/ProjectRouteContext';
+import { ProjectRouteContext } from '../context/ProjectRoute.context';
 
 /**
  * Hook that provides the current project from either route params or context.

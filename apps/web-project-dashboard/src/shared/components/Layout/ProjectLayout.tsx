@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { ProjectRouteProvider } from '../../../features/dashboard/context/ProjectRouteContext';
+import { ProjectRouteProvider } from '../../../features/dashboard/context/ProjectRouteProvider';
 import { ProjectSidebar } from './ProjectSidebar';
 import { MainContent } from './MainContent';
 

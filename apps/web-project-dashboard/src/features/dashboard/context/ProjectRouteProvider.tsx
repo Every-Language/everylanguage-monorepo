@@ -1,20 +1,11 @@
-import React, { createContext, useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useProject, type Project } from '../../../shared/hooks/query/projects';
-
-export interface ProjectRouteContextValue {
-  projectId: string | null;
-  project: Project | null;
-  isLoading: boolean;
-  error: Error | null;
-  isProjectSelected: boolean;
-  closeProject: () => void;
-}
-
-export const ProjectRouteContext = createContext<
-  ProjectRouteContextValue | undefined
->(undefined);
+import { useProject } from '../../../shared/hooks/query/projects';
+import {
+  ProjectRouteContext,
+  type ProjectRouteContextValue,
+} from './ProjectRoute.context';
 
 interface ProjectRouteProviderProps {
   children: ReactNode;
@@ -35,9 +26,9 @@ export const ProjectRouteProvider: React.FC<ProjectRouteProviderProps> = ({
   // Fetch project data based on route param
   const { data: project, isLoading, error } = useProject(projectId || null);
 
-  const closeProject = () => {
+  const closeProject = useCallback(() => {
     navigate('/projects');
-  };
+  }, [navigate]);
 
   const value = useMemo<ProjectRouteContextValue>(
     () => ({
@@ -48,7 +39,7 @@ export const ProjectRouteProvider: React.FC<ProjectRouteProviderProps> = ({
       isProjectSelected: !!project,
       closeProject,
     }),
-    [projectId, project, isLoading, error, navigate]
+    [projectId, project, isLoading, error, closeProject]
   );
 
   return (

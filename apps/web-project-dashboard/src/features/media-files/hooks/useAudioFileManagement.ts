@@ -728,7 +728,13 @@ export function useAudioFileManagement(projectId: string | null) {
         });
       }
     },
-    [bulkOps, batchUpdatePublishStatus, toast, setConfirmationModal]
+    [
+      bulkOps,
+      batchUpdatePublishStatus,
+      batchUpdateStatus,
+      toast,
+      setConfirmationModal,
+    ]
   );
 
   // Bulk operations
