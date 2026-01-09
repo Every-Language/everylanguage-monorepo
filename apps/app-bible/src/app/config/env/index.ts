@@ -9,7 +9,7 @@ declare const process: {
     EXPO_PUBLIC_ENVIRONMENT?: string;
     EXPO_PUBLIC_SUPABASE_URL?: string;
     EXPO_PUBLIC_SUPABASE_ANON_KEY?: string;
-    EXPO_PUBLIC_POWERSYNC_URL?: string;
+    EXPO_PUBLIC_POWERSYNC_BIBLE_URL?: string;
   };
 };
 
@@ -36,7 +36,7 @@ const environmentConfigs = {
       anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
     },
     powersync: {
-      url: process.env.EXPO_PUBLIC_POWERSYNC_URL || '',
+      url: process.env.EXPO_PUBLIC_POWERSYNC_BIBLE_URL || '',
     },
   },
   prod: {
@@ -45,7 +45,7 @@ const environmentConfigs = {
       anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
     },
     powersync: {
-      url: process.env.EXPO_PUBLIC_POWERSYNC_URL || '',
+      url: process.env.EXPO_PUBLIC_POWERSYNC_BIBLE_URL || '',
     },
   },
 } as const;
@@ -76,7 +76,9 @@ export function getRequiredEnvVar(name: string, value?: string): string {
       EXPO_PUBLIC_SUPABASE_ANON_KEY: env.supabase.anonKey
         ? '[REDACTED]'
         : '[MISSING]',
-      EXPO_PUBLIC_POWERSYNC_URL: env.powersync.url ? '[SET]' : '[MISSING]',
+      EXPO_PUBLIC_POWERSYNC_BIBLE_URL: env.powersync.url
+        ? '[SET]'
+        : '[MISSING]',
     });
     throw new Error(
       `Missing required environment variable: ${name} for config type: ${configType}`

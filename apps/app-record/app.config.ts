@@ -246,7 +246,7 @@ module.exports = () => {
         'EXPO_PUBLIC_SUPABASE_ANON_KEY',
         'SUPABASE_ANON_KEY'
       ),
-      EXPO_PUBLIC_POWERSYNC_URL: resolveEnv(
+      EXPO_PUBLIC_POWERSYNC_RECORD_URL: resolveEnv(
         'EXPO_PUBLIC_POWERSYNC_RECORD_URL',
         'POWERSYNC_RECORD_URL'
       ),
