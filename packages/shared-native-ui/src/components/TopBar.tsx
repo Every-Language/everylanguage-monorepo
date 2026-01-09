@@ -24,7 +24,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.leftSection}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          El Bible
+          EL Bible
         </Text>
       </View>
 
