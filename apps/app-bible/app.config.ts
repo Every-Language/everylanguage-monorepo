@@ -250,7 +250,7 @@ module.exports = () => {
         'EXPO_PUBLIC_SUPABASE_ANON_KEY',
         'SUPABASE_ANON_KEY'
       ),
-      EXPO_PUBLIC_POWERSYNC_URL: resolveEnv(
+      EXPO_PUBLIC_POWERSYNC_BIBLE_URL: resolveEnv(
         'EXPO_PUBLIC_POWERSYNC_BIBLE_URL',
         'POWERSYNC_BIBLE_URL'
       ),

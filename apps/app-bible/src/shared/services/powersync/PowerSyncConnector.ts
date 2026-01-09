@@ -37,7 +37,7 @@ export class PowerSyncConnector implements PowerSyncBackendConnector {
       // Validate PowerSync URL first
       if (!env.powersync.url) {
         throw new Error(
-          'PowerSync URL not configured. Please set EXPO_PUBLIC_POWERSYNC_URL in your environment.'
+          'PowerSync URL not configured. Please set EXPO_PUBLIC_POWERSYNC_BIBLE_URL in your environment.'
         );
       }
 
