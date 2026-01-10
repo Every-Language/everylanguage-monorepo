@@ -81,6 +81,7 @@ const sessions = new Table(
     continent_code: column.text,
     country_code: column.text,
     region_code: column.text,
+    language_entity_id: column.text,
   },
   { indexes: {} }
 );
@@ -91,7 +92,7 @@ const share_opens = new Table(
     user_id: column.text,
     session_id: column.text,
     opened_at: column.text,
-    origin_share_id: column.text,
+    parent_share_id: column.text,
     created_at: column.text,
   },
   { indexes: {} }
@@ -105,7 +106,7 @@ const shares = new Table(
     share_entity_type: column.text,
     share_entity_id: column.text,
     language_entity_id: column.text,
-    origin_share_id: column.text,
+    parent_share_id: column.text,
   },
   { indexes: {} }
 );
@@ -147,6 +148,9 @@ const app_downloads = new Table(
     platform: column.text,
     os: column.text,
     os_version: column.text,
+    country_code: column.text,
+    region_code: column.text,
+    continent_code: column.text,
   },
   { indexes: {} }
 );
@@ -204,6 +208,7 @@ const audio_versions = new Table(
     created_by: column.text,
     updated_at: column.text,
     deleted_at: column.text,
+    publish_status: column.text,
   },
   { indexes: {} }
 );
@@ -231,6 +236,9 @@ const media_files = new Table(
     storage_provider: column.text,
     original_filename: column.text,
     file_type: column.text,
+    local_path: column.text,
+    sequence_id: column.text,
+    project_id: column.text,
   },
   {
     indexes: {
@@ -241,6 +249,8 @@ const media_files = new Table(
       idx_4: ['audio_version_id', 'chapter_id'],
       idx_5: ['chapter_id', 'deleted_at'],
       idx_6: ['id', 'chapter_id'],
+      idx_7: ['audio_version_id', 'deleted_at'],
+      idx_8: ['chapter_id', 'audio_version_id', 'deleted_at'],
     },
   }
 );
@@ -256,6 +266,9 @@ const media_files_verses = new Table(
     updated_at: column.text,
     deleted_at: column.text,
     denormalized_audio_version_id: column.text,
+    verse_checker_status: column.text,
+    verse_checker_comment: column.text,
+    project_id: column.text,
   },
   {
     indexes: {
@@ -279,6 +292,7 @@ const text_versions = new Table(
     updated_at: column.text,
     deleted_at: column.text,
     project_id: column.text,
+    publish_status: column.text,
   },
   { indexes: {} }
 );
@@ -488,7 +502,6 @@ export const AppSchema = new Schema({
   user_playlist_groups,
   user_playlists,
   playlists,
-  playlist_items,
   // Local-only tables
   ...__localTables,
 });
