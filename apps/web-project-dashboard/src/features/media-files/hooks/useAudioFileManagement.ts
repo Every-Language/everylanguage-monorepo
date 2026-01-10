@@ -502,15 +502,12 @@ export function useAudioFileManagement(projectId: string | null) {
           await import('../../../shared/services/downloadService');
         const service = new downloadService.DownloadService();
 
-        console.log('🎵 Getting download URL for file:', file.id);
         const result = await service.getDownloadUrlsById({
           mediaFileIds: [file.id],
         });
         const signedUrl = result.media?.[file.id];
 
         if (result.success && signedUrl) {
-          console.log('✅ Got signed URL, fetching audio blob...');
-
           // Convert the file to the audio player's expected type
           const audioFile = {
             ...file,
@@ -528,12 +525,6 @@ export function useAudioFileManagement(projectId: string | null) {
             }
 
             const blob = await blobResponse.blob();
-            console.log(
-              '✅ Audio blob created, size:',
-              blob.size,
-              'type:',
-              blob.type
-            );
 
             if (blob.size === 0) {
               throw new Error('Audio file is empty');
@@ -589,15 +580,8 @@ export function useAudioFileManagement(projectId: string | null) {
   );
 
   const handleUploadComplete = useCallback(() => {
-    console.log('🔄 Audio upload completed - refreshing table data');
-
     // Force comprehensive query invalidation and refetch immediately
     if (selectedProject?.id) {
-      console.log(
-        '📋 Invalidating all media file queries for project:',
-        selectedProject.id
-      );
-
       // Invalidate all related queries
       queryClient.invalidateQueries({
         queryKey: ['media_files_with_verse_info', selectedProject.id],

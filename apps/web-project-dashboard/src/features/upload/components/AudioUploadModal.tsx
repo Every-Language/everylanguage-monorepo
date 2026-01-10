@@ -87,17 +87,9 @@ export function AudioUploadModal({
 
   // Clear files when modal opens/closes to prevent duplication
   useEffect(() => {
-    console.log(
-      'AudioUploadModal: open state changed to:',
-      open,
-      'current files count:',
-      audioFiles.length
-    );
     // Always clear files when modal state changes
     setAudioFiles([]);
     setCurrentlyPlayingId(null);
-    console.log('AudioUploadModal: Files cleared due to modal state change');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]); // Don't include audioFiles.length to prevent infinite loop
 
   // R2 upload functionality
@@ -137,20 +129,12 @@ export function AudioUploadModal({
     async (files: File[]) => {
       // Prevent duplicate processing if already in progress
       if (isProcessing) {
-        console.log(
-          '⚠️ File processing already in progress, skipping duplicate call'
-        );
         return;
       }
 
       setIsProcessing(true);
 
       try {
-        console.log(
-          'Processing files:',
-          files.map(f => f.name)
-        );
-
         // Filter supported files
         const supportedFiles = files.filter(file =>
           SUPPORTED_AUDIO_TYPES.includes(file.type)
@@ -182,13 +166,6 @@ export function AudioUploadModal({
 
         // Add to existing files, but prevent duplicates based on file name and size
         setAudioFiles(prev => {
-          console.log(
-            'AudioUploadModal: Adding files. Previous count:',
-            prev.length,
-            'New files:',
-            processedFiles.length
-          );
-
           // Filter out files that are already in the list (by name and size)
           const newFiles = processedFiles.filter(
             newFile =>
@@ -199,11 +176,6 @@ export function AudioUploadModal({
               )
           );
 
-          console.log(
-            'AudioUploadModal: After duplicate filtering, adding:',
-            newFiles.length,
-            'files'
-          );
           return [...prev, ...newFiles];
         });
 
@@ -288,8 +260,6 @@ export function AudioUploadModal({
     }
 
     try {
-      console.log('🚀 Starting upload for', validFiles.length, 'files');
-
       // Start R2 upload
       await handleR2Upload(validFiles, selectedAudioVersionId);
 
@@ -299,8 +269,8 @@ export function AudioUploadModal({
       // Call completion callback if provided
       onUploadComplete?.();
     } catch (error) {
-      console.error('Upload failed:', error);
       // Error handling is done in the hook
+      void error;
     }
   }, [
     selectedProject,

@@ -1242,10 +1242,6 @@ export async function resolveFullChapterEndVersesBatch(
     }
   });
 
-  console.log(
-    `📋 Cache status: ${cachedResults.size} cached, ${uncachedChapters.size} need lookup`
-  );
-
   if (uncachedChapters.size === 0) {
     // All results are cached, apply them directly
     return parsedResults.map(result => {
@@ -1274,11 +1270,6 @@ export async function resolveFullChapterEndVersesBatch(
   try {
     // Import supabase dynamically to avoid circular dependencies
     const { supabase } = await import('./supabase');
-
-    console.log(
-      `🔍 Resolving ${uncachedChapters.size} unique chapters for ${filesToResolve.length} files...`
-    );
-    const startTime = Date.now();
 
     // Build batch query using OR conditions for up to 20 combinations
     // For larger batches, we'll chunk them
@@ -1356,11 +1347,6 @@ export async function resolveFullChapterEndVersesBatch(
         }
       }
     }
-
-    const queryTime = Date.now() - startTime;
-    console.log(
-      `✅ Resolved ${newChapterData.size}/${uncachedChapters.size} new chapters in ${queryTime}ms`
-    );
 
     // Combine cached and newly fetched data
     const allChapterData = new Map([...cachedResults, ...newChapterData]);

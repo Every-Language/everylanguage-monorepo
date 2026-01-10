@@ -8,6 +8,7 @@ interface NavigationItem {
   pathSuffix: string;
   icon: React.ReactNode;
   description?: string;
+  isExternalRoute?: boolean;
 }
 
 const navigationItems: NavigationItem[] = [
@@ -36,6 +37,33 @@ const navigationItems: NavigationItem[] = [
       </svg>
     ),
     description: 'Project overview and recent activity',
+  },
+  {
+    id: 'language-search',
+    label: 'Language Search',
+    pathSuffix: '/languages',
+    isExternalRoute: true,
+    icon: (
+      <svg
+        className='h-5 w-5'
+        fill='none'
+        stroke='currentColor'
+        viewBox='0 0 24 24'>
+        <path
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth={2}
+          d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
+        />
+        <path
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth={2}
+          d='M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945'
+        />
+      </svg>
+    ),
+    description: 'Search languages and translation progress',
   },
   {
     id: 'updates',
@@ -79,7 +107,7 @@ const navigationItems: NavigationItem[] = [
   },
   {
     id: 'audio-versions',
-    label: 'Audio Versions',
+    label: 'Audio Management',
     pathSuffix: '/audio-versions',
     icon: (
       <svg
@@ -164,15 +192,21 @@ export const ProjectSidebarNavigation: React.FC = () => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
 
-  const handleNavigate = (pathSuffix: string) => {
-    if (projectId) {
-      navigate(`/project/${projectId}${pathSuffix}`);
+  const handleNavigate = (item: NavigationItem) => {
+    if (item.isExternalRoute) {
+      // Navigate to external route (outside project context)
+      navigate(item.pathSuffix);
+    } else if (projectId) {
+      navigate(`/project/${projectId}${item.pathSuffix}`);
     }
   };
 
   // Check if current path matches a nav item (accounting for nested routes)
-  const isActive = (pathSuffix: string) => {
-    const basePath = `/project/${projectId}${pathSuffix}`;
+  const isActive = (item: NavigationItem) => {
+    if (item.isExternalRoute) {
+      return location.pathname === item.pathSuffix;
+    }
+    const basePath = `/project/${projectId}${item.pathSuffix}`;
     return (
       location.pathname === basePath ||
       location.pathname.startsWith(basePath + '/')
@@ -185,8 +219,8 @@ export const ProjectSidebarNavigation: React.FC = () => {
         <SidebarNavItem
           key={item.id}
           icon={item.icon}
-          active={isActive(item.pathSuffix)}
-          onClick={() => handleNavigate(item.pathSuffix)}>
+          active={isActive(item)}
+          onClick={() => handleNavigate(item)}>
           {item.label}
         </SidebarNavItem>
       ))}

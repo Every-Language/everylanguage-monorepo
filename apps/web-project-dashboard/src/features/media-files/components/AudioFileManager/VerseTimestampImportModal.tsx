@@ -639,8 +639,6 @@ export function VerseTimestampImportModal({
         }
       }
 
-      console.log('Attempting to insert verse timestamps:', allVerseTimestamps);
-
       // Use optimized bulk insert with progress tracking
       // Choose batch size based on dataset size
       const batchSize =

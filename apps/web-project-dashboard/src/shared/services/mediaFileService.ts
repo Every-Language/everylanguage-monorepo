@@ -147,16 +147,6 @@ export class MediaFileService {
       created_by: userId,
     }));
 
-    // Debug logging: Log first record to verify values
-    if (insertRecords.length > 0) {
-      console.log('🔍 DEBUG: First insert record values:', {
-        project_id: insertRecords[0].project_id,
-        created_by: insertRecords[0].created_by,
-        audio_version_id: insertRecords[0].audio_version_id,
-        language_entity_id: insertRecords[0].language_entity_id,
-      });
-    }
-
     // Step 3: Batch insert with chunking for large batches
     const chunkSize = 25; // Smaller chunks for better performance
     const allIds: string[] = [];
@@ -169,17 +159,6 @@ export class MediaFileService {
         .select('id');
 
       if (error) {
-        console.error('Error creating pending media files batch:', error);
-        console.error('🔍 DEBUG: Insert records that failed:', {
-          count: insertRecords.length,
-          firstRecord: insertRecords[0]
-            ? {
-                project_id: insertRecords[0].project_id,
-                created_by: insertRecords[0].created_by,
-                audio_version_id: insertRecords[0].audio_version_id,
-              }
-            : null,
-        });
         throw new Error(
           `Failed to create pending media file records: ${error.message}`
         );
@@ -194,19 +173,9 @@ export class MediaFileService {
       return data.map(record => record.id);
     } else {
       // Chunked batch inserts for large batches
-      console.log(
-        `📊 Using chunked inserts: ${Math.ceil(insertRecords.length / chunkSize)} batches of ${chunkSize} records`
-      );
-
       for (let i = 0; i < insertRecords.length; i += chunkSize) {
         const chunk = insertRecords.slice(i, i + chunkSize);
         const batchNum = Math.floor(i / chunkSize) + 1;
-        const totalBatches = Math.ceil(insertRecords.length / chunkSize);
-
-        console.log(
-          `📝 Inserting batch ${batchNum}/${totalBatches} (${chunk.length} records)`
-        );
-        const chunkStartTime = Date.now();
 
         const { data, error } = await supabase
           .from('media_files')
@@ -214,10 +183,6 @@ export class MediaFileService {
           .select('id');
 
         if (error) {
-          console.error(
-            `Error creating pending media files batch ${batchNum}:`,
-            error
-          );
           throw new Error(
             `Failed to create pending media file records in batch ${batchNum}: ${error.message}`
           );
@@ -230,11 +195,6 @@ export class MediaFileService {
         }
 
         allIds.push(...data.map(record => record.id));
-
-        const chunkTime = Date.now() - chunkStartTime;
-        console.log(
-          `✅ Batch ${batchNum} completed in ${chunkTime}ms (${(chunkTime / chunk.length).toFixed(1)}ms per record)`
-        );
       }
 
       return allIds;
@@ -271,10 +231,6 @@ export class MediaFileService {
 
     for (let i = 0; i < combinationArray.length; i += chunkSize) {
       const chunk = combinationArray.slice(i, i + chunkSize);
-
-      console.log(
-        `📊 Processing version batch ${Math.floor(i / chunkSize) + 1}/${Math.ceil(combinationArray.length / chunkSize)} (${chunk.length} combinations)`
-      );
 
       if (chunk.length === 1) {
         // Single query optimization
@@ -413,8 +369,6 @@ export class MediaFileService {
         `Failed to finalize ${failures.length} media file records: ${failedIds}`
       );
     }
-
-    console.log(`✅ Finalized ${updates.length} media files successfully`);
   }
 
   /**

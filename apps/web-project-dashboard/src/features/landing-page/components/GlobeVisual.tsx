@@ -2,9 +2,9 @@ import React from 'react';
 
 export const GlobeVisual: React.FC = () => {
   return (
-    <div className='relative flex items-center justify-center w-full h-[400px] lg:h-[500px] overflow-hidden'>
+    <div className='relative flex items-center justify-center w-full h-[280px] lg:h-[320px] overflow-hidden'>
       {/* Main spinning container */}
-      <div className='relative w-[240px] h-[240px] md:w-[320px] md:h-[320px] lg:w-[380px] lg:h-[380px] animate-[spin_20s_linear_infinite]'>
+      <div className='relative w-[180px] h-[180px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] animate-[spin_20s_linear_infinite]'>
         {/* Core Globe Background */}
         <div className='absolute inset-0 rounded-full bg-accent-500/5 dark:bg-accent-500/10 blur-3xl' />
 

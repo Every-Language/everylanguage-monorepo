@@ -64,12 +64,6 @@ export const useImageUploadStore = create<ImageUploadState>((set, get) => ({
     });
 
     try {
-      console.log(
-        '🚀 Starting R2 by-id image upload for',
-        files.length,
-        'files'
-      );
-
       // Pre-create pending image rows
       const pendingIds: string[] = [];
       const { ImageService } = await import('../services/imageService');
@@ -84,11 +78,7 @@ export const useImageUploadStore = create<ImageUploadState>((set, get) => ({
         pendingIds.push(id);
       }
 
-      console.log(`📝 Created ${pendingIds.length} pending image records.`);
-
       // Get by-id presigned PUT URLs for images using Supabase client
-      console.log('🔗 Requesting upload URLs for image IDs:', pendingIds);
-
       // Pass original filenames mapping for backend object key generation
       const originalFilenames: Record<string, string> = {};
       files.forEach((file, index) => {
@@ -100,7 +90,6 @@ export const useImageUploadStore = create<ImageUploadState>((set, get) => ({
         expirationHours: 24,
         originalFilenames,
       };
-      console.log('📤 Request body:', requestBody);
 
       const { data, error } = await supabase.functions.invoke(
         'get-upload-urls-by-id',
@@ -113,8 +102,6 @@ export const useImageUploadStore = create<ImageUploadState>((set, get) => ({
         console.error('❌ Edge function error:', error);
         throw new Error(`get-upload-urls-by-id failed: ${error.message}`);
       }
-
-      console.log('📄 Raw response:', data);
 
       // Handle the response structure from supabase.functions.invoke() - data is wrapped in a 'data' property
       const functionResponse = data?.data;
@@ -287,8 +274,6 @@ export const useImageUploadStore = create<ImageUploadState>((set, get) => ({
         )
       );
 
-      console.log('✅ By-id image upload completed:', batchProgress);
-
       // Call completion callbacks
       const { onUploadComplete, onBatchComplete } = get();
 
@@ -322,7 +307,6 @@ export const useImageUploadStore = create<ImageUploadState>((set, get) => ({
   },
 
   cancelUpload: () => {
-    console.log('🛑 Image upload cancelled');
     set({
       isUploading: false,
       currentBatch: null,
