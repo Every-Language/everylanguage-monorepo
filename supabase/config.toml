@@ -195,9 +195,11 @@ sql_paths = [
   # Test seeds - loaded after production seeds
   "seed/test/01_test_users/01_seed_test_users.sql",
   "seed/test/01_test_users/02_seed_rbac_test_users.sql",
+  "seed/test/02_test_projects/01_seed_test_projects.sql",
   "seed/test/02_recording_app/01_seed_sequences_segments.sql",
   "seed/test/03_bible_content/01_seed_tags_media.sql",
   "seed/test/04_finance/01_seed_sponsorships_donations.sql",
+  "seed/test/04_finance/02_seed_test_donations_for_el34.sql",
   "seed/test/05_user_data/01_seed_playlists_bookmarks.sql",
   "seed/test/06_analytics/01_seed_analytics.sql"
 ]

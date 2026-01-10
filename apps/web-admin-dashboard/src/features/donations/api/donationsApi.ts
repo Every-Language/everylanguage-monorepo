@@ -2,6 +2,7 @@ import { supabase } from '@/shared/services/supabase';
 import type {
   Donation,
   DonationAllocation,
+  DonationAllocationWithNested,
   DonationWithAllocations,
 } from '@/types';
 import type { Database } from '@everylanguage/shared-types';
@@ -342,7 +343,41 @@ export const donationsApi = {
       throw error;
     }
 
-    const allocations: DonationAllocation[] = data.donation_allocations || [];
+    // Preserve nested operation and project data from Supabase query
+    type SupabaseAllocationResponse = {
+      id: string;
+      amount_cents: number;
+      donation_id: string;
+      operation_id: string | null;
+      project_id: string | null;
+      notes: string | null;
+      created_at: string;
+      created_by: string;
+      effective_from: string;
+      effective_to: string | null;
+      currency_code: string;
+      operation?: { id: string; name: string; category: string } | null;
+      project?: {
+        id: string;
+        name: string;
+        target_language_entity_id: string | null;
+        target_language?: { id: string; name: string; level: string } | null;
+      } | null;
+    };
+
+    const allocations: DonationAllocationWithNested[] = (
+      (data.donation_allocations as SupabaseAllocationResponse[]) || []
+    ).map(alloc => ({
+      ...alloc,
+      operation: alloc.operation || null,
+      project: alloc.project
+        ? {
+            ...alloc.project,
+            target_language: alloc.project.target_language || null,
+          }
+        : null,
+    }));
+
     const allocated_cents = allocations.reduce(
       (sum, alloc) => sum + alloc.amount_cents,
       0
