@@ -117,9 +117,7 @@ export const AuthStackNavigator: React.FC<AuthStackNavigatorProps> = ({
           name='SignInSync'
           component={SignInSyncScreen}
           options={{
-            title: i18n.t('auth.sync.title', {
-              defaultValue: 'Syncing Account',
-            }),
+            title: i18n.t('auth.sync.title'),
             gestureEnabled: false, // Prevent back navigation during sync
             animation: 'none', // No animation for sync screen
           }}

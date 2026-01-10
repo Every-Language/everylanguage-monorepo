@@ -140,9 +140,7 @@ export const ExportBiblePackageModal: React.FC = () => {
     if (!selectedVersionId || !selectedVersion) return;
 
     setIsExporting(true);
-    setExportProgress(
-      t('sharing.preparingExport', { defaultValue: 'Preparing export...' })
-    );
+    setExportProgress(t('sharing.preparingExport'));
 
     try {
       if (activeTab === 'audio') {
@@ -153,9 +151,7 @@ export const ExportBiblePackageModal: React.FC = () => {
         );
 
         if (packageUris.length === 0) {
-          setExportProgress(
-            t('sharing.noFilesToExport', { defaultValue: 'No files to export' })
-          );
+          setExportProgress(t('sharing.noFilesToExport'));
           return;
         }
 
@@ -171,11 +167,7 @@ export const ExportBiblePackageModal: React.FC = () => {
         );
 
         if (packageUris.length === 0) {
-          setExportProgress(
-            t('sharing.noTextToExport', {
-              defaultValue: 'No text content to export',
-            })
-          );
+          setExportProgress(t('sharing.noTextToExport'));
           return;
         }
 
@@ -187,9 +179,7 @@ export const ExportBiblePackageModal: React.FC = () => {
 
       handleClose();
     } catch (error) {
-      setExportProgress(
-        t('sharing.exportFailed', { defaultValue: 'Export failed' })
-      );
+      setExportProgress(t('sharing.exportFailed'));
       logger.error(ENABLE_LOGGING, 'Export failed:', error);
     } finally {
       setIsExporting(false);
@@ -267,10 +257,7 @@ export const ExportBiblePackageModal: React.FC = () => {
         </View>
 
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-          {t('sharing.exportDescription', {
-            defaultValue:
-              'Export an audio or text version which you have downloaded, to share with someone else',
-          })}
+          {t('sharing.exportDescription')}
         </Text>
 
         {/* Tabs */}

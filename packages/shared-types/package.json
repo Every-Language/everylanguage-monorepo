@@ -25,6 +25,10 @@
   "publishConfig": {
     "access": "public"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Every-Language/everylanguage-monorepo.git"
+  },
   "description": "TypeScript types for Every Language database",
   "keywords": [
     "supabase",

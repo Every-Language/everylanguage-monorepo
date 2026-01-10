@@ -41,9 +41,10 @@ export const MediaPlayerSheet: React.FC = () => {
   // ==========================================
   // Enhanced Android bottom safe area detection
   const effectiveBottomInset = useMemo(() => {
-    return Platform.OS === 'android' && insets.bottom === 0
-      ? 16
-      : insets.bottom;
+    return (
+      (Platform.OS === 'android' && insets.bottom === 0 ? 16 : insets.bottom) +
+      74 // Standalone tab bar height
+    );
   }, [insets.bottom]);
 
   // Snap points: collapsed = header + content + footer + effective bottom safe area; expanded = 100%

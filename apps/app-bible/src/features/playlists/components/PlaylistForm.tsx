@@ -31,6 +31,7 @@ interface PlaylistFormProps {
   onCancel: () => void;
   submitLabel?: string;
   isSubmitting?: boolean;
+  imageUploadComponent?: React.ReactNode;
 }
 
 // schema moved above to align inferred types with form values
@@ -41,6 +42,7 @@ export const PlaylistForm: React.FC<PlaylistFormProps> = ({
   onCancel,
   submitLabel,
   isSubmitting,
+  imageUploadComponent,
 }) => {
   const { theme } = useTheme();
   const { t } = useLocalization();
@@ -183,6 +185,10 @@ export const PlaylistForm: React.FC<PlaylistFormProps> = ({
           </Text>
         </View>
 
+        {imageUploadComponent && (
+          <View style={styles.imageUploadSection}>{imageUploadComponent}</View>
+        )}
+
         <View style={styles.buttonGroup}>
           <TouchableOpacity
             style={[
@@ -230,6 +236,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     marginTop: 16,
+  },
+  imageUploadSection: {
+    marginBottom: 20,
   },
   //   notice: {
   //     padding: 12,

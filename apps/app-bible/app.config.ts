@@ -36,6 +36,7 @@ const base = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.everylanguage.elbible',
+    buildNumber: '2',
     infoPlist: {
       UIBackgroundModes: [
         'fetch',
@@ -219,8 +220,14 @@ const base = {
 
 module.exports = () => {
   const environment = process.env['EXPO_PUBLIC_ENVIRONMENT'] || 'development';
-  const resolveEnv = (key: string, fallbackKey?: string) =>
-    process.env[key] ?? (fallbackKey ? process.env[fallbackKey] : undefined);
+  const resolveEnv = (...keys: string[]) => {
+    for (const key of keys) {
+      if (process.env[key]) {
+        return process.env[key];
+      }
+    }
+    return undefined;
+  };
 
   const config = {
     ...base,
@@ -244,9 +251,9 @@ module.exports = () => {
         'EXPO_PUBLIC_SUPABASE_ANON_KEY',
         'SUPABASE_ANON_KEY'
       ),
-      EXPO_PUBLIC_POWERSYNC_URL: resolveEnv(
-        'EXPO_PUBLIC_POWERSYNC_URL',
-        'POWERSYNC_URL'
+      EXPO_PUBLIC_POWERSYNC_BIBLE_URL: resolveEnv(
+        'EXPO_PUBLIC_POWERSYNC_BIBLE_URL',
+        'POWERSYNC_BIBLE_URL'
       ),
     },
   };

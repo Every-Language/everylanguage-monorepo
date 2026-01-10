@@ -17,7 +17,8 @@ export interface Image {
     | 'verse'
     | 'podcast'
     | 'film_segment'
-    | 'audio_segment';
+    | 'audio_segment'
+    | 'playlist';
   target_id: string;
   set_id?: string | null;
   object_key?: string | null;
@@ -51,7 +52,8 @@ export interface ImageUploadRequest {
     | 'verse'
     | 'podcast'
     | 'film_segment'
-    | 'audio_segment';
+    | 'audio_segment'
+    | 'playlist';
   target_id: string;
   set_id?: string;
   setName?: string;
@@ -94,7 +96,8 @@ export interface ProcessedImageFile {
     | 'verse'
     | 'podcast'
     | 'film_segment'
-    | 'audio_segment';
+    | 'audio_segment'
+    | 'playlist';
   selectedTargetId?: string;
   selectedSetId?: string;
 

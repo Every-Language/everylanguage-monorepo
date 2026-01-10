@@ -243,12 +243,17 @@ async function runBackendChecks(changes) {
     return;
   }
 
-  // Deno type-check for Edge Functions
-  await runStep('Backend: Deno type-check', () => {
-    execSync('cd supabase && pnpm run type-check:functions', {
-      stdio: 'inherit',
+  // Deno type-check for Edge Functions (only if Deno is installed)
+  try {
+    execSync('which deno', { stdio: 'ignore' });
+    await runStep('Backend: Deno type-check', () => {
+      execSync('cd supabase && pnpm run type-check:functions', {
+        stdio: 'inherit',
+      });
     });
-  });
+  } catch (error) {
+    console.log('⏭️  Skipping Deno type-check (Deno not installed)');
+  }
 
   // Start Supabase
   await runStep('Backend: Start Supabase', async () => {

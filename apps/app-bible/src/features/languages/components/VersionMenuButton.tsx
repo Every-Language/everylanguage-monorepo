@@ -31,7 +31,7 @@ export const VersionMenuButton: React.FC<VersionMenuButtonProps> = ({
       { id: 'info', title: t('versions.infoTitle'), image: 'info.circle' },
       {
         id: 'remove',
-        title: t('versions.remove', { defaultValue: 'Remove version' }),
+        title: t('versions.remove'),
         attributes: { destructive: true },
         image: 'trash',
       },

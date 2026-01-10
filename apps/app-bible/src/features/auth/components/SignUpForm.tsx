@@ -248,19 +248,12 @@ export function SignUpForm({
           onNavigateToVerify('email', data.email);
         } else {
           // Fallback to old behavior
-          Alert.alert(
-            t('auth.signUpSuccess', { defaultValue: 'Account Created!' }),
-            t('auth.signUpSuccessMessage', {
-              defaultValue:
-                'Your account has been created. Please sign in to continue.',
-            }),
-            [
-              {
-                text: t('common.ok', { defaultValue: 'OK' }),
-                onPress: () => onSwitchToSignIn(),
-              },
-            ]
-          );
+          Alert.alert(t('auth.signUpSuccess'), t('auth.signUpSuccessMessage'), [
+            {
+              text: t('common.ok'),
+              onPress: () => onSwitchToSignIn(),
+            },
+          ]);
         }
         return;
       }
@@ -287,19 +280,12 @@ export function SignUpForm({
         onNavigateToVerify('phone', undefined, data.phone);
       } else {
         // Fallback to old behavior
-        Alert.alert(
-          t('auth.signUpSuccess', { defaultValue: 'Account Created!' }),
-          t('auth.signUpSuccessMessage', {
-            defaultValue:
-              'Your account has been created. Please sign in to continue.',
-          }),
-          [
-            {
-              text: t('common.ok', { defaultValue: 'OK' }),
-              onPress: () => onSwitchToSignIn(),
-            },
-          ]
-        );
+        Alert.alert(t('auth.signUpSuccess'), t('auth.signUpSuccessMessage'), [
+          {
+            text: t('common.ok'),
+            onPress: () => onSwitchToSignIn(),
+          },
+        ]);
       }
     } catch (error) {
       logger.error(ENABLE_LOGGING, 'Sign up error:', error);

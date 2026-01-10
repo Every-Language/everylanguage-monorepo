@@ -17,7 +17,7 @@
         "EXPO_PUBLIC_ENVIRONMENT": "development",
         "EXPO_PUBLIC_SUPABASE_URL": "https://sjczwtpnjbmscxoszlyi.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqY3p3dHBuamJtc2N4b3N6bHlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExODE2MjcsImV4cCI6MjA2Njc1NzYyN30.XqaYmc7WPXeF_eASoxHUUMIok8a1OStmfmGL2a5qnAo",
-        "EXPO_PUBLIC_POWERSYNC_URL": "https://688f10841b4862186551cbbe.powersync.journeyapps.com"
+        "EXPO_PUBLIC_POWERSYNC_BIBLE_URL": "https://688f10841b4862186551cbbe.powersync.journeyapps.com"
       }
     },
     "production": {
@@ -33,7 +33,7 @@
         "EXPO_PUBLIC_ENVIRONMENT": "production",
         "EXPO_PUBLIC_SUPABASE_URL": "https://mmcvtfxzntimcjfncdea.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tY3Z0Znh6bnRpbWNqZm5jZGVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAwNTMyMzYsImV4cCI6MjA2NTYyOTIzNn0.cE4-x3yNBQAmLrwDucGau8PpuF85IqxKZ3KC13p4KMU",
-        "EXPO_PUBLIC_POWERSYNC_URL": "https://688f1d649f644bd691508926.powersync.journeyapps.com"
+        "EXPO_PUBLIC_POWERSYNC_BIBLE_URL": "https://688f1d649f644bd691508926.powersync.journeyapps.com"
       }
     }
   },

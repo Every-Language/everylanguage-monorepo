@@ -67,8 +67,8 @@ jobs:
         env:
           AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
           ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
-          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
-          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_BIBLE_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_BIBLE_INSTANCE_ID }}
         run: |
           echo "🔍 Checking if committed schema matches sync rules..."
           pnpm run powersync:verify-schema
@@ -79,8 +79,8 @@ jobs:
         env:
           AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
           ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
-          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
-          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_BIBLE_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_BIBLE_INSTANCE_ID }}
         run: |
           npx powersync instance sync-rules validate -f powersync/sync-rules.yaml
           echo "✅ Sync rules validated against dev instance"
@@ -90,8 +90,8 @@ jobs:
         env:
           AUTH_TOKEN: ${{ secrets.POWERSYNC_API_TOKEN }}
           ORG_ID: ${{ secrets.POWERSYNC_ORG_ID }}
-          PROJECT_ID: ${{ secrets.POWERSYNC_PROJECT_ID }}
-          INSTANCE_ID: ${{ secrets.POWERSYNC_INSTANCE_ID }}
+          PROJECT_ID: ${{ secrets.POWERSYNC_BIBLE_PROJECT_ID }}
+          INSTANCE_ID: ${{ secrets.POWERSYNC_BIBLE_INSTANCE_ID }}
         run: |
           echo "🚀 Deploying sync rules to development environment..."
           npx powersync instance sync-rules deploy -f powersync/sync-rules.yaml --skipConfirmation

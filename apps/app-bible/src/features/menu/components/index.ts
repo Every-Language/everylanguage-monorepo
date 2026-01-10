@@ -8,4 +8,3 @@ export { ImportBiblePackageMenuItem } from './ImportBiblePackageMenuItem';
 export { ProfileMenuItem } from './ProfileMenuItem';
 export { AuthMenuItem } from './AuthMenuItem';
 export { NetworkStatusWidget } from './NetworkStatusWidget';
-export { PlaylistMenuItem } from './PlaylistMenuItem';

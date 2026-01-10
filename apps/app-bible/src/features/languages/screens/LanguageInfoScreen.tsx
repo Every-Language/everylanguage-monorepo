@@ -169,7 +169,7 @@ export const LanguageInfoScreen: React.FC<LanguageInfoScreenProps> = ({
         },
       ]}>
       <ModalHeader
-        title={t('languages.infoTitle', { defaultValue: 'Language info' })}
+        title={t('languages.infoTitle')}
         showBack
         onBack={handleBack}
         showClose
