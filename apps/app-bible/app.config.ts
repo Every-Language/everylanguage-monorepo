@@ -36,6 +36,7 @@ const base = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.everylanguage.elbible',
+    buildNumber: '2',
     infoPlist: {
       UIBackgroundModes: [
         'fetch',
