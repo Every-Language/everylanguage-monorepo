@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
 import { SearchResultItem } from './SearchResultItem';
+import { SearchResultSkeleton } from './skeletons';
 import { useSearchNavigation } from '../hooks/useSearchNavigation';
 import type { SearchResult } from '../types';
 
@@ -119,9 +120,19 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   );
 
   if (loading) {
+    const skeletonData = Array.from({ length: 5 }, (_, i) => ({
+      id: `skeleton-${i}`,
+    }));
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyMessage}>{t('search.searching')}</Text>
+      <View style={styles.container}>
+        <FlatList
+          style={styles.resultsList}
+          data={skeletonData}
+          keyExtractor={item => item.id}
+          renderItem={() => <SearchResultSkeleton />}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
       </View>
     );
   }
