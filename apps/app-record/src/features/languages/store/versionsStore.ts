@@ -4,9 +4,24 @@ import { userVersionsService } from '../services/userVersionsService';
 import { logger } from '@/shared/utils/logger';
 import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
 import { queryClient } from '@/shared/services/query/queryClient';
+import type {
+  PreloadProgress,
+  PreloadStatus,
+} from '../../onboarding/services/preloadVersionContentService';
+import type { SyncProgress } from '../../onboarding/services/prioritySyncMonitor';
 
 // Logging configuration for this module
 const ENABLE_LOGGING = true;
+
+interface TextVersionDownloadProgress {
+  versionId: string;
+  isDownloading: boolean;
+  phase: 'syncing' | 'preloading' | 'complete' | 'error';
+  progress?: PreloadProgress | null;
+  status?: PreloadStatus | null;
+  syncProgress?: SyncProgress | null;
+  error?: Error | null;
+}
 
 interface VersionsStoreState {
   // Current selections
@@ -20,12 +35,24 @@ interface VersionsStoreState {
   // Status
   isReady: boolean;
   error: string | null;
+
+  // Text version download progress (for future UI)
+  textVersionDownloadProgress: TextVersionDownloadProgress | null;
+}
+
+interface SetCurrentTextVersionOptions {
+  onProgress?: (progress: PreloadProgress) => void;
+  onStatus?: (status: PreloadStatus) => void;
+  onSyncProgress?: (progress: SyncProgress) => void;
 }
 
 interface VersionsStoreActions {
   refresh: () => Promise<void>;
   setCurrentAudioVersion: (version: AudioVersion | null) => Promise<void>;
-  setCurrentTextVersion: (version: TextVersion | null) => Promise<void>;
+  setCurrentTextVersion: (
+    version: TextVersion | null,
+    options?: SetCurrentTextVersionOptions
+  ) => Promise<void>;
   addSavedVersion: (
     version: AudioVersion | TextVersion,
     type: 'audio' | 'text'
@@ -36,6 +63,7 @@ interface VersionsStoreActions {
   ) => Promise<void>;
   isVersionSaved: (versionId: string, type: 'audio' | 'text') => boolean;
   clearError: () => void;
+  clearTextVersionDownloadProgress: () => void;
 }
 
 export type VersionsStore = VersionsStoreState & VersionsStoreActions;
@@ -48,6 +76,7 @@ export const useVersionsStore = create<VersionsStore>()((set, get) => ({
   savedTextVersions: [],
   isReady: false,
   error: null,
+  textVersionDownloadProgress: null,
 
   // Load current selections and saved versions (one-time or on demand)
   refresh: async () => {
@@ -223,36 +252,356 @@ export const useVersionsStore = create<VersionsStore>()((set, get) => ({
     }
   },
 
-  setCurrentTextVersion: async (version: TextVersion | null) => {
+  setCurrentTextVersion: async (
+    version: TextVersion | null,
+    options?: SetCurrentTextVersionOptions
+  ) => {
     try {
+      // Phase 1: Early return if same version
+      const currentVersionId = get().currentTextVersion?.id;
+      if (version?.id === currentVersionId) {
+        logger.debug(
+          ENABLE_LOGGING,
+          '[setCurrentTextVersion] Same version selected, skipping',
+          { versionId: version.id }
+        );
+        return;
+      }
+
+      if (!version) {
+        // Setting to null - just update and persist
+        set({ currentTextVersion: null });
+        await userVersionsService.setCurrentTextVersion(null);
+        return;
+      }
+
+      // Phase 2: Check if text is already downloaded
+      let isTextDownloaded = false;
+      try {
+        const countResult = await powerSyncSystem.getAll<{ count: number }>(
+          'SELECT COUNT(*) as count FROM verse_texts WHERE text_version_id = ? LIMIT 1',
+          [version.id]
+        );
+        isTextDownloaded = (countResult[0]?.count ?? 0) > 0;
+        logger.debug(
+          ENABLE_LOGGING,
+          '[setCurrentTextVersion] Text download check',
+          { versionId: version.id, isDownloaded: isTextDownloaded }
+        );
+      } catch (e) {
+        logger.warn(
+          ENABLE_LOGGING,
+          '[setCurrentTextVersion] Failed to check if text is downloaded',
+          e
+        );
+        // Continue as if not downloaded to be safe
+      }
+
+      // Phase 3A: Fast path - text already downloaded
+      if (isTextDownloaded) {
+        logger.info(
+          ENABLE_LOGGING,
+          '[setCurrentTextVersion] Fast path - text already downloaded',
+          { versionId: version.id }
+        );
+
+        // Add to saved versions if not already saved
+        if (version) {
+          const exists = get().savedTextVersions.some(v => v.id === version.id);
+          if (!exists) {
+            // Fire and forget - don't await
+            userVersionsService
+              .addSavedVersion(version, 'text')
+              .then(() => {
+                set({
+                  savedTextVersions: [version, ...get().savedTextVersions],
+                });
+              })
+              .catch(err => {
+                logger.warn(
+                  ENABLE_LOGGING,
+                  '[setCurrentTextVersion] Failed to add saved version (non-blocking)',
+                  err
+                );
+              });
+          }
+        }
+
+        // Optimistic update for immediate UI
+        set({ currentTextVersion: version });
+
+        // Skip query invalidation - data is local
+        // Persist selection in background (non-blocking)
+        userVersionsService.setCurrentTextVersion(version).catch(err => {
+          logger.warn(
+            ENABLE_LOGGING,
+            '[setCurrentTextVersion] Failed to persist selection (non-blocking)',
+            err
+          );
+        });
+
+        return;
+      }
+
+      // Phase 3B: New version, text not downloaded - sync + fallback
+      logger.info(
+        ENABLE_LOGGING,
+        '[setCurrentTextVersion] New version - initiating sync/preload',
+        { versionId: version.id }
+      );
+
+      // Set downloading state
+      set({
+        textVersionDownloadProgress: {
+          versionId: version.id,
+          isDownloading: true,
+          phase: 'syncing',
+        },
+      });
+
+      // Add to saved versions if not already saved
       if (version) {
         const exists = get().savedTextVersions.some(v => v.id === version.id);
         if (!exists) {
-          await userVersionsService.addSavedVersion(version, 'text');
-          set({ savedTextVersions: [version, ...get().savedTextVersions] });
+          try {
+            await userVersionsService.addSavedVersion(version, 'text');
+            set({ savedTextVersions: [version, ...get().savedTextVersions] });
+          } catch (err) {
+            logger.warn(
+              ENABLE_LOGGING,
+              '[setCurrentTextVersion] Failed to add saved version',
+              err
+            );
+          }
         }
       }
+
       // Optimistic update for immediate UI
       set({ currentTextVersion: version });
 
-      // Invalidate verse queries to refetch with the new text version
+      // Persist selection
       try {
-        await queryClient.invalidateQueries({
-          predicate: ({ queryKey }) =>
-            Array.isArray(queryKey) && queryKey[0] === 'verses-with-texts',
-        });
-      } catch {
-        // non-fatal
+        await userVersionsService.setCurrentTextVersion(version);
+      } catch (err) {
+        logger.warn(
+          ENABLE_LOGGING,
+          '[setCurrentTextVersion] Failed to persist selection',
+          err
+        );
       }
 
-      // Persist selection in the background
-      await userVersionsService.setCurrentTextVersion(version);
+      // Get userId for sync monitoring
+      const { useAuthStore } = await import('@/shared/store/authStore');
+      const authState = useAuthStore.getState();
+      const userId = authState.userId;
+
+      if (!userId) {
+        logger.warn(
+          ENABLE_LOGGING,
+          '[setCurrentTextVersion] No userId, cannot sync'
+        );
+        set({
+          textVersionDownloadProgress: {
+            versionId: version.id,
+            isDownloading: false,
+            phase: 'error',
+            error: new Error('User not authenticated'),
+          },
+        });
+        // Still invalidate queries in case data exists
+        try {
+          await queryClient.invalidateQueries({
+            predicate: ({ queryKey }) =>
+              Array.isArray(queryKey) && queryKey[0] === 'verses-with-texts',
+          });
+        } catch {
+          // non-fatal
+        }
+        return;
+      }
+
+      // Try PowerSync sync first
+      try {
+        const { PrioritySyncMonitor } =
+          await import('../../onboarding/services/prioritySyncMonitor');
+
+        const monitor = new PrioritySyncMonitor({
+          userId,
+          checkInterval: 1000,
+          timeout: 30000, // 30 second timeout
+        });
+
+        // Subscribe to progress updates
+        const unsubscribe = monitor.subscribe(progress => {
+          if (options?.onSyncProgress) {
+            options.onSyncProgress(progress);
+          }
+          set({
+            textVersionDownloadProgress: {
+              versionId: version.id,
+              isDownloading: true,
+              phase: 'syncing',
+              syncProgress: progress,
+            },
+          });
+        });
+
+        // Wait for priority 1 sync to complete
+        const syncComplete = await monitor.waitForPriority1Complete();
+        unsubscribe();
+        monitor.stopMonitoring();
+
+        if (syncComplete) {
+          // Sync completed successfully
+          logger.info(
+            ENABLE_LOGGING,
+            '[setCurrentTextVersion] PowerSync sync complete',
+            { versionId: version.id }
+          );
+          set({
+            textVersionDownloadProgress: {
+              versionId: version.id,
+              isDownloading: false,
+              phase: 'complete',
+            },
+          });
+
+          // Invalidate queries to refresh UI
+          try {
+            await queryClient.invalidateQueries({
+              predicate: ({ queryKey }) =>
+                Array.isArray(queryKey) && queryKey[0] === 'verses-with-texts',
+            });
+          } catch {
+            // non-fatal
+          }
+          return;
+        }
+
+        // Sync timed out, fallback to preload
+        logger.warn(
+          ENABLE_LOGGING,
+          '[setCurrentTextVersion] PowerSync sync timeout, falling back to preload',
+          { versionId: version.id }
+        );
+      } catch (syncError) {
+        logger.warn(
+          ENABLE_LOGGING,
+          '[setCurrentTextVersion] PowerSync sync failed, falling back to preload',
+          syncError
+        );
+      }
+
+      // Fallback to preload
+      try {
+        const { preloadVersionContent } =
+          await import('../../onboarding/services/preloadVersionContentService');
+
+        set({
+          textVersionDownloadProgress: {
+            versionId: version.id,
+            isDownloading: true,
+            phase: 'preloading',
+          },
+        });
+
+        await preloadVersionContent(
+          version.id,
+          null, // audioVersionId
+          progress => {
+            if (options?.onProgress) {
+              options.onProgress(progress);
+            }
+            set({
+              textVersionDownloadProgress: {
+                versionId: version.id,
+                isDownloading: true,
+                phase: 'preloading',
+                progress,
+              },
+            });
+          },
+          status => {
+            if (options?.onStatus) {
+              options.onStatus(status);
+            }
+            set({
+              textVersionDownloadProgress: {
+                versionId: version.id,
+                isDownloading: true,
+                phase: 'preloading',
+                status,
+              },
+            });
+          }
+        );
+
+        logger.info(
+          ENABLE_LOGGING,
+          '[setCurrentTextVersion] Preload complete',
+          { versionId: version.id }
+        );
+
+        set({
+          textVersionDownloadProgress: {
+            versionId: version.id,
+            isDownloading: false,
+            phase: 'complete',
+          },
+        });
+
+        // Invalidate queries to refresh UI
+        try {
+          await queryClient.invalidateQueries({
+            predicate: ({ queryKey }) =>
+              Array.isArray(queryKey) && queryKey[0] === 'verses-with-texts',
+          });
+        } catch {
+          // non-fatal
+        }
+      } catch (preloadError) {
+        logger.error(
+          ENABLE_LOGGING,
+          '[setCurrentTextVersion] Preload failed',
+          preloadError
+        );
+        set({
+          textVersionDownloadProgress: {
+            versionId: version.id,
+            isDownloading: false,
+            phase: 'error',
+            error:
+              preloadError instanceof Error
+                ? preloadError
+                : new Error('Preload failed'),
+          },
+        });
+        // Still invalidate queries in case partial data exists
+        try {
+          await queryClient.invalidateQueries({
+            predicate: ({ queryKey }) =>
+              Array.isArray(queryKey) && queryKey[0] === 'verses-with-texts',
+          });
+        } catch {
+          // non-fatal
+        }
+      }
     } catch (e) {
       logger.error(
         ENABLE_LOGGING,
         'versionsStore.setCurrentTextVersion failed',
         e
       );
+      if (version) {
+        set({
+          textVersionDownloadProgress: {
+            versionId: version.id,
+            isDownloading: false,
+            phase: 'error',
+            error: e instanceof Error ? e : new Error('Unknown error'),
+          },
+        });
+      }
       await get().refresh();
     }
   },
@@ -346,6 +695,9 @@ export const useVersionsStore = create<VersionsStore>()((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  clearTextVersionDownloadProgress: () =>
+    set({ textVersionDownloadProgress: null }),
 }));
 
 // Helper init to be called once after PowerSync is ready
