@@ -263,7 +263,7 @@ export const useVersionsStore = create<VersionsStore>()((set, get) => ({
         logger.debug(
           ENABLE_LOGGING,
           '[setCurrentTextVersion] Same version selected, skipping',
-          { versionId: version.id }
+          { versionId: version?.id }
         );
         return;
       }
@@ -278,10 +278,10 @@ export const useVersionsStore = create<VersionsStore>()((set, get) => ({
       // Phase 2: Check if text is already downloaded
       let isTextDownloaded = false;
       try {
-        const countResult = await powerSyncSystem.getAll<{ count: number }>(
+        const countResult = (await powerSyncSystem.getAll(
           'SELECT COUNT(*) as count FROM verse_texts WHERE text_version_id = ? LIMIT 1',
           [version.id]
-        );
+        )) as Array<{ count: number }>;
         isTextDownloaded = (countResult[0]?.count ?? 0) > 0;
         logger.debug(
           ENABLE_LOGGING,

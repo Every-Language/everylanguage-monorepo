@@ -152,12 +152,10 @@ export const VersionInfoScreen: React.FC<VersionInfoScreenProps> = ({
               await import('@/shared/services/powersync/PowerSyncSystem');
             let isTextDownloaded = false;
             try {
-              const countResult = await powerSyncSystem.getAll<{
-                count: number;
-              }>(
+              const countResult = (await powerSyncSystem.getAll(
                 'SELECT COUNT(*) as count FROM verse_texts WHERE text_version_id = ? LIMIT 1',
                 [selectedVersion.id]
-              );
+              )) as Array<{ count: number }>;
               isTextDownloaded = (countResult[0]?.count ?? 0) > 0;
             } catch {
               // Ignore check errors
