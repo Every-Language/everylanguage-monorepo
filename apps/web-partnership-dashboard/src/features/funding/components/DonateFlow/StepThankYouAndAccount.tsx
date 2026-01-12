@@ -3,11 +3,17 @@
 import React from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
-import { CheckCircle2 } from 'lucide-react';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@/shared/components/ui/Alert';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { authService } from '@/features/auth/services/auth';
 import { useToast } from '@/shared/theme/hooks/useToast';
 import { supabase } from '@/shared/services/supabase';
 import type { useDonateFlow } from '../../hooks/useDonateFlow';
+import { useDonationStatus } from '../../hooks/useDonationStatus';
 
 interface StepThankYouAndAccountProps {
   flow: ReturnType<typeof useDonateFlow>;
@@ -20,6 +26,10 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
 }) => {
   const { state } = flow;
   const { toast } = useToast();
+
+  // Monitor donation status in real-time
+  const { status: donationStatus, isLoading: isStatusLoading } =
+    useDonationStatus(state.donationId);
 
   const intent = state.intent;
   const amount = state.amount;
@@ -54,6 +64,45 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
 
   // Payment status based on payment method
   const isBankTransfer = paymentMethod === 'bank_transfer';
+
+  // Determine display status
+  // For card payments: show "Confirmed" optimistically, but update if status changes
+  // For bank transfers: always show "Pending" (no change)
+  const getDisplayStatus = (): {
+    text: string;
+    className: string;
+  } => {
+    if (isBankTransfer) {
+      return {
+        text: 'Pending',
+        className: 'text-yellow-600 dark:text-yellow-400',
+      };
+    }
+
+    // For card payments, check actual status if available
+    if (donationStatus === 'failed') {
+      return {
+        text: 'Failed',
+        className: 'text-error-600 dark:text-error-400',
+      };
+    }
+
+    if (donationStatus === 'completed') {
+      return {
+        text: 'Confirmed',
+        className: 'text-success-600 dark:text-success-400',
+      };
+    }
+
+    // Default: show "Confirmed" optimistically for card payments
+    return {
+      text: 'Confirmed',
+      className: 'text-success-600 dark:text-success-400',
+    };
+  };
+
+  const displayStatus = getDisplayStatus();
+  const hasFailed = donationStatus === 'failed';
 
   const donationType =
     intent?.type === 'operation'
@@ -235,27 +284,66 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
     <div className='space-y-6'>
       {/* Success Icon & Message */}
       <div className='flex flex-col items-center text-center space-y-3'>
-        <div className='w-16 h-16 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center'>
-          <CheckCircle2 className='w-10 h-10 text-success-600 dark:text-success-400' />
+        <div
+          className={`w-16 h-16 rounded-full flex items-center justify-center ${
+            hasFailed
+              ? 'bg-error-100 dark:bg-error-900/30'
+              : 'bg-success-100 dark:bg-success-900/30'
+          }`}>
+          {hasFailed ? (
+            <AlertCircle className='w-10 h-10 text-error-600 dark:text-error-400' />
+          ) : (
+            <CheckCircle2 className='w-10 h-10 text-success-600 dark:text-success-400' />
+          )}
         </div>
         <div>
           <h3 className='text-2xl font-semibold text-neutral-900 dark:text-neutral-100 mb-1'>
-            {isBankTransfer
-              ? 'Donation submitted!'
-              : 'Thank you for your donation!'}
+            {hasFailed
+              ? 'Payment Failed'
+              : isBankTransfer
+                ? 'Donation submitted!'
+                : 'Thank you for your donation!'}
           </h3>
           <p className='text-sm text-neutral-600 dark:text-neutral-400'>
-            {isBankTransfer
-              ? "Your bank transfer is pending. We'll process your donation once we receive the funds (usually 1-3 business days)."
-              : "Your generosity helps bring God's Word to every language."}
+            {hasFailed
+              ? "We couldn't process your payment. Please try again or contact support."
+              : isBankTransfer
+                ? "Your bank transfer is pending. We'll process your donation once we receive the funds (usually 1-3 business days)."
+                : "Your generosity helps bring God's Word to every language."}
           </p>
-          {isBankTransfer && (
+          {isBankTransfer && !hasFailed && (
             <p className='text-xs text-neutral-500 dark:text-neutral-500 mt-2'>
               You'll receive a confirmation email once the transfer is complete.
             </p>
           )}
         </div>
       </div>
+
+      {/* Error Alert for Failed Donations */}
+      {hasFailed && (
+        <Alert variant='error' size='md'>
+          <AlertTitle>Payment Failed</AlertTitle>
+          <AlertDescription>
+            <div className='space-y-2'>
+              <p>Your donation could not be processed. This may be due to:</p>
+              <ul className='list-disc list-inside space-y-1 text-sm'>
+                <li>Insufficient funds or card declined</li>
+                <li>Card expired or invalid</li>
+                <li>Network or processing error</li>
+              </ul>
+              <p className='mt-2'>
+                Please try again with a different payment method or{' '}
+                <a
+                  href='mailto:support@everylanguage.com'
+                  className='underline font-medium'>
+                  contact support
+                </a>{' '}
+                if the problem persists.
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Receipt Details */}
       <div className='border border-neutral-200 dark:border-neutral-800 rounded-lg p-5 space-y-3 bg-neutral-50 dark:bg-neutral-900/40'>
@@ -316,15 +404,12 @@ export const StepThankYouAndAccount: React.FC<StepThankYouAndAccountProps> = ({
         <div className='flex justify-between text-sm'>
           <span className='text-neutral-600 dark:text-neutral-400'>Status</span>
           <span className='font-medium text-neutral-900 dark:text-neutral-100'>
-            {isBankTransfer ? (
-              <span className='text-yellow-600 dark:text-yellow-400'>
-                Pending
-              </span>
-            ) : (
-              <span className='text-success-600 dark:text-success-400'>
-                Confirmed
-              </span>
-            )}
+            <span className={displayStatus.className}>
+              {displayStatus.text}
+              {isStatusLoading && !hasFailed && (
+                <span className='ml-2 text-xs opacity-70'>(verifying...)</span>
+              )}
+            </span>
           </span>
         </div>
       </div>
