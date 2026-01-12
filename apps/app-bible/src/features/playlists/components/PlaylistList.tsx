@@ -91,11 +91,6 @@ const createStyles = (theme: Theme) =>
       alignItems: 'center',
       padding: 20,
     },
-    loadingText: {
-      marginTop: 10,
-      fontSize: 16,
-      color: theme.colors.textSecondary,
-    },
     emptyText: {
       fontSize: 16,
       textAlign: 'center',
