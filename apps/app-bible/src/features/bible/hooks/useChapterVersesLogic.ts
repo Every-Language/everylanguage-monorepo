@@ -82,6 +82,7 @@ export const useChapterVersesLogic = () => {
   // Verses data
   const {
     versesWithTexts,
+    loading: versesLoading,
     refetch: refetchVerses,
     isRefetching,
   } = useVersesWithTexts(effectiveChapterId ?? null, currentTextVersion?.id);
@@ -119,6 +120,7 @@ export const useChapterVersesLogic = () => {
     chapter,
     effectiveChapterId,
     versesWithTexts,
+    versesLoading,
     currentTextVersion,
     currentAudioVersion,
     downloadStatus,
