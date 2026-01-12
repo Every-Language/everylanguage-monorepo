@@ -451,13 +451,12 @@ Deno.serve(async (req: Request) => {
         // For now, use a default bible_version_id - you may need to determine this from project
         const defaultBibleVersionId = 'default'; // TODO: Get from project metadata
 
-        const { data: audioVersion, error: audioVersionError } =
-          await supabaseClient
-            .from('audio_versions')
-            .select('id')
-            .eq('language_entity_id', languageEntityId)
-            .eq('bible_version_id', defaultBibleVersionId)
-            .maybeSingle();
+        const { data: audioVersion } = await supabaseClient
+          .from('audio_versions')
+          .select('id')
+          .eq('language_entity_id', languageEntityId)
+          .eq('bible_version_id', defaultBibleVersionId)
+          .maybeSingle();
 
         let audioVersionId: string;
 
