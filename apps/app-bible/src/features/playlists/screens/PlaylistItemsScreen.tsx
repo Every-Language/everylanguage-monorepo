@@ -31,6 +31,7 @@ import type { Theme } from '@everylanguage/shared-native-ui';
 import { usePlaylistItemsPS } from '../hooks/usePlaylistItemsPS';
 import { PlaylistItemWithVerses } from '../types';
 import { DraggablePlaylistItem } from '../components/DraggablePlaylistItem';
+import { VerseCardSkeleton } from '../../bible/components/skeletons';
 import { usePlaylistActions } from '../hooks/usePlaylistActions';
 import { usePlaylistPS } from '../hooks/usePlaylistPS';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
@@ -335,14 +336,9 @@ export const PlaylistItemsScreen: React.FC = () => {
     if (loading && playlistItems.length === 0) {
       return (
         <View style={styles.loadingContainer}>
-          <MaterialIcons
-            name='hourglass-empty'
-            size={48}
-            color={theme.colors.textSecondary}
-          />
-          <Text style={styles.loadingText}>
-            {t('verses.loading', 'Loading verses...')}
-          </Text>
+          {Array.from({ length: 8 }).map((_, index) => (
+            <VerseCardSkeleton key={`skeleton-${index}`} />
+          ))}
         </View>
       );
     }

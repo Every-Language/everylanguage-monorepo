@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useLocalization } from '@/shared/hooks';
+import { PlaylistCardSkeleton } from './skeletons';
 import type { Playlist } from '../types';
 
 interface PlaylistSelectionListProps {
@@ -100,9 +100,14 @@ export const PlaylistSelectionList: React.FC<PlaylistSelectionListProps> = ({
   return (
     <View style={styles.container}>
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color={theme.colors.primary} />
-        </View>
+        <FlatList
+          data={Array.from({ length: 6 }, (_, i) => ({ id: `skeleton-${i}` }))}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.content}
+          ListHeaderComponent={renderCreatePlaylistButton}
+          renderItem={() => <PlaylistCardSkeleton />}
+          ListEmptyComponent={renderEmptyComponent}
+        />
       ) : (
         <FlatList
           data={playlists}
@@ -124,13 +129,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingTop: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 200,
-    paddingHorizontal: 20,
   },
   createButton: {
     flexDirection: 'row',

@@ -19,6 +19,7 @@ import type {
   VersionSelectionStackNavigationProp,
 } from '../navigation/VersionSelectionStackNavigator';
 import { SearchResultItem } from '../components/SearchResultItem';
+import { SearchResultSkeleton } from '../../search/components/skeletons';
 //
 import { StyleSheet } from 'react-native';
 import { ModalHeader } from '@everylanguage/shared-native-ui';
@@ -167,13 +168,11 @@ export const LanguageSearchScreen: React.FC<LanguageSearchScreenProps> = ({
 
       {/* Loading */}
       {isSearching && (
-        <View style={styles.searchLoadingContainer}>
-          <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text
-            style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-            {t('languages.search.searching')}
-          </Text>
-        </View>
+        <ScrollView style={styles.scrollView}>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <SearchResultSkeleton key={`skeleton-${index}`} />
+          ))}
+        </ScrollView>
       )}
 
       {/* Results */}
