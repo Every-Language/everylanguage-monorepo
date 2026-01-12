@@ -7,3 +7,7 @@ export { ChapterVersesLoading } from './ChapterVersesLoading';
 export { ChapterVersesList } from './ChapterVersesList';
 export { ChapterVersesDetails } from './ChapterVersesDetails';
 export { BibleContainer } from './BibleContainer';
+export { ChapterCard } from './ChapterCard';
+
+// Skeletons
+export * from './skeletons';
