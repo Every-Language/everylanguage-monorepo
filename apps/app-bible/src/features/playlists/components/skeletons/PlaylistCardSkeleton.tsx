@@ -43,7 +43,11 @@ export const PlaylistCardSkeleton: React.FC = () => {
   });
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessibilityRole='none'
+      accessibilityLabel='Loading playlist'
+      importantForAccessibility='no-hide-descendants'>
       {/* Image */}
       <SkeletonBox
         width={64}

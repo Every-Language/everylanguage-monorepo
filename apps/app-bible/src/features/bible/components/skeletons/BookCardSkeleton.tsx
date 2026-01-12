@@ -57,7 +57,11 @@ export const BookCardSkeleton: React.FC = () => {
   });
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessibilityRole='none'
+      accessibilityLabel='Loading book'
+      importantForAccessibility='no-hide-descendants'>
       {/* Image area */}
       <View style={styles.image}>
         <SkeletonBox

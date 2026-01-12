@@ -39,7 +39,11 @@ export const SearchResultSkeleton: React.FC = () => {
   });
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessibilityRole='none'
+      accessibilityLabel='Loading search result'
+      importantForAccessibility='no-hide-descendants'>
       {/* Icon */}
       <SkeletonCircle size={40} style={styles.iconContainer} />
       {/* Content */}

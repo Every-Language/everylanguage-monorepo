@@ -51,7 +51,11 @@ export const ChapterCardSkeleton: React.FC = () => {
   });
 
   return (
-    <View style={styles.chapterCard}>
+    <View
+      style={styles.chapterCard}
+      accessibilityRole='none'
+      accessibilityLabel='Loading chapter'
+      importantForAccessibility='no-hide-descendants'>
       <View style={styles.chapterContent}>
         <View style={styles.chapterMainContent}>
           <View style={styles.chapterInfo}>

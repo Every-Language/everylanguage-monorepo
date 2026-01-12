@@ -31,7 +31,11 @@ export const VerseCardSkeleton: React.FC = () => {
   });
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessibilityRole='none'
+      accessibilityLabel='Loading verse'
+      importantForAccessibility='no-hide-descendants'>
       <View style={styles.verseContent}>
         <View style={styles.textContainer}>
           {/* Verse number */}

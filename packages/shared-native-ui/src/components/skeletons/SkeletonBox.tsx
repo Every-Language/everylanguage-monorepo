@@ -9,6 +9,8 @@ interface SkeletonBoxProps {
   borderRadius?: number;
   style?: ViewStyle;
   colorMode?: 'light' | 'dark';
+  /** Accessibility label for screen readers. If not provided, skeleton is hidden from accessibility */
+  accessibilityLabel?: string;
 }
 
 /**
@@ -31,12 +33,18 @@ export const SkeletonBox: React.FC<SkeletonBoxProps> = ({
   borderRadius = 8,
   style,
   colorMode,
+  accessibilityLabel,
 }) => {
   const { theme } = useTheme();
   const mode = colorMode ?? (theme.mode === 'dark' ? 'dark' : 'light');
 
   return (
-    <View style={style}>
+    <View
+      style={style}
+      accessibilityRole={accessibilityLabel ? 'none' : 'none'}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityElementsHidden={!accessibilityLabel}
+      importantForAccessibility={accessibilityLabel ? 'yes' : 'no-hide-descendants'}>
       <Skeleton
         colorMode={mode}
         colors={SKELETON_COLORS[mode]}

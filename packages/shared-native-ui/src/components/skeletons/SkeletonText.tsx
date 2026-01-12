@@ -11,6 +11,8 @@ interface SkeletonTextProps {
   borderRadius?: number;
   style?: ViewStyle;
   colorMode?: 'light' | 'dark';
+  /** Accessibility label for screen readers. If not provided, skeleton is hidden from accessibility */
+  accessibilityLabel?: string;
 }
 
 /**
@@ -36,13 +38,19 @@ export const SkeletonText: React.FC<SkeletonTextProps> = ({
   borderRadius = 4,
   style,
   colorMode,
+  accessibilityLabel,
 }) => {
   const { theme } = useTheme();
   const mode = colorMode ?? (theme.mode === 'dark' ? 'dark' : 'light');
 
   if (lines === 1) {
     return (
-      <View style={style}>
+      <View
+        style={style}
+        accessibilityRole="none"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityElementsHidden={!accessibilityLabel}
+        importantForAccessibility={accessibilityLabel ? 'yes' : 'no-hide-descendants'}>
         <Skeleton
           colorMode={mode}
           colors={SKELETON_COLORS[mode]}
@@ -56,7 +64,12 @@ export const SkeletonText: React.FC<SkeletonTextProps> = ({
 
   // Multiple lines - last line is typically shorter
   return (
-    <View style={style}>
+    <View
+      style={style}
+      accessibilityRole="none"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityElementsHidden={!accessibilityLabel}
+      importantForAccessibility={accessibilityLabel ? 'yes' : 'no-hide-descendants'}>
       {Array.from({ length: lines }).map((_, index) => {
         const isLastLine = index === lines - 1;
         const lineWidth = isLastLine ? Math.floor(width * 0.75) : width;
