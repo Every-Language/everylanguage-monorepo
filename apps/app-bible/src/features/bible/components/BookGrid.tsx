@@ -3,6 +3,7 @@ import { View, StyleSheet, RefreshControlProps } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useResponsiveGrid, BOOK_GRID_CONFIG } from '@/shared/utils/responsive';
 import { BookCard } from './BookCard';
+import { BookCardSkeleton } from './skeletons';
 import type { Book } from '../types';
 import { useMediaBottomInset } from '@/features/media/layout/useMediaBottomInset';
 
@@ -18,7 +19,7 @@ export const BookGrid: React.FC<BookGridProps> = ({
   books,
   selectedBook: _selectedBook,
   onBookSelect,
-  loading: _loading = false,
+  loading = false,
   refreshControl,
 }) => {
   const { numColumns } = useResponsiveGrid(BOOK_GRID_CONFIG);
@@ -58,6 +59,33 @@ export const BookGrid: React.FC<BookGridProps> = ({
   const CARD_ASPECT_RATIO = 1.4;
   const estimatedItemSize =
     BOOK_GRID_CONFIG.maxCardWidth / CARD_ASPECT_RATIO + 48 + 16; // image + footer + margin
+
+  // Show skeleton placeholders while loading
+  if (loading && books.length === 0) {
+    const skeletonData = Array.from({ length: numColumns * 3 }, (_, i) => ({
+      id: `skeleton-${i}`,
+    }));
+    return (
+      <View style={styles.container}>
+        <FlashList
+          data={skeletonData}
+          renderItem={() => (
+            <View style={styles.bookWrapper}>
+              <BookCardSkeleton />
+            </View>
+          )}
+          keyExtractor={item => item.id}
+          numColumns={numColumns}
+          estimatedItemSize={estimatedItemSize}
+          contentContainerStyle={contentContainerStyle}
+          showsVerticalScrollIndicator={true}
+          scrollIndicatorInsets={{ bottom: bottomInset }}
+          ListFooterComponent={<View style={{ height: bottomInset }} />}
+          key={numColumns}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

@@ -3,6 +3,7 @@ import { FlatList, View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/shared/hooks';
 import { useLocalization } from '@/shared/hooks';
 import { BookCard } from './BookCard';
+import { BookCardSkeleton } from './skeletons';
 import type { Book } from '../types';
 
 interface BookListProps {
@@ -30,11 +31,6 @@ export const BookList: React.FC<BookListProps> = ({
       padding: 20,
       backgroundColor: theme.colors.background,
     },
-    loadingText: {
-      marginTop: 10,
-      fontSize: 16,
-      color: theme.colors.textSecondary,
-    },
     emptyText: {
       fontSize: 16,
       textAlign: 'center',
@@ -48,13 +44,29 @@ export const BookList: React.FC<BookListProps> = ({
       paddingHorizontal: 16,
       paddingBottom: 100, // Space for audio player
     },
+    skeletonItem: {
+      paddingHorizontal: 16,
+      marginBottom: 12,
+    },
   });
 
   if (loading) {
+    const skeletonData = Array.from({ length: 10 }, (_, i) => ({
+      id: `skeleton-${i}`,
+    }));
     return (
-      <View style={styles.centered}>
-        <Text style={styles.loadingText}>{t('books.loading')}</Text>
-      </View>
+      <FlatList
+        data={skeletonData}
+        renderItem={() => (
+          <View style={styles.skeletonItem}>
+            <BookCardSkeleton />
+          </View>
+        )}
+        keyExtractor={item => item.id}
+        style={styles.list}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      />
     );
   }
 
