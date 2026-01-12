@@ -37,18 +37,19 @@ export const SkeletonCircle: React.FC<SkeletonCircleProps> = ({
   return (
     <View
       style={style}
-      accessibilityRole="none"
+      accessibilityRole='none'
       accessibilityLabel={accessibilityLabel}
       accessibilityElementsHidden={!accessibilityLabel}
-      importantForAccessibility={accessibilityLabel ? 'yes' : 'no-hide-descendants'}>
+      importantForAccessibility={
+        accessibilityLabel ? 'yes' : 'no-hide-descendants'
+      }>
       <Skeleton
         colorMode={mode}
         colors={SKELETON_COLORS[mode]}
-        radius="round"
+        radius='round'
         width={size}
         height={size}
       />
     </View>
   );
 };
-

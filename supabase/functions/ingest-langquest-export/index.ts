@@ -125,9 +125,11 @@ async function findOrCreateLanguageEntity(
 ): Promise<string> {
   // Extract ISO 639-3 code from sources
   const iso6393Source = languoid.sources.find(
-    (s) => s.name.toLowerCase() === 'iso639-3' || s.name.toLowerCase() === 'iso639_3'
+    s =>
+      s.name.toLowerCase() === 'iso639-3' || s.name.toLowerCase() === 'iso639_3'
   );
-  const iso6393Code = iso6393Source?.unique_identifier?.toUpperCase().trim() || null;
+  const iso6393Code =
+    iso6393Source?.unique_identifier?.toUpperCase().trim() || null;
 
   let languageEntityId: string | null = null;
 
@@ -219,11 +221,13 @@ async function findOrCreateLanguageEntity(
 
     // Create language_property for ISO 639-3 code (if available)
     if (iso6393Code) {
-      const { error } = await supabaseClient.from('language_properties').insert({
-        language_entity_id: languageEntityId,
-        key: 'iso639-3',
-        value: iso6393Code,
-      });
+      const { error } = await supabaseClient
+        .from('language_properties')
+        .insert({
+          language_entity_id: languageEntityId,
+          key: 'iso639-3',
+          value: iso6393Code,
+        });
       // Ignore duplicate key errors - property may already exist
       if (error && !error.code?.includes('23505')) {
         console.warn(`Failed to create language_property: ${error.message}`);
@@ -249,17 +253,21 @@ async function findOrCreateLanguageEntity(
         // Add more mappings as needed
 
         if (externalIdType) {
-          const { error } = await supabaseClient.from('language_entity_sources').insert({
-            language_entity_id: languageEntityId,
-            source: source.name,
-            version: source.version || null,
-            external_id_type: externalIdType,
-            external_id: source.unique_identifier.toUpperCase(),
-            is_external: true,
-          });
+          const { error } = await supabaseClient
+            .from('language_entity_sources')
+            .insert({
+              language_entity_id: languageEntityId,
+              source: source.name,
+              version: source.version || null,
+              external_id_type: externalIdType,
+              external_id: source.unique_identifier.toUpperCase(),
+              is_external: true,
+            });
           // Ignore duplicate key errors - source may already exist
           if (error && !error.code?.includes('23505')) {
-            console.warn(`Failed to create language_entity_source: ${error.message}`);
+            console.warn(
+              `Failed to create language_entity_source: ${error.message}`
+            );
           }
         }
       }
@@ -314,7 +322,10 @@ Deno.serve(async (req: Request) => {
     }
 
     // Create LangQuest client
-    const langquestClient = createClient(langquestSupabaseUrl, langquestSupabaseKey);
+    const langquestClient = createClient(
+      langquestSupabaseUrl,
+      langquestSupabaseKey
+    );
 
     // Fetch exports to ingest
     let exports: LangQuestExport[] = [];
@@ -389,13 +400,17 @@ Deno.serve(async (req: Request) => {
 
         // Validate audio_url is present
         if (!exportRecord.audio_url) {
-          throw new Error('Export audio_url is missing - export may not be ready');
+          throw new Error(
+            'Export audio_url is missing - export may not be ready'
+          );
         }
 
         // Download audio from LangQuest storage
         const audioResponse = await fetch(exportRecord.audio_url);
         if (!audioResponse.ok) {
-          throw new Error(`Failed to download audio: ${audioResponse.statusText}`);
+          throw new Error(
+            `Failed to download audio: ${audioResponse.statusText}`
+          );
         }
 
         const audioBuffer = await audioResponse.arrayBuffer();
@@ -414,7 +429,9 @@ Deno.serve(async (req: Request) => {
         });
 
         if (!uploadResponse.ok) {
-          throw new Error(`Failed to upload to R2: ${uploadResponse.statusText}`);
+          throw new Error(
+            `Failed to upload to R2: ${uploadResponse.statusText}`
+          );
         }
 
         const manifest = exportRecord.metadata.manifest;
@@ -434,12 +451,13 @@ Deno.serve(async (req: Request) => {
         // For now, use a default bible_version_id - you may need to determine this from project
         const defaultBibleVersionId = 'default'; // TODO: Get from project metadata
 
-        const { data: audioVersion, error: audioVersionError } = await supabaseClient
-          .from('audio_versions')
-          .select('id')
-          .eq('language_entity_id', languageEntityId)
-          .eq('bible_version_id', defaultBibleVersionId)
-          .maybeSingle();
+        const { data: audioVersion, error: audioVersionError } =
+          await supabaseClient
+            .from('audio_versions')
+            .select('id')
+            .eq('language_entity_id', languageEntityId)
+            .eq('bible_version_id', defaultBibleVersionId)
+            .maybeSingle();
 
         let audioVersionId: string;
 
@@ -447,19 +465,22 @@ Deno.serve(async (req: Request) => {
           audioVersionId = audioVersion.id;
         } else {
           // Create audio_version
-          const { data: newAudioVersion, error: createError } = await supabaseClient
-            .from('audio_versions')
-            .insert({
-              language_entity_id: languageEntityId,
-              bible_version_id: defaultBibleVersionId,
-              name: 'LangQuest Export',
-              project_id: null, // EL projects are separate
-            })
-            .select('id')
-            .single();
+          const { data: newAudioVersion, error: createError } =
+            await supabaseClient
+              .from('audio_versions')
+              .insert({
+                language_entity_id: languageEntityId,
+                bible_version_id: defaultBibleVersionId,
+                name: 'LangQuest Export',
+                project_id: null, // EL projects are separate
+              })
+              .select('id')
+              .single();
 
           if (createError || !newAudioVersion) {
-            throw new Error(`Failed to create audio_version: ${createError?.message}`);
+            throw new Error(
+              `Failed to create audio_version: ${createError?.message}`
+            );
           }
 
           audioVersionId = newAudioVersion.id;
@@ -484,7 +505,9 @@ Deno.serve(async (req: Request) => {
           .single();
 
         if (mediaFileError || !mediaFile) {
-          throw new Error(`Failed to create media_file: ${mediaFileError?.message}`);
+          throw new Error(
+            `Failed to create media_file: ${mediaFileError?.message}`
+          );
         }
 
         // Find chapter in EL database (only if bible chapter metadata is available)
@@ -527,7 +550,8 @@ Deno.serve(async (req: Request) => {
                   // Use actual timings from export metadata
                   const startTimeSeconds = timing.start_ms / 1000;
                   const endTimeSeconds = timing.end_ms / 1000;
-                  const verseDurationSeconds = endTimeSeconds - startTimeSeconds;
+                  const verseDurationSeconds =
+                    endTimeSeconds - startTimeSeconds;
 
                   await supabaseClient.from('media_files_verses').insert({
                     media_file_id: mediaFile.id,
@@ -572,10 +596,9 @@ Deno.serve(async (req: Request) => {
     return createSuccessResponse({
       message: `Processed ${exports.length} exports`,
       results,
-      ingested: results.filter((r) => r.status === 'success').length,
+      ingested: results.filter(r => r.status === 'success').length,
     });
   } catch (error) {
     return handleUnexpectedError(error);
   }
 });
-

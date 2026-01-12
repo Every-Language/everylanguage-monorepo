@@ -44,7 +44,9 @@ export const SkeletonBox: React.FC<SkeletonBoxProps> = ({
       accessibilityRole={accessibilityLabel ? 'none' : 'none'}
       accessibilityLabel={accessibilityLabel}
       accessibilityElementsHidden={!accessibilityLabel}
-      importantForAccessibility={accessibilityLabel ? 'yes' : 'no-hide-descendants'}>
+      importantForAccessibility={
+        accessibilityLabel ? 'yes' : 'no-hide-descendants'
+      }>
       <Skeleton
         colorMode={mode}
         colors={SKELETON_COLORS[mode]}
@@ -55,4 +57,3 @@ export const SkeletonBox: React.FC<SkeletonBoxProps> = ({
     </View>
   );
 };
-

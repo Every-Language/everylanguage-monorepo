@@ -47,10 +47,12 @@ export const SkeletonText: React.FC<SkeletonTextProps> = ({
     return (
       <View
         style={style}
-        accessibilityRole="none"
+        accessibilityRole='none'
         accessibilityLabel={accessibilityLabel}
         accessibilityElementsHidden={!accessibilityLabel}
-        importantForAccessibility={accessibilityLabel ? 'yes' : 'no-hide-descendants'}>
+        importantForAccessibility={
+          accessibilityLabel ? 'yes' : 'no-hide-descendants'
+        }>
         <Skeleton
           colorMode={mode}
           colors={SKELETON_COLORS[mode]}
@@ -66,10 +68,12 @@ export const SkeletonText: React.FC<SkeletonTextProps> = ({
   return (
     <View
       style={style}
-      accessibilityRole="none"
+      accessibilityRole='none'
       accessibilityLabel={accessibilityLabel}
       accessibilityElementsHidden={!accessibilityLabel}
-      importantForAccessibility={accessibilityLabel ? 'yes' : 'no-hide-descendants'}>
+      importantForAccessibility={
+        accessibilityLabel ? 'yes' : 'no-hide-descendants'
+      }>
       {Array.from({ length: lines }).map((_, index) => {
         const isLastLine = index === lines - 1;
         const lineWidth = isLastLine ? Math.floor(width * 0.75) : width;
@@ -90,4 +94,3 @@ export const SkeletonText: React.FC<SkeletonTextProps> = ({
     </View>
   );
 };
-
