@@ -105,6 +105,7 @@
     "expo-updates": "~0.28.17",
     "i18next": "^25.2.1",
     "libphonenumber-js": "^1.12.24",
+    "moti": "^0.30.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-hook-form": "^7.63.0",

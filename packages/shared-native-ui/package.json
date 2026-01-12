@@ -27,7 +27,9 @@
     "react-native-safe-area-context": "*",
     "@react-native-async-storage/async-storage": "*",
     "expo-linear-gradient": "*",
-    "@react-native-menu/menu": "*"
+    "@react-native-menu/menu": "*",
+    "moti": "*",
+    "react-native-reanimated": "*"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
@@ -42,6 +44,8 @@
     "typescript-eslint": "^8.46.2",
     "expo-linear-gradient": "*",
     "@react-native-menu/menu": "*",
-    "react": "19.0.0"
+    "react": "19.0.0",
+    "moti": "*",
+    "react-native-reanimated": "*"
   }
 }

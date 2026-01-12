@@ -8,3 +8,6 @@ export { ModalHeader } from './ModalHeader';
 export { NoInternetModal } from './NoInternetModal';
 export { PlayButton } from './PlayButton';
 export type { PlayableType } from './PlayButton';
+
+// Skeletons
+export * from './skeletons';
