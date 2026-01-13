@@ -171,6 +171,19 @@ const base = {
       },
     ],
     'expo-asset',
+    [
+      'expo-splash-screen',
+      {
+        backgroundColor: '#ebe5d9', // Cream background (light theme)
+        image: './assets/icon.png',
+        dark: {
+          backgroundColor: '#070707', // Almost black background (dark theme)
+          image: './assets/icon.png',
+        },
+        imageWidth: 200,
+        resizeMode: 'contain',
+      },
+    ],
     './plugins/sqlite-config-plugin.cjs',
   ],
   scheme: 'everylanguage',

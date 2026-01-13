@@ -1,23 +1,32 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-  StatusBar,
-  Platform,
-} from 'react-native';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+} from 'react';
+import { View, Text, StyleSheet, StatusBar, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
 import { PowerSyncContext } from '@powersync/react';
 import { AbstractPowerSyncDatabase } from '@powersync/react-native';
 import { powerSyncSystem } from '@/shared/infrastructure/powersync/services/PowerSyncSystem';
 import { useAuthStore } from '@/shared/auth/store/authStore';
 import { logger } from '@/shared/utils/logger';
-import { ErrorBoundary } from '@/shared/ui/ErrorBoundary';
+import { ErrorBoundary, LoadingScreen } from '@/shared/ui';
 import { useThemeStore } from '@/shared/store/themeStore';
 import { useTheme, useSupabaseAppState } from '@/shared/hooks';
 import { appInitializationService } from '@/shared/services/AppInitializationService';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
+
+// Configure splash screen animation
+SplashScreen.setOptions({
+  duration: 1000,
+  fade: true,
+});
 
 /**
  * Root Layout for Expo Router
@@ -47,6 +56,7 @@ const RootLayout: React.FC = () => {
   const [powerSyncError, setPowerSyncError] = useState<Error | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [initError, setInitError] = useState<Error | null>(null);
+  const [appIsReady, setAppIsReady] = useState(false);
   const { user, isInitialized } = useAuthStore();
   const initializationRef = useRef(false);
   // Call useTheme at the top level - hooks must be called unconditionally
@@ -70,6 +80,7 @@ const RootLayout: React.FC = () => {
         setPowerSyncReady(powerSyncSystem.isInitialized);
 
         setIsInitializing(false);
+        setAppIsReady(true);
       } catch (error) {
         const err =
           error instanceof Error
@@ -79,11 +90,22 @@ const RootLayout: React.FC = () => {
         setInitError(err);
         setPowerSyncError(err);
         setIsInitializing(false);
+        setAppIsReady(true); // Still mark as ready to show error screen
       }
     };
 
     initializeApp();
   }, []);
+
+  // Hide splash screen once app is ready and layout is complete
+  const onLayoutRootView = useCallback(() => {
+    if (appIsReady) {
+      // Hide splash screen once we know the root view has performed layout
+      SplashScreen.hideAsync().catch(error => {
+        logger.warn('Failed to hide splash screen:', error);
+      });
+    }
+  }, [appIsReady]);
 
   // Connect PowerSync when user logs in
   useEffect(() => {
@@ -141,7 +163,7 @@ const RootLayout: React.FC = () => {
     return (
       <ErrorBoundary>
         <SafeAreaProvider>
-          <View style={styles.errorContainer}>
+          <View style={styles.errorContainer} onLayout={onLayoutRootView}>
             <Text style={styles.errorTitle}>
               {powerSyncError ? 'PowerSync Error' : 'Initialization Error'}
             </Text>
@@ -158,11 +180,10 @@ const RootLayout: React.FC = () => {
     return (
       <ErrorBoundary>
         <SafeAreaProvider>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size='large' />
-            <Text style={styles.loadingText}>
-              {isInitializing ? 'Loading...' : 'Initializing...'}
-            </Text>
+          <View style={styles.loadingContainer} onLayout={onLayoutRootView}>
+            <LoadingScreen
+              message={isInitializing ? 'Initializing...' : 'Loading...'}
+            />
           </View>
         </SafeAreaProvider>
       </ErrorBoundary>
@@ -173,17 +194,19 @@ const RootLayout: React.FC = () => {
     <ErrorBoundary>
       <PowerSyncContext.Provider value={powerSync as AbstractPowerSyncDatabase}>
         <SafeAreaProvider>
-          <StatusBarWrapper />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'default',
-              contentStyle: {
-                backgroundColor: theme?.colors?.background || '#ebe5d9',
-              },
-            }}>
-            <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
-          </Stack>
+          <View style={styles.rootContainer} onLayout={onLayoutRootView}>
+            <StatusBarWrapper />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'default',
+                contentStyle: {
+                  backgroundColor: theme?.colors?.background || '#ebe5d9',
+                },
+              }}>
+              <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+            </Stack>
+          </View>
         </SafeAreaProvider>
       </PowerSyncContext.Provider>
     </ErrorBoundary>
@@ -191,16 +214,11 @@ const RootLayout: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ebe5d9', // Default cream background
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#070707', // Default dark text
   },
   errorContainer: {
     flex: 1,
