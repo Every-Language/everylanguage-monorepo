@@ -297,8 +297,8 @@ export const PlaylistImageUpload: React.FC<PlaylistImageUploadProps> = ({
             <MaterialIcons name='delete' size={20} color={theme.colors.error} />
             <Text
               style={[
-                styles.buttonText,
-                { color: theme.colors.error, marginLeft: 8 },
+                styles.buttonTextWithMargin,
+                { color: theme.colors.error },
               ]}>
               {t('common.remove', 'Remove')}
             </Text>
@@ -380,5 +380,10 @@ const createStyles = (theme: Theme) =>
     buttonText: {
       fontSize: 16,
       fontWeight: '600',
+    },
+    buttonTextWithMargin: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
     },
   });
