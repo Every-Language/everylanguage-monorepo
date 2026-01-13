@@ -3,6 +3,7 @@ import { supabase } from '@/shared/services/api/supabase';
 import { resolveTargetUserId } from '@/shared/services/auth/OfflineIdentity';
 import { generateUUID } from '@/shared/utils/uuid';
 import { PlaylistService } from './PlaylistService';
+import type { Database } from '@everylanguage/shared-types';
 
 // Logging configuration for this module
 const ENABLE_LOGGING = true;
@@ -62,7 +63,7 @@ export class PlaylistImageService {
           // Type assertion: 'playlist' was added to target_type enum in migration
           // 20251231171838_add_playlist_to_target_type_and_images_rls.sql
           // Types will be correct after TypeScript re-reads updated shared-types
-          target_type: 'playlist' as any,
+          target_type: 'playlist' as Database['public']['Enums']['target_type'],
           target_id: playlistId,
           set_id: null,
           created_by: userId,
