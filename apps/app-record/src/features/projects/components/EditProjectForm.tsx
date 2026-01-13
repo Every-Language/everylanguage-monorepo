@@ -368,6 +368,33 @@ export const EditProjectForm: React.FC<EditProjectFormProps> = ({
     [theme.colors.error]
   );
 
+  // Memoize delete button style to avoid inline style warning
+  const deleteButtonStyle = useMemo(
+    () => [
+      styles.deleteButton,
+      {
+        backgroundColor: theme.colors.error,
+        opacity: isLoading || isDeleting ? 0.5 : 1,
+      },
+    ],
+    [theme.colors.error, isLoading, isDeleting]
+  );
+
+  // Memoize delete button text style
+  const deleteButtonTextStyle = useMemo(
+    () => [styles.deleteButtonText, { color: theme.colors.textInverse }],
+    [theme.colors.textInverse]
+  );
+
+  // Memoize modal overlay style
+  const deleteModalOverlayStyle = useMemo(
+    () => [
+      styles.deleteModalOverlay,
+      { backgroundColor: hexToRgba(theme.colors.text, 0.5) },
+    ],
+    [theme.colors.text]
+  );
+
   // Show loading state while project is being fetched
   if (!projectId) {
     return (
@@ -695,21 +722,11 @@ export const EditProjectForm: React.FC<EditProjectFormProps> = ({
         {/* Delete Project Button */}
         <View style={styles.deleteButtonContainer}>
           <TouchableOpacity
-            style={[
-              styles.deleteButton,
-              {
-                backgroundColor: theme.colors.error,
-                opacity: isLoading || isDeleting ? 0.5 : 1,
-              },
-            ]}
+            style={deleteButtonStyle}
             onPress={handleDeletePress}
             disabled={isLoading || isDeleting}
             accessibilityLabel={t('projects.edit.deleteButton')}>
-            <Text
-              style={[
-                styles.deleteButtonText,
-                { color: theme.colors.textInverse },
-              ]}>
+            <Text style={deleteButtonTextStyle}>
               {t('projects.edit.deleteButton')}
             </Text>
           </TouchableOpacity>
@@ -777,7 +794,7 @@ export const EditProjectForm: React.FC<EditProjectFormProps> = ({
         transparent
         animationType='fade'
         onRequestClose={handleDeleteCancel}>
-        <View style={styles.deleteModalOverlay}>
+        <View style={deleteModalOverlayStyle}>
           <View
             style={[
               styles.deleteModalContent,
@@ -1019,11 +1036,9 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#FFFFFF',
   },
   deleteModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,

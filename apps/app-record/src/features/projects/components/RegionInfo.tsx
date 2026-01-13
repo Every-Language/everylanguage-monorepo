@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -75,6 +75,18 @@ export const RegionInfo: React.FC<RegionInfoProps> = ({
 
   const displayName = selectedRegionName || regionDetails?.name || 'Loading...';
   const isLoading = detailsLoading || hierarchyLoading || statsLoading;
+
+  // Memoize select button style to avoid inline style warning
+  const selectButtonStyle = useMemo(
+    () => [
+      styles.selectButton,
+      {
+        backgroundColor: theme.colors.accent,
+        opacity: selectedRegionId ? 1 : 0.5,
+      },
+    ],
+    [theme.colors.accent, selectedRegionId]
+  );
 
   return (
     <SafeAreaView
@@ -176,13 +188,7 @@ export const RegionInfo: React.FC<RegionInfoProps> = ({
           },
         ]}>
         <TouchableOpacity
-          style={[
-            styles.selectButton,
-            {
-              backgroundColor: theme.colors.accent,
-              opacity: selectedRegionId ? 1 : 0.5,
-            },
-          ]}
+          style={selectButtonStyle}
           onPress={handleSelect}
           disabled={!selectedRegionId}>
           <Text

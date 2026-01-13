@@ -14,6 +14,9 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "type-check": "tsc --noEmit",
     "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
     "powersync:generate-schema": "node scripts/generate-powersync-schema.cjs",
     "powersync:combine-schema": "node scripts/combine-powersync-schema.cjs",
     "powersync:build-schema": "npm run powersync:generate-schema && npm run powersync:combine-schema",
@@ -57,6 +60,8 @@
   "devDependencies": {
     "@babel/core": "^7.27.4",
     "@eslint/js": "^9.30.1",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.5",
     "@types/react": "~19.0.10",
@@ -91,11 +96,26 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "coverageProvider": "v8",
     "testPathIgnorePatterns": [
       "/node_modules/",
       "/.expo/",
       "/coverage/"
     ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/**/index.ts",
+      "!src/**/*.test.{ts,tsx}",
+      "!src/**/__tests__/**",
+      "!src/**/__mocks__/**"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "coverageDirectory": "coverage",
     "moduleNameMapper": {
       "^@/powersync/(.*)$": "<rootDir>/powersync/$1",
       "^@/features/(.*)$": "<rootDir>/src/features/$1",
@@ -103,7 +123,7 @@
       "^@/(.*)$": "<rootDir>/src/$1"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|isows|@supabase|@powersync)"
+      "node_modules/(?!(?:\\.pnpm/)?(@react-native|react-native|jest-react-native|@react-native-community|@react-native\\+js-polyfills|@react-native/js-polyfills|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|isows|@supabase|@powersync))"
     ],
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.cjs"

@@ -6,6 +6,7 @@ import {
   createNetworkError,
   isNetworkError,
 } from '@/shared/utils/networkErrors';
+import type { Database } from '@everylanguage/shared-types';
 
 export interface RegionSearchResult {
   region_id: string;
@@ -87,7 +88,9 @@ export const useSearchRegions = (
         setData([]);
       } else {
         // Transform the results to match our interface
-        const transformed = result.map((row: any) => ({
+        type SearchResult =
+          Database['public']['Functions']['search_region_aliases']['Returns'][number];
+        const transformed = result.map((row: SearchResult) => ({
           region_id: row.region_id,
           region_name: row.region_name,
           region_level: row.region_level,

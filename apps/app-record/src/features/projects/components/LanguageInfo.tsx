@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -78,6 +78,18 @@ export const LanguageInfo: React.FC<LanguageInfoProps> = ({
   const displayName =
     selectedLanguageName || languageDetails?.name || 'Loading...';
   const isLoading = detailsLoading || hierarchyLoading || statsLoading;
+
+  // Memoize select button style to avoid inline style warning
+  const selectButtonStyle = useMemo(
+    () => [
+      styles.selectButton,
+      {
+        backgroundColor: theme.colors.accent,
+        opacity: selectedLanguageId ? 1 : 0.5,
+      },
+    ],
+    [theme.colors.accent, selectedLanguageId]
+  );
 
   return (
     <SafeAreaView
@@ -179,13 +191,7 @@ export const LanguageInfo: React.FC<LanguageInfoProps> = ({
           },
         ]}>
         <TouchableOpacity
-          style={[
-            styles.selectButton,
-            {
-              backgroundColor: theme.colors.accent,
-              opacity: selectedLanguageId ? 1 : 0.5,
-            },
-          ]}
+          style={selectButtonStyle}
           onPress={handleSelect}
           disabled={!selectedLanguageId}>
           <Text

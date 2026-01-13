@@ -6,6 +6,7 @@ import {
   createNetworkError,
   isNetworkError,
 } from '@/shared/utils/networkErrors';
+import type { Database } from '@everylanguage/shared-types';
 
 export interface LanguageSearchResult {
   entity_id: string;
@@ -89,7 +90,9 @@ export const useSearchLanguages = (
         setData([]);
       } else {
         // Transform the results to match our interface
-        const transformed = result.map((row: any) => ({
+        type SearchResult =
+          Database['public']['Functions']['search_language_aliases']['Returns'][number];
+        const transformed = result.map((row: SearchResult) => ({
           entity_id: row.entity_id,
           entity_name: row.entity_name,
           entity_level: row.entity_level,
