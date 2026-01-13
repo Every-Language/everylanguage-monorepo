@@ -149,7 +149,7 @@ export default function CreateSequenceFormScreen(): React.JSX.Element {
           },
         ]}>
         <TouchableOpacity
-          style={[styles.closeButton, { backgroundColor: theme.colors.accent }]}
+          style={[styles.closeButton, { backgroundColor: theme.colors.error }]}
           onPress={handleClose}
           accessibilityLabel={t('common.close')}>
           <Ionicons name='close' size={20} color={theme.colors.textInverse} />

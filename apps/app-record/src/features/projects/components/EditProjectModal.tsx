@@ -202,7 +202,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
           <TouchableOpacity
             style={[
               styles.closeButton,
-              { backgroundColor: theme.colors.accent },
+              { backgroundColor: theme.colors.error },
             ]}
             onPress={handleClose}
             accessibilityLabel={t('common.close')}>

@@ -187,7 +187,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           <TouchableOpacity
             style={[
               styles.closeButton,
-              { backgroundColor: theme.colors.accent },
+              { backgroundColor: theme.colors.error },
             ]}
             onPress={handleClose}
             accessibilityLabel={t('common.close')}>

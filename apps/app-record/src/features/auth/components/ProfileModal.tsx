@@ -245,7 +245,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <TouchableOpacity
             style={[
               styles.closeButton,
-              { backgroundColor: theme.colors.accent },
+              { backgroundColor: theme.colors.error },
             ]}
             onPress={onClose}
             accessibilityLabel={t('common.close')}>
