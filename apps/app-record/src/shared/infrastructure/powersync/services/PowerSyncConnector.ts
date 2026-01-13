@@ -1,6 +1,6 @@
 import { UpdateType, AbstractPowerSyncDatabase } from '@powersync/react-native';
 import { supabase } from '@/shared/infrastructure/supabase/client';
-import { env } from '@/app/config/env';
+import { env } from '@/shared/config/env';
 import { logger } from '@/shared/utils/logger';
 import type { PowerSyncBackendConnector, PowerSyncCredentials } from '../types';
 

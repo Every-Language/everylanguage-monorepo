@@ -3,6 +3,7 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
+      'expo-router/babel',
       [
         'module-resolver',
         {
@@ -20,13 +21,13 @@ module.exports = function (api) {
           alias: {
             // More specific aliases must come first
             '@/powersync': './powersync',
-            '@/app': './src/app',
             '@/features': './src/features',
             '@/shared': './src/shared',
             '@': './src',
           },
         },
       ],
+      'react-native-reanimated/plugin',
     ],
   };
 };

@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: colors.text,
+    color: colors.textPrimary,
   },
   tableContainer: {
     marginBottom: 24,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-    color: colors.text,
+    color: colors.textPrimary,
   },
   tableScroll: {
     maxHeight: 300,
@@ -143,13 +143,13 @@ const styles = StyleSheet.create({
     padding: 8,
     fontWeight: '600',
     backgroundColor: colors.gray,
-    color: colors.text,
+    color: colors.textPrimary,
     minWidth: 100,
     fontSize: 12,
   },
   tableCell: {
     padding: 8,
-    color: colors.text,
+    color: colors.textPrimary,
     minWidth: 100,
     fontSize: 11,
     borderRightWidth: 1,

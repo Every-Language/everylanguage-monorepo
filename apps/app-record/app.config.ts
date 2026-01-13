@@ -176,7 +176,6 @@ const base = {
   scheme: 'everylanguage',
   newArchEnabled: false,
   extra: {
-    router: { origin: false },
     eas: { projectId: '8d2fb795-58b5-4eda-98b7-2cf9c20cf82c' },
   },
   owner: 'every-language',

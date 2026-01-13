@@ -1,0 +1,80 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro",
+    "cancel": "Cancelar",
+    "ok": "OK",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "continue": "Continuar",
+    "done": "Concluído",
+    "retry": "Tentar novamente",
+    "close": "Fechar",
+    "settings": "Configurações",
+    "success": "Sucesso",
+    "confirm": "Confirmar"
+  },
+  "nav": {
+    "home": "Início",
+    "menu": "Menu",
+    "record": "Gravar",
+    "publish": "Publicar",
+    "projects": "Projetos"
+  },
+  "settings": {
+    "title": "Configurações",
+    "appearance": "Aparência",
+    "appLanguage": "Idioma do Aplicativo",
+    "myProfile": "Meu Perfil",
+    "debug": "Depuração",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Escuro",
+    "themeSystem": "Padrão do Sistema"
+  },
+  "appearance": {
+    "title": "Aparência",
+    "theme": "Tema",
+    "appTheme": "Tema do Aplicativo"
+  },
+  "language": {
+    "title": "Idioma do Aplicativo",
+    "selectLanguage": "Selecionar Idioma",
+    "currentLanguage": "Idioma Atual",
+    "english": "Inglês"
+  },
+  "sequences": {
+    "title": "Sequências",
+    "empty": "Nenhuma sequência ainda",
+    "emptySubtext": "Toque no botão + para criar sua primeira sequência",
+    "errorLoading": "Erro ao carregar sequências",
+    "noProjectId": "ID do projeto está faltando",
+    "create": {
+      "title": "Nova Sequência",
+      "name": "Nome",
+      "namePlaceholder": "Digite o nome da sequência",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Digite a descrição da sequência (opcional)",
+      "book": "Livro",
+      "selectBook": "Selecionar Livro",
+      "chapter": "Capítulo",
+      "selectChapter": "Selecionar Capítulo",
+      "chapterNumber": "Capítulo {{number}}",
+      "createButton": "Criar",
+      "searchBooks": "Pesquisar livros...",
+      "searchChapters": "Pesquisar capítulos...",
+      "noBooksFound": "Nenhum livro encontrado",
+      "noChaptersFound": "Nenhum capítulo encontrado",
+      "nameRequired": "O nome da sequência é obrigatório",
+      "nameMaxLength": "O nome da sequência deve ter no máximo {{max}} caracteres",
+      "descriptionMaxLength": "A descrição deve ter no máximo {{max}} caracteres",
+      "bookRequired": "A seleção do livro é obrigatória",
+      "chapterRequired": "A seleção do capítulo é obrigatória",
+      "bookAndChapterRequired": "Por favor, selecione um livro e um capítulo",
+      "error": "Falha ao criar sequência. Tente novamente."
+    }
+  }
+}
