@@ -6,7 +6,7 @@ const bible_versions = new Table(
     name: column.text,
     structure_notes: column.text,
     created_at: column.text,
-    updated_at: column.text,
+    updated_at: column.text
   },
   { indexes: {} }
 );
@@ -19,7 +19,7 @@ const books = new Table(
     created_at: column.text,
     updated_at: column.text,
     global_order: column.integer,
-    testament: column.text,
+    testament: column.text
   },
   { indexes: {} }
 );
@@ -31,7 +31,7 @@ const chapters = new Table(
     total_verses: column.integer,
     created_at: column.text,
     updated_at: column.text,
-    global_order: column.integer,
+    global_order: column.integer
   },
   { indexes: {} }
 );
@@ -42,7 +42,7 @@ const verses = new Table(
     verse_number: column.integer,
     created_at: column.text,
     updated_at: column.text,
-    global_order: column.integer,
+    global_order: column.integer
   },
   { indexes: {} }
 );
@@ -63,7 +63,7 @@ const projects = new Table(
     region_name: column.text,
     source_language_name: column.text,
     target_language_name: column.text,
-    publish_status: column.text,
+    publish_status: column.text
   },
   { indexes: {} }
 );
@@ -84,7 +84,7 @@ const sequences = new Table(
     upload_status: column.text,
     publish_status: column.text,
     check_status: column.text,
-    chapter_id: column.text,
+    chapter_id: column.text
   },
   { indexes: {} }
 );
@@ -105,7 +105,7 @@ const segments = new Table(
     storage_provider: column.text,
     object_key: column.text,
     original_filename: column.text,
-    file_type: column.text,
+    file_type: column.text
   },
   { indexes: {} }
 );
@@ -120,7 +120,7 @@ const audio_versions = new Table(
     created_by: column.text,
     updated_at: column.text,
     deleted_at: column.text,
-    publish_status: column.text,
+    publish_status: column.text
   },
   { indexes: {} }
 );
@@ -149,7 +149,7 @@ const media_files = new Table(
     original_filename: column.text,
     file_type: column.text,
     sequence_id: column.text,
-    project_id: column.text,
+    project_id: column.text
   },
   { indexes: {} }
 );
@@ -167,7 +167,7 @@ const media_files_verses = new Table(
     denormalized_audio_version_id: column.text,
     verse_checker_status: column.text,
     verse_checker_comment: column.text,
-    project_id: column.text,
+    project_id: column.text
   },
   { indexes: {} }
 );
@@ -181,5 +181,5 @@ export const AppSchema = new Schema({
   segments,
   audio_versions,
   media_files,
-  media_files_verses,
+  media_files_verses
 });
