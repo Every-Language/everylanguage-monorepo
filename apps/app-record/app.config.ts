@@ -171,12 +171,24 @@ const base = {
       },
     ],
     'expo-asset',
+    [
+      'expo-splash-screen',
+      {
+        backgroundColor: '#ebe5d9', // Cream background (light theme)
+        image: './assets/icon.png',
+        dark: {
+          backgroundColor: '#070707', // Almost black background (dark theme)
+          image: './assets/icon.png',
+        },
+        imageWidth: 200,
+        resizeMode: 'contain',
+      },
+    ],
     './plugins/sqlite-config-plugin.cjs',
   ],
   scheme: 'everylanguage',
   newArchEnabled: false,
   extra: {
-    router: { origin: false },
     eas: { projectId: '8d2fb795-58b5-4eda-98b7-2cf9c20cf82c' },
   },
   owner: 'every-language',
