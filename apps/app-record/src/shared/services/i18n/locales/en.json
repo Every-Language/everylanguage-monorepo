@@ -1,0 +1,146 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "continue": "Continue",
+    "done": "Done",
+    "retry": "Retry",
+    "close": "Close",
+    "settings": "Settings",
+    "success": "Success",
+    "confirm": "Confirm"
+  },
+  "nav": {
+    "home": "Home",
+    "menu": "Menu",
+    "record": "Record",
+    "publish": "Publish",
+    "projects": "Projects"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "appLanguage": "App Language",
+    "myProfile": "My Profile",
+    "debug": "Debug",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System Default"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "theme": "Theme",
+    "appTheme": "App Theme"
+  },
+  "language": {
+    "title": "App Language",
+    "selectLanguage": "Select Language",
+    "currentLanguage": "Current Language",
+    "english": "English"
+  },
+  "projects": {
+    "title": "Projects",
+    "empty": "No projects yet",
+    "emptySubtext": "Tap the + button to create your first project",
+    "errorLoading": "Error loading projects",
+    "create": {
+      "title": "New Project",
+      "name": "Name",
+      "namePlaceholder": "Enter project name",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter project description (optional)",
+      "sourceLanguage": "Source Language",
+      "selectSourceLanguage": "Select Source Language",
+      "targetLanguage": "Target Language",
+      "selectTargetLanguage": "Select Target Language",
+      "region": "Region",
+      "selectRegion": "Select Region",
+      "createButton": "Create",
+      "nameRequired": "Project name is required",
+      "nameMaxLength": "Project name must be {{max}} characters or less",
+      "descriptionMaxLength": "Description must be {{max}} characters or less",
+      "error": "Failed to create project. Please try again."
+    },
+    "edit": {
+      "title": "Edit Project",
+      "saveButton": "Save",
+      "deleteButton": "Delete project",
+      "deleteConfirmation": {
+        "title": "Are you sure you want to delete this project?",
+        "message": "This is permanent and cannot be recovered",
+        "enterProjectName": "Enter the project name to confirm",
+        "deleteButton": "Delete"
+      }
+    }
+  },
+  "sequences": {
+    "title": "Sequences",
+    "empty": "No sequences yet",
+    "emptySubtext": "Tap the + button to create your first sequence",
+    "errorLoading": "Error loading sequences",
+    "noProjectId": "Project ID is missing",
+    "create": {
+      "title": "New Sequence",
+      "name": "Name",
+      "namePlaceholder": "Enter sequence name",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter sequence description (optional)",
+      "book": "Book",
+      "selectBook": "Select Book",
+      "chapter": "Chapter",
+      "selectChapter": "Select Chapter",
+      "chapterNumber": "Chapter {{number}}",
+      "createButton": "Create",
+      "searchBooks": "Search books...",
+      "searchChapters": "Search chapters...",
+      "noBooksFound": "No books found",
+      "noChaptersFound": "No chapters found",
+      "nameRequired": "Sequence name is required",
+      "nameMaxLength": "Sequence name must be {{max}} characters or less",
+      "descriptionMaxLength": "Description must be {{max}} characters or less",
+      "bookRequired": "Book selection is required",
+      "chapterRequired": "Chapter selection is required",
+      "bookAndChapterRequired": "Please select both a book and chapter",
+      "error": "Failed to create sequence. Please try again."
+    }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "emailPasswordRequired": "Email and password are required",
+    "signInSuccess": "Successfully signed in",
+    "signInFailed": "Sign in failed",
+    "signOutSuccess": "Successfully signed out",
+    "signOutFailed": "Sign out failed",
+    "signingIn": "Signing in...",
+    "signingOut": "Signing out...",
+    "account": "Account",
+    "userId": "User ID",
+    "myProfile": "My Profile",
+    "errorOccurred": "An error occurred"
+  },
+  "publish": {
+    "title": "Publish",
+    "signInRequired": "Please sign in to publish projects",
+    "placeholder": "Publish your projects",
+    "subtitle": "Upload and share your Bible audio recordings"
+  },
+  "record": {
+    "title": "Record",
+    "placeholder": "Start recording",
+    "subtitle": "Record Bible audio for your projects"
+  },
+  "debug": {
+    "title": "Debug"
+  }
+}

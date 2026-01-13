@@ -22,5 +22,11 @@ module.exports = (async () => {
     ],
   };
 
+  // Support Expo Router
+  config.transformer = {
+    ...config.transformer,
+    unstable_allowRequireContext: true,
+  };
+
   return config;
 })();

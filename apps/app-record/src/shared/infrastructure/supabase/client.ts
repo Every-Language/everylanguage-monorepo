@@ -1,4 +1,3 @@
-import { AppState } from 'react-native';
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
@@ -9,7 +8,7 @@ import {
   getRequiredEnvVar,
   environmentInfo,
   debugEnvironmentConfig,
-} from '@/app/config/env';
+} from '@/shared/config/env';
 import { logger } from '@/shared/utils/logger';
 
 // Define proper types for global and process
@@ -68,19 +67,10 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Tell React Native to use our fast refresh
-if (AppState.currentState === 'active') {
-  // Only set up listeners in active state
-  AppState.addEventListener('change', nextAppState => {
-    if (nextAppState === 'active') {
-      supabase.auth.startAutoRefresh();
-    } else {
-      supabase.auth.stopAutoRefresh();
-    }
-  });
-}
-
 // Verify client was created successfully
 if (!supabase) {
   throw new Error('Failed to create Supabase client');
 }
+
+// Note: AppState listener for auth token refresh is now managed by useSupabaseAppState hook
+// This prevents memory leaks and ensures proper cleanup
