@@ -7,9 +7,10 @@
       "@/*": ["src/*"],
       "@/app/*": ["src/app/*"],
       "@/features/*": ["src/features/*"],
-      "@/shared/*": ["src/shared/*"]
+      "@/shared/*": ["src/shared/*"],
+      "@/powersync/*": ["powersync/*"]
     },
-    "types": ["jest", "react-native-svg", "node"],
+    "types": ["jest", "node"],
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
     "exactOptionalPropertyTypes": true,

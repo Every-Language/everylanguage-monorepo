@@ -1,5 +1,5 @@
-// Logging utility for the Bible App
-// This provides a centralized way to handle logging with environment-based control
+// Logging utility for the app
+// Provides centralized logging with environment-based control
 /* eslint-disable no-console */
 
 // Global declaration for React Native __DEV__ variable
@@ -96,12 +96,9 @@ class Logger {
     return `[${timestamp}] ${level}: ${message}${formattedArgs}`;
   }
 
-  error(shouldLog: boolean, message: string, ...args: unknown[]): void {
-    // Always show errors in dev mode, or when explicitly enabled
-    const shouldShowError =
-      __DEV__ || (shouldLog && this.shouldLog(LogLevel.ERROR));
-
-    if (shouldShowError) {
+  error(message: string, ...args: unknown[]): void {
+    // Always show errors in dev mode, or when log level allows
+    if (__DEV__ || this.shouldLog(LogLevel.ERROR)) {
       const formattedMessage = this.formatMessage('ERROR', message, ...args);
       if (this.config.enableConsole) {
         console.error(formattedMessage);
@@ -110,8 +107,8 @@ class Logger {
     }
   }
 
-  warn(shouldLog: boolean, message: string, ...args: unknown[]): void {
-    if (shouldLog && this.shouldLog(LogLevel.WARN)) {
+  warn(message: string, ...args: unknown[]): void {
+    if (this.shouldLog(LogLevel.WARN)) {
       const formattedMessage = this.formatMessage('WARN', message, ...args);
       if (this.config.enableConsole) {
         console.warn(formattedMessage);
@@ -119,18 +116,17 @@ class Logger {
     }
   }
 
-  info(shouldLog: boolean, message: string, ...args: unknown[]): void {
-    if (shouldLog && this.shouldLog(LogLevel.INFO)) {
+  info(message: string, ...args: unknown[]): void {
+    if (this.shouldLog(LogLevel.INFO)) {
       const formattedMessage = this.formatMessage('INFO', message, ...args);
       if (this.config.enableConsole) {
         console.info(formattedMessage);
-        console.log(this.config);
       }
     }
   }
 
-  debug(shouldLog: boolean, message: string, ...args: unknown[]): void {
-    if (shouldLog && this.shouldLog(LogLevel.DEBUG)) {
+  debug(message: string, ...args: unknown[]): void {
+    if (this.shouldLog(LogLevel.DEBUG)) {
       const formattedMessage = this.formatMessage('DEBUG', message, ...args);
       if (this.config.enableConsole) {
         console.debug(formattedMessage);
@@ -139,8 +135,8 @@ class Logger {
   }
 
   // Convenience method
-  log(shouldLog: boolean, message: string, ...args: unknown[]): void {
-    this.info(shouldLog, message, ...args);
+  log(message: string, ...args: unknown[]): void {
+    this.info(message, ...args);
   }
 
   setConfig(config: Partial<LogConfig>): void {
