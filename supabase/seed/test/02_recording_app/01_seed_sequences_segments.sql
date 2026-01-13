@@ -55,23 +55,39 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================================
 -- SEGMENTS
 -- ============================================================================
+-- Segments now belong directly to sequences (one-to-many relationship)
+-- Storage fields: storage_provider, object_key, original_filename, file_type
 INSERT INTO
   public.segments (
     id,
     type,
-    local_path,
-    remote_path,
+    sequence_id,
+    segment_index,
+    segment_color,
+    is_deleted,
+    is_numbered,
+    storage_provider,
+    object_key,
+    original_filename,
+    file_type,
     created_by,
     created_at,
     updated_at
   )
 VALUES
-  -- Source segments
+  -- Genesis 1 sequence segments
   (
     'dd0e8400-e29b-41d4-a716-446655440001',
     'source',
-    '/local/segments/gen1-source-1.mp3',
-    'https://storage.example.com/segments/gen1-source-1.mp3',
+    'cc0e8400-e29b-41d4-a716-446655440001', -- Genesis Chapter 1 sequence
+    0,
+    '#FF5733',
+    FALSE,
+    TRUE,
+    'r2',
+    'segments/gen1-source-1.mp3',
+    'gen1-source-1.mp3',
+    'mp3',
     '880e8400-e29b-41d4-a716-446655440001', -- Sarah Johnson
     NOW(),
     NOW()
@@ -79,18 +95,31 @@ VALUES
   (
     'dd0e8400-e29b-41d4-a716-446655440002',
     'source',
-    '/local/segments/gen1-source-2.mp3',
-    'https://storage.example.com/segments/gen1-source-2.mp3',
+    'cc0e8400-e29b-41d4-a716-446655440001', -- Genesis Chapter 1 sequence
+    1,
+    '#33FF57',
+    FALSE,
+    TRUE,
+    'r2',
+    'segments/gen1-source-2.mp3',
+    'gen1-source-2.mp3',
+    'mp3',
     '880e8400-e29b-41d4-a716-446655440001',
     NOW(),
     NOW()
   ),
-  -- Target segments
   (
     'dd0e8400-e29b-41d4-a716-446655440003',
     'target',
-    '/local/segments/gen1-target-1.mp3',
-    'https://storage.example.com/segments/gen1-target-1.mp3',
+    'cc0e8400-e29b-41d4-a716-446655440001', -- Genesis Chapter 1 sequence
+    2,
+    '#3357FF',
+    FALSE,
+    TRUE,
+    'r2',
+    'segments/gen1-target-1.mp3',
+    'gen1-target-1.mp3',
+    'mp3',
     '880e8400-e29b-41d4-a716-446655440002', -- Michael Chen
     NOW(),
     NOW()
@@ -98,17 +127,32 @@ VALUES
   (
     'dd0e8400-e29b-41d4-a716-446655440004',
     'target',
-    '/local/segments/gen1-target-2.mp3',
-    'https://storage.example.com/segments/gen1-target-2.mp3',
+    'cc0e8400-e29b-41d4-a716-446655440001', -- Genesis Chapter 1 sequence
+    3,
+    '#FF33F5',
+    FALSE,
+    TRUE,
+    'r2',
+    'segments/gen1-target-2.mp3',
+    'gen1-target-2.mp3',
+    'mp3',
     '880e8400-e29b-41d4-a716-446655440002',
     NOW(),
     NOW()
   ),
+  -- Genesis 2 sequence segments
   (
     'dd0e8400-e29b-41d4-a716-446655440005',
     'source',
-    '/local/segments/gen2-source-1.mp3',
-    'https://storage.example.com/segments/gen2-source-1.mp3',
+    'cc0e8400-e29b-41d4-a716-446655440002', -- Genesis Chapter 2 sequence
+    0,
+    '#FF5733',
+    FALSE,
+    TRUE,
+    'r2',
+    'segments/gen2-source-1.mp3',
+    'gen2-source-1.mp3',
+    'mp3',
     '880e8400-e29b-41d4-a716-446655440001',
     NOW(),
     NOW()
@@ -116,96 +160,16 @@ VALUES
   (
     'dd0e8400-e29b-41d4-a716-446655440006',
     'target',
-    '/local/segments/gen2-target-1.mp3',
-    'https://storage.example.com/segments/gen2-target-1.mp3',
+    'cc0e8400-e29b-41d4-a716-446655440002', -- Genesis Chapter 2 sequence
+    1,
+    '#33FF57',
+    FALSE,
+    TRUE,
+    'r2',
+    'segments/gen2-target-1.mp3',
+    'gen2-target-1.mp3',
+    'mp3',
     '880e8400-e29b-41d4-a716-446655440003', -- Priya Sharma
-    NOW(),
-    NOW()
-  )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================================
--- SEQUENCES_SEGMENTS (Junction table)
--- ============================================================================
-INSERT INTO
-  public.sequences_segments (
-    id,
-    sequence_id,
-    segment_id,
-    segment_index,
-    segment_color,
-    is_deleted,
-    is_numbered,
-    created_at,
-    updated_at
-  )
-VALUES
-  -- Genesis 1 sequence segments
-  (
-    'ee0e8400-e29b-41d4-a716-446655440001',
-    'cc0e8400-e29b-41d4-a716-446655440001',
-    'dd0e8400-e29b-41d4-a716-446655440001',
-    0,
-    '#FF5733',
-    FALSE,
-    TRUE,
-    NOW(),
-    NOW()
-  ),
-  (
-    'ee0e8400-e29b-41d4-a716-446655440002',
-    'cc0e8400-e29b-41d4-a716-446655440001',
-    'dd0e8400-e29b-41d4-a716-446655440002',
-    1,
-    '#33FF57',
-    FALSE,
-    TRUE,
-    NOW(),
-    NOW()
-  ),
-  (
-    'ee0e8400-e29b-41d4-a716-446655440003',
-    'cc0e8400-e29b-41d4-a716-446655440001',
-    'dd0e8400-e29b-41d4-a716-446655440003',
-    2,
-    '#3357FF',
-    FALSE,
-    TRUE,
-    NOW(),
-    NOW()
-  ),
-  (
-    'ee0e8400-e29b-41d4-a716-446655440004',
-    'cc0e8400-e29b-41d4-a716-446655440001',
-    'dd0e8400-e29b-41d4-a716-446655440004',
-    3,
-    '#FF33F5',
-    FALSE,
-    TRUE,
-    NOW(),
-    NOW()
-  ),
-  -- Genesis 2 sequence segments
-  (
-    'ee0e8400-e29b-41d4-a716-446655440005',
-    'cc0e8400-e29b-41d4-a716-446655440002',
-    'dd0e8400-e29b-41d4-a716-446655440005',
-    0,
-    '#FF5733',
-    FALSE,
-    TRUE,
-    NOW(),
-    NOW()
-  ),
-  (
-    'ee0e8400-e29b-41d4-a716-446655440006',
-    'cc0e8400-e29b-41d4-a716-446655440002',
-    'dd0e8400-e29b-41d4-a716-446655440006',
-    1,
-    '#33FF57',
-    FALSE,
-    TRUE,
     NOW(),
     NOW()
   )
