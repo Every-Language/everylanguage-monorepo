@@ -1,85 +1,199 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  TouchableOpacity,
   ScrollView,
-  RefreshControl,
 } from 'react-native';
-import { useTheme } from '@/shared/hooks';
-import { useLocalization } from '@/shared/hooks';
-import { Header, GradientBackground } from '@/shared/components';
-import { useSettingsState, useSettingsActions } from '../store/settingsStore';
-import { MediaSettingsSection } from '../components';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { AppHeader } from '@/shared/ui';
+import { useTheme, useTranslation } from '@/shared/hooks';
+import { environmentInfo } from '@/shared/config/env';
+import { useLocalizationStore } from '@/shared/store/localizationStore';
+import { ProfileModal } from '@/features/auth/components';
 
 /**
- * Main settings screen
+ * Settings Screen
+ *
+ * Main settings screen with navigation to:
+ * - Appearance (theme selection)
+ * - App Language (language selection)
+ * - Debug (shows current HomeScreen debug content)
+ *
+ * Profile access is available via the profile icon button in the header,
+ * which opens a modal with login form (when logged out) or user info (when logged in).
  */
 export const SettingsScreen: React.FC = () => {
+  const router = useRouter();
   const { theme } = useTheme();
-  const { t } = useLocalization();
-  const { isLoading, error } = useSettingsState();
-  const { clearError } = useSettingsActions();
+  const { t } = useTranslation();
+  const { currentLocaleInfo } = useLocalizationStore();
+  const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
 
-  const handleRefresh = () => {
-    // Settings are automatically loaded from storage
-    // This could be used to refresh from a remote source if needed
-    clearError();
+  const handleBack = (): void => {
+    router.back();
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    scrollView: {
-      flex: 1,
-    },
-    content: {
-      paddingBottom: 20,
-    },
-    errorContainer: {
-      padding: 16,
-      backgroundColor: theme.colors.surface,
-      borderColor: theme.colors.error,
-      borderWidth: 1,
-      margin: 16,
-      borderRadius: 8,
-    },
-    errorText: {
-      color: theme.colors.error,
-      fontSize: 14,
-    },
-  });
+  const handleProfilePress = (): void => {
+    setIsProfileModalVisible(true);
+  };
+
+  const handleCloseProfileModal = (): void => {
+    setIsProfileModalVisible(false);
+  };
 
   return (
-    <GradientBackground>
-      <View style={styles.container}>
-        <Header
-          title={t('settings.title', 'Settings')}
-          onBackPress={() => {}}
-        />
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <AppHeader
+        title={t('settings.title')}
+        leftButton={{
+          label: t('common.back'),
+          onPress: handleBack,
+        }}
+        rightButtons={[
+          {
+            icon: (
+              <Ionicons
+                name='person-circle-outline'
+                size={24}
+                color={theme.colors.accent}
+              />
+            ),
+            onPress: handleProfilePress,
+          },
+        ]}
+      />
+      <ScrollView style={styles.content}>
+        <View
+          style={[
+            styles.section,
+            {
+              backgroundColor: theme.colors.surface,
+            },
+          ]}>
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              { borderBottomColor: theme.colors.border },
+            ]}
+            onPress={() => router.push('/(tabs)/menu/settings/appearance')}>
+            <Text style={[styles.menuItemText, { color: theme.colors.text }]}>
+              {t('settings.appearance')}
+            </Text>
+            <Text
+              style={[
+                styles.menuItemChevron,
+                { color: theme.colors.textSecondary },
+              ]}>
+              ›
+            </Text>
+          </TouchableOpacity>
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.content}
-          refreshControl={
-            <RefreshControl
-              refreshing={isLoading}
-              onRefresh={handleRefresh}
-              tintColor={theme.colors.primary}
-              colors={[theme.colors.primary]}
-            />
-          }
-          showsVerticalScrollIndicator={false}>
-          {error && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.menuItemLast}
+            onPress={() => router.push('/(tabs)/menu/settings/app-language')}>
+            <Text style={[styles.menuItemText, { color: theme.colors.text }]}>
+              {t('settings.appLanguage')}
+            </Text>
+            <View style={styles.menuItemRight}>
+              {currentLocaleInfo && (
+                <Text
+                  style={[
+                    styles.menuItemValue,
+                    { color: theme.colors.textSecondary },
+                  ]}>
+                  {currentLocaleInfo.nativeName}
+                </Text>
+              )}
+              <Text
+                style={[
+                  styles.menuItemChevron,
+                  { color: theme.colors.textSecondary },
+                ]}>
+                ›
+              </Text>
             </View>
-          )}
+          </TouchableOpacity>
+        </View>
 
-          <MediaSettingsSection />
-        </ScrollView>
-      </View>
-    </GradientBackground>
+        {environmentInfo.isDevelopment && (
+          <View
+            style={[
+              styles.section,
+              {
+                backgroundColor: theme.colors.surface,
+              },
+            ]}>
+            <TouchableOpacity
+              style={styles.menuItemLast}
+              onPress={() => router.push('/(tabs)/menu/settings/debug')}>
+              <Text style={[styles.menuItemText, { color: theme.colors.text }]}>
+                {t('settings.debug')}
+              </Text>
+              <Text
+                style={[
+                  styles.menuItemChevron,
+                  { color: theme.colors.textSecondary },
+                ]}>
+                ›
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+      <ProfileModal
+        visible={isProfileModalVisible}
+        onClose={handleCloseProfileModal}
+      />
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingTop: 8,
+  },
+  section: {
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  menuItemLast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 0,
+  },
+  menuItemText: {
+    fontSize: 17,
+  },
+  menuItemChevron: {
+    fontSize: 24,
+  },
+  menuItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  menuItemValue: {
+    fontSize: 17,
+  },
+});

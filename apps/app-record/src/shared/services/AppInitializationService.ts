@@ -1,19 +1,22 @@
 import { logger } from '../utils/logger';
-import { powerSyncSystem } from './powersync/PowerSyncSystem';
+import { powerSyncSystem } from '../infrastructure/powersync/services/PowerSyncSystem';
 import { initializeAllStores } from '../store';
-import { initializeVersionsStore } from '../../features/languages/store/versionsStore';
-import { authService } from '../../features/auth/services/authService';
-// Search initialization is handled by components using useSearchInitialization hook
-
-// Logging configuration for this module
-const ENABLE_LOGGING = true;
+import { useAuthStore } from '../auth/store/authStore';
 
 /**
- * Service responsible for initializing the app from scratch
- * Extracted from App.tsx to be reusable for reset scenarios
+ * Service responsible for initializing the app
+ *
+ * This service centralizes all app initialization logic, keeping
+ * app/_layout.tsx clean and focused on rendering.
+ *
+ * Initialization order:
+ * 1. PowerSync database (required for auth and data)
+ * 2. All stores (theme, i18n, localization)
+ * 3. Auth store (may depend on PowerSync)
  */
 class AppInitializationService {
   private static instance: AppInitializationService;
+  private initializationPromise: Promise<void> | null = null;
 
   public static getInstance(): AppInitializationService {
     if (!AppInitializationService.instance) {
@@ -23,139 +26,79 @@ class AppInitializationService {
   }
 
   /**
-   * Initialize the entire app from scratch
-   * This is the same logic used during app startup
+   * Initialize the entire app
+   *
+   * This method is idempotent - calling it multiple times will
+   * return the same promise if initialization is already in progress.
    */
   public async initializeApp(): Promise<void> {
+    // Return existing promise if initialization is already in progress
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    this.initializationPromise = this._doInitialize();
+    return this.initializationPromise;
+  }
+
+  private async _doInitialize(): Promise<void> {
     try {
       logger.info(
-        ENABLE_LOGGING,
         '🚀 AppInitializationService: Starting app initialization...'
       );
 
-      // 1. Initialize PowerSync database first to avoid deadlocks with auth store
+      // 1. Initialize PowerSync database first
+      // This is required before auth store can work properly
       try {
-        logger.info(ENABLE_LOGGING, '📊 Initializing PowerSync database...');
+        logger.info('📊 Initializing PowerSync database...');
         await powerSyncSystem.initialize();
-        logger.info(ENABLE_LOGGING, '✅ PowerSync database initialized');
+        logger.info('✅ PowerSync database initialized');
       } catch (powerSyncInitError) {
         logger.error(
-          ENABLE_LOGGING,
           '❌ PowerSync initialize failed (continuing):',
           powerSyncInitError
         );
         // Continue with initialization even if PowerSync fails
+        // The app can still function in offline mode
       }
 
-      // 2. Initialize all Zustand stores (some may await DB readiness)
-      logger.info(ENABLE_LOGGING, '🏪 Initializing all stores...');
+      // 2. Initialize all Zustand stores
+      // This includes theme, i18n, and localization stores
+      logger.info('🏪 Initializing all stores...');
       await initializeAllStores();
-      logger.info(ENABLE_LOGGING, '✅ All stores initialized');
+      logger.info('✅ All stores initialized');
 
-      // 3. Ensure versions store is ready as soon as PowerSync is initialized
+      // 3. Initialize auth store (non-blocking)
+      // Auth initialization can happen in the background
       try {
-        logger.info(ENABLE_LOGGING, '📚 Initializing versions store...');
-        await initializeVersionsStore();
-        logger.info(ENABLE_LOGGING, '✅ Versions store initialized');
-      } catch (e) {
-        logger.warn(
-          ENABLE_LOGGING,
-          '⚠️ Versions store early init failed (non-fatal)',
-          e
-        );
+        const { initialize } = useAuthStore.getState();
+        logger.info('🔐 Initializing auth store...');
+        // Fire-and-forget - don't block UI on auth initialization
+        void initialize().catch(error => {
+          logger.warn('Auth initialization failed (non-fatal):', error);
+        });
+      } catch (error) {
+        logger.warn('Failed to start auth initialization:', error);
       }
 
-      // 4. Initialize MediaPlayerService
-      try {
-        logger.info(ENABLE_LOGGING, '🎵 Initializing MediaPlayerService...');
-        const { mediaPlayerService } =
-          await import('@/features/media/services');
-        await mediaPlayerService.initialize();
-        logger.info(
-          ENABLE_LOGGING,
-          '✅ MediaPlayerService initialized successfully'
-        );
-      } catch (e) {
-        logger.error(ENABLE_LOGGING, '❌ MediaPlayerService init failed:', e);
-        // Continue without media player - app should still function
-      }
-
-      // 5. Initialize search indexes (fire-and-forget)
-      try {
-        logger.info(ENABLE_LOGGING, '🔍 Initializing search indexes...');
-        // Note: useSearchInitialization is a hook, so we'll handle this differently
-        // For now, we'll let the component handle search initialization
-        logger.info(
-          ENABLE_LOGGING,
-          '✅ Search initialization delegated to components'
-        );
-      } catch (e) {
-        logger.warn(
-          ENABLE_LOGGING,
-          '⚠️ Search initialization failed (non-fatal):',
-          e
-        );
-      }
-
-      // 6. Ensure anonymous session is available
-      try {
-        logger.info(ENABLE_LOGGING, '🔐 Ensuring anonymous session...');
-        await authService.ensureSessionIfOnline();
-        logger.info(ENABLE_LOGGING, '✅ Anonymous session ensured');
-      } catch (e) {
-        logger.warn(
-          ENABLE_LOGGING,
-          '⚠️ Anonymous session setup failed (non-fatal):',
-          e
-        );
-      }
-
-      logger.info(
-        ENABLE_LOGGING,
-        '🎉 AppInitializationService: App initialization completed successfully'
-      );
+      logger.info('✅ AppInitializationService: App initialization complete');
     } catch (error) {
       logger.error(
-        ENABLE_LOGGING,
-        '💥 AppInitializationService: Failed during app initialization:',
+        '❌ AppInitializationService: Initialization failed:',
         error
       );
+      // Reset promise so we can retry
+      this.initializationPromise = null;
       throw error;
     }
   }
 
   /**
-   * Initialize only the core services (PowerSync, stores, auth)
-   * Used for partial initialization scenarios
+   * Reset initialization state
+   * Useful for testing or app reset scenarios
    */
-  public async initializeCoreServices(): Promise<void> {
-    try {
-      logger.info(
-        ENABLE_LOGGING,
-        '🔧 AppInitializationService: Initializing core services...'
-      );
-
-      // Initialize PowerSync database
-      await powerSyncSystem.initialize();
-
-      // Initialize all stores
-      await initializeAllStores();
-
-      // Ensure anonymous session
-      await authService.ensureSessionIfOnline();
-
-      logger.info(
-        ENABLE_LOGGING,
-        '✅ AppInitializationService: Core services initialized'
-      );
-    } catch (error) {
-      logger.error(
-        ENABLE_LOGGING,
-        '❌ AppInitializationService: Core services initialization failed:',
-        error
-      );
-      throw error;
-    }
+  public reset(): void {
+    this.initializationPromise = null;
   }
 }
 

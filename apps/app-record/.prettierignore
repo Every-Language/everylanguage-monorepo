@@ -1,0 +1,3 @@
+# PowerSync generated schema files (must match exactly to pass verification)
+powersync/AppSchema.generated.ts
+powersync/AppSchema.ts
