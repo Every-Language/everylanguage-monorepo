@@ -31,21 +31,21 @@ bucket_definitions:
     data:
       # Projects owned by the user
       - SELECT * FROM projects WHERE id = bucket.project_id
-      
+
       # Sequences linked to the project
       - SELECT * FROM sequences WHERE project_id = bucket.project_id
-      
+
       # Segments linked to the project (via denormalized project_id field)
       # Segments belong to sequences, but project_id is denormalized for efficient querying
       - SELECT * FROM segments WHERE project_id = bucket.project_id
-      
+
       # Audio versions linked to the project
       - SELECT * FROM audio_versions WHERE project_id = bucket.project_id
-      
+
       # Media files linked to the project
       # project_id is denormalized from audio_versions for efficient filtering
       - SELECT * FROM media_files WHERE project_id = bucket.project_id
-      
+
       # Media files verses linked to the project
       # project_id is denormalized for efficient filtering
       # Also filtered by denormalized_audio_version_id and media_file_id to catch all related verses
