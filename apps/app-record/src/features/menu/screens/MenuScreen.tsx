@@ -1,86 +1,113 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '@/shared/hooks';
-import { useLocalization } from '@/shared/hooks';
-import { ModalHeader } from '@/shared/components/ModalHeader';
-import { useAuthContext } from '@/features/auth/hooks/useAuthFromStore';
-import { DownloadPill } from '@/features/downloads/components/DownloadPill';
-import {
-  HistoryMenuItem,
-  AudioVersionMenuItem,
-  TextVersionMenuItem,
-  SettingsMenuItem,
-  ExportBiblePackageMenuItem,
-  ImportBiblePackageMenuItem,
-  ProfileMenuItem,
-  AuthMenuItem,
-  NetworkStatusWidget,
-  PlaylistMenuItem,
-} from '../components';
-import type {
-  MenuScreenProps,
-  MenuStackNavigationProp,
-} from '../navigation/MenuStackNavigator';
-import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { AppHeader } from '@/shared/ui';
+import { useTheme, useTranslation } from '@/shared/hooks';
+import { ProfileModal } from '@/features/auth/components';
 
-export const MenuScreen: React.FC<MenuScreenProps> = () => {
+/**
+ * Menu Screen
+ *
+ * Main menu with navigation to settings and other options.
+ */
+export const MenuScreen: React.FC = () => {
+  const router = useRouter();
   const { theme } = useTheme();
-  const { t } = useLocalization();
-  const navigation = useNavigation<MenuStackNavigationProp>();
-  const insets = useSafeAreaInsets();
-  const { user } = useAuthContext();
+  const { t } = useTranslation();
+  const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
 
-  const isAuthenticated =
-    !!user && !(user as { is_anonymous?: boolean })?.is_anonymous;
-
-  const handleClose = () => {
-    navigation.getParent()?.goBack();
+  const handleSettingsPress = (): void => {
+    router.push('/(tabs)/menu/settings');
   };
 
-  const handleOpenDownloads = () => {
-    const rootNavigation = navigation.getParent() as RootStackNavigationProp;
-    rootNavigation?.navigate('DownloadStatusModal');
+  const handleProfilePress = (): void => {
+    setIsProfileModalVisible(true);
+  };
+
+  const handleCloseProfileModal = (): void => {
+    setIsProfileModalVisible(false);
   };
 
   return (
     <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: theme.colors.modalBackground,
-          paddingBottom: insets.bottom,
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-        },
-      ]}>
-      <ModalHeader title={t('nav.menu')} showClose onClose={handleClose} />
-
-      {/* Content */}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <AppHeader
+        title={t('nav.menu')}
+        rightButtons={[
+          {
+            icon: (
+              <Ionicons
+                name='person-circle-outline'
+                size={24}
+                color={theme.colors.accent}
+              />
+            ),
+            onPress: handleProfilePress,
+          },
+        ]}
+      />
       <View style={styles.content}>
-        <View style={styles.menuItems}>
-          <HistoryMenuItem />
-          <DownloadPill onPress={handleOpenDownloads} />
-
-          <AudioVersionMenuItem />
-          <TextVersionMenuItem />
-          <PlaylistMenuItem />
-          <NetworkStatusWidget />
-          <SettingsMenuItem />
-          <ExportBiblePackageMenuItem />
-
-          {isAuthenticated ? <ProfileMenuItem /> : <AuthMenuItem />}
-
-          <ImportBiblePackageMenuItem />
+        <View
+          style={[
+            styles.section,
+            {
+              backgroundColor: theme.colors.surface,
+            },
+          ]}>
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              { borderBottomColor: theme.colors.border },
+            ]}
+            onPress={handleSettingsPress}>
+            <Text style={[styles.menuItemText, { color: theme.colors.text }]}>
+              {t('common.settings')}
+            </Text>
+            <Text
+              style={[
+                styles.menuItemChevron,
+                { color: theme.colors.textSecondary },
+              ]}>
+              ›
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
+      <ProfileModal
+        visible={isProfileModalVisible}
+        onClose={handleCloseProfileModal}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { flex: 1, padding: 16 },
-  menuItems: { gap: 8 },
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingTop: 8,
+  },
+  section: {
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  menuItemText: {
+    fontSize: 17,
+  },
+  menuItemChevron: {
+    fontSize: 24,
+  },
 });

@@ -1,11 +1,9 @@
-// Export all hooks for easy importing
-export { useUserProfile } from './useUserProfile';
-export { useProfileOperations } from './useProfileOperations';
-export { useAuthProfileSync } from './useAuthProfileSync';
-export { useLocalization, useTranslations } from './useLocalizationFromStore';
-export { useTheme } from './useThemeFromStore';
-export { useNetworkState, useNetworkForAction } from './useNetworkState';
-export { useOptimisticNetwork } from './useOptimisticNetwork';
-export { useLocation } from './useLocation';
-export { useQueryLogger } from './useQueryLogger';
-export { useQueryPerformance } from './useQueryPerformance';
+// Generic hooks only - domain-specific hooks belong in their respective modules
+// (e.g., PowerSync hooks in infrastructure/powersync/hooks)
+export { useTheme } from './useTheme';
+export { useTranslation } from './useTranslation';
+export { useAuth } from './useAuth';
+export { useSupabaseAppState } from './useSupabaseAppState';
+export { useNetworkConnectivity } from './useNetworkConnectivity';
+export type { User, Session } from './useAuth';
+export type { NetworkConnectivityState } from './useNetworkConnectivity';

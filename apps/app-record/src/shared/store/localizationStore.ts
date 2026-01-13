@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { I18nManager } from 'react-native';
-import * as Updates from 'expo-updates';
 import i18n, {
   SUPPORTED_LOCALES,
   saveLocalePreference,
@@ -15,7 +14,7 @@ import i18n, {
 import { logger } from '../utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = __DEV__;
 
 // Types
 export interface LocalizationState {
@@ -31,7 +30,6 @@ export interface LocalizationActions {
   changeLocale: (localeCode: string) => Promise<void>;
   setLoading: (loading: boolean) => void;
   clearError: () => void;
-  // Computed getters
   getSupportedLocales: () => typeof SUPPORTED_LOCALES;
   getTranslationFunction: () => typeof i18n.t;
 }
@@ -65,17 +63,8 @@ export const useLocalizationStore = create<LocalizationStore>()(
           if (I18nManager.isRTL !== newIsRTL) {
             I18nManager.allowRTL(newIsRTL);
             I18nManager.forceRTL(newIsRTL);
-            // Reload app to fully apply RTL change
-            try {
-              await Updates.reloadAsync();
-            } catch (reloadError) {
-              logger.warn(
-                true,
-                'Failed to reload after RTL change:',
-                reloadError
-              );
-            }
-            return;
+            // Note: App restart may be required for RTL changes to fully apply
+            // The change will persist and apply on next app launch
           }
 
           set({
@@ -86,7 +75,9 @@ export const useLocalizationStore = create<LocalizationStore>()(
             isLoading: false,
           });
         } catch (error) {
-          logger.error(ENABLE_LOGGING, 'Failed to change locale:', error);
+          if (ENABLE_LOGGING) {
+            logger.error('Failed to change locale:', error);
+          }
           set({
             error: 'Failed to change locale',
             isLoading: false,
@@ -110,18 +101,17 @@ export const useLocalizationStore = create<LocalizationStore>()(
     {
       name: 'localization-store',
       storage: createJSONStorage(() => AsyncStorage),
-      // Only persist the current locale, not loading/error states
       partialize: state => ({
         currentLocale: state.currentLocale,
-        isRTL: state.isRTL,
-        direction: state.direction,
       }),
     }
   )
 );
 
 // Initialize localization store
-export const initializeLocalizationStore = async () => {
+export const initializeLocalizationStore = async (): Promise<
+  (() => void) | void
+> => {
   const store = useLocalizationStore.getState();
 
   try {
@@ -133,7 +123,6 @@ export const initializeLocalizationStore = async () => {
 
     if (isFirst) {
       logger.info(
-        true,
         `First app launch detected. Device locale: ${deviceLocale}, Selected locale: ${i18n.language}`
       );
     }
@@ -174,29 +163,22 @@ export const initializeLocalizationStore = async () => {
         direction,
         isLoading: false,
       });
-
-      logger.info(ENABLE_LOGGING, `Locale changed to: ${lng}`);
     };
 
     // Listen for locale changes
     i18n.on('languageChanged', handleLocaleChange);
 
-    logger.info(
-      true,
-      `Localization store initialized with locale: ${currentLocale}`
-    );
+    logger.info(`Localization store initialized with locale: ${currentLocale}`);
 
     // Return cleanup function
     return () => {
       i18n.off('languageChanged', handleLocaleChange);
     };
   } catch (error) {
-    logger.error(
-      ENABLE_LOGGING,
-      'Failed to initialize localization store:',
-      error
-    );
+    if (ENABLE_LOGGING) {
+      logger.error('Failed to initialize localization store:', error);
+    }
     store.setLoading(false);
-    return () => {}; // Return empty cleanup function
+    store.clearError();
   }
 };
