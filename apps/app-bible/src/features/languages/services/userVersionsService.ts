@@ -2,7 +2,6 @@ import { logger } from '../../../shared/utils/logger';
 import { AudioVersion, TextVersion } from '../types/entities';
 import { powerSyncSystem } from '../../../shared/services/powersync/PowerSyncSystem';
 import { queryLogger } from '@/shared/utils/queryLogger';
-import { useAuthStore } from '@/shared/store/authStore';
 
 // Logging configuration for this module
 const ENABLE_LOGGING = false;
@@ -18,21 +17,18 @@ import { generateUUID } from '@/shared/utils/uuid';
 export class UserVersionsService {
   private static instance: UserVersionsService;
 
+  // Cache for dynamically imported auth store module
+  private static authStoreModule:
+    | typeof import('@/shared/store/authStore')
+    | null = null;
+
   // Cached user id (read lazily from auth store to avoid heavy lookups/logging)
   private currentUserId: string | null = null;
 
   private constructor() {
-    try {
-      const state = useAuthStore.getState();
-      this.currentUserId = state.userId ?? null;
-    } catch (error) {
-      logger.warn(
-        ENABLE_LOGGING,
-        'UserVersionsService: Failed to read initial auth state',
-        error
-      );
-      this.currentUserId = null;
-    }
+    // Defer auth state reading to break require cycle
+    // Auth state will be read on first method call via getCurrentUserId()
+    this.currentUserId = null;
   }
 
   static getInstance(): UserVersionsService {
@@ -49,20 +45,40 @@ export class UserVersionsService {
     }
   }
 
+  /**
+   * Get auth store module with caching to avoid repeated dynamic imports
+   * This breaks the require cycle by deferring the import until runtime
+   */
+  private async getAuthStore() {
+    if (!UserVersionsService.authStoreModule) {
+      UserVersionsService.authStoreModule =
+        await import('@/shared/store/authStore');
+    }
+    return UserVersionsService.authStoreModule.useAuthStore;
+  }
+
   /** Get the current user's auth ID from cached auth store */
-  private getCurrentUserId(): string | null {
+  private async getCurrentUserId(): Promise<string | null> {
     try {
+      const useAuthStore = await this.getAuthStore();
       const state = useAuthStore.getState();
       this.currentUserId = state.userId ?? null;
       return this.currentUserId;
-    } catch {
+    } catch (error) {
+      logger.warn(
+        ENABLE_LOGGING,
+        'UserVersionsService: Failed to get auth store',
+        error
+      );
       return this.currentUserId ?? null;
     }
   }
 
   /** Get authenticated user id or throw with a helpful message for write ops */
-  private requireUserIdOrThrow(actionDescription: string): string {
-    const userId = this.getCurrentUserId();
+  private async requireUserIdOrThrow(
+    actionDescription: string
+  ): Promise<string> {
+    const userId = await this.getCurrentUserId();
     if (!userId) {
       throw new Error(
         `Authentication required to ${actionDescription}. Please sign in to sync your data.`
@@ -95,7 +111,7 @@ export class UserVersionsService {
           versionKeys: Object.keys(version),
         }
       );
-      const userId = this.requireUserIdOrThrow('save versions');
+      const userId = await this.requireUserIdOrThrow('save versions');
 
       // Check if already exists
       const table =
@@ -231,7 +247,7 @@ export class UserVersionsService {
   ): Promise<void> {
     try {
       this.ensureDbReady();
-      const userId = this.requireUserIdOrThrow('manage saved versions');
+      const userId = await this.requireUserIdOrThrow('manage saved versions');
 
       const table =
         type === 'audio'
@@ -266,7 +282,7 @@ export class UserVersionsService {
     try {
       this.ensureDbReady();
 
-      const userId = this.getCurrentUserId();
+      const userId = await this.getCurrentUserId();
       if (!userId) {
         logger.info(
           ENABLE_LOGGING,
@@ -392,7 +408,7 @@ export class UserVersionsService {
     try {
       this.ensureDbReady();
 
-      const userId = this.getCurrentUserId();
+      const userId = await this.getCurrentUserId();
       if (!userId) return false;
 
       const table =
@@ -430,7 +446,7 @@ export class UserVersionsService {
     try {
       this.ensureDbReady();
 
-      const userId = this.getCurrentUserId();
+      const userId = await this.getCurrentUserId();
       if (!userId) {
         return { audio: null, text: null };
       }
@@ -549,7 +565,7 @@ export class UserVersionsService {
     await this.updateCurrentSelection('audio', version?.id || null);
     try {
       const id = version?.id || null;
-      const uid = this.getCurrentUserId();
+      const uid = await this.getCurrentUserId();
       logger.info(
         ENABLE_LOGGING,
         'UserVersionsService: setCurrentAudioVersion',
@@ -608,7 +624,7 @@ export class UserVersionsService {
   ): Promise<void> {
     this.ensureDbReady();
 
-    const userId = this.requireUserIdOrThrow('set current selections');
+    const userId = await this.requireUserIdOrThrow('set current selections');
     const timestamp = new Date().toISOString();
 
     try {
@@ -709,7 +725,7 @@ export class UserVersionsService {
   ): Promise<void> {
     this.ensureDbReady();
 
-    const userId = this.requireUserIdOrThrow('set current selections');
+    const userId = await this.requireUserIdOrThrow('set current selections');
     const timestamp = new Date().toISOString();
 
     try {
@@ -799,7 +815,7 @@ export class UserVersionsService {
    * Watch saved versions for real-time updates (authenticated users only)
    */
   async watchSavedVersions() {
-    const userId = this.getCurrentUserId();
+    const userId = await this.getCurrentUserId();
     if (!userId) {
       // Return empty watcher for anonymous users
       return powerSyncSystem.watch(
@@ -838,7 +854,7 @@ export class UserVersionsService {
    * Watch current selections for real-time updates (authenticated users only)
    */
   async watchCurrentSelections() {
-    const userId = this.getCurrentUserId();
+    const userId = await this.getCurrentUserId();
     if (!userId) {
       // Return empty watcher for anonymous users
       return powerSyncSystem.watch(
