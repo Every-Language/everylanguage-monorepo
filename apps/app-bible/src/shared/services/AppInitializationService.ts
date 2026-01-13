@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 import { powerSyncSystem } from './powersync/PowerSyncSystem';
-import { initializeAllStores } from '../store';
+import { initializeAllStores } from '../store/initializeStores';
 import { initializeVersionsStore } from '../../features/languages/store/versionsStore';
 import { authService } from '../../features/auth/services/authService';
 // Search initialization is handled by components using useSearchInitialization hook
