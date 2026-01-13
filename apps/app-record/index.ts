@@ -1,5 +1,1 @@
-import { registerRootComponent } from 'expo';
-import App from './src/app/App';
-
-// Register the app
-registerRootComponent(App);
+import 'expo-router/entry';

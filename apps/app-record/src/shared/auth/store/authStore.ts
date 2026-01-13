@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/shared/infrastructure/supabase/client';
+import { powerSyncSystem } from '@/shared/infrastructure/powersync/services/PowerSyncSystem';
 import { logger } from '@/shared/utils/logger';
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
@@ -116,6 +117,21 @@ export const useAuthStore = create<AuthStore>()(
         signOut: async () => {
           set({ isLoading: true });
           try {
+            // Disconnect PowerSync before signing out
+            // This prevents sync attempts with invalid credentials
+            if (powerSyncSystem.isConnected) {
+              try {
+                await powerSyncSystem.disconnect();
+                logger.info('PowerSync disconnected on sign out');
+              } catch (error) {
+                // Non-fatal: log but continue with sign out
+                logger.warn(
+                  'Failed to disconnect PowerSync on sign out:',
+                  error
+                );
+              }
+            }
+
             await supabase.auth.signOut();
             set({ session: null, user: null });
             logger.info('User signed out successfully');
