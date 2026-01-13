@@ -72,7 +72,20 @@ export const StepThankYou: React.FC<StepThankYouProps> = ({
       };
     }
 
-    // Default: show "Confirmed" optimistically for card payments
+    // If status is explicitly set to something other than null, show it
+    if (
+      donationStatus &&
+      donationStatus !== 'pending' &&
+      donationStatus !== 'processing'
+    ) {
+      return {
+        text: donationStatus.charAt(0).toUpperCase() + donationStatus.slice(1),
+        className: 'text-yellow-600 dark:text-yellow-400',
+      };
+    }
+
+    // Default: show "Confirmed" optimistically for card payments when status is null/pending/processing
+    // This handles the case where we're still waiting for the initial status fetch
     return {
       text: 'Confirmed',
       className: 'text-success-600 dark:text-success-400',

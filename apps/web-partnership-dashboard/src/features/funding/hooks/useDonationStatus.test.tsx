@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { useDonationStatus } from './useDonationStatus';
@@ -54,10 +54,8 @@ describe('useDonationStatus', () => {
     mockChannel = {
       on: vi.fn().mockReturnThis(),
       subscribe: vi.fn().mockImplementation(callback => {
-        // Simulate successful subscription
-        setTimeout(() => {
-          callback('SUBSCRIBED');
-        }, 0);
+        // Simulate successful subscription (sync to avoid act warnings/flakiness)
+        callback('SUBSCRIBED');
         return mockChannel;
       }),
     };
@@ -216,16 +214,11 @@ describe('useDonationStatus', () => {
         }),
       });
 
-      let realtimeCallback:
-        | ((payload: { new: { status: string } }) => void)
-        | null = null;
+      type RealtimeCallback = (payload: { new: { status: string } }) => void;
+      let realtimeCallback: RealtimeCallback | null = null;
 
       mockChannel.on.mockImplementation(
-        (
-          event: string,
-          config: unknown,
-          callback?: (payload: { new: { status: string } }) => void
-        ) => {
+        (event: string, config: unknown, callback?: RealtimeCallback) => {
           if (event === 'postgres_changes' && callback) {
             realtimeCallback = callback;
           }
@@ -243,11 +236,18 @@ describe('useDonationStatus', () => {
 
       // Simulate real-time update
       expect(realtimeCallback).not.toBeNull();
-      if (realtimeCallback) {
-        realtimeCallback({
-          new: { status: 'completed' },
-        } as { new: { status: string } });
+      if (!realtimeCallback) {
+        throw new Error('realtimeCallback should not be null');
       }
+      const cb: (payload: { new: { status: string } }) => void =
+        realtimeCallback as unknown as (payload: {
+          new: { status: string };
+        }) => void;
+      act(() => {
+        cb({
+          new: { status: 'completed' },
+        });
+      });
 
       await waitFor(() => {
         expect(result.current.status).toBe('completed');
@@ -286,8 +286,6 @@ describe('useDonationStatus', () => {
 
   describe('polling fallback', () => {
     it('should fall back to polling when subscription fails', async () => {
-      vi.useFakeTimers();
-
       const donationId = 'test-donation-id';
       const mockSingle = vi.fn().mockResolvedValue({
         data: { status: 'pending' },
@@ -302,9 +300,7 @@ describe('useDonationStatus', () => {
 
       // Simulate subscription failure
       mockChannel.subscribe.mockImplementation(callback => {
-        setTimeout(() => {
-          callback('CHANNEL_ERROR');
-        }, 0);
+        callback('CHANNEL_ERROR');
         return mockChannel;
       });
 
@@ -316,14 +312,9 @@ describe('useDonationStatus', () => {
         expect(result.current.status).toBe('pending');
       });
 
-      // Fast-forward to trigger polling fallback
-      vi.advanceTimersByTime(3000);
-
       // Polling should be set up (we can't easily test the interval without more complex mocking)
       // But we can verify the subscription error was handled
       expect(mockChannel.subscribe).toHaveBeenCalled();
-
-      vi.useRealTimers();
     });
   });
 });

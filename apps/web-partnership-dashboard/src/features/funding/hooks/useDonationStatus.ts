@@ -1,10 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/services/supabase';
 import { processQueryError } from '@/shared/query/query-error-handler';
 import type { Database } from '@everylanguage/shared-types';
 
 type DonationStatus = Database['public']['Enums']['donation_status'];
+
+// Query key factory for consistency
+const donationStatusKeys = {
+  all: ['donation-status'] as const,
+  byId: (id: string) => ['donation-status', id] as const,
+};
 
 const TERMINAL_STATES: readonly DonationStatus[] = [
   'completed',
@@ -38,6 +44,7 @@ interface UseDonationStatusResult {
 export function useDonationStatus(
   donationId: string | undefined
 ): UseDonationStatusResult {
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<DonationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -50,12 +57,6 @@ export function useDonationStatus(
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const realtimeFallbackRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
-
-  // Query key factory for consistency
-  const donationStatusKeys = {
-    all: ['donation-status'] as const,
-    byId: (id: string) => [...donationStatusKeys.all, id] as const,
-  };
 
   // Fetch initial donation status
   const {
@@ -82,8 +83,17 @@ export function useDonationStatus(
     },
     enabled: !!donationId,
     staleTime: 0, // Always fetch fresh status initially
-    retry: 2,
+    retry: false,
+    refetchInterval: usePolling ? POLLING_INTERVAL_MS : false, // Refetch when polling is active
+    refetchOnWindowFocus: true, // Refetch when window regains focus (helps with cross-tab updates)
   });
+
+  // Sync initialStatus from query to local state
+  useEffect(() => {
+    if (initialStatus !== undefined && initialStatus !== null) {
+      setStatus(initialStatus);
+    }
+  }, [initialStatus]);
 
   // Set up real-time subscription with polling fallback
   useEffect(() => {
@@ -98,15 +108,10 @@ export function useDonationStatus(
     setIsLoading(true);
     setError(null);
 
-    // Set initial status from query
-    if (initialStatus) {
-      setStatus(initialStatus);
+    // If already in terminal state, skip subscription
+    if (initialStatus && TERMINAL_STATES.includes(initialStatus)) {
       setIsLoading(false);
-
-      // If already in terminal state, skip subscription
-      if (TERMINAL_STATES.includes(initialStatus)) {
-        return;
-      }
+      return;
     }
 
     // Set up real-time subscription
@@ -125,10 +130,16 @@ export function useDonationStatus(
           if (!isMountedRef.current) return;
 
           const newStatus = payload.new.status as DonationStatus;
-          console.log(`📡 Donation ${donationId} status updated: ${newStatus}`);
+          // Real-time status update received
 
           setStatus(newStatus);
           setIsLoading(false);
+
+          // Update query cache to keep it in sync
+          queryClient.setQueryData(
+            donationStatusKeys.byId(donationId),
+            newStatus
+          );
 
           // If reached terminal state, cleanup
           if (TERMINAL_STATES.includes(newStatus)) {
@@ -138,11 +149,6 @@ export function useDonationStatus(
       )
       .subscribe(subscriptionStatus => {
         if (!isMountedRef.current) return;
-
-        console.log(
-          `🔔 Donation status subscription ${channelName}:`,
-          subscriptionStatus
-        );
 
         if (subscriptionStatus === 'SUBSCRIBED') {
           setIsLoading(false);
@@ -156,9 +162,6 @@ export function useDonationStatus(
           subscriptionStatus === 'TIMED_OUT' ||
           subscriptionStatus === 'CLOSED'
         ) {
-          console.warn(
-            `⚠️ Real-time subscription failed for ${donationId}, falling back to polling`
-          );
           // Fallback to polling after a short delay
           realtimeFallbackRef.current = setTimeout(() => {
             if (isMountedRef.current) {
@@ -195,6 +198,12 @@ export function useDonationStatus(
               if (prevStatus !== currentStatus) {
                 setIsLoading(false);
 
+                // Update query cache to keep it in sync
+                queryClient.setQueryData(
+                  donationStatusKeys.byId(donationId),
+                  currentStatus
+                );
+
                 // If reached terminal state, cleanup
                 if (TERMINAL_STATES.includes(currentStatus)) {
                   cleanup();
@@ -215,9 +224,6 @@ export function useDonationStatus(
     // Set timeout to cleanup after 60 seconds
     timeoutRef.current = setTimeout(() => {
       if (isMountedRef.current) {
-        console.log(
-          `⏱️ Verification timeout reached for donation ${donationId}, cleaning up`
-        );
         cleanup();
       }
     }, VERIFICATION_TIMEOUT_MS);
@@ -228,8 +234,8 @@ export function useDonationStatus(
         try {
           supabase.removeChannel(subscriptionRef.current);
           subscriptionRef.current = null;
-        } catch (err) {
-          console.warn('Failed to remove donation status subscription:', err);
+        } catch {
+          // ignore
         }
       }
 
@@ -254,7 +260,7 @@ export function useDonationStatus(
       isMountedRef.current = false;
       cleanup();
     };
-  }, [donationId, initialStatus, usePolling]);
+  }, [donationId, initialStatus, queryClient, usePolling]);
 
   // Handle query errors
   useEffect(() => {

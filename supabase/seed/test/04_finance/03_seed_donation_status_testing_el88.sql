@@ -17,6 +17,7 @@ INSERT INTO
     status,
     payment_method,
     is_recurring,
+    is_manual,
     created_by,
     created_at,
     updated_at,
@@ -37,6 +38,7 @@ VALUES
     'pending', -- Will test transition to completed/failed
     'card',
     FALSE,
+    TRUE, -- is_manual: Allow updates for testing
     '880e8400-e29b-41d4-a716-446655440001',
     NOW() - INTERVAL '5 minutes',
     NOW() - INTERVAL '5 minutes',
@@ -56,6 +58,7 @@ VALUES
     'failed', -- Should show error message
     'card',
     FALSE,
+    TRUE, -- is_manual: Allow updates for testing
     '880e8400-e29b-41d4-a716-446655440001',
     NOW() - INTERVAL '10 minutes',
     NOW() - INTERVAL '2 minutes',
@@ -75,6 +78,7 @@ VALUES
     'processing', -- Should transition to completed
     'card',
     FALSE,
+    TRUE, -- is_manual: Allow updates for testing
     '880e8400-e29b-41d4-a716-446655440001',
     NOW() - INTERVAL '3 minutes',
     NOW() - INTERVAL '3 minutes',
@@ -94,6 +98,7 @@ VALUES
     'completed', -- Should stay confirmed
     'card',
     FALSE,
+    TRUE, -- is_manual: Allow updates for testing
     '880e8400-e29b-41d4-a716-446655440001',
     NOW() - INTERVAL '1 hour',
     NOW() - INTERVAL '1 hour',
@@ -114,6 +119,7 @@ VALUES
     'pending', -- Bank transfer, should show "Pending"
     'us_bank_account', -- Database enum value (frontend uses 'bank_transfer')
     FALSE,
+    TRUE, -- is_manual: Allow updates for testing
     '880e8400-e29b-41d4-a716-446655440001',
     NOW() - INTERVAL '1 day',
     NOW() - INTERVAL '1 day',
