@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
-import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
+import { powerSyncSystem } from '@/shared/infrastructure/powersync/services/PowerSyncSystem';
 import { logger } from '@/shared/utils/logger';
-
-// Logging configuration for this module
-const ENABLE_LOGGING = true;
 
 export interface TableInfo {
   name: string;
@@ -35,13 +32,13 @@ export const usePowerSyncTables = (): {
         setError(null);
 
         // Query SQLite master table to get all tables
-        const allTables = await powerSyncSystem.getAll<{ name: string }>(
+        const allTables = (await powerSyncSystem.getAll(
           `SELECT name FROM sqlite_master 
            WHERE type='table' 
            AND name NOT LIKE 'sqlite_%'
            AND name NOT LIKE '__%'
            ORDER BY name`
-        );
+        )) as Array<{ name: string }>;
 
         // Filter out local-only tables and get row counts
         const syncedTables: TableInfo[] = [];
@@ -74,9 +71,9 @@ export const usePowerSyncTables = (): {
             if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(table.name)) {
               continue; // Skip invalid table names
             }
-            const countResult = await powerSyncSystem.get<{ count: number }>(
+            const countResult = (await powerSyncSystem.get(
               `SELECT COUNT(*) as count FROM "${table.name}"`
-            );
+            )) as { count: number } | null;
             const rowCount = countResult?.count ?? 0;
 
             syncedTables.push({
@@ -91,7 +88,6 @@ export const usePowerSyncTables = (): {
           } catch (err) {
             // If we can't query the table, skip it
             logger.warn(
-              ENABLE_LOGGING,
               `usePowerSyncTables: Failed to query table ${table.name}`,
               err
             );
@@ -100,11 +96,7 @@ export const usePowerSyncTables = (): {
 
         setTables(syncedTables);
       } catch (err) {
-        logger.error(
-          ENABLE_LOGGING,
-          'usePowerSyncTables: Failed to fetch tables',
-          err
-        );
+        logger.error('usePowerSyncTables: Failed to fetch tables', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch tables');
       } finally {
         setLoading(false);

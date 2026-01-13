@@ -24,8 +24,8 @@ dotenvConfig?.({ path: path.resolve(appRoot, '.env'), override: true });
 
 // Base static config migrated from app.json to avoid duplicate static config warnings
 const base = {
-  name: 'EL Record',
-  slug: 'el-record',
+  name: 'OMT Record',
+  slug: 'omt-record',
   version: '1.0.0',
   orientation: 'portrait',
   userInterfaceStyle: 'automatic',
@@ -42,7 +42,7 @@ const base = {
         'remote-notification',
       ],
       NSMicrophoneUsageDescription:
-        'This app does not use the microphone. Audio playback is for Record content only.',
+        'This app needs microphone access to record Bible chapter audio.',
       NSAppTransportSecurity: {
         NSAllowsArbitraryLoads: false,
         NSExceptionDomains: {
@@ -55,12 +55,6 @@ const base = {
       NSCameraUsageDescription: 'This app does not use the camera.',
       NSPhotoLibraryUsageDescription:
         'This app does not access your photo library.',
-      NSLocationUsageDescription:
-        'This app uses location to provide region-specific Bible content and language recommendations.',
-      NSLocationWhenInUseUsageDescription:
-        'This app uses location to provide region-specific Bible content and language recommendations.',
-      NSLocationAlwaysAndWhenInUseUsageDescription:
-        'This app uses location to provide region-specific Bible content and language recommendations.',
       NSContactsUsageDescription: 'This app does not access your contacts.',
       NSBluetoothAlwaysUsageDescription: 'This app does not use Bluetooth.',
       NSBluetoothPeripheralUsageDescription:
@@ -74,7 +68,7 @@ const base = {
       LSSupportsOpeningDocumentsInPlace: true,
       CFBundleDocumentTypes: [
         {
-          CFBundleTypeName: 'EL Record Package',
+          CFBundleTypeName: 'OMT Record Package',
           LSItemContentTypes: ['com.everylanguage.elpkg'],
           LSTypeIsPackage: true,
           CFBundleTypeRole: 'Viewer',
@@ -84,7 +78,7 @@ const base = {
       UTExportedTypeDeclarations: [
         {
           UTTypeIdentifier: 'com.everylanguage.elpkg',
-          UTTypeDescription: 'EL Record Package',
+          UTTypeDescription: 'OMT Record Package',
           UTTypeConformsTo: ['public.zip-archive', 'public.data'],
           UTTypeTagSpecification: {
             'public.filename-extension': ['elpkg'],
@@ -108,14 +102,13 @@ const base = {
       'android.permission.ACCESS_NETWORK_STATE',
       'android.permission.WAKE_LOCK',
       'android.permission.FOREGROUND_SERVICE',
-      'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+      'android.permission.FOREGROUND_SERVICE_MICROPHONE',
       'android.permission.RECEIVE_BOOT_COMPLETED',
       'android.permission.VIBRATE',
       'android.permission.MODIFY_AUDIO_SETTINGS',
       'android.permission.READ_EXTERNAL_STORAGE',
       'android.permission.WRITE_EXTERNAL_STORAGE',
-      'android.permission.ACCESS_COARSE_LOCATION',
-      'android.permission.ACCESS_FINE_LOCATION',
+      'android.permission.RECORD_AUDIO',
       'android.permission.POST_NOTIFICATIONS',
     ],
     adaptiveIcon: {
@@ -140,7 +133,7 @@ const base = {
       {
         action: 'VIEW',
         autoVerify: true,
-        data: [{ scheme: 'https', host: 'bible.everylanguage.com' }],
+        data: [{ scheme: 'https', host: 'record.everylanguage.com' }],
         category: ['BROWSABLE', 'DEFAULT'],
       },
     ],
@@ -159,9 +152,6 @@ const base = {
     [
       'react-native-edge-to-edge',
       {
-        // Note: parentTheme is static config and cannot be dynamic
-        // The actual status bar styling is handled dynamically in StatusBarWrapper
-        // using getSystemBarsStyle() helper function
         android: { parentTheme: 'Light', enforceNavigationBarContrast: false },
       },
     ],
@@ -172,33 +162,12 @@ const base = {
         android: { usesCleartextTraffic: true },
       },
     ],
-    ['expo-notifications', { color: '#ffffff' }],
-    ['expo-audio', { microphonePermission: false }],
-    [
-      'expo-background-task',
-      { backgroundModes: ['background-fetch', 'background-processing'] },
-    ],
-    'expo-task-manager',
-    ['expo-document-picker', { iCloudContainerEnvironment: 'Production' }],
     [
       'expo-file-system',
       {
         photosPermission: false,
         savePhotosPermission: false,
         isAccessMediaLocationEnabled: false,
-      },
-    ],
-    [
-      'expo-location',
-      {
-        locationAlwaysAndWhenInUsePermission:
-          'This app uses location to provide region-specific Record content and language recommendations.',
-        locationAlwaysPermission:
-          'This app uses location to provide region-specific Record content and language recommendations.',
-        locationWhenInUsePermission:
-          'This app uses location to provide region-specific Record content and language recommendations.',
-        isIosBackgroundLocationEnabled: false,
-        isAndroidBackgroundLocationEnabled: false,
       },
     ],
     'expo-asset',
