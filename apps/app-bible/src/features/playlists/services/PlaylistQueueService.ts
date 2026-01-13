@@ -1,6 +1,5 @@
 import TrackPlayer from 'react-native-track-player';
 import { logger } from '@/shared/utils/logger';
-import { mediaPlayerService } from '@/features/media/services/MediaPlayerService';
 import { TrackBuilder } from '@/features/media/services/TrackBuilder';
 import { ChapterMediaResolver } from '@/features/media/services/ChapterMediaResolver';
 import { getQueueStore } from '@/features/media/store/QueueStore';
@@ -21,6 +20,12 @@ const ENABLE_LOGGING = false;
  */
 export class PlaylistQueueService {
   private static instance: PlaylistQueueService;
+
+  // Cache for dynamically imported media player service module
+  private static mediaPlayerModule:
+    | typeof import('@/features/media/services/MediaPlayerService')
+    | null = null;
+
   private trackBuilder: TrackBuilder;
   private chapterMediaResolver: ChapterMediaResolver;
 
@@ -34,6 +39,18 @@ export class PlaylistQueueService {
       PlaylistQueueService.instance = new PlaylistQueueService();
     }
     return PlaylistQueueService.instance;
+  }
+
+  /**
+   * Get media player service module with caching to avoid repeated dynamic imports
+   * This breaks the require cycle by deferring the import until runtime
+   */
+  private async getMediaPlayerService() {
+    if (!PlaylistQueueService.mediaPlayerModule) {
+      PlaylistQueueService.mediaPlayerModule =
+        await import('@/features/media/services/MediaPlayerService');
+    }
+    return PlaylistQueueService.mediaPlayerModule.mediaPlayerService;
   }
 
   /**
@@ -80,6 +97,7 @@ export class PlaylistQueueService {
       // Start playing the first track
       // The existing queue system will handle the rest
       if (tracks.length > 0 && tracks[0]) {
+        const mediaPlayerService = await this.getMediaPlayerService();
         await mediaPlayerService.playChapter(tracks[0].chapterId);
 
         logger.info(
