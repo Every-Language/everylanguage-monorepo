@@ -5,7 +5,7 @@ export { useAuthProfileSync } from './useAuthProfileSync';
 export { useLocalization, useTranslations } from './useLocalizationFromStore';
 // Re-export useTheme from shared-native-ui package
 export { useTheme } from '@everylanguage/shared-native-ui';
-export { useNetworkState } from './useNetworkState';
+export { useNetworkState, useNetworkForAction } from './useNetworkState';
 export { useOptimisticNetwork } from './useOptimisticNetwork';
 export { useLocation } from './useLocation';
 export { useQueryLogger } from './useQueryLogger';
