@@ -57,6 +57,12 @@
       "namePlaceholder": "Enter project name",
       "description": "Description",
       "descriptionPlaceholder": "Enter project description (optional)",
+      "sourceLanguage": "Source Language",
+      "selectSourceLanguage": "Select Source Language",
+      "targetLanguage": "Target Language",
+      "selectTargetLanguage": "Select Target Language",
+      "region": "Region",
+      "selectRegion": "Select Region",
       "createButton": "Create",
       "nameRequired": "Project name is required",
       "nameMaxLength": "Project name must be {{max}} characters or less",
@@ -65,7 +71,14 @@
     },
     "edit": {
       "title": "Edit Project",
-      "saveButton": "Save"
+      "saveButton": "Save",
+      "deleteButton": "Delete project",
+      "deleteConfirmation": {
+        "title": "Are you sure you want to delete this project?",
+        "message": "This is permanent and cannot be recovered",
+        "enterProjectName": "Enter the project name to confirm",
+        "deleteButton": "Delete"
+      }
     }
   },
   "sequences": {
@@ -98,5 +111,36 @@
       "bookAndChapterRequired": "Please select both a book and chapter",
       "error": "Failed to create sequence. Please try again."
     }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "emailPasswordRequired": "Email and password are required",
+    "signInSuccess": "Successfully signed in",
+    "signInFailed": "Sign in failed",
+    "signOutSuccess": "Successfully signed out",
+    "signOutFailed": "Sign out failed",
+    "signingIn": "Signing in...",
+    "signingOut": "Signing out...",
+    "account": "Account",
+    "userId": "User ID",
+    "myProfile": "My Profile",
+    "errorOccurred": "An error occurred"
+  },
+  "publish": {
+    "title": "Publish",
+    "signInRequired": "Please sign in to publish projects",
+    "placeholder": "Publish your projects",
+    "subtitle": "Upload and share your Bible audio recordings"
+  },
+  "record": {
+    "title": "Record",
+    "placeholder": "Start recording",
+    "subtitle": "Record Bible audio for your projects"
+  },
+  "debug": {
+    "title": "Debug"
   }
 }

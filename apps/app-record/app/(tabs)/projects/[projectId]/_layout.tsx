@@ -6,7 +6,7 @@ import { useTheme } from '@/shared/hooks';
 /**
  * Project Detail Stack Layout
  *
- * Nested Stack navigator for project detail section (sequences, create sequence).
+ * Nested Stack navigator for project detail section (sequences, create sequence, edit).
  * Provides native iOS/Android navigation with proper animations and gestures.
  */
 export const unstable_settings = {
@@ -36,6 +36,13 @@ const ProjectDetailStackLayout: React.FC = () => {
       />
       <Stack.Screen
         name='create-sequence'
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name='edit'
         options={{
           headerShown: false,
           presentation: 'modal',

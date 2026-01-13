@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -138,6 +139,9 @@ export default function CreateSequenceFormScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView
+      {...(Platform.OS === 'ios'
+        ? { edges: ['bottom', 'left', 'right'] as const }
+        : {})}
       style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View

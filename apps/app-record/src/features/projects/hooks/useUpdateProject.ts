@@ -5,6 +5,12 @@ import { logger } from '@/shared/utils/logger';
 export interface UpdateProjectFormData {
   name: string;
   description: string;
+  source_language_entity_id: string | null;
+  source_language_name: string | null;
+  target_language_entity_id: string | null;
+  target_language_name: string | null;
+  region_id: string | null;
+  region_name: string | null;
 }
 
 /**
@@ -33,9 +39,26 @@ export const useUpdateProject = () => {
           `UPDATE projects 
            SET name = ?, 
                description = ?, 
+               source_language_entity_id = ?,
+               source_language_name = ?,
+               target_language_entity_id = ?,
+               target_language_name = ?,
+               region_id = ?,
+               region_name = ?,
                updated_at = ?
            WHERE id = ?`,
-          [data.name.trim(), data.description.trim() || null, now, projectId]
+          [
+            data.name.trim(),
+            data.description.trim() || null,
+            data.source_language_entity_id || null,
+            data.source_language_name || null,
+            data.target_language_entity_id || null,
+            data.target_language_name || null,
+            data.region_id || null,
+            data.region_name || null,
+            now,
+            projectId,
+          ]
         );
 
         logger.info('Project updated successfully:', {

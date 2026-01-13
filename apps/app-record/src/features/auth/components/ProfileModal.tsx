@@ -8,6 +8,7 @@ import {
   Alert,
   ScrollView,
   Modal,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -229,6 +230,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       presentationStyle='pageSheet'
       onRequestClose={onClose}>
       <SafeAreaView
+        {...(Platform.OS === 'ios'
+          ? { edges: ['bottom', 'left', 'right'] as const }
+          : {})}
         style={[
           styles.container,
           { backgroundColor: theme.colors.background },

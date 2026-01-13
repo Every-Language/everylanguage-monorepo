@@ -1,23 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppHeader } from '@/shared/ui';
 import { useTheme } from '@/shared/hooks';
 import { logger } from '@/shared/utils/logger';
-import {
-  CreateProjectModal,
-  ProjectListItem,
-  type CreateProjectFormData,
-} from '../components';
-import { useProjects, useCreateProject } from '../hooks';
+import { ProjectListItem } from '../components';
+import { useProjects } from '../hooks';
 
 /**
  * Projects Screen
@@ -28,39 +23,11 @@ import { useProjects, useCreateProject } from '../hooks';
 export const ProjectsScreen: React.FC = () => {
   const router = useRouter();
   const { theme } = useTheme();
-  const [isModalVisible, setIsModalVisible] = useState(false);
   const { projects, error: projectsError } = useProjects();
-  const {
-    createProject,
-    isLoading: isCreating,
-    error: createError,
-  } = useCreateProject();
 
-  const handleOpenModal = useCallback((): void => {
-    setIsModalVisible(true);
-  }, []);
-
-  const handleCloseModal = useCallback((): void => {
-    setIsModalVisible(false);
-  }, []);
-
-  const handleCreateProject = useCallback(
-    async (data: CreateProjectFormData): Promise<void> => {
-      try {
-        await createProject(data);
-        setIsModalVisible(false);
-      } catch (error) {
-        // Error is already logged in useCreateProject hook
-        Alert.alert(
-          'Error',
-          error instanceof Error
-            ? error.message
-            : 'Failed to create project. Please try again.'
-        );
-      }
-    },
-    [createProject]
-  );
+  const handleOpenCreateModal = useCallback((): void => {
+    router.push('/(tabs)/projects/create');
+  }, [router]);
 
   const handleProjectPress = useCallback(
     (projectId: string): void => {
@@ -83,7 +50,7 @@ export const ProjectsScreen: React.FC = () => {
                 color={theme.colors.accent}
               />
             ),
-            onPress: handleOpenModal,
+            onPress: handleOpenCreateModal,
           },
         ]}
       />
@@ -152,13 +119,6 @@ export const ProjectsScreen: React.FC = () => {
           initialNumToRender={10}
         />
       )}
-      <CreateProjectModal
-        visible={isModalVisible}
-        onClose={handleCloseModal}
-        onSubmit={handleCreateProject}
-        isLoading={isCreating}
-        error={createError}
-      />
     </View>
   );
 };

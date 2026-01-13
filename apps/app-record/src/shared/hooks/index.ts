@@ -4,4 +4,6 @@ export { useTheme } from './useTheme';
 export { useTranslation } from './useTranslation';
 export { useAuth } from './useAuth';
 export { useSupabaseAppState } from './useSupabaseAppState';
+export { useNetworkConnectivity } from './useNetworkConnectivity';
 export type { User, Session } from './useAuth';
+export type { NetworkConnectivityState } from './useNetworkConnectivity';

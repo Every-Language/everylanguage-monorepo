@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { powerSyncSystem } from '@/shared/infrastructure/powersync/services/PowerSyncSystem';
 import { logger } from '@/shared/utils/logger';
-import type { CreateProjectFormData } from '../components';
+import type { CreateProjectFormData } from '../types/project';
 
 /**
  * Generate a UUID v4
@@ -53,16 +53,28 @@ export const useCreateProject = () => {
             id, 
             name, 
             description, 
+            source_language_entity_id,
+            source_language_name,
+            target_language_entity_id,
+            target_language_name,
+            region_id,
+            region_name,
             created_at, 
             updated_at, 
             project_status, 
             publish_status,
             deleted_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             projectId,
             data.name.trim(),
             data.description.trim() || null,
+            data.source_language_entity_id || null,
+            data.source_language_name || null,
+            data.target_language_entity_id || null,
+            data.target_language_name || null,
+            data.region_id || null,
+            data.region_name || null,
             now,
             now,
             'precreated',

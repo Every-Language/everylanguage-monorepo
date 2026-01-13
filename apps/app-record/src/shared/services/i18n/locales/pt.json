@@ -46,6 +46,41 @@
     "currentLanguage": "Idioma Atual",
     "english": "Inglês"
   },
+  "projects": {
+    "title": "Projetos",
+    "empty": "Nenhum projeto ainda",
+    "emptySubtext": "Toque no botão + para criar seu primeiro projeto",
+    "errorLoading": "Erro ao carregar projetos",
+    "create": {
+      "title": "Novo Projeto",
+      "name": "Nome",
+      "namePlaceholder": "Digite o nome do projeto",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Digite a descrição do projeto (opcional)",
+      "sourceLanguage": "Idioma de Origem",
+      "selectSourceLanguage": "Selecionar Idioma de Origem",
+      "targetLanguage": "Idioma de Destino",
+      "selectTargetLanguage": "Selecionar Idioma de Destino",
+      "region": "Região",
+      "selectRegion": "Selecionar Região",
+      "createButton": "Criar",
+      "nameRequired": "O nome do projeto é obrigatório",
+      "nameMaxLength": "O nome do projeto deve ter no máximo {{max}} caracteres",
+      "descriptionMaxLength": "A descrição deve ter no máximo {{max}} caracteres",
+      "error": "Falha ao criar projeto. Tente novamente."
+    },
+    "edit": {
+      "title": "Editar Projeto",
+      "saveButton": "Salvar",
+      "deleteButton": "Excluir projeto",
+      "deleteConfirmation": {
+        "title": "Tem certeza de que deseja excluir este projeto?",
+        "message": "Esta ação é permanente e não pode ser desfeita",
+        "enterProjectName": "Digite o nome do projeto para confirmar",
+        "deleteButton": "Excluir"
+      }
+    }
+  },
   "sequences": {
     "title": "Sequências",
     "empty": "Nenhuma sequência ainda",
@@ -76,5 +111,36 @@
       "bookAndChapterRequired": "Por favor, selecione um livro e um capítulo",
       "error": "Falha ao criar sequência. Tente novamente."
     }
+  },
+  "auth": {
+    "signIn": "Entrar",
+    "signOut": "Sair",
+    "email": "E-mail",
+    "password": "Senha",
+    "emailPasswordRequired": "E-mail e senha são obrigatórios",
+    "signInSuccess": "Login realizado com sucesso",
+    "signInFailed": "Falha ao fazer login",
+    "signOutSuccess": "Logout realizado com sucesso",
+    "signOutFailed": "Falha ao fazer logout",
+    "signingIn": "Entrando...",
+    "signingOut": "Saindo...",
+    "account": "Conta",
+    "userId": "ID do Usuário",
+    "myProfile": "Meu Perfil",
+    "errorOccurred": "Ocorreu um erro"
+  },
+  "publish": {
+    "title": "Publicar",
+    "signInRequired": "Por favor, faça login para publicar projetos",
+    "placeholder": "Publique seus projetos",
+    "subtitle": "Envie e compartilhe suas gravações de áudio da Bíblia"
+  },
+  "record": {
+    "title": "Gravar",
+    "placeholder": "Começar gravação",
+    "subtitle": "Grave áudio da Bíblia para seus projetos"
+  },
+  "debug": {
+    "title": "Depuração"
   }
 }

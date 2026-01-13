@@ -5,6 +5,7 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,13 +14,9 @@ import { useTheme, useTranslation } from '@/shared/hooks';
 import { logger } from '@/shared/utils/logger';
 import { useSequences, useBooks, useChaptersForBooks } from '../hooks';
 import type { Sequence, Chapter } from '../types/sequence';
-import { useProject, useUpdateProject } from '@/features/projects/hooks';
-import {
-  ProjectInfoCard,
-  EditProjectModal,
-} from '@/features/projects/components';
+import { useProject } from '@/features/projects/hooks';
+import { ProjectInfoCard } from '@/features/projects/components';
 import { BookSection } from '../components';
-import type { UpdateProjectFormData } from '@/features/projects/hooks';
 
 /**
  * Sequences Screen
@@ -34,16 +31,10 @@ export const SequencesScreen: React.FC = () => {
 
   const { theme } = useTheme();
   const { t } = useTranslation();
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [collapsedBooks, setCollapsedBooks] = useState<Set<string>>(new Set());
   const { sequences, error: sequencesError } = useSequences(projectId);
   const { books } = useBooks();
   const { project } = useProject(projectId);
-  const {
-    updateProject,
-    isLoading: isUpdating,
-    error: updateError,
-  } = useUpdateProject();
 
   // Get unique book IDs from sequences
   const bookIdsWithSequences = useMemo(() => {
@@ -133,25 +124,8 @@ export const SequencesScreen: React.FC = () => {
   }, []);
 
   const handleEditProject = useCallback((): void => {
-    setIsEditModalVisible(true);
-  }, []);
-
-  const handleCloseEditModal = useCallback((): void => {
-    setIsEditModalVisible(false);
-  }, []);
-
-  const handleUpdateProject = useCallback(
-    async (data: UpdateProjectFormData): Promise<void> => {
-      try {
-        await updateProject(projectId, data);
-        setIsEditModalVisible(false);
-      } catch (error) {
-        // Error is already logged in useUpdateProject hook
-        logger.error('Failed to update project:', error);
-      }
-    },
-    [updateProject, projectId]
-  );
+    router.push(`/(tabs)/projects/${projectId}/edit`);
+  }, [router, projectId]);
 
   if (!projectId) {
     return (
@@ -222,19 +196,29 @@ export const SequencesScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       ) : !sequences || sequences.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text
-            style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-            {t('sequences.empty')}
-          </Text>
-          <Text
-            style={[
-              styles.emptySubtext,
-              { color: theme.colors.textSecondary },
-            ]}>
-            {t('sequences.emptySubtext')}
-          </Text>
-        </View>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.emptyContent}>
+          <View style={styles.projectCardContainer}>
+            <ProjectInfoCard
+              project={project}
+              onEditPress={handleEditProject}
+            />
+          </View>
+          <View style={styles.emptyContainer}>
+            <Text
+              style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+              {t('sequences.empty')}
+            </Text>
+            <Text
+              style={[
+                styles.emptySubtext,
+                { color: theme.colors.textSecondary },
+              ]}>
+              {t('sequences.emptySubtext')}
+            </Text>
+          </View>
+        </ScrollView>
       ) : booksWithSequences.length > 0 ? (
         <FlatList
           style={styles.content}
@@ -279,14 +263,6 @@ export const SequencesScreen: React.FC = () => {
           </Text>
         </View>
       )}
-      <EditProjectModal
-        visible={isEditModalVisible}
-        project={project}
-        onClose={handleCloseEditModal}
-        onSubmit={handleUpdateProject}
-        isLoading={isUpdating}
-        error={updateError}
-      />
     </View>
   );
 };
@@ -309,6 +285,13 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 15,
     textAlign: 'center',
+  },
+  emptyContent: {
+    paddingTop: 8,
+  },
+  projectCardContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   emptyContainer: {
     padding: 32,

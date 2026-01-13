@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -48,6 +49,9 @@ export default function SelectBookScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView
+      {...(Platform.OS === 'ios'
+        ? { edges: ['bottom', 'left', 'right'] as const }
+        : {})}
       style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View
@@ -59,10 +63,14 @@ export default function SelectBookScreen(): React.JSX.Element {
           },
         ]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: theme.colors.accent }]}
           onPress={handleBack}
           accessibilityLabel={t('common.back')}>
-          <Ionicons name='chevron-back' size={24} color={theme.colors.text} />
+          <Ionicons
+            name='chevron-back'
+            size={20}
+            color={theme.colors.textInverse}
+          />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
           {t('sequences.create.selectBook')}
@@ -167,6 +175,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 32,
     height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },

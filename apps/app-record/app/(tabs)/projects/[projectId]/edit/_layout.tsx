@@ -4,12 +4,16 @@ import { Platform } from 'react-native';
 import { useTheme } from '@/shared/hooks';
 
 /**
- * Projects Stack Layout
+ * Edit Project Modal Stack Layout
  *
- * Nested Stack navigator for projects section.
+ * Nested Stack navigator for edit project modal flow.
  * Provides native iOS/Android navigation with proper animations and gestures.
  */
-const ProjectsStackLayout: React.FC = () => {
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
+const EditProjectStackLayout: React.FC = () => {
   const { theme } = useTheme();
 
   return (
@@ -31,14 +35,31 @@ const ProjectsStackLayout: React.FC = () => {
         }}
       />
       <Stack.Screen
-        name='create'
+        name='source-language'
         options={{
           headerShown: false,
-          presentation: 'modal',
         }}
       />
       <Stack.Screen
-        name='[projectId]'
+        name='target-language'
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name='region'
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name='language-info'
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name='region-info'
         options={{
           headerShown: false,
         }}
@@ -47,4 +68,4 @@ const ProjectsStackLayout: React.FC = () => {
   );
 };
 
-export default ProjectsStackLayout;
+export default EditProjectStackLayout;
