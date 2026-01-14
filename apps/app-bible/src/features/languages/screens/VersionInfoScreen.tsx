@@ -29,6 +29,8 @@ import Svg, { Circle } from 'react-native-svg';
 import { useVersionDownloads } from '@/features/downloads/hooks';
 import { useVersionDownloadActions } from '@/features/downloads/components';
 import { logger } from '@/shared/utils/logger';
+import { useNetworkForAction } from '@/shared/hooks';
+import { NoInternetModal } from '@everylanguage/shared-native-ui';
 
 export const VersionInfoScreen: React.FC<VersionInfoScreenProps> = ({
   route,
@@ -43,11 +45,16 @@ export const VersionInfoScreen: React.FC<VersionInfoScreenProps> = ({
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<VersionSelectionStackNavigationProp>();
   const {
-    addSavedVersion,
     setCurrentAudioVersion,
     setCurrentTextVersion,
     isVersionSaved,
+    textVersionDownloadProgress,
   } = useVersionsStore();
+
+  const { isOnline, ensureNetworkAvailable, retryAndExecute } =
+    useNetworkForAction();
+
+  const [showNoInternetModal, setShowNoInternetModal] = useState(false);
 
   const preselected: AudioVersion | TextVersion | null = useMemo(() => {
     return initialVersion ?? null;
@@ -92,15 +99,23 @@ export const VersionInfoScreen: React.FC<VersionInfoScreenProps> = ({
     ? isVersionSaved(selectedVersion.id, versionType)
     : false;
 
+  const isDownloadingText =
+    versionType === 'text' &&
+    textVersionDownloadProgress?.isDownloading === true &&
+    textVersionDownloadProgress.versionId === selectedVersion?.id;
+
   const footerCtaLabel = useMemo(() => {
     if (!selectedVersion) return 'Select a version';
+    if (isDownloadingText) return 'Loading...';
     if (isSelectedSaved)
       return versionType === 'audio' ? 'Listen to version' : 'Read version';
     return 'Add to my saved versions';
-  }, [selectedVersion, isSelectedSaved, versionType]);
+  }, [selectedVersion, isSelectedSaved, versionType, isDownloadingText]);
 
   const onFooterPress = useCallback(async () => {
     if (!selectedVersion) return;
+    if (isDownloadingText) return; // Prevent action while downloading
+
     try {
       const overallStart = Date.now();
       logger.info(ENABLE_LOGGING, '[Versions] Saving selection start', {
@@ -108,17 +123,7 @@ export const VersionInfoScreen: React.FC<VersionInfoScreenProps> = ({
         versionType,
         versionId: selectedVersion.id,
       });
-      if (!isSelectedSaved) {
-        const t0 = Date.now();
-        logger.info(ENABLE_LOGGING, '[Versions] addSavedVersion begin', {
-          versionType,
-          versionId: selectedVersion.id,
-        });
-        await addSavedVersion(selectedVersion, versionType);
-        logger.info(ENABLE_LOGGING, '[Versions] addSavedVersion done', {
-          durationMs: Date.now() - t0,
-        });
-      }
+
       if (versionType === 'audio') {
         const t1 = Date.now();
         logger.info(ENABLE_LOGGING, '[Versions] setCurrentAudioVersion begin', {
@@ -128,17 +133,75 @@ export const VersionInfoScreen: React.FC<VersionInfoScreenProps> = ({
         logger.info(ENABLE_LOGGING, '[Versions] setCurrentAudioVersion done', {
           durationMs: Date.now() - t1,
         });
+        navigation.getParent()?.goBack();
       } else {
-        const t2 = Date.now();
-        logger.info(ENABLE_LOGGING, '[Versions] setCurrentTextVersion begin', {
-          versionId: selectedVersion.id,
-        });
-        await setCurrentTextVersion(selectedVersion as TextVersion);
-        logger.info(ENABLE_LOGGING, '[Versions] setCurrentTextVersion done', {
-          durationMs: Date.now() - t2,
-        });
+        // Text version - check network before sync/preload
+        try {
+          await ensureNetworkAvailable(async () => {
+            const t2 = Date.now();
+            logger.info(
+              ENABLE_LOGGING,
+              '[Versions] setCurrentTextVersion begin',
+              {
+                versionId: selectedVersion.id,
+              }
+            );
+
+            // Check if text is already downloaded (quick check)
+            const { powerSyncSystem } =
+              await import('@/shared/services/powersync/PowerSyncSystem');
+            let isTextDownloaded = false;
+            try {
+              const countResult = (await powerSyncSystem.getAll(
+                'SELECT COUNT(*) as count FROM verse_texts WHERE text_version_id = ? LIMIT 1',
+                [selectedVersion.id]
+              )) as Array<{ count: number }>;
+              isTextDownloaded = (countResult[0]?.count ?? 0) > 0;
+            } catch {
+              // Ignore check errors
+            }
+
+            // If text is already downloaded, no network needed
+            if (isTextDownloaded) {
+              await setCurrentTextVersion(selectedVersion as TextVersion);
+              logger.info(
+                ENABLE_LOGGING,
+                '[Versions] setCurrentTextVersion done (fast path)',
+                {
+                  durationMs: Date.now() - t2,
+                }
+              );
+              navigation.getParent()?.goBack();
+              return;
+            }
+
+            // Text not downloaded - need network for sync/preload
+            // setCurrentTextVersion will handle sync/preload
+            await setCurrentTextVersion(selectedVersion as TextVersion);
+            logger.info(
+              ENABLE_LOGGING,
+              '[Versions] setCurrentTextVersion done (sync/preload)',
+              {
+                durationMs: Date.now() - t2,
+              }
+            );
+
+            // Wait for download to complete before closing
+            // In a real scenario, you might want to show progress or allow user to navigate away
+            // For now, we'll close immediately and let download continue in background
+            navigation.getParent()?.goBack();
+          });
+        } catch (networkError) {
+          logger.debug(
+            ENABLE_LOGGING,
+            '[Versions] Network not available for text version selection:',
+            networkError
+          );
+          setShowNoInternetModal(true);
+          return;
+        }
       }
-      navigation.getParent()?.goBack();
+
       logger.info(ENABLE_LOGGING, '[Versions] Modal closed after save', {
         totalMs: Date.now() - overallStart,
       });
@@ -151,10 +214,35 @@ export const VersionInfoScreen: React.FC<VersionInfoScreenProps> = ({
     }
   }, [
     selectedVersion,
-    isSelectedSaved,
-    addSavedVersion,
     versionType,
     setCurrentAudioVersion,
+    setCurrentTextVersion,
+    navigation,
+    isDownloadingText,
+    ensureNetworkAvailable,
+  ]);
+
+  const handleRetryConnection = useCallback(async () => {
+    if (!selectedVersion || versionType !== 'text') return;
+
+    try {
+      await retryAndExecute(async () => {
+        setShowNoInternetModal(false);
+        await setCurrentTextVersion(selectedVersion as TextVersion);
+        navigation.getParent()?.goBack();
+      });
+    } catch (error) {
+      logger.debug(
+        ENABLE_LOGGING,
+        '[Versions] Retry connection failed:',
+        error
+      );
+      // Modal will stay open
+    }
+  }, [
+    selectedVersion,
+    versionType,
+    retryAndExecute,
     setCurrentTextVersion,
     navigation,
   ]);
@@ -364,22 +452,47 @@ export const VersionInfoScreen: React.FC<VersionInfoScreenProps> = ({
           style={[
             styles.footerButton,
             {
-              backgroundColor: selectedVersion
-                ? theme.colors.primary
-                : theme.colors.interactiveDisabled,
+              backgroundColor:
+                selectedVersion && !isDownloadingText
+                  ? theme.colors.primary
+                  : theme.colors.interactiveDisabled,
             },
           ]}
           onPress={onFooterPress}
-          disabled={!selectedVersion}>
-          <Text
-            style={[
-              styles.footerButtonText,
-              { color: theme.colors.textInverse },
-            ]}>
-            {footerCtaLabel}
-          </Text>
+          disabled={!selectedVersion || isDownloadingText}>
+          {isDownloadingText ? (
+            <View style={styles.loadingButtonContent}>
+              <ActivityIndicator
+                size='small'
+                color={theme.colors.textInverse}
+                style={styles.buttonSpinner}
+              />
+              <Text
+                style={[
+                  styles.footerButtonText,
+                  { color: theme.colors.textInverse },
+                ]}>
+                {footerCtaLabel}
+              </Text>
+            </View>
+          ) : (
+            <Text
+              style={[
+                styles.footerButtonText,
+                { color: theme.colors.textInverse },
+              ]}>
+              {footerCtaLabel}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
+
+      {/* No Internet Modal */}
+      <NoInternetModal
+        visible={showNoInternetModal && !isOnline}
+        onRetry={handleRetryConnection}
+        onClose={() => setShowNoInternetModal(false)}
+      />
     </View>
   );
 };
@@ -574,5 +687,14 @@ const styles = StyleSheet.create({
   footerButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  loadingButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  buttonSpinner: {
+    marginRight: 4,
   },
 });
