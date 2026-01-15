@@ -106,10 +106,14 @@ export const SequencesScreen: React.FC = () => {
     router.push(`/(tabs)/projects/${projectId}/create-sequence`);
   }, [router, projectId]);
 
-  const handleSequencePress = useCallback((sequenceId: string): void => {
-    // TODO: Navigate to sequence detail screen
-    logger.debug('Sequence pressed:', { sequenceId });
-  }, []);
+  const handleSequencePress = useCallback(
+    (sequenceId: string): void => {
+      router.push(
+        `/(tabs)/projects/${projectId}/sequences/${sequenceId}/record`
+      );
+    },
+    [router, projectId]
+  );
 
   const toggleBookCollapse = useCallback((bookId: string): void => {
     setCollapsedBooks(prev => {

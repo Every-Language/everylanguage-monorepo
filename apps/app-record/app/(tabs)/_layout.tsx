@@ -70,12 +70,6 @@ const TabsLayout: React.FC = () => {
         }}
       />
       <Tabs.Screen
-        name='projects/[projectId]'
-        options={{
-          href: null, // Hide from tab bar
-        }}
-      />
-      <Tabs.Screen
         name='record'
         options={{
           title: 'Record',

@@ -35,6 +35,12 @@ const ProjectDetailStackLayout: React.FC = () => {
         }}
       />
       <Stack.Screen
+        name='sequences/[sequenceId]'
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name='create-sequence'
         options={{
           headerShown: false,
