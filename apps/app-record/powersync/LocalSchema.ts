@@ -57,26 +57,6 @@ const download_queue = new Table(
   }
 );
 
-// Recording configuration (user preferences)
-const recording_config = new Table(
-  {
-    id: column.text, // Single row ID like 'default'
-    start_segment_threshold: column.real, // Audio level threshold to start segment
-    end_segment_threshold: column.real, // Audio level threshold to end segment
-    start_padding_ms: column.integer, // Milliseconds before threshold to include
-    end_padding_ms: column.integer, // Milliseconds after threshold to include
-    speaker_threshold: column.real, // Threshold for filtering segments in edit modal
-    sample_rate: column.integer, // Audio sample rate (default: 44100)
-    channels: column.integer, // Number of channels (default: 1)
-    bit_depth: column.integer, // Bit depth (default: 16)
-    updated_at: column.text,
-  },
-  {
-    localOnly: true,
-    indexes: {},
-  }
-);
-
 // Temporary recording segments (before insertion)
 const segments_temp = new Table(
   {
@@ -106,7 +86,6 @@ const segments_temp = new Table(
 export const LocalSchema = new Schema({
   media_files_downloads,
   download_queue,
-  recording_config,
   segments_temp,
 });
 
@@ -114,7 +93,6 @@ export const LocalSchema = new Schema({
 export const localTables = {
   media_files_downloads,
   download_queue,
-  recording_config,
   segments_temp,
 };
 
@@ -122,5 +100,4 @@ export const localTables = {
 export type LocalDatabase = (typeof LocalSchema)['types'];
 export type MediaFileDownloadRecord = LocalDatabase['media_files_downloads'];
 export type DownloadQueueRecord = LocalDatabase['download_queue'];
-export type RecordingConfigRecord = LocalDatabase['recording_config'];
 export type SegmentTempRecord = LocalDatabase['segments_temp'];
