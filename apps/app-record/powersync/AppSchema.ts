@@ -6,7 +6,7 @@ const bible_versions = new Table(
     name: column.text,
     structure_notes: column.text,
     created_at: column.text,
-    updated_at: column.text
+    updated_at: column.text,
   },
   { indexes: {} }
 );
@@ -19,8 +19,16 @@ const books = new Table(
     created_at: column.text,
     updated_at: column.text,
     global_order: column.integer,
-    testament: column.text
-  }, { indexes: { idx_0: ['global_order'], idx_1: ['testament'], idx_2: ['bible_version_id'] } });
+    testament: column.text,
+  },
+  {
+    indexes: {
+      idx_0: ['global_order'],
+      idx_1: ['testament'],
+      idx_2: ['bible_version_id'],
+    },
+  }
+);
 const chapters = new Table(
   {
     // id column (text) is automatically included
@@ -29,8 +37,16 @@ const chapters = new Table(
     total_verses: column.integer,
     created_at: column.text,
     updated_at: column.text,
-    global_order: column.integer
-  }, { indexes: { idx_0: ['book_id'], idx_1: ['global_order'], idx_2: ['chapter_number'] } });
+    global_order: column.integer,
+  },
+  {
+    indexes: {
+      idx_0: ['book_id'],
+      idx_1: ['global_order'],
+      idx_2: ['chapter_number'],
+    },
+  }
+);
 const verses = new Table(
   {
     // id column (text) is automatically included
@@ -38,8 +54,16 @@ const verses = new Table(
     verse_number: column.integer,
     created_at: column.text,
     updated_at: column.text,
-    global_order: column.integer
-  }, { indexes: { idx_0: ['chapter_id'], idx_1: ['global_order'], idx_2: ['verse_number'] } });
+    global_order: column.integer,
+  },
+  {
+    indexes: {
+      idx_0: ['chapter_id'],
+      idx_1: ['global_order'],
+      idx_2: ['verse_number'],
+    },
+  }
+);
 const projects = new Table(
   {
     // id column (text) is automatically included
@@ -57,8 +81,18 @@ const projects = new Table(
     region_name: column.text,
     source_language_name: column.text,
     target_language_name: column.text,
-    publish_status: column.text
-  }, { indexes: { idx_0: ['created_by'], idx_1: ['project_status'], idx_2: ['deleted_at'], idx_3: ['created_by', 'deleted_at'], idx_4: ['project_status', 'deleted_at'] } });
+    publish_status: column.text,
+  },
+  {
+    indexes: {
+      idx_0: ['created_by'],
+      idx_1: ['project_status'],
+      idx_2: ['deleted_at'],
+      idx_3: ['created_by', 'deleted_at'],
+      idx_4: ['project_status', 'deleted_at'],
+    },
+  }
+);
 const sequences = new Table(
   {
     // id column (text) is automatically included
@@ -76,8 +110,20 @@ const sequences = new Table(
     upload_status: column.text,
     publish_status: column.text,
     check_status: column.text,
-    chapter_id: column.text
-  }, { indexes: { idx_0: ['project_id'], idx_1: ['book_id'], idx_2: ['chapter_id'], idx_3: ['project_id', 'deleted_at'], idx_4: ['chapter_id', 'deleted_at'], idx_5: ['project_id', 'chapter_id'], idx_6: ['project_id', 'is_bible_audio'] } });
+    chapter_id: column.text,
+  },
+  {
+    indexes: {
+      idx_0: ['project_id'],
+      idx_1: ['book_id'],
+      idx_2: ['chapter_id'],
+      idx_3: ['project_id', 'deleted_at'],
+      idx_4: ['chapter_id', 'deleted_at'],
+      idx_5: ['project_id', 'chapter_id'],
+      idx_6: ['project_id', 'is_bible_audio'],
+    },
+  }
+);
 const segments = new Table(
   {
     // id column (text) is automatically included
@@ -95,8 +141,19 @@ const segments = new Table(
     storage_provider: column.text,
     object_key: column.text,
     original_filename: column.text,
-    file_type: column.text
-  }, { indexes: { idx_0: ['project_id'], idx_1: ['sequence_id'], idx_2: ['project_id', 'deleted_at'], idx_3: ['sequence_id', 'deleted_at'], idx_4: ['sequence_id', 'segment_index'], idx_5: ['project_id', 'sequence_id'] } });
+    file_type: column.text,
+  },
+  {
+    indexes: {
+      idx_0: ['project_id'],
+      idx_1: ['sequence_id'],
+      idx_2: ['project_id', 'deleted_at'],
+      idx_3: ['sequence_id', 'deleted_at'],
+      idx_4: ['sequence_id', 'segment_index'],
+      idx_5: ['project_id', 'sequence_id'],
+    },
+  }
+);
 const audio_versions = new Table(
   {
     // id column (text) is automatically included
@@ -108,8 +165,18 @@ const audio_versions = new Table(
     created_by: column.text,
     updated_at: column.text,
     deleted_at: column.text,
-    publish_status: column.text
-  }, { indexes: { idx_0: ['project_id'], idx_1: ['language_entity_id'], idx_2: ['project_id', 'deleted_at'], idx_3: ['language_entity_id', 'project_id'], idx_4: ['project_id', 'publish_status'] } });
+    publish_status: column.text,
+  },
+  {
+    indexes: {
+      idx_0: ['project_id'],
+      idx_1: ['language_entity_id'],
+      idx_2: ['project_id', 'deleted_at'],
+      idx_3: ['language_entity_id', 'project_id'],
+      idx_4: ['project_id', 'publish_status'],
+    },
+  }
+);
 const media_files = new Table(
   {
     // id column (text) is automatically included
@@ -135,8 +202,25 @@ const media_files = new Table(
     original_filename: column.text,
     file_type: column.text,
     sequence_id: column.text,
-    project_id: column.text
-  }, { indexes: { idx_0: ['audio_version_id'], idx_1: ['chapter_id'], idx_2: ['language_entity_id'], idx_3: ['project_id'], idx_4: ['chapter_id', 'audio_version_id'], idx_5: ['audio_version_id', 'chapter_id'], idx_6: ['chapter_id', 'deleted_at'], idx_7: ['id', 'chapter_id'], idx_8: ['audio_version_id', 'deleted_at'], idx_9: ['chapter_id', 'audio_version_id', 'deleted_at'], idx_10: ['project_id', 'deleted_at'], idx_11: ['project_id', 'audio_version_id'] } });
+    project_id: column.text,
+  },
+  {
+    indexes: {
+      idx_0: ['audio_version_id'],
+      idx_1: ['chapter_id'],
+      idx_2: ['language_entity_id'],
+      idx_3: ['project_id'],
+      idx_4: ['chapter_id', 'audio_version_id'],
+      idx_5: ['audio_version_id', 'chapter_id'],
+      idx_6: ['chapter_id', 'deleted_at'],
+      idx_7: ['id', 'chapter_id'],
+      idx_8: ['audio_version_id', 'deleted_at'],
+      idx_9: ['chapter_id', 'audio_version_id', 'deleted_at'],
+      idx_10: ['project_id', 'deleted_at'],
+      idx_11: ['project_id', 'audio_version_id'],
+    },
+  }
+);
 const media_files_verses = new Table(
   {
     // id column (text) is automatically included
@@ -151,8 +235,20 @@ const media_files_verses = new Table(
     denormalized_audio_version_id: column.text,
     verse_checker_status: column.text,
     verse_checker_comment: column.text,
-    project_id: column.text
-  }, { indexes: { idx_0: ['media_file_id'], idx_1: ['verse_id'], idx_2: ['denormalized_audio_version_id'], idx_3: ['project_id'], idx_4: ['media_file_id', 'verse_id'], idx_5: ['verse_id', 'denormalized_audio_version_id'], idx_6: ['project_id', 'verse_id'] } });
+    project_id: column.text,
+  },
+  {
+    indexes: {
+      idx_0: ['media_file_id'],
+      idx_1: ['verse_id'],
+      idx_2: ['denormalized_audio_version_id'],
+      idx_3: ['project_id'],
+      idx_4: ['media_file_id', 'verse_id'],
+      idx_5: ['verse_id', 'denormalized_audio_version_id'],
+      idx_6: ['project_id', 'verse_id'],
+    },
+  }
+);
 export const SyncedSchema = new Schema({
   bible_versions,
   books,
@@ -163,7 +259,7 @@ export const SyncedSchema = new Schema({
   segments,
   audio_versions,
   media_files,
-  media_files_verses
+  media_files_verses,
 });
 
 // Import local-only tables map
@@ -183,5 +279,5 @@ export const AppSchema = new Schema({
   media_files,
   media_files_verses,
   // Local-only tables
-  ...__localTables
+  ...__localTables,
 });
