@@ -14,7 +14,7 @@ export const languageAvailabilityApi = {
     page?: number;
     pageSize?: number;
     statusFilter?: LanguageFundingStatus;
-    sortField?: 'name' | 'budget';
+    sortField?: 'name' | 'budget' | 'priority';
     sortDirection?: 'asc' | 'desc';
     externalIdSearch?: string; // Search by external_id in language_entity_sources
     regionFilters?: string[]; // Array of region IDs to filter by (OR logic)
@@ -170,6 +170,12 @@ export const languageAvailabilityApi = {
           nullsFirst: sortAscending,
         });
         break;
+      case 'priority':
+        query = query.order('priority', {
+          ascending: sortAscending,
+          nullsFirst: !sortAscending,
+        });
+        break;
       case 'name':
       default:
         query = query.order('name', {
@@ -190,6 +196,7 @@ export const languageAvailabilityApi = {
         language_entity_id: string;
         funding_status: string;
         budget_cents: number | null;
+        priority: number | null;
         created_at: string;
         updated_at: string;
         created_by: string | null;
@@ -202,6 +209,7 @@ export const languageAvailabilityApi = {
           language_entity_id: item.language_entity_id,
           funding_status: item.funding_status as LanguageFundingStatus,
           budget_cents: item.budget_cents,
+          priority: item.priority ?? null,
           created_at: item.created_at,
           updated_at: item.updated_at,
           created_by: item.created_by,
@@ -832,6 +840,40 @@ export const languageAvailabilityApi = {
         language_entity_id: languageId,
         funding_status: budgetCents !== null ? 'available' : 'draft',
         budget_cents: budgetCents,
+      });
+
+      if (error) throw error;
+    }
+  },
+
+  /**
+   * Update language funding priority (creates record if it doesn't exist)
+   */
+  async updateLanguagePriority(
+    languageId: string,
+    priority: number | null
+  ): Promise<void> {
+    const { data: existing } = await supabase
+      .from('language_funding')
+      .select('id')
+      .eq('language_entity_id', languageId)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from('language_funding')
+        .update({ priority })
+        .eq('language_entity_id', languageId)
+        .is('deleted_at', null);
+
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from('language_funding').insert({
+        language_entity_id: languageId,
+        funding_status: 'draft',
+        budget_cents: null,
+        priority,
       });
 
       if (error) throw error;
