@@ -5,17 +5,22 @@ import { EntityCard } from './EntityCard';
 import type { DonateFlow } from '../../hooks/useDonateFlow';
 import type { SelectedEntity, DonationIntent } from '../../state/types';
 import {
-  fetchLanguagesForDonation,
-  fetchRegionsForDonation,
   fetchOperationsForDonation,
+  fetchLanguagesForDonationPaginated,
+  fetchRegionsForDonationPaginated,
   type EntityForDonation,
 } from '../../api/fundingApi';
+import { Pagination } from '@/shared/components/ui/Pagination';
 
 export const StepEntitySelection: React.FC<{ flow: DonateFlow }> = ({
   flow,
 }) => {
+  const pageSize = 25;
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [debouncedQuery, setDebouncedQuery] = React.useState('');
   const [entities, setEntities] = React.useState<EntityForDonation[]>([]);
+  const [totalCount, setTotalCount] = React.useState(0);
+  const [currentPage, setCurrentPage] = React.useState(1);
   const [loading, setLoading] = React.useState(true);
 
   const intent = flow.state.intent;
@@ -35,22 +40,62 @@ export const StepEntitySelection: React.FC<{ flow: DonateFlow }> = ({
         ? 'region'
         : 'operation';
 
+  const normalizedQuery = debouncedQuery.trim();
+  const hasSearch = normalizedQuery.length >= 2;
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [intent?.type, normalizedQuery]);
+
   // Fetch entities based on intent type
   React.useEffect(() => {
     const fetchEntities = async () => {
       setLoading(true);
       try {
-        let data: EntityForDonation[];
+        let data: EntityForDonation[] = [];
+        let count = 0;
         if (intent?.type === 'language') {
-          data = await fetchLanguagesForDonation();
+          const result = await fetchLanguagesForDonationPaginated({
+            page: currentPage,
+            pageSize,
+            searchQuery: hasSearch ? normalizedQuery : undefined,
+          });
+          data = result.data;
+          count = result.count;
         } else if (intent?.type === 'region') {
-          data = await fetchRegionsForDonation();
+          const result = await fetchRegionsForDonationPaginated({
+            page: currentPage,
+            pageSize,
+            searchQuery: hasSearch ? normalizedQuery : undefined,
+          });
+          data = result.data;
+          count = result.count;
         } else if (intent?.type === 'operation') {
-          data = await fetchOperationsForDonation();
+          const operations = await fetchOperationsForDonation();
+          const filtered = hasSearch
+            ? operations.filter(entity =>
+                entity.name
+                  .toLowerCase()
+                  .includes(normalizedQuery.toLowerCase())
+              )
+            : operations;
+          count = filtered.length;
+          const from = (currentPage - 1) * pageSize;
+          data = filtered.slice(from, from + pageSize);
         } else {
           data = [];
+          count = 0;
         }
         setEntities(data);
+        setTotalCount(data.length === 0 ? 0 : count);
       } catch (error) {
         console.error('Failed to fetch entities:', error);
       } finally {
@@ -61,14 +106,7 @@ export const StepEntitySelection: React.FC<{ flow: DonateFlow }> = ({
     if (intent?.type && intent.type !== 'unrestricted') {
       fetchEntities();
     }
-  }, [intent?.type]);
-
-  // Filter entities by search query
-  const filteredEntities = React.useMemo(() => {
-    if (!searchQuery.trim()) return entities;
-    const query = searchQuery.toLowerCase();
-    return entities.filter(e => e.name.toLowerCase().includes(query));
-  }, [entities, searchQuery]);
+  }, [intent?.type, currentPage, pageSize, hasSearch, normalizedQuery]);
 
   // Handle entity selection - immediately proceed to amount entry
   const handleSelectEntity = (entity: EntityForDonation) => {
@@ -128,15 +166,15 @@ export const StepEntitySelection: React.FC<{ flow: DonateFlow }> = ({
         <div className='text-sm text-neutral-500 py-8 text-center'>
           Loading {entityTypeLabel}s...
         </div>
-      ) : filteredEntities.length === 0 ? (
+      ) : entities.length === 0 ? (
         <div className='text-sm text-neutral-500 py-8 text-center'>
-          {searchQuery
+          {hasSearch
             ? `No ${entityTypeLabel}s found matching "${searchQuery}"`
             : `No ${entityTypeLabel}s available`}
         </div>
       ) : (
         <div className='space-y-2'>
-          {filteredEntities.map(entity => (
+          {entities.map(entity => (
             <EntityCard
               key={entity.id}
               entity={entity}
@@ -144,6 +182,19 @@ export const StepEntitySelection: React.FC<{ flow: DonateFlow }> = ({
             />
           ))}
         </div>
+      )}
+
+      {!loading && entities.length > 0 && totalCount > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.max(1, Math.ceil(totalCount / pageSize))}
+          totalItems={totalCount}
+          itemsPerPage={pageSize}
+          onPageChange={setCurrentPage}
+          visibleItemsCount={entities.length}
+          useVisibleItemsSummary={hasSearch}
+          showInfo
+        />
       )}
     </div>
   );

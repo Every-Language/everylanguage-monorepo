@@ -200,6 +200,7 @@ sql_paths = [
   "seed/test/03_bible_content/01_seed_tags_media.sql",
   "seed/test/04_finance/01_seed_sponsorships_donations.sql",
   "seed/test/04_finance/02_seed_test_donations_for_el34.sql",
+  "seed/test/04_finance/03_seed_donation_flow_placeholders.sql",
   "seed/test/05_user_data/01_seed_playlists_bookmarks.sql",
   "seed/test/06_analytics/01_seed_analytics.sql"
 ]

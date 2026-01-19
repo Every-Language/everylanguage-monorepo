@@ -7,6 +7,20 @@ export interface EntityForDonation {
   budgetCents: number;
 }
 
+export interface PaginatedDonationEntities {
+  data: EntityForDonation[];
+  count: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+interface FetchDonationEntitiesParams {
+  page?: number;
+  pageSize?: number;
+  searchQuery?: string;
+}
+
 type SearchPartnerOrgsResult =
   Database['public']['Functions']['search_partner_orgs']['Returns'];
 
@@ -118,16 +132,48 @@ export async function fetchPartnerOrgsPaginated(
 export async function fetchLanguagesForDonation(): Promise<
   EntityForDonation[]
 > {
+  return (await fetchLanguagesForDonationPaginated()).data;
+}
+
+export async function fetchLanguagesForDonationPaginated(
+  params: FetchDonationEntitiesParams = {}
+): Promise<PaginatedDonationEntities> {
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 25;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const searchQuery = params.searchQuery?.trim() ?? '';
+  const isSearchActive = searchQuery.length >= 2;
+
+  type LanguageFundingBalanceRow = {
+    language_entity_id: string;
+    remaining_budget_cents: number | null;
+    language_entities: { id: string; name: string } | null;
+  };
+
   // Use explicit foreign key relationship syntax for PostgREST
-  const { data, error } = await (supabase as any)
+  let query = (supabase as unknown as typeof supabase)
     .from('language_funding_balances')
     .select(
-      'language_entity_id, remaining_budget_cents, language_entities!language_entity_id(id, name)'
+      'language_entity_id, remaining_budget_cents, language_entities!language_entity_id(id, name)',
+      { count: 'exact' }
     )
     .in('funding_status', ['available', 'in_progress'])
     .gt('remaining_budget_cents', 0)
-    .is('deleted_at', null)
-    .order('remaining_budget_cents', { ascending: false });
+    .is('deleted_at', null);
+
+  if (isSearchActive) {
+    query = query
+      .ilike('language_entities.name', `%${searchQuery}%`)
+      .order('name', {
+        ascending: true,
+        referencedTable: 'language_entities',
+      });
+  } else {
+    query = query.order('remaining_budget_cents', { ascending: false });
+  }
+
+  const { data, error, count } = await query.range(from, to);
 
   if (error) {
     console.error('Error fetching languages:', error);
@@ -140,26 +186,26 @@ export async function fetchLanguagesForDonation(): Promise<
     throw new Error(error.message || 'Failed to fetch languages');
   }
 
-  console.log('Fetched languages data:', {
-    count: data?.length || 0,
-    sample: data?.[0],
-  });
-
-  // Filter out languages without entity data and map to response format
-  const result = (data || [])
-    .filter((row: any) => row.language_entities) // Only filter out if language_entities is missing
-    .map((row: any) => ({
+  const rows = (data || []) as LanguageFundingBalanceRow[];
+  const result = rows
+    .filter(row => row.language_entities)
+    .map(row => ({
       id: row.language_entity_id,
-      name: row.language_entities.name,
-      budgetCents: row.remaining_budget_cents || 0, // Use remaining budget
-    }));
+      name: row.language_entities?.name ?? '',
+      budgetCents: row.remaining_budget_cents || 0,
+    }))
+    .filter(entity => entity.name);
 
-  console.log('Processed languages:', {
-    count: result.length,
-    sample: result[0],
-  });
+  const totalCount = count ?? 0;
+  const totalPages = totalCount === 0 ? 1 : Math.ceil(totalCount / pageSize);
 
-  return result;
+  return {
+    data: result,
+    count: totalCount,
+    page,
+    pageSize,
+    totalPages,
+  };
 }
 
 /**
@@ -167,24 +213,67 @@ export async function fetchLanguagesForDonation(): Promise<
  * Returns regions with status indicating available/in_progress and remaining_budget_cents > 0
  */
 export async function fetchRegionsForDonation(): Promise<EntityForDonation[]> {
-  const { data, error } = await (supabase as any)
-    .from('region_funding')
-    .select('region_id, remaining_budget_cents, region_name')
+  return (await fetchRegionsForDonationPaginated()).data;
+}
+
+export async function fetchRegionsForDonationPaginated(
+  params: FetchDonationEntitiesParams = {}
+): Promise<PaginatedDonationEntities> {
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 25;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const searchQuery = params.searchQuery?.trim() ?? '';
+  const isSearchActive = searchQuery.length >= 2;
+
+  type RegionFundingRow = {
+    region_id: string;
+    remaining_budget_cents: number | null;
+    region_name: string | null;
+  };
+
+  let query = (supabase as unknown as typeof supabase)
+    .from('region_funding_cached')
+    .select('region_id, remaining_budget_cents, region_name', {
+      count: 'exact',
+    })
     .in('funding_status', ['available', 'in_progress'])
-    .gt('remaining_budget_cents', 0)
-    .order('remaining_budget_cents', { ascending: false });
+    .gt('remaining_budget_cents', 0);
+
+  if (isSearchActive) {
+    query = query
+      .ilike('region_name', `%${searchQuery}%`)
+      .order('region_name', { ascending: true });
+  } else {
+    query = query.order('remaining_budget_cents', { ascending: false });
+  }
+
+  const { data, error, count } = await query.range(from, to);
 
   if (error) {
     throw new Error(error.message || 'Failed to fetch regions');
   }
 
-  return (data || [])
-    .filter((row: any) => row.region_name && row.remaining_budget_cents)
-    .map((row: any) => ({
+  const rows = (data || []) as RegionFundingRow[];
+  const result = rows
+    .filter(row => row.region_name)
+    .map(row => ({
       id: row.region_id,
-      name: row.region_name,
-      budgetCents: row.remaining_budget_cents,
-    }));
+      name: row.region_name ?? '',
+      budgetCents: row.remaining_budget_cents || 0,
+    }))
+    .filter(entity => entity.name);
+
+  const totalCount = count ?? 0;
+  const totalPages = totalCount === 0 ? 1 : Math.ceil(totalCount / pageSize);
+
+  return {
+    data: result,
+    count: totalCount,
+    page,
+    pageSize,
+    totalPages,
+  };
 }
 
 /**

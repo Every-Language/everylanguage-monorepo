@@ -89,6 +89,11 @@ Remaining unallocated amount for each donation.
 
 Donations that haven't been fully allocated.
 
+### `region_funding_cached`
+
+Materialized view that caches region funding balances used by the donation flow.
+Refreshed daily via pg_cron to reduce query latency on `region_funding`.
+
 ## Notes
 
 - Business logic layer: What donors want to fund and how funds are allocated

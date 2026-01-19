@@ -12,6 +12,8 @@ export interface PaginationProps {
   showSizeChanger?: boolean;
   pageSizeOptions?: number[];
   onPageSizeChange?: (pageSize: number) => void;
+  visibleItemsCount?: number;
+  useVisibleItemsSummary?: boolean;
   className?: string;
 }
 
@@ -25,11 +27,19 @@ export const Pagination: React.FC<PaginationProps> = ({
   showSizeChanger = false,
   pageSizeOptions = [10, 25, 50, 100],
   onPageSizeChange,
+  visibleItemsCount,
+  useVisibleItemsSummary = false,
   className = '',
 }) => {
   // Calculate the range of items being displayed
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+  const visibleCount = visibleItemsCount ?? endItem - startItem + 1;
+  const summaryText = useVisibleItemsSummary
+    ? `Showing ${visibleCount} result${visibleCount === 1 ? '' : 's'}`
+    : totalItems <= itemsPerPage
+      ? `Showing ${totalItems} result${totalItems === 1 ? '' : 's'}`
+      : `Showing ${startItem} to ${endItem} of ${totalItems} results`;
 
   // Generate page numbers to show
   const getVisiblePages = () => {
@@ -91,7 +101,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       {/* Items info */}
       {showInfo && (
         <div className='text-sm text-gray-700 dark:text-gray-300'>
-          Showing {startItem} to {endItem} of {totalItems} results
+          {summaryText}
         </div>
       )}
 
