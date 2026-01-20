@@ -14,6 +14,8 @@ jest.mock('@/shared/utils/logger');
 const mockPowerSyncSystem = powerSyncSystem as jest.Mocked<
   typeof powerSyncSystem
 >;
+
+type ExecuteCallArgs = Parameters<typeof mockPowerSyncSystem.execute>;
 const mockFindFirstVerseId = findFirstVerseId as jest.MockedFunction<
   typeof findFirstVerseId
 >;
@@ -22,10 +24,25 @@ const mockFindLastVerseId = findLastVerseId as jest.MockedFunction<
 >;
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
+const setIsInitialized = (value: boolean): void => {
+  Object.defineProperty(mockPowerSyncSystem, 'isInitialized', {
+    configurable: true,
+    get: () => value,
+  });
+};
+
+const getExecuteCallArgs = (index: number = 0): ExecuteCallArgs => {
+  const callArgs = mockPowerSyncSystem.execute.mock.calls[index];
+  if (!callArgs) {
+    throw new Error('Expected execute call');
+  }
+  return callArgs as ExecuteCallArgs;
+};
+
 describe('useCreateSequence', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPowerSyncSystem.isInitialized = true;
+    setIsInitialized(true);
     mockPowerSyncSystem.execute.mockResolvedValue(undefined);
     mockFindFirstVerseId.mockResolvedValue('verse-1');
     mockFindLastVerseId.mockResolvedValue('verse-50');
@@ -100,8 +117,11 @@ describe('useCreateSequence', () => {
       await result.current.createSequence(mockSequenceData, projectId);
     });
 
-    const callArgs = mockPowerSyncSystem.execute.mock.calls[0];
-    const createdBy = callArgs[1][11] as string | null; // created_by is at index 11
+    const [, params] = getExecuteCallArgs();
+    if (!params) {
+      throw new Error('Expected execute params');
+    }
+    const createdBy = params[11] as string | null; // created_by is at index 11
 
     expect(createdBy).toBeNull();
   });
@@ -142,8 +162,11 @@ describe('useCreateSequence', () => {
       await result.current.createSequence(dataWithoutDescription, projectId);
     });
 
-    const callArgs = mockPowerSyncSystem.execute.mock.calls[0];
-    const description = callArgs[1][2] as string | null;
+    const [, params] = getExecuteCallArgs();
+    if (!params) {
+      throw new Error('Expected execute params');
+    }
+    const description = params[2] as string | null;
 
     expect(description).toBeNull();
   });
@@ -167,7 +190,7 @@ describe('useCreateSequence', () => {
   });
 
   it('should throw error when PowerSync is not initialized', async () => {
-    mockPowerSyncSystem.isInitialized = false;
+    setIsInitialized(false);
 
     const { result } = renderHook(() => useCreateSequence());
 
@@ -270,8 +293,11 @@ describe('useCreateSequence', () => {
       await result.current.createSequence(mockSequenceData, projectId);
     });
 
-    const callArgs = mockPowerSyncSystem.execute.mock.calls[0];
-    const sequenceId = callArgs[1][0] as string;
+    const [, params] = getExecuteCallArgs();
+    if (!params) {
+      throw new Error('Expected execute params');
+    }
+    const sequenceId = params[0] as string;
 
     // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
     const uuidRegex =
@@ -286,10 +312,13 @@ describe('useCreateSequence', () => {
       await result.current.createSequence(mockSequenceData, projectId);
     });
 
-    const callArgs = mockPowerSyncSystem.execute.mock.calls[0];
-    const uploadStatus = callArgs[1][12] as string; // upload_status is at index 12
-    const publishStatus = callArgs[1][13] as string; // publish_status is at index 13
-    const checkStatus = callArgs[1][14] as string; // check_status is at index 14
+    const [, params] = getExecuteCallArgs();
+    if (!params) {
+      throw new Error('Expected execute params');
+    }
+    const uploadStatus = params[12] as string; // upload_status is at index 12
+    const publishStatus = params[13] as string; // publish_status is at index 13
+    const checkStatus = params[14] as string; // check_status is at index 14
 
     expect(uploadStatus).toBe('pending');
     expect(publishStatus).toBe('pending');
@@ -303,8 +332,11 @@ describe('useCreateSequence', () => {
       await result.current.createSequence(mockSequenceData, projectId);
     });
 
-    const callArgs = mockPowerSyncSystem.execute.mock.calls[0];
-    const isBibleAudio = callArgs[1][5] as number;
+    const [, params] = getExecuteCallArgs();
+    if (!params) {
+      throw new Error('Expected execute params');
+    }
+    const isBibleAudio = params[5] as number;
 
     expect(isBibleAudio).toBe(1);
   });
