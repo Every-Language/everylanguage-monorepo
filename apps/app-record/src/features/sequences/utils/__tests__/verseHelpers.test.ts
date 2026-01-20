@@ -8,10 +8,17 @@ const mockPowerSyncSystem = powerSyncSystem as jest.Mocked<
   typeof powerSyncSystem
 >;
 
+const setIsInitialized = (value: boolean): void => {
+  Object.defineProperty(mockPowerSyncSystem, 'isInitialized', {
+    configurable: true,
+    get: () => value,
+  });
+};
+
 describe('verseHelpers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPowerSyncSystem.isInitialized = true;
+    setIsInitialized(true);
   });
 
   describe('findFirstVerseId', () => {
@@ -46,7 +53,7 @@ describe('verseHelpers', () => {
 
     it('should throw error when PowerSync is not initialized', async () => {
       const chapterId = 'chapter-123';
-      mockPowerSyncSystem.isInitialized = false;
+      setIsInitialized(false);
 
       await expect(findFirstVerseId(chapterId)).rejects.toThrow(
         'PowerSync database not initialized'
@@ -107,7 +114,7 @@ describe('verseHelpers', () => {
 
     it('should throw error when PowerSync is not initialized', async () => {
       const chapterId = 'chapter-123';
-      mockPowerSyncSystem.isInitialized = false;
+      setIsInitialized(false);
 
       await expect(findLastVerseId(chapterId)).rejects.toThrow(
         'PowerSync database not initialized'

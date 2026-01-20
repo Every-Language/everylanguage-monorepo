@@ -20,7 +20,15 @@ const books = new Table(
     updated_at: column.text,
     global_order: column.integer,
     testament: column.text,
-  }, { indexes: { idx_0: ['global_order'], idx_1: ['testament'], idx_2: ['bible_version_id'] } });
+  },
+  {
+    indexes: {
+      idx_0: ['global_order'],
+      idx_1: ['testament'],
+      idx_2: ['bible_version_id'],
+    },
+  }
+);
 const chapters = new Table(
   {
     // id column (text) is automatically included
@@ -30,7 +38,15 @@ const chapters = new Table(
     created_at: column.text,
     updated_at: column.text,
     global_order: column.integer,
-  }, { indexes: { idx_0: ['book_id'], idx_1: ['global_order'], idx_2: ['chapter_number'] } });
+  },
+  {
+    indexes: {
+      idx_0: ['book_id'],
+      idx_1: ['global_order'],
+      idx_2: ['chapter_number'],
+    },
+  }
+);
 const verses = new Table(
   {
     // id column (text) is automatically included
@@ -39,7 +55,15 @@ const verses = new Table(
     created_at: column.text,
     updated_at: column.text,
     global_order: column.integer,
-  }, { indexes: { idx_0: ['chapter_id'], idx_1: ['global_order'], idx_2: ['verse_number'] } });
+  },
+  {
+    indexes: {
+      idx_0: ['chapter_id'],
+      idx_1: ['global_order'],
+      idx_2: ['verse_number'],
+    },
+  }
+);
 const verse_texts = new Table(
   {
     // id column (text) is automatically included
@@ -52,7 +76,15 @@ const verse_texts = new Table(
     deleted_at: column.text,
     version: column.integer,
     publish_status: column.text,
-  }, { indexes: { idx_0: ['text_version_id'], idx_1: ['verse_id'], idx_2: ['verse_id', 'text_version_id'] } });
+  },
+  {
+    indexes: {
+      idx_0: ['text_version_id'],
+      idx_1: ['verse_id'],
+      idx_2: ['verse_id', 'text_version_id'],
+    },
+  }
+);
 const media_files = new Table(
   {
     // id column (text) is automatically included
@@ -80,7 +112,21 @@ const media_files = new Table(
     local_path: column.text,
     sequence_id: column.text,
     project_id: column.text,
-  }, { indexes: { idx_0: ['audio_version_id'], idx_1: ['chapter_id'], idx_2: ['language_entity_id'], idx_3: ['chapter_id', 'audio_version_id'], idx_4: ['audio_version_id', 'chapter_id'], idx_5: ['chapter_id', 'deleted_at'], idx_6: ['id', 'chapter_id'], idx_7: ['audio_version_id', 'deleted_at'], idx_8: ['chapter_id', 'audio_version_id', 'deleted_at'] } });
+  },
+  {
+    indexes: {
+      idx_0: ['audio_version_id'],
+      idx_1: ['chapter_id'],
+      idx_2: ['language_entity_id'],
+      idx_3: ['chapter_id', 'audio_version_id'],
+      idx_4: ['audio_version_id', 'chapter_id'],
+      idx_5: ['chapter_id', 'deleted_at'],
+      idx_6: ['id', 'chapter_id'],
+      idx_7: ['audio_version_id', 'deleted_at'],
+      idx_8: ['chapter_id', 'audio_version_id', 'deleted_at'],
+    },
+  }
+);
 const media_files_verses = new Table(
   {
     // id column (text) is automatically included
@@ -96,7 +142,17 @@ const media_files_verses = new Table(
     verse_checker_status: column.text,
     verse_checker_comment: column.text,
     project_id: column.text,
-  }, { indexes: { idx_0: ['media_file_id'], idx_1: ['verse_id'], idx_2: ['denormalized_audio_version_id'], idx_3: ['media_file_id', 'verse_id'], idx_4: ['verse_id', 'denormalized_audio_version_id'] } });
+  },
+  {
+    indexes: {
+      idx_0: ['media_file_id'],
+      idx_1: ['verse_id'],
+      idx_2: ['denormalized_audio_version_id'],
+      idx_3: ['media_file_id', 'verse_id'],
+      idx_4: ['verse_id', 'denormalized_audio_version_id'],
+    },
+  }
+);
 const text_versions = new Table(
   {
     // id column (text) is automatically included
@@ -136,7 +192,9 @@ const user_current_selections = new Table(
     selected_text_version: column.text,
     created_at: column.text,
     updated_at: column.text,
-  }, { indexes: { idx_0: ['user_id'] } });
+  },
+  { indexes: { idx_0: ['user_id'] } }
+);
 const user_saved_text_versions = new Table(
   {
     // id column (text) is automatically included
@@ -144,7 +202,9 @@ const user_saved_text_versions = new Table(
     text_version_id: column.text,
     created_at: column.text,
     updated_at: column.text,
-  }, { indexes: { idx_0: ['user_id'], idx_1: ['text_version_id'] } });
+  },
+  { indexes: { idx_0: ['user_id'], idx_1: ['text_version_id'] } }
+);
 const user_saved_audio_versions = new Table(
   {
     // id column (text) is automatically included
@@ -152,7 +212,9 @@ const user_saved_audio_versions = new Table(
     audio_version_id: column.text,
     created_at: column.text,
     updated_at: column.text,
-  }, { indexes: { idx_0: ['user_id'], idx_1: ['audio_version_id'] } });
+  },
+  { indexes: { idx_0: ['user_id'], idx_1: ['audio_version_id'] } }
+);
 const sessions = new Table(
   {
     // id column (text) is automatically included
@@ -318,7 +380,15 @@ const images = new Table(
     storage_provider: column.text,
     original_filename: column.text,
     file_type: column.text,
-  }, { indexes: { idx_0: ['set_id'], idx_1: ['target_id'], idx_2: ['target_type'] } });
+  },
+  {
+    indexes: {
+      idx_0: ['set_id'],
+      idx_1: ['target_id'],
+      idx_2: ['target_type'],
+    },
+  }
+);
 const user_playlist_groups = new Table(
   {
     // id column (text) is automatically included
@@ -399,7 +469,6 @@ export const SyncedSchema = new Schema({
   playlist_items,
 });
 
-
 // Import local-only tables map
 import { localTables as __localTables } from './LocalSchema';
 
@@ -435,5 +504,5 @@ export const AppSchema = new Schema({
   playlists,
   playlist_items,
   // Local-only tables
-  ...__localTables
+  ...__localTables,
 });
