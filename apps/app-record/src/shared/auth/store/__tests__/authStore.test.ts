@@ -16,6 +16,13 @@ const mockPowerSyncSystem = powerSyncSystem as jest.Mocked<
 >;
 const mockLogger = logger as jest.Mocked<typeof logger>;
 
+const setIsConnected = (value: boolean): void => {
+  Object.defineProperty(mockPowerSyncSystem, 'isConnected', {
+    configurable: true,
+    get: () => value,
+  });
+};
+
 describe('authStore', () => {
   const mockUser: User = {
     id: 'user-123',
@@ -38,6 +45,7 @@ describe('authStore', () => {
 
   let mockUnsubscribe: jest.Mock;
   let mockSubscription: { unsubscribe: jest.Mock };
+  let onAuthStateChangeMock: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -55,6 +63,9 @@ describe('authStore', () => {
     // Setup default mocks
     mockUnsubscribe = jest.fn();
     mockSubscription = { unsubscribe: mockUnsubscribe };
+    onAuthStateChangeMock = jest.fn(() => ({
+      data: { subscription: mockSubscription },
+    }));
 
     mockSupabase.auth = {
       getSession: jest.fn().mockResolvedValue({
@@ -63,13 +74,11 @@ describe('authStore', () => {
       }),
       signInWithPassword: jest.fn(),
       signOut: jest.fn(),
-      onAuthStateChange: jest.fn(() => ({
-        data: { subscription: mockSubscription },
-      })),
+      onAuthStateChange: onAuthStateChangeMock,
     } as any;
 
     mockPowerSyncSystem.disconnect = jest.fn().mockResolvedValue(undefined);
-    mockPowerSyncSystem.isConnected = false;
+    setIsConnected(false);
   });
 
   describe('initial state', () => {
@@ -260,8 +269,11 @@ describe('authStore', () => {
       });
 
       expect(mockSupabase.auth.onAuthStateChange).toHaveBeenCalledTimes(1);
-      const listenerCallback = mockSupabase.auth.onAuthStateChange.mock
-        .calls[0][0] as (
+      const authCalls = onAuthStateChangeMock.mock.calls[0];
+      if (!authCalls) {
+        throw new Error('Expected auth state change listener to be registered');
+      }
+      const listenerCallback = authCalls[0] as (
         event: AuthChangeEvent,
         session: Session | null
       ) => void;
@@ -399,7 +411,7 @@ describe('authStore', () => {
       mockSupabase.auth.signOut = jest.fn().mockResolvedValue({
         error: null,
       });
-      mockPowerSyncSystem.isConnected = true;
+      setIsConnected(true);
 
       await act(async () => {
         await useAuthStore.getState().signOut();
@@ -441,7 +453,7 @@ describe('authStore', () => {
     it('should throw error on sign out failure', async () => {
       const signOutError = new Error('Sign out failed');
       mockSupabase.auth.signOut = jest.fn().mockRejectedValue(signOutError);
-      mockPowerSyncSystem.isConnected = false;
+      setIsConnected(false);
 
       await act(async () => {
         await expect(useAuthStore.getState().signOut()).rejects.toThrow(
@@ -464,7 +476,7 @@ describe('authStore', () => {
       mockSupabase.auth.signOut = jest.fn().mockResolvedValue({
         error: null,
       });
-      mockPowerSyncSystem.isConnected = true;
+      setIsConnected(true);
 
       await act(async () => {
         await useAuthStore.getState().signOut();
@@ -480,7 +492,7 @@ describe('authStore', () => {
       mockSupabase.auth.signOut = jest.fn().mockResolvedValue({
         error: null,
       });
-      mockPowerSyncSystem.isConnected = false;
+      setIsConnected(false);
 
       await act(async () => {
         await useAuthStore.getState().signOut();
@@ -494,7 +506,7 @@ describe('authStore', () => {
       mockSupabase.auth.signOut = jest.fn().mockResolvedValue({
         error: null,
       });
-      mockPowerSyncSystem.isConnected = true;
+      setIsConnected(true);
       mockPowerSyncSystem.disconnect = jest
         .fn()
         .mockRejectedValue(disconnectError);
@@ -517,7 +529,7 @@ describe('authStore', () => {
       mockSupabase.auth.signOut = jest.fn().mockResolvedValue({
         error: null,
       });
-      mockPowerSyncSystem.isConnected = false;
+      setIsConnected(false);
 
       // Initialize first to set up listener
       mockSupabase.auth.getSession = jest.fn().mockResolvedValue({
