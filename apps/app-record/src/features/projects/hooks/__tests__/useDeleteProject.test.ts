@@ -9,10 +9,19 @@ const mockPowerSyncSystem = powerSyncSystem as jest.Mocked<
   typeof powerSyncSystem
 >;
 
+type ExecuteCallArgs = Parameters<typeof mockPowerSyncSystem.execute>;
+
+const setIsInitialized = (value: boolean): void => {
+  Object.defineProperty(mockPowerSyncSystem, 'isInitialized', {
+    configurable: true,
+    get: () => value,
+  });
+};
+
 describe('useDeleteProject', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPowerSyncSystem.isInitialized = true;
+    setIsInitialized(true);
     mockPowerSyncSystem.execute.mockResolvedValue(undefined);
   });
 
@@ -74,10 +83,20 @@ describe('useDeleteProject', () => {
       await result.current.deleteProject(projectId);
     });
 
-    const calls = mockPowerSyncSystem.execute.mock.calls;
-    const deletedAtSegments = calls[0][1][0] as string;
-    const deletedAtSequences = calls[1][1][0] as string;
-    const deletedAtProject = calls[2][1][0] as string;
+    const calls = mockPowerSyncSystem.execute.mock.calls as ExecuteCallArgs[];
+    const [segmentsCall, sequencesCall, projectCall] = calls;
+    if (!segmentsCall || !sequencesCall || !projectCall) {
+      throw new Error('Expected execute calls for deletes');
+    }
+    const segmentsParams = segmentsCall[1];
+    const sequencesParams = sequencesCall[1];
+    const projectParams = projectCall[1];
+    if (!segmentsParams || !sequencesParams || !projectParams) {
+      throw new Error('Expected execute params for deletes');
+    }
+    const deletedAtSegments = segmentsParams[0] as string;
+    const deletedAtSequences = sequencesParams[0] as string;
+    const deletedAtProject = projectParams[0] as string;
 
     // All should use the same timestamp
     expect(deletedAtSegments).toBe(deletedAtSequences);
@@ -137,7 +156,7 @@ describe('useDeleteProject', () => {
   });
 
   it('should handle PowerSync not initialized error', async () => {
-    mockPowerSyncSystem.isInitialized = false;
+    setIsInitialized(false);
 
     const { result } = renderHook(() => useDeleteProject());
 
@@ -221,7 +240,7 @@ describe('useDeleteProject', () => {
     const { result } = renderHook(() => useDeleteProject());
 
     // First, cause an error
-    mockPowerSyncSystem.isInitialized = false;
+    setIsInitialized(false);
     await act(async () => {
       await expect(
         result.current.deleteProject('project-123')
@@ -233,7 +252,7 @@ describe('useDeleteProject', () => {
     });
 
     // Then fix the issue and delete successfully
-    mockPowerSyncSystem.isInitialized = true;
+    setIsInitialized(true);
     mockPowerSyncSystem.execute.mockResolvedValue(undefined);
 
     await act(async () => {
