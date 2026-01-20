@@ -75,6 +75,9 @@ describe('AppInitializationService', () => {
         mockPowerSyncSystem.initialize.mock.invocationCallOrder[0];
       const storesCallOrder =
         mockInitializeAllStores.mock.invocationCallOrder[0];
+      if (powerSyncCallOrder === undefined || storesCallOrder === undefined) {
+        throw new Error('Expected initialize call order data');
+      }
 
       expect(storesCallOrder).toBeGreaterThan(powerSyncCallOrder);
     });
@@ -86,6 +89,9 @@ describe('AppInitializationService', () => {
         mockInitializeAllStores.mock.invocationCallOrder[0];
       const authStoreCallOrder =
         mockUseAuthStore.getState.mock.invocationCallOrder[0];
+      if (storesCallOrder === undefined || authStoreCallOrder === undefined) {
+        throw new Error('Expected initialize call order data');
+      }
 
       expect(authStoreCallOrder).toBeGreaterThan(storesCallOrder);
     });

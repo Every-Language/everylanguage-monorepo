@@ -10,10 +10,27 @@ const mockPowerSyncSystem = powerSyncSystem as jest.Mocked<
   typeof powerSyncSystem
 >;
 
+type ExecuteCallArgs = Parameters<typeof mockPowerSyncSystem.execute>;
+
+const setIsInitialized = (value: boolean): void => {
+  Object.defineProperty(mockPowerSyncSystem, 'isInitialized', {
+    configurable: true,
+    get: () => value,
+  });
+};
+
+const getExecuteCallArgs = (index: number = 0): ExecuteCallArgs => {
+  const callArgs = mockPowerSyncSystem.execute.mock.calls[index];
+  if (!callArgs) {
+    throw new Error('Expected execute call');
+  }
+  return callArgs as ExecuteCallArgs;
+};
+
 describe('useUpdateProject', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPowerSyncSystem.isInitialized = true;
+    setIsInitialized(true);
     mockPowerSyncSystem.execute.mockResolvedValue(undefined);
   });
 
@@ -133,8 +150,11 @@ describe('useUpdateProject', () => {
 
     const afterTime = new Date().toISOString();
 
-    const callArgs = mockPowerSyncSystem.execute.mock.calls[0];
-    const updatedAt = callArgs[1][8] as string; // updated_at
+    const [, params] = getExecuteCallArgs();
+    if (!params) {
+      throw new Error('Expected execute params');
+    }
+    const updatedAt = params[8] as string; // updated_at
 
     expect(updatedAt >= beforeTime && updatedAt <= afterTime).toBe(true);
   });
@@ -172,7 +192,7 @@ describe('useUpdateProject', () => {
   });
 
   it('should handle PowerSync not initialized error', async () => {
-    mockPowerSyncSystem.isInitialized = false;
+    setIsInitialized(false);
 
     const { result } = renderHook(() => useUpdateProject());
 
@@ -214,7 +234,7 @@ describe('useUpdateProject', () => {
     const { result } = renderHook(() => useUpdateProject());
 
     // First, cause an error
-    mockPowerSyncSystem.isInitialized = false;
+    setIsInitialized(false);
     await act(async () => {
       await expect(
         result.current.updateProject(projectId, mockUpdateData)
@@ -226,7 +246,7 @@ describe('useUpdateProject', () => {
     });
 
     // Then fix the issue and update successfully
-    mockPowerSyncSystem.isInitialized = true;
+    setIsInitialized(true);
     mockPowerSyncSystem.execute.mockResolvedValue(undefined);
 
     await act(async () => {
@@ -245,8 +265,11 @@ describe('useUpdateProject', () => {
       await result.current.updateProject(projectId, mockUpdateData);
     });
 
-    const callArgs = mockPowerSyncSystem.execute.mock.calls[0];
-    const whereClauseId = callArgs[1][9] as string; // Last parameter is the WHERE id
+    const [, params] = getExecuteCallArgs();
+    if (!params) {
+      throw new Error('Expected execute params');
+    }
+    const whereClauseId = params[9] as string; // Last parameter is the WHERE id
 
     expect(whereClauseId).toBe(projectId);
     expect(mockPowerSyncSystem.execute).toHaveBeenCalledWith(
