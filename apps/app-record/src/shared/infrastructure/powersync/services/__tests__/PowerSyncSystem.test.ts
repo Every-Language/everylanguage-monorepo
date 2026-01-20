@@ -50,6 +50,12 @@ const mockLogger = logger as jest.Mocked<typeof logger>;
 describe('PowerSyncSystem', () => {
   let mockPowerSyncInstance: jest.Mocked<PowerSyncDatabase>;
   let mockOpSqliteFactoryInstance: jest.Mocked<OPSqliteOpenFactory>;
+  const setConnected = (value: boolean): void => {
+    Object.defineProperty(mockPowerSyncInstance, 'connected', {
+      configurable: true,
+      get: () => value,
+    });
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -254,7 +260,7 @@ describe('PowerSyncSystem', () => {
     it('should return true when connected', async () => {
       const system = PowerSyncSystem.getInstance();
       await system.initialize();
-      mockPowerSyncInstance.connected = true;
+      setConnected(true);
 
       expect(system.isConnected).toBe(true);
     });
@@ -262,7 +268,7 @@ describe('PowerSyncSystem', () => {
     it('should return false when not connected', async () => {
       const system = PowerSyncSystem.getInstance();
       await system.initialize();
-      mockPowerSyncInstance.connected = false;
+      setConnected(false);
 
       expect(system.isConnected).toBe(false);
     });
@@ -278,7 +284,7 @@ describe('PowerSyncSystem', () => {
     it('should return status information', async () => {
       const system = PowerSyncSystem.getInstance();
       await system.initialize();
-      mockPowerSyncInstance.connected = true;
+      setConnected(true);
       mockPowerSyncInstance.currentStatus = 'connected' as any;
 
       const status = system.getStatus();
@@ -307,7 +313,10 @@ describe('PowerSyncSystem', () => {
     it('should execute SQL query', async () => {
       const system = PowerSyncSystem.getInstance();
       await system.initialize();
-      mockPowerSyncInstance.execute.mockResolvedValueOnce({ affectedRows: 1 });
+      const mockResult = {} as Awaited<
+        ReturnType<typeof mockPowerSyncInstance.execute>
+      >;
+      mockPowerSyncInstance.execute.mockResolvedValueOnce(mockResult);
 
       const result = await system.execute('SELECT * FROM projects', []);
 
@@ -315,7 +324,7 @@ describe('PowerSyncSystem', () => {
         'SELECT * FROM projects',
         []
       );
-      expect(result).toEqual({ affectedRows: 1 });
+      expect(result).toBe(mockResult);
     });
 
     it('should throw error if not initialized', () => {
