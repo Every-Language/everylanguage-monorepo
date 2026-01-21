@@ -1862,6 +1862,7 @@ export type Database = {
                     funding_status: Database["public"]["Enums"]["funding_status"];
                     id: string;
                     language_entity_id: string;
+                    priority: number | null;
                     updated_at: string;
                 };
                 Insert: {
@@ -1872,6 +1873,7 @@ export type Database = {
                     funding_status?: Database["public"]["Enums"]["funding_status"];
                     id?: string;
                     language_entity_id: string;
+                    priority?: number | null;
                     updated_at?: string;
                 };
                 Update: {
@@ -1882,6 +1884,7 @@ export type Database = {
                     funding_status?: Database["public"]["Enums"]["funding_status"];
                     id?: string;
                     language_entity_id?: string;
+                    priority?: number | null;
                     updated_at?: string;
                 };
                 Relationships: [
