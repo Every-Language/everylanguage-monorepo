@@ -49,7 +49,15 @@ export async function authenticateRequest(
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    // Create Supabase client with JWT token set in headers
+    // This is critical for RLS policies to work correctly - they need auth.uid() to match user_id
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    });
 
     // Get authenticated user by passing token directly
     const {
