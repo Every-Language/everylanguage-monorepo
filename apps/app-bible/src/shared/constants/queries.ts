@@ -129,7 +129,7 @@ export const QUERIES = {
       mfv.media_file_id = mf.id 
       AND mf.chapter_id = ? 
       AND mf.deleted_at IS NULL
-      AND (? IS NULL OR mf.audio_version_id = ?)
+      AND mf.audio_version_id = ?
     )
     WHERE v.chapter_id = ?
     ORDER BY v.verse_number ASC

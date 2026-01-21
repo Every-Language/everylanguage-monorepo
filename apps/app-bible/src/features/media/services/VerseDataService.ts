@@ -193,25 +193,30 @@ export class VerseDataService {
       return;
     }
 
-    await this.loadVerseData(
-      currentTrack.chapterId,
-      currentTextVersion.id,
-      currentTrack.audioVersionId
-    );
+    await this.loadVerseData(currentTrack.chapterId, currentTextVersion.id);
   }
 
   /**
    * Load verse data for a specific chapter and text version
+   * Gets audio version from versionsStore automatically
    */
-  async loadVerseData(
-    chapterId: string,
-    textVersionId: string,
-    audioVersionId?: string
-  ): Promise<void> {
+  async loadVerseData(chapterId: string, textVersionId: string): Promise<void> {
     if (!powerSyncSystem.isInitialized) {
       logger.debug(
         ENABLE_LOGGING,
         '[VerseDataService] PowerSync not initialized yet'
+      );
+      return;
+    }
+
+    // Get current audio version from versionsStore
+    const versionsStore = useVersionsStore.getState();
+    const audioVersionId = versionsStore.currentAudioVersion?.id;
+
+    if (!audioVersionId) {
+      logger.debug(
+        ENABLE_LOGGING,
+        '[VerseDataService] No audio version selected, skipping verse data load'
       );
       return;
     }
@@ -231,13 +236,14 @@ export class VerseDataService {
 
     logger.info(
       ENABLE_LOGGING,
-      `[VerseDataService] Loading verse data for ${cacheKey}`
+      `[VerseDataService] Loading verse data for ${cacheKey} (audio: ${audioVersionId})`
     );
     verseStore.setVerseLoading(chapterId, true);
 
     try {
       // ✅ OPTIMIZED: Single combined query with JOINs
-      // Includes deleted_at filters and optional audio_version_id filter for performance
+      // Includes deleted_at filters and audio_version_id filter for performance
+      // Always filters to current audio version for correctness and performance
       const results = await queryLogger.logQuery(
         'verse-data-service',
         QUERIES.VERSES_WITH_TIMING,
@@ -245,8 +251,7 @@ export class VerseDataService {
           return await powerSyncSystem.getAll(QUERIES.VERSES_WITH_TIMING, [
             textVersionId,
             chapterId,
-            audioVersionId ?? null,
-            audioVersionId ?? null,
+            audioVersionId,
             chapterId,
           ]);
         }
