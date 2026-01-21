@@ -35,6 +35,7 @@ export interface LanguageFunding {
   language_entity_id: string;
   funding_status: LanguageFundingStatus;
   budget_cents: number | null;
+  priority: number | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
