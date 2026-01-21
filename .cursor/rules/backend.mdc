@@ -6,14 +6,20 @@ alwaysApply: false
 
 ## Supabase Migration Workflow (CRITICAL)
 
-**NEVER use `supabase db push`**
+**NEVER use `supabase db push` locally**
 
 Always follow:
 1. `supabase migration new <descriptive_name>`
 2. Edit migration in `supabase/migrations/`
 3. `supabase db reset` - Test locally
 4. Commit & push migrations folder
-5. CI/CD handles deployment automatically
+5. CI/CD handles deployment automatically with `--include-all` flag
+
+**CI/CD uses `--include-all` flag:**
+- Allows migrations to be applied regardless of timestamp order
+- Safe because all migrations are required to be idempotent
+- Prevents issues when PRs with migrations are merged out of order
+- Only applies migrations not already recorded in `supabase_migrations.schema_migrations`
 
 ## Migration Immutability (CRITICAL)
 
@@ -65,15 +71,17 @@ CREATE INDEX idx_example_created_at ON example(created_at);
 - **Read-only**: Use Supabase MCP to query development project data only
 - **Never modify**: Do not create/update/delete data through MCP
 - **No deployments**: Never apply migrations or deploy Edge Functions through MCP - only through CI/CD
-- **Default project**: Always use dev remote project (`sjczwtpnjbmscxoszlyi`) unless explicitly asked to use prod
-- **Never execute SQL on prod**: Never execute SQL on production project unless explicitly instructed
-
 ## Database Migrations
+
+**CRITICAL: Idempotency is required because:**
+- CI/CD uses `--include-all` flag to handle out-of-order PR merges
+- Migrations may be applied in any timestamp order
+- Idempotent migrations ensure safe re-execution if needed
+
 
 **All migrations must be idempotent** (see Migration Immutability section above).
 
 Every migration must include:
-```sql
 -- Idempotent CREATE TABLE
 CREATE TABLE IF NOT EXISTS example (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
