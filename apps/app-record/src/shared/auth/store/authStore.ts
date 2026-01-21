@@ -6,6 +6,88 @@ import { powerSyncSystem } from '@/shared/infrastructure/powersync/services/Powe
 import { logger } from '@/shared/utils/logger';
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
+/**
+ * Update local projects with user_id after sign-in
+ * Only updates projects where created_by IS NULL to avoid overwriting existing assignments
+ */
+async function updateProjectsWithUserId(userId: string): Promise<void> {
+  if (!powerSyncSystem.isInitialized) {
+    logger.warn(
+      'PowerSync not initialized, skipping project update with user_id'
+    );
+    return;
+  }
+
+  try {
+    const result = await powerSyncSystem.execute(
+      `UPDATE projects 
+       SET created_by = ? 
+       WHERE created_by IS NULL`,
+      [userId]
+    );
+
+    logger.info('Updated projects with user_id', { userId, result });
+  } catch (error) {
+    logger.error('Failed to update projects with user_id:', error);
+    // Non-fatal: continue even if update fails
+  }
+}
+
+/**
+ * Validate that all local projects will pass RLS checks before syncing
+ * Checks that projects have created_by matching current user
+ */
+async function validateProjectsForSync(userId: string): Promise<void> {
+  if (!powerSyncSystem.isInitialized) {
+    return;
+  }
+
+  try {
+    const projects = await powerSyncSystem.getAll(
+      `SELECT id, created_by FROM projects WHERE deleted_at IS NULL`
+    );
+
+    const invalidProjects = projects.filter(
+      (p: { id: string; created_by: string | null }) =>
+        p.created_by !== null && p.created_by !== userId
+    );
+
+    if (invalidProjects.length > 0) {
+      logger.warn(
+        'Projects with invalid created_by found (will be skipped on sync):',
+        invalidProjects
+      );
+    }
+  } catch (error) {
+    logger.error('Failed to validate projects for sync:', error);
+    // Non-fatal: continue even if validation fails
+  }
+}
+
+/**
+ * Connect PowerSync after sign-in, with error handling
+ * Non-blocking: failures are logged but don't prevent sign-in
+ */
+async function connectPowerSyncAfterSignIn(): Promise<void> {
+  if (!powerSyncSystem.isInitialized) {
+    logger.warn('PowerSync not initialized, skipping connection after sign-in');
+    return;
+  }
+
+  if (powerSyncSystem.isConnected) {
+    logger.info('PowerSync already connected, skipping connection');
+    return;
+  }
+
+  try {
+    await powerSyncSystem.connect();
+    logger.info('PowerSync connected after sign-in');
+  } catch (error) {
+    logger.error('Failed to connect PowerSync after sign-in:', error);
+    // Non-fatal: user can still use app offline
+  }
+}
+
 interface AuthStoreState {
   user: User | null;
   session: Session | null;
@@ -69,7 +151,7 @@ export const useAuthStore = create<AuthStore>()(
 
             // Set up auth state change listener
             authStateChangeSubscription = supabase.auth.onAuthStateChange(
-              (event: AuthChangeEvent, session: Session | null) => {
+              async (event: AuthChangeEvent, session: Session | null) => {
                 logger.info(
                   `Auth state changed: ${event}`,
                   session?.user?.email
@@ -78,6 +160,14 @@ export const useAuthStore = create<AuthStore>()(
                   session,
                   user: session?.user ?? null,
                 });
+
+                // Handle SIGNED_IN event: update projects and connect PowerSync
+                if (event === 'SIGNED_IN' && session?.user) {
+                  const userId = session.user.id;
+                  await updateProjectsWithUserId(userId);
+                  await validateProjectsForSync(userId);
+                  await connectPowerSyncAfterSignIn();
+                }
               }
             );
           } catch (error) {
@@ -104,6 +194,14 @@ export const useAuthStore = create<AuthStore>()(
 
             set({ session: data.session, user: data.user });
             logger.info('User signed in successfully', email);
+
+            // Update projects with user_id, validate, and connect PowerSync
+            if (data.user) {
+              const userId = data.user.id;
+              await updateProjectsWithUserId(userId);
+              await validateProjectsForSync(userId);
+              await connectPowerSyncAfterSignIn();
+            }
           } catch (error) {
             const err =
               error instanceof Error ? error : new Error('Sign in failed');
