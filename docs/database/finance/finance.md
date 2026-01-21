@@ -27,6 +27,10 @@ How donations are allocated to projects or operations. Supports time-based effec
 
 Operational funding categories (travel, legal, servers, etc.). Public-facing categories donors can fund.
 
+### `language_funding`
+
+Tracks budget and availability for language-specific funding. Includes `priority` for manual ordering in donor-facing lists.
+
 ### `operation_costs`
 
 Costs associated with operations. Used for budgeting and reporting.
@@ -88,6 +92,10 @@ Remaining unallocated amount for each donation.
 ### `vw_unallocated_donations`
 
 Donations that haven't been fully allocated.
+
+### `language_funding_balances`
+
+Remaining budget per language (budget minus completed donations), including `priority` for ordering.
 
 ## Notes
 

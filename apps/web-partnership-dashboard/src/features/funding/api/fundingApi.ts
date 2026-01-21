@@ -122,11 +122,12 @@ export async function fetchLanguagesForDonation(): Promise<
   const { data, error } = await (supabase as any)
     .from('language_funding_balances')
     .select(
-      'language_entity_id, remaining_budget_cents, language_entities!language_entity_id(id, name)'
+      'language_entity_id, remaining_budget_cents, priority, language_entities!language_entity_id(id, name)'
     )
     .in('funding_status', ['available', 'in_progress'])
     .gt('remaining_budget_cents', 0)
     .is('deleted_at', null)
+    .order('priority', { ascending: true, nullsFirst: false })
     .order('remaining_budget_cents', { ascending: false });
 
   if (error) {
