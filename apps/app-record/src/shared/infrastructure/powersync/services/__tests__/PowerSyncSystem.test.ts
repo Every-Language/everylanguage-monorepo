@@ -50,12 +50,17 @@ const mockLogger = logger as jest.Mocked<typeof logger>;
 describe('PowerSyncSystem', () => {
   let mockPowerSyncInstance: jest.Mocked<PowerSyncDatabase>;
   let mockOpSqliteFactoryInstance: jest.Mocked<OPSqliteOpenFactory>;
+  const setConnected = (value: boolean): void => {
+    Object.defineProperty(mockPowerSyncInstance, 'connected', {
+      configurable: true,
+      get: () => value,
+    });
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
 
     // Reset singleton instance for each test
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (PowerSyncSystem as any).instance = undefined;
 
     // Mock PowerSyncDatabase instance
@@ -166,7 +171,6 @@ describe('PowerSyncSystem', () => {
       });
 
       // Access private _seedPromise through the instance
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._seedPromise = seedPromise;
 
       const connectPromise = system.connect();
@@ -186,7 +190,6 @@ describe('PowerSyncSystem', () => {
       await system.initialize();
 
       const seedError = new Error('Seed failed');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._seedPromise = Promise.reject(seedError);
 
       await system.connect();
@@ -216,9 +219,7 @@ describe('PowerSyncSystem', () => {
   describe('database getter', () => {
     it('should return PowerSync database instance', () => {
       const system = PowerSyncSystem.getInstance();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._powersync = mockPowerSyncInstance;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._isInitialized = true;
 
       const db = system.database;
@@ -254,7 +255,7 @@ describe('PowerSyncSystem', () => {
     it('should return true when connected', async () => {
       const system = PowerSyncSystem.getInstance();
       await system.initialize();
-      mockPowerSyncInstance.connected = true;
+      setConnected(true);
 
       expect(system.isConnected).toBe(true);
     });
@@ -262,7 +263,7 @@ describe('PowerSyncSystem', () => {
     it('should return false when not connected', async () => {
       const system = PowerSyncSystem.getInstance();
       await system.initialize();
-      mockPowerSyncInstance.connected = false;
+      setConnected(false);
 
       expect(system.isConnected).toBe(false);
     });
@@ -278,7 +279,7 @@ describe('PowerSyncSystem', () => {
     it('should return status information', async () => {
       const system = PowerSyncSystem.getInstance();
       await system.initialize();
-      mockPowerSyncInstance.connected = true;
+      setConnected(true);
       mockPowerSyncInstance.currentStatus = 'connected' as any;
 
       const status = system.getStatus();
@@ -307,7 +308,10 @@ describe('PowerSyncSystem', () => {
     it('should execute SQL query', async () => {
       const system = PowerSyncSystem.getInstance();
       await system.initialize();
-      mockPowerSyncInstance.execute.mockResolvedValueOnce({ affectedRows: 1 });
+      const mockResult = {} as Awaited<
+        ReturnType<typeof mockPowerSyncInstance.execute>
+      >;
+      mockPowerSyncInstance.execute.mockResolvedValueOnce(mockResult);
 
       const result = await system.execute('SELECT * FROM projects', []);
 
@@ -315,7 +319,7 @@ describe('PowerSyncSystem', () => {
         'SELECT * FROM projects',
         []
       );
-      expect(result).toEqual({ affectedRows: 1 });
+      expect(result).toBe(mockResult);
     });
 
     it('should throw error if not initialized', () => {
@@ -382,9 +386,7 @@ describe('PowerSyncSystem', () => {
   describe('watch', () => {
     it('should watch query for changes', () => {
       const system = PowerSyncSystem.getInstance();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._powersync = mockPowerSyncInstance;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._isInitialized = true;
 
       const watcher = system.watch('SELECT * FROM projects', []);

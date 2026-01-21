@@ -14,6 +14,30 @@ const mockSupabase = supabase as jest.Mocked<typeof supabase>;
 const mockEnv = env as jest.Mocked<typeof env>;
 const mockLogger = logger as jest.Mocked<typeof logger>;
 
+const setPowerSyncEnv = (url: string | undefined): void => {
+  Object.defineProperty(mockEnv, 'powersync', {
+    configurable: true,
+    value: { url } as typeof env.powersync,
+  });
+};
+
+const getMockFromResult = (
+  mockFrom: jest.Mock,
+  index: number
+): {
+  upsert?: jest.Mock;
+  update?: jest.Mock;
+  delete?: jest.Mock;
+} => {
+  const result = mockFrom.mock.results[index]?.value as
+    | { upsert?: jest.Mock; update?: jest.Mock; delete?: jest.Mock }
+    | undefined;
+  if (!result) {
+    throw new Error('Expected Supabase client call result');
+  }
+  return result;
+};
+
 describe('PowerSyncConnector', () => {
   let connector: PowerSyncConnector;
   let mockDatabase: jest.Mocked<AbstractPowerSyncDatabase>;
@@ -23,9 +47,7 @@ describe('PowerSyncConnector', () => {
     connector = new PowerSyncConnector();
 
     // Setup default mocks
-    mockEnv.powersync = {
-      url: 'https://test-powersync.example.com',
-    } as typeof env.powersync;
+    setPowerSyncEnv('https://test-powersync.example.com');
 
     mockSupabase.auth = {
       getSession: jest.fn().mockResolvedValue({
@@ -79,11 +101,11 @@ describe('PowerSyncConnector', () => {
 
       const credentials = await connector.fetchCredentials();
 
-      expect(credentials?.parameters?.is_authenticated).toBe('false');
+      expect(credentials?.parameters?.['is_authenticated']).toBe('false');
     });
 
     it('should throw error if PowerSync URL is not configured', async () => {
-      mockEnv.powersync.url = undefined as any;
+      setPowerSyncEnv(undefined);
 
       await expect(connector.fetchCredentials()).rejects.toThrow(
         'PowerSync URL not configured'
@@ -192,7 +214,10 @@ describe('PowerSyncConnector', () => {
       expect(mockFrom).toHaveBeenCalledWith('projects');
       expect(mockFrom).toHaveBeenCalledWith('sequences');
 
-      const projectsUpsert = mockFrom.mock.results[0].value.upsert;
+      const projectsUpsert = getMockFromResult(mockFrom, 0).upsert;
+      if (!projectsUpsert) {
+        throw new Error('Expected projects upsert');
+      }
       expect(projectsUpsert).toHaveBeenCalledWith(
         [
           { id: 'project-1', name: 'Project 1', description: 'Desc 1' },
@@ -201,7 +226,10 @@ describe('PowerSyncConnector', () => {
         { onConflict: 'id' }
       );
 
-      const sequencesUpsert = mockFrom.mock.results[1].value.upsert;
+      const sequencesUpsert = getMockFromResult(mockFrom, 1).upsert;
+      if (!sequencesUpsert) {
+        throw new Error('Expected sequences upsert');
+      }
       expect(sequencesUpsert).toHaveBeenCalledWith(
         [{ id: 'seq-1', name: 'Sequence 1' }],
         { onConflict: 'id' }
@@ -239,14 +267,20 @@ describe('PowerSyncConnector', () => {
       expect(mockFrom).toHaveBeenCalledWith('projects');
       expect(mockFrom).toHaveBeenCalledWith('sequences');
 
-      const projectsUpdate = mockFrom.mock.results[0].value.update;
+      const projectsUpdate = getMockFromResult(mockFrom, 0).update;
+      if (!projectsUpdate) {
+        throw new Error('Expected projects update');
+      }
       expect(projectsUpdate).toHaveBeenCalledWith({
         name: 'Updated Project',
         description: 'Updated Desc',
       });
       expect(projectsUpdate().eq).toHaveBeenCalledWith('id', 'project-1');
 
-      const sequencesUpdate = mockFrom.mock.results[1].value.update;
+      const sequencesUpdate = getMockFromResult(mockFrom, 1).update;
+      if (!sequencesUpdate) {
+        throw new Error('Expected sequences update');
+      }
       expect(sequencesUpdate).toHaveBeenCalledWith({
         name: 'Updated Sequence',
       });
@@ -290,13 +324,19 @@ describe('PowerSyncConnector', () => {
       expect(mockFrom).toHaveBeenCalledWith('projects');
       expect(mockFrom).toHaveBeenCalledWith('sequences');
 
-      const projectsDelete = mockFrom.mock.results[0].value.delete;
+      const projectsDelete = getMockFromResult(mockFrom, 0).delete;
+      if (!projectsDelete) {
+        throw new Error('Expected projects delete');
+      }
       expect(projectsDelete().in).toHaveBeenCalledWith('id', [
         'project-1',
         'project-2',
       ]);
 
-      const sequencesDelete = mockFrom.mock.results[1].value.delete;
+      const sequencesDelete = getMockFromResult(mockFrom, 1).delete;
+      if (!sequencesDelete) {
+        throw new Error('Expected sequences delete');
+      }
       expect(sequencesDelete().in).toHaveBeenCalledWith('id', ['seq-1']);
 
       expect(mockTransaction.complete).toHaveBeenCalledTimes(1);

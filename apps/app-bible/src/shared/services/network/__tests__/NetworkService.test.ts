@@ -17,7 +17,6 @@ describe('NetworkService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset singleton instance
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (NetworkService as any).instance = undefined;
     networkService = NetworkService.getInstance();
 
@@ -50,7 +49,6 @@ describe('NetworkService', () => {
         isInternetReachable: true,
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockNetInfo.fetch.mockResolvedValue(mockState as any);
 
       const result = await networkService.getNetworkState();
@@ -70,7 +68,6 @@ describe('NetworkService', () => {
         isInternetReachable: null,
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockNetInfo.fetch.mockResolvedValue(mockState as any);
 
       const result = await networkService.getNetworkState();
@@ -90,7 +87,6 @@ describe('NetworkService', () => {
         isConnected: true,
         type: 'wifi',
         isInternetReachable: true,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
     });
 
@@ -118,7 +114,6 @@ describe('NetworkService', () => {
         isConnected: false,
         type: null,
         isInternetReachable: false,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       const result = await networkService.checkOnlineCapabilities();
@@ -132,7 +127,6 @@ describe('NetworkService', () => {
         isConnected: true,
         type: 'wifi',
         isInternetReachable: false,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       const result = await networkService.checkOnlineCapabilities();
@@ -509,11 +503,9 @@ describe('NetworkService', () => {
 
     it('should transform NetInfo state to NetworkState format', () => {
       const mockCallback = jest.fn();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let listenerCallback: (state: any) => void;
 
       mockNetInfo.addEventListener.mockImplementation(
-        //  eslint-disable-next-line @typescript-eslint/no-explicit-any
         (callback: (state: any) => void) => {
           listenerCallback = callback;
           return jest.fn();
@@ -544,7 +536,6 @@ describe('NetworkService', () => {
         isConnected: true,
         type: 'wifi',
         isInternetReachable: true,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       mockFetch.mockResolvedValue({
@@ -572,7 +563,6 @@ describe('NetworkService', () => {
         isConnected: true,
         type: 'wifi',
         isInternetReachable: true,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       mockFetch.mockResolvedValue({
