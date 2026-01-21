@@ -323,22 +323,169 @@ git merge-tree $(git merge-base HEAD origin/{base_branch}) HEAD origin/{base_bra
 - Check if rebase/merge is needed
 - Verify no conflicts exist
 
-### 9. Review Related Issues
+### 9. Review Related Linear Issues
 
 **Extract Linear Issue IDs:**
 
-- From PR description: Look for `fixes {issue_id}` patterns
-- From commit messages: Look for `ref {issue_id}` patterns
-- From branch name: Extract issue ID if present
+- From PR description: Look for `fixes {issue_id}` patterns (e.g., `fixes EL-123`)
+- From commit messages: Look for `ref {issue_id}` patterns (e.g., `ref EL-123`)
+- From branch name: Extract issue ID if present (e.g., `EL-123-feature-name`)
 
-**Fetch Issue Details:**
+**Check Linear MCP Availability:**
 
-For each issue ID found:
+- Attempt to use Linear MCP to fetch issue details
+- If Linear MCP is not available or fails: Note this limitation and skip detailed issue verification
+- Continue with review but note that Linear issue verification was skipped
 
-- Use Linear MCP to fetch issue details
-- Verify acceptance criteria match PR changes
-- Check if issue is properly linked
-- Verify issue status is appropriate
+**Fetch Comprehensive Issue Details (if Linear MCP available):**
+
+For each issue ID found, use Linear MCP to fetch:
+
+- **Issue Title**: Full title
+- **Issue Description**: Complete description with context
+- **Issue Type**: Feature/Bug/Improvement/etc.
+- **Status**: Current status (should be "In Progress" or "In Review" for active PRs)
+- **Acceptance Criteria**: List of all acceptance criteria (may be in description or separate field)
+- **Labels**: All labels (frontend/backend/fullstack, priority, etc.)
+- **Assignee**: Who is assigned
+- **Team**: Backend/Frontend/Fullstack
+- **Related Project**: Any related project
+- **Comments**: Recent comments that may have clarifications or additional requirements
+- **Dependencies**: Related issues that must be completed first
+- **Attachments**: Any design files, mockups, or documentation
+
+**Analyze Issue Requirements:**
+
+For each issue, extract and document:
+
+1. **Core Requirements:**
+   - What problem is being solved?
+   - What is the expected outcome?
+   - What are the key features/fixes needed?
+
+2. **Acceptance Criteria:**
+   - Parse acceptance criteria (may be in checklist format `- [ ]` or numbered list)
+   - Create a checklist of all criteria
+   - Note any criteria that are ambiguous or need clarification
+
+3. **Technical Requirements:**
+   - Frontend/Backend/Fullstack scope
+   - Specific technologies or patterns mentioned
+   - Performance requirements
+   - Security considerations
+   - Integration points
+
+4. **Edge Cases and Constraints:**
+   - Error handling requirements
+   - Edge cases mentioned
+   - Constraints or limitations
+   - Breaking change considerations
+
+**Map PR Changes to Issue Requirements:**
+
+For each acceptance criterion and requirement:
+
+1. **Identify Related Code Changes:**
+   - Which files/changes address this criterion?
+   - Are there tests that verify this criterion?
+   - Is the implementation complete?
+
+2. **Verify Coverage:**
+   - ✅ **Fully Addressed**: Code changes clearly implement the requirement
+   - ⚠️ **Partially Addressed**: Implementation exists but may be incomplete
+   - ❌ **Not Addressed**: No code changes found for this requirement
+   - ❓ **Unclear**: Cannot determine if requirement is met
+
+3. **Check for Gaps:**
+   - Are all acceptance criteria addressed?
+   - Are there requirements in the issue description not covered by acceptance criteria?
+   - Are there edge cases mentioned but not handled?
+   - Are there comments with additional requirements not addressed?
+
+**Verify Implementation Completeness:**
+
+- **Scope Alignment**: Does the PR scope match the issue scope?
+  - If issue is frontend-only, verify no unnecessary backend changes
+  - If issue is backend-only, verify no unnecessary frontend changes
+  - If issue is fullstack, verify both frontend and backend are addressed
+
+- **Acceptance Criteria Coverage:**
+  - Count how many criteria are fully addressed
+  - Count how many are partially addressed
+  - Count how many are not addressed
+  - Calculate coverage percentage
+
+- **Issue Status Verification:**
+  - If issue status is "Done": Verify PR is ready to merge
+  - If issue status is "In Review": Verify PR is ready for review
+  - If issue status is "In Progress": Verify PR is complete enough for review
+  - If issue status is "Backlog": Note that issue may not be ready
+
+**Identify Missing Implementations:**
+
+If gaps are found:
+
+- List each missing requirement
+- Explain why it's missing (not implemented, incomplete, or unclear)
+- Recommend whether it should be:
+  - **Blocking**: Must be addressed before merge
+  - **Follow-up**: Can be addressed in a separate PR
+  - **Out of Scope**: Not part of this issue
+
+**Check for Over-Scope:**
+
+- Are there changes in the PR not related to the Linear issue?
+- If yes, verify they're intentional (e.g., refactoring, dependency updates)
+- Note if PR includes unrelated changes that should be split
+
+**Generate Issue Verification Summary:**
+
+For each Linear issue, create a summary:
+
+\`\`\`markdown
+
+### Linear Issue: {issue_id} - {issue_title}
+
+**Issue Status**: {status}
+**Issue Type**: {type}
+**Scope**: {frontend/backend/fullstack}
+
+**Acceptance Criteria Coverage**:
+
+- ✅ Fully Addressed: {count}
+- ⚠️ Partially Addressed: {count}
+- ❌ Not Addressed: {count}
+- **Coverage**: {percentage}%
+
+**Requirements Verification**:
+
+✅ **Fully Addressed**:
+
+- {Requirement 1}: {How PR addresses it}
+- {Requirement 2}: {How PR addresses it}
+
+⚠️ **Partially Addressed**:
+
+- {Requirement 3}: {What's missing or incomplete}
+
+❌ **Not Addressed**:
+
+- {Requirement 4}: {Why it's missing, recommendation}
+
+**Gaps Identified**:
+
+- {List any gaps between issue requirements and PR implementation}
+
+**Recommendation**:
+
+- {APPROVE if all criteria met / REQUEST CHANGES if gaps / NEEDS CLARIFICATION if unclear}
+  \`\`\`
+
+**If No Linear Issues Found:**
+
+- Note that PR doesn't reference any Linear issues
+- Verify if this is intentional (e.g., hotfix, refactoring)
+- Recommend adding issue references if this is feature work
 
 ### 10. Check CI/CD Status
 
@@ -466,10 +613,20 @@ gh pr checks {pr_number} || gh run list --branch {branch_name}
 
 {If recommendation is "NEEDS E2E TESTING", provide detailed manual testing steps}
 
-### Related Issues
+### Linear Issue Verification
 
-- {List linked Linear issues}
-- {Verify acceptance criteria met}
+**Issues Linked**: {list of issue IDs}
+
+**Issue Coverage Summary**:
+{For each issue, include verification summary from step 9}
+
+**Overall Assessment**:
+
+- ✅ All acceptance criteria met
+- ⚠️ Some criteria partially met
+- ❌ Missing requirements identified
+
+**Recommendation**: {Based on issue verification}
 ```
 
 ### 12. Provide Final Recommendation
@@ -597,6 +754,7 @@ gh pr review {pr_number} --comment --body "{comment}" --line {line_number} --pat
 
 - PR or branch successfully checked out
 - All code changes reviewed comprehensively
+- Linear issues verified (if MCP available) with acceptance criteria coverage analysis
 - Automated quality checks executed
 - Security and performance considerations evaluated
 - Clear recommendation provided (APPROVE / NEEDS E2E TESTING / REQUEST CHANGES)
@@ -610,7 +768,7 @@ gh pr review {pr_number} --comment --body "{comment}" --line {line_number} --pat
 - **If `ci:pr` fails**: Document failures and provide fix recommendations
 - **If GitHub CLI not available**: Provide manual review instructions
 - **If branch diverged**: Note divergence and recommend rebase/merge
-- **If Linear API fails**: Continue review without issue context, note limitation
+- **If Linear MCP fails or unavailable**: Continue review without Linear issue verification, note limitation in summary
 
 ## Important Notes
 
