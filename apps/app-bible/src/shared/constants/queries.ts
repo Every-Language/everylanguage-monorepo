@@ -124,8 +124,13 @@ export const QUERIES = {
       mf.id as media_file_id
     FROM verses v
     LEFT JOIN verse_texts vt ON (vt.verse_id = v.id AND vt.text_version_id = ?)
-    LEFT JOIN media_files_verses mfv ON (mfv.verse_id = v.id)
-    LEFT JOIN media_files mf ON (mfv.media_file_id = mf.id AND mf.chapter_id = ?)
+    LEFT JOIN media_files_verses mfv ON (mfv.verse_id = v.id AND mfv.deleted_at IS NULL)
+    LEFT JOIN media_files mf ON (
+      mfv.media_file_id = mf.id 
+      AND mf.chapter_id = ? 
+      AND mf.deleted_at IS NULL
+      AND (? IS NULL OR mf.audio_version_id = ?)
+    )
     WHERE v.chapter_id = ?
     ORDER BY v.verse_number ASC
   `,

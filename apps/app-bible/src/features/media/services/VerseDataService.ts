@@ -193,13 +193,21 @@ export class VerseDataService {
       return;
     }
 
-    await this.loadVerseData(currentTrack.chapterId, currentTextVersion.id);
+    await this.loadVerseData(
+      currentTrack.chapterId,
+      currentTextVersion.id,
+      currentTrack.audioVersionId
+    );
   }
 
   /**
    * Load verse data for a specific chapter and text version
    */
-  async loadVerseData(chapterId: string, textVersionId: string): Promise<void> {
+  async loadVerseData(
+    chapterId: string,
+    textVersionId: string,
+    audioVersionId?: string
+  ): Promise<void> {
     if (!powerSyncSystem.isInitialized) {
       logger.debug(
         ENABLE_LOGGING,
@@ -229,6 +237,7 @@ export class VerseDataService {
 
     try {
       // ✅ OPTIMIZED: Single combined query with JOINs
+      // Includes deleted_at filters and optional audio_version_id filter for performance
       const results = await queryLogger.logQuery(
         'verse-data-service',
         QUERIES.VERSES_WITH_TIMING,
@@ -236,6 +245,8 @@ export class VerseDataService {
           return await powerSyncSystem.getAll(QUERIES.VERSES_WITH_TIMING, [
             textVersionId,
             chapterId,
+            audioVersionId ?? null,
+            audioVersionId ?? null,
             chapterId,
           ]);
         }
