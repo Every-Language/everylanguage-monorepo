@@ -141,11 +141,6 @@ export async function fetchLanguagesForDonation(): Promise<
     throw new Error(error.message || 'Failed to fetch languages');
   }
 
-  console.log('Fetched languages data:', {
-    count: data?.length || 0,
-    sample: data?.[0],
-  });
-
   // Filter out languages without entity data and map to response format
   const result = (data || [])
     .filter((row: any) => row.language_entities) // Only filter out if language_entities is missing
@@ -154,11 +149,6 @@ export async function fetchLanguagesForDonation(): Promise<
       name: row.language_entities.name,
       budgetCents: row.remaining_budget_cents || 0, // Use remaining budget
     }));
-
-  console.log('Processed languages:', {
-    count: result.length,
-    sample: result[0],
-  });
 
   return result;
 }
@@ -374,11 +364,6 @@ export async function createDonationCheckout(payload: {
   amountCents: number;
   isRecurring: boolean;
 }) {
-  console.log('🔵 Creating donation checkout:', {
-    payload: JSON.parse(JSON.stringify(payload)), // Deep clone to see actual values
-  });
-  console.log('🔵 Intent in payload:', JSON.stringify(payload.intent, null, 2));
-
   const { data, error } = await supabase.functions.invoke(
     'create-donation-checkout',
     {
