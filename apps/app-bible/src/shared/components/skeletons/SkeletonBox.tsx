@@ -1,10 +1,10 @@
 import React from 'react';
 import { Skeleton } from './Skeleton';
-import type { ViewStyle } from 'react-native';
+import type { ViewStyle, DimensionValue } from 'react-native';
 
 interface SkeletonBoxProps {
-  width?: number | string;
-  height?: number | string;
+  width?: DimensionValue;
+  height?: DimensionValue;
   borderRadius?: number;
   style?: ViewStyle;
   testID?: string;
@@ -16,15 +16,14 @@ interface SkeletonBoxProps {
  */
 export const SkeletonBox: React.FC<SkeletonBoxProps> = React.memo(
   ({ width = '100%', height = 100, borderRadius = 8, style, testID }) => {
-    return (
-      <Skeleton
-        width={width}
-        height={height}
-        borderRadius={borderRadius}
-        style={style}
-        testID={testID}
-      />
-    );
+    const props: React.ComponentProps<typeof Skeleton> = {
+      width,
+      height,
+      borderRadius,
+    };
+    if (style !== undefined) props.style = style;
+    if (testID !== undefined) props.testID = testID;
+    return <Skeleton {...props} />;
   }
 );
 

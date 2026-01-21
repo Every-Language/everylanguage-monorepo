@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, DimensionValue } from 'react-native';
 import { Skeleton } from './Skeleton';
 
 interface SkeletonTextProps {
-  width?: number | string;
+  width?: DimensionValue;
   height?: number;
   lines?: number;
   spacing?: number;
@@ -25,15 +25,15 @@ export const SkeletonText: React.FC<SkeletonTextProps> = React.memo(
 
     return (
       <View style={[styles.container, style]} testID={testID}>
-        {Array.from({ length: lines }).map((_, index) => (
-          <Skeleton
-            key={index}
-            width={index === lines - 1 ? '80%' : width}
-            height={height}
-            borderRadius={4}
-            testID={testID ? `${testID}-line-${index}` : undefined}
-          />
-        ))}
+        {Array.from({ length: lines }).map((_, index) => {
+          const skeletonProps: React.ComponentProps<typeof Skeleton> = {
+            width: index === lines - 1 ? '80%' : width,
+            height,
+            borderRadius: 4,
+          };
+          if (testID) skeletonProps.testID = `${testID}-line-${index}`;
+          return <Skeleton key={index} {...skeletonProps} />;
+        })}
       </View>
     );
   }

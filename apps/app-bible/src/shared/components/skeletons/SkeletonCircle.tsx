@@ -13,15 +13,14 @@ interface SkeletonCircleProps {
  */
 export const SkeletonCircle: React.FC<SkeletonCircleProps> = React.memo(
   ({ size, style, testID }) => {
-    return (
-      <Skeleton
-        width={size}
-        height={size}
-        borderRadius={size / 2}
-        style={style}
-        testID={testID}
-      />
-    );
+    const props: React.ComponentProps<typeof Skeleton> = {
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+    };
+    if (style !== undefined) props.style = style;
+    if (testID !== undefined) props.testID = testID;
+    return <Skeleton {...props} />;
   }
 );
 
