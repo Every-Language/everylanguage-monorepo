@@ -61,7 +61,6 @@ describe('PowerSyncSystem', () => {
     jest.clearAllMocks();
 
     // Reset singleton instance for each test
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (PowerSyncSystem as any).instance = undefined;
 
     // Mock PowerSyncDatabase instance
@@ -172,7 +171,6 @@ describe('PowerSyncSystem', () => {
       });
 
       // Access private _seedPromise through the instance
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._seedPromise = seedPromise;
 
       const connectPromise = system.connect();
@@ -192,7 +190,6 @@ describe('PowerSyncSystem', () => {
       await system.initialize();
 
       const seedError = new Error('Seed failed');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._seedPromise = Promise.reject(seedError);
 
       await system.connect();
@@ -222,9 +219,7 @@ describe('PowerSyncSystem', () => {
   describe('database getter', () => {
     it('should return PowerSync database instance', () => {
       const system = PowerSyncSystem.getInstance();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._powersync = mockPowerSyncInstance;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._isInitialized = true;
 
       const db = system.database;
@@ -391,9 +386,7 @@ describe('PowerSyncSystem', () => {
   describe('watch', () => {
     it('should watch query for changes', () => {
       const system = PowerSyncSystem.getInstance();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._powersync = mockPowerSyncInstance;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (system as any)._isInitialized = true;
 
       const watcher = system.watch('SELECT * FROM projects', []);
