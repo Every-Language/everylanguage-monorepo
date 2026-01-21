@@ -738,8 +738,6 @@ export const languageAvailabilityApi = {
    * Set language status to 'draft' (creates language_funding row if it doesn't exist)
    */
   async setLanguageAvailable(languageId: string): Promise<void> {
-    console.log('setLanguageAvailable called with languageId:', languageId);
-
     // Check if funding record already exists
     const { data: existing, error: checkError } = await supabase
       .from('language_funding')
@@ -754,11 +752,8 @@ export const languageAvailabilityApi = {
       throw checkError;
     }
 
-    console.log('Existing record:', existing);
-
     if (existing) {
       // Record already exists, update it to draft
-      console.log('Updating existing record to draft');
       const { error } = await supabase
         .from('language_funding')
         .update({ funding_status: 'draft' })
@@ -769,28 +764,23 @@ export const languageAvailabilityApi = {
         console.error('Error updating funding status:', error);
         throw error;
       }
-      console.log('Successfully updated existing record');
     } else {
       // Create new record
-      console.log('Creating new funding record');
       const insertData = {
         language_entity_id: languageId,
         funding_status: 'draft' as const,
         budget_cents: null,
       };
-      console.log('Insert data:', insertData);
 
-      const { data: insertedData, error } = await supabase
+      const { error } = await supabase
         .from('language_funding')
         .insert(insertData)
         .select();
 
       if (error) {
         console.error('Error creating funding record:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
         throw error;
       }
-      console.log('Successfully created new record:', insertedData);
     }
   },
 
