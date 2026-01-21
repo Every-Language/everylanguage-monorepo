@@ -19,6 +19,15 @@ packages/shared-types/types/database.d.ts
 packages/shared-types/types/database.js
 apps/app-bible/powersync/AppSchema.generated.ts
 apps/app-record/powersync/AppSchema.generated.ts
+apps/app-bible/powersync/AppSchema.ts
+apps/app-record/powersync/AppSchema.ts
+
+# iOS CocoaPods dependencies and generated files
+apps/app-record/ios/Pods/
+apps/app-bible/ios/Pods/
+apps/*/ios/**/*.xcassets/
+apps/*/ios/**/*.dSYM/
+apps/*/ios/**/*.podspec.json
 
 # GitHub Actions
 .github/workflows/
