@@ -462,11 +462,6 @@ export async function createDonationCheckout(payload: {
   amountCents: number;
   isRecurring: boolean;
 }) {
-  console.log('🔵 Creating donation checkout:', {
-    payload: JSON.parse(JSON.stringify(payload)), // Deep clone to see actual values
-  });
-  console.log('🔵 Intent in payload:', JSON.stringify(payload.intent, null, 2));
-
   const { data, error } = await supabase.functions.invoke(
     'create-donation-checkout',
     {
