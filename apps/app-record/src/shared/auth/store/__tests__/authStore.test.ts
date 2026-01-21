@@ -506,8 +506,7 @@ describe('authStore', () => {
       });
 
       expect(mockPowerSyncSystem.getAll).toHaveBeenCalledWith(
-        expect.stringContaining('SELECT id, created_by FROM projects'),
-        undefined
+        'SELECT id, created_by FROM projects WHERE deleted_at IS NULL'
       );
     });
 
