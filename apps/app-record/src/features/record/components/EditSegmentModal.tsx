@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
 // TODO: Use FilePathService when implementing trimAudio
 // import { FilePathService } from '../services';
-import type { Segment } from '../hooks';
+import type { Segment } from '../types';
 
 export interface EditSegmentModalProps {
   visible: boolean;

@@ -1,26 +1,5 @@
 import { useQuery } from '@powersync/react';
-
-/**
- * Segment type from database
- */
-export interface Segment {
-  id: string;
-  type: string;
-  sequence_id: string;
-  project_id: string;
-  segment_index: number;
-  created_at: string;
-  created_by: string | null;
-  updated_at: string;
-  deleted_at: string | null;
-  is_deleted: number;
-  is_numbered: number;
-  storage_provider: string;
-  object_key: string;
-  original_filename: string;
-  file_type: string;
-  segment_color: string | null;
-}
+import type { Segment } from '../types';
 
 /**
  * Hook for fetching segments for a sequence

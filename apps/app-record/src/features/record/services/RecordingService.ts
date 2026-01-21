@@ -128,10 +128,25 @@ export class RecordingService {
         sequenceId,
         tempSegment.id
       );
-      await FilePathService.copyFile(
-        tempSegment.local_file_path,
-        finalRelativePath
-      );
+
+      // Only copy if the paths are different
+      // (segments are already saved to the final location during extraction)
+      if (tempSegment.local_file_path !== finalRelativePath) {
+        await FilePathService.copyFile(
+          tempSegment.local_file_path,
+          finalRelativePath
+        );
+      } else {
+        // Verify the file exists at the final location
+        const fileExists = await FilePathService.fileExists(finalRelativePath);
+        if (!fileExists) {
+          logger.error('Segment file does not exist at final location', {
+            segmentId: tempSegment.id,
+            path: finalRelativePath,
+          });
+          throw new Error(`Segment file not found: ${finalRelativePath}`);
+        }
+      }
 
       // Insert into segments table
       await powerSyncSystem.execute(
@@ -167,7 +182,7 @@ export class RecordingService {
           0, // is_numbered
           'local', // storage_provider
           finalRelativePath, // object_key (relative path)
-          `${tempSegment.id}.m4a`, // original_filename
+          `${tempSegment.id}.aac`, // original_filename
           'audio/m4a', // file_type
           null, // segment_color
         ]
@@ -183,12 +198,22 @@ export class RecordingService {
       segmentsToInsert.length
     );
 
-    // Clean up files for all temp segments (including hidden ones)
+    // Clean up temp files only (files that are NOT at the final location)
+    // Note: Files at the final location should NOT be deleted as they're now persisted
     let deletedCount = 0;
     for (const segment of tempSegments) {
       try {
-        await FilePathService.deleteFile(segment.local_file_path);
-        deletedCount++;
+        const finalRelativePath = FilePathService.getRelativePath(
+          sequenceId,
+          segment.id
+        );
+        // Only delete if it's a temp file (different path from final location)
+        if (segment.local_file_path !== finalRelativePath) {
+          await FilePathService.deleteFile(segment.local_file_path);
+          deletedCount++;
+        }
+        // If local_file_path === finalRelativePath, the file is already at final location
+        // and should NOT be deleted as it's now part of the persisted segments
       } catch (err) {
         logger.error('Failed to delete temp segment file:', err);
       }

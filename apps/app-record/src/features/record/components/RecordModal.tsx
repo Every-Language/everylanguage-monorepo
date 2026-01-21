@@ -36,37 +36,54 @@ export const RecordModal: React.FC<RecordModalProps> = ({
 
   const {
     tempSegments,
-    recordingMode,
     isRecording,
     isPaused,
     analysisData,
     handleStartRecording,
     handleStopRecording,
     handlePauseRecording,
-    handleToggleHide,
+    handleCleanup,
   } = useRecording(sequenceId, projectId, visible);
 
   const { insertSegments } = useRecordingMutations();
 
   const handleSave = async (): Promise<void> => {
-    const wasRecording = isRecording;
-
-    if (wasRecording) {
+    // If recording, stop first (this will extract segment files)
+    if (isRecording) {
       await handleStopRecording();
+      return;
     }
 
-    // Get completed segments (non-hidden)
-    const completedSegments = tempSegments.filter(
-      s => s.recording_status === 'completed' && !s.is_hidden
-    );
+    // Verify segment files exist before saving (more reliable than state check)
+    if (tempSegments.length > 0) {
+      const { FilePathService } = await import('../services/FilePathService');
+      const allFilesExist = await Promise.all(
+        tempSegments.map(segment =>
+          FilePathService.fileExists(segment.local_file_path)
+        )
+      );
 
-    if (completedSegments.length > 0) {
-      // Insert segments into the segments list
+      if (!allFilesExist.every(exists => exists)) {
+        // eslint-disable-next-line no-console
+        console.error(
+          'Some segment files do not exist yet, cannot save',
+          allFilesExist
+        );
+        return;
+      }
+
+      // Insert segments into the segments list (persist to database)
       await handleInsert();
-    } else if (!wasRecording && tempSegments.length === 0) {
+    } else if (!isRecording && tempSegments.length === 0) {
       // Start recording if no segments yet and wasn't recording
       await handleStartRecording();
     }
+  };
+
+  const handleCancel = async (): Promise<void> => {
+    // Cleanup extracted files if user cancels
+    await handleCleanup();
+    onClose();
   };
 
   const handleInsert = async (): Promise<void> => {
@@ -75,7 +92,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
 
     // Get completed non-hidden segments
     const segmentsToInsert = tempSegments.filter(
-      s => s.recording_status === 'completed' && !s.is_hidden
+      s => s.recording_status === 'completed'
     );
 
     if (segmentsToInsert.length === 0) {
@@ -93,9 +110,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
       },
       {
         onSuccess: () => {
-          if (onSegmentsInserted) {
-            onSegmentsInserted();
-          }
+          if (onSegmentsInserted) onSegmentsInserted();
           onClose();
         },
         onError: error => {
@@ -148,11 +163,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
           </View>
 
           {/* Segments List */}
-          <TempSegmentsList
-            segments={tempSegments}
-            recordingMode={recordingMode}
-            onToggleHide={handleToggleHide}
-          />
+          <TempSegmentsList segments={tempSegments} />
         </ScrollView>
 
         {/* Footer Controls */}
@@ -160,7 +171,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
           isRecording={isRecording}
           isPaused={isPaused}
           hasSegments={tempSegments.length > 0}
-          onCancel={onClose}
+          onCancel={handleCancel}
           onPause={handlePauseRecording}
           onSave={handleSave}
         />

@@ -1,5 +1,3 @@
-export { SegmentCard } from './SegmentCard';
-export type { SegmentCardProps } from './SegmentCard';
 export { MediaPlayer } from './MediaPlayer';
 export type { MediaPlayerProps } from './MediaPlayer';
 export { RecordModal } from './RecordModal';
@@ -16,3 +14,5 @@ export { RecordModalHeader } from './RecordModalHeader';
 export type { RecordModalHeaderProps } from './RecordModalHeader';
 export { RecordModalFooter } from './RecordModalFooter';
 export type { RecordModalFooterProps } from './RecordModalFooter';
+export { SegmentAudioPlayer } from './SegmentAudioPlayer';
+export type { SegmentAudioPlayerProps } from './SegmentAudioPlayer';

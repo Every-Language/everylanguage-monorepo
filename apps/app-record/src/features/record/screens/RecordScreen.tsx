@@ -14,11 +14,12 @@ import { useTheme } from '@/shared/hooks';
 // import { useTranslation } from '@/shared/hooks';
 import { useSequence, useSequenceChapterInfo, useSegments } from '../hooks';
 import {
-  SegmentCard,
   MediaPlayer,
   RecordModal,
   EditSegmentModal,
+  SegmentAudioPlayer,
 } from '../components';
+import { DeleteAllSegmentsButton } from '../components/DeleteAllSegmentsButton';
 import type { Segment } from '../hooks';
 
 /**
@@ -56,17 +57,6 @@ export const RecordScreen: React.FC = () => {
   const handleSegmentsInserted = (): void => {
     // Segments will refresh automatically via useSegments hook
     setIsRecordModalVisible(false);
-  };
-
-  const handleEditSegment = (segmentId: string): void => {
-    const segment = segments?.find(s => s.id === segmentId);
-    if (segment) {
-      setEditingSegment(segment);
-    }
-  };
-
-  const handlePlaySegment = (_segmentId: string): void => {
-    // TODO: Play segment
   };
 
   if (!sequence) {
@@ -130,6 +120,9 @@ export const RecordScreen: React.FC = () => {
           </Text>
         </View>
 
+        {/* Dev: Delete All Segments Button */}
+        <DeleteAllSegmentsButton sequenceId={sequenceId} />
+
         {/* Media Player */}
         {segments && segments.length > 0 && (
           <MediaPlayer
@@ -147,11 +140,11 @@ export const RecordScreen: React.FC = () => {
               Segments ({segments.length})
             </Text>
             {segments.map(segment => (
-              <SegmentCard
+              <SegmentAudioPlayer
                 key={segment.id}
                 segment={segment}
-                onEdit={() => handleEditSegment(segment.id)}
-                onPlay={() => handlePlaySegment(segment.id)}
+                // onEdit={() => handleEditSegment(segment.id)}
+                // onPlay={() => handlePlaySegment(segment.id)}
               />
             ))}
           </View>
@@ -187,6 +180,7 @@ export const RecordScreen: React.FC = () => {
             styles.recordButton,
             {
               backgroundColor: theme.colors.accent,
+              shadowColor: theme.colors.shadow,
             },
           ]}
           onPress={handleRecord}
@@ -250,11 +244,11 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 16,
+    paddingHorizontal: 16,
   },
   sectionTitle: {
     fontSize: 15,
     fontWeight: '600',
-    paddingHorizontal: 16,
     marginBottom: 8,
   },
   emptyState: {
@@ -286,7 +280,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 8,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

@@ -6,8 +6,8 @@ import * as FileSystem from 'expo-file-system';
  * Manages file paths for recording audio files.
  * Stores relative paths in database, resolves to absolute when needed.
  *
- * Pattern: `recordings/${sequenceId}/${segmentId}.m4a`
- * Absolute: `${FileSystem.documentDirectory}recordings/${sequenceId}/${segmentId}.m4a`
+ * Pattern: `recordings/${sequenceId}/${segmentId}.aac`
+ * Absolute: `${FileSystem.documentDirectory}recordings/${sequenceId}/${segmentId}.aac`
  */
 export class FilePathService {
   /**
@@ -22,10 +22,10 @@ export class FilePathService {
    *
    * @param sequenceId - Sequence ID
    * @param segmentId - Segment ID (UUID)
-   * @returns Relative path (e.g., "recordings/seq-123/seg-456.m4a")
+   * @returns Relative path (e.g., "recordings/seq-123/seg-456.aac")
    */
   static getRelativePath(sequenceId: string, segmentId: string): string {
-    return `recordings/${sequenceId}/${segmentId}.m4a`;
+    return `recordings/${sequenceId}/${segmentId}.aac`;
   }
 
   /**

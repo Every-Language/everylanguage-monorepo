@@ -79,13 +79,13 @@ export const RecordModalFooter: React.FC<RecordModalFooterProps> = ({
           </TouchableOpacity>
         )}
 
-        {/* Save Button */}
+        {/* Stop/Save Button */}
         <TouchableOpacity
           style={styles.footerButton}
           onPress={onSave}
           accessibilityLabel={
             isRecording
-              ? 'Stop and Save'
+              ? 'Stop recording'
               : hasSegments
                 ? 'Save segments'
                 : 'Start recording'
@@ -103,7 +103,7 @@ export const RecordModalFooter: React.FC<RecordModalFooterProps> = ({
           </View>
           <Text
             style={[styles.footerButtonLabel, { color: theme.colors.text }]}>
-            {isRecording ? 'Save' : hasSegments ? 'Save' : 'Start'}
+            {isRecording ? 'Stop' : hasSegments ? 'Save' : 'Start'}
           </Text>
         </TouchableOpacity>
       </View>

@@ -1,3 +1,10 @@
+import { Database } from '@everylanguage/shared-types';
+
+/**
+ * Segment type from database
+ */
+export type Segment = Database['public']['Tables']['segments']['Row'];
+
 /**
  * Temporary segment during recording session
  */
