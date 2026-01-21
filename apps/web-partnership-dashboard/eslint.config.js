@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 import { globalIgnores } from 'eslint/config';
 
 export default tseslint.config([
-  globalIgnores(['.next', 'dist', 'node_modules', 'next-env.d.ts']),
+  globalIgnores(['.next', 'dist', 'node_modules', 'next-env.d.ts', 'coverage']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -59,6 +59,10 @@ export default tseslint.config([
             'generateViewport',
             'dynamic',
             'revalidate',
+            'AuthContext',
+            'MapContext',
+            'FormContext',
+            'ToastContext',
           ],
         },
       ],
