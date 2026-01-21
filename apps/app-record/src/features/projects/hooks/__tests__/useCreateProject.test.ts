@@ -10,10 +10,27 @@ const mockPowerSyncSystem = powerSyncSystem as jest.Mocked<
   typeof powerSyncSystem
 >;
 
+type ExecuteCallArgs = Parameters<typeof mockPowerSyncSystem.execute>;
+
+const setIsInitialized = (value: boolean): void => {
+  Object.defineProperty(mockPowerSyncSystem, 'isInitialized', {
+    configurable: true,
+    get: () => value,
+  });
+};
+
+const getExecuteCallArgs = (index: number = 0): ExecuteCallArgs => {
+  const callArgs = mockPowerSyncSystem.execute.mock.calls[index];
+  if (!callArgs) {
+    throw new Error('Expected execute call');
+  }
+  return callArgs as ExecuteCallArgs;
+};
+
 describe('useCreateProject', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPowerSyncSystem.isInitialized = true;
+    setIsInitialized(true);
     mockPowerSyncSystem.execute.mockResolvedValue(undefined);
   });
 
@@ -159,7 +176,7 @@ describe('useCreateProject', () => {
   });
 
   it('should handle PowerSync not initialized error', async () => {
-    mockPowerSyncSystem.isInitialized = false;
+    setIsInitialized(false);
 
     const { result } = renderHook(() => useCreateProject());
 
@@ -201,8 +218,12 @@ describe('useCreateProject', () => {
       await result.current.createProject(mockProjectData);
     });
 
-    const callArgs = mockPowerSyncSystem.execute.mock.calls[0];
-    const projectId = callArgs[1][0] as string;
+    expect(mockPowerSyncSystem.execute).toHaveBeenCalled();
+    const [, params] = getExecuteCallArgs();
+    if (!params) {
+      throw new Error('Expected execute params');
+    }
+    const projectId = params[0] as string;
 
     // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
     const uuidRegex =
@@ -221,9 +242,13 @@ describe('useCreateProject', () => {
 
     const afterTime = new Date().toISOString();
 
-    const callArgs = mockPowerSyncSystem.execute.mock.calls[0];
-    const createdAt = callArgs[1][9] as string; // created_at
-    const updatedAt = callArgs[1][10] as string; // updated_at
+    expect(mockPowerSyncSystem.execute).toHaveBeenCalled();
+    const [, params] = getExecuteCallArgs();
+    if (!params) {
+      throw new Error('Expected execute params');
+    }
+    const createdAt = params[9] as string; // created_at
+    const updatedAt = params[10] as string; // updated_at
 
     expect(createdAt).toBe(updatedAt); // Should be the same
     expect(createdAt >= beforeTime && createdAt <= afterTime).toBe(true);
@@ -236,9 +261,13 @@ describe('useCreateProject', () => {
       await result.current.createProject(mockProjectData);
     });
 
-    const callArgs = mockPowerSyncSystem.execute.mock.calls[0];
-    const projectStatus = callArgs[1][11] as string;
-    const publishStatus = callArgs[1][12] as string;
+    expect(mockPowerSyncSystem.execute).toHaveBeenCalled();
+    const [, params] = getExecuteCallArgs();
+    if (!params) {
+      throw new Error('Expected execute params');
+    }
+    const projectStatus = params[11] as string;
+    const publishStatus = params[12] as string;
 
     expect(projectStatus).toBe('precreated');
     expect(publishStatus).toBe('pending');

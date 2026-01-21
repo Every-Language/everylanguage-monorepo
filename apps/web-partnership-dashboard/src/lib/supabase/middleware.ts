@@ -5,6 +5,7 @@
 
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { env } from '@/lib/env';
 
 export async function updateSession(request: NextRequest) {
   // Create a new response with the incoming request headers
@@ -15,8 +16,8 @@ export async function updateSession(request: NextRequest) {
   });
 
   // Check for required environment variables
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Missing Supabase environment variables in middleware');
