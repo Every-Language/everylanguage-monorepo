@@ -6,6 +6,7 @@ import { Button } from '../../shared/design-system/components/Button';
 import { LoadingSpinner } from '../../shared/design-system';
 import { LandingNavbar } from '../../features/landing-page/components/LandingNavbar';
 import { supabase } from '../../shared/services/supabase';
+import { LandingFooter } from '@/features/landing-page';
 
 interface LanguageWithProject {
   id: string;
@@ -385,7 +386,7 @@ export const LanguagesPage: React.FC = () => {
         </div>
 
         {/* Info Card */}
-        <div className='mt-8 p-6 bg-gradient-to-br from-accent-50 to-primary-50 dark:from-accent-900/20 dark:to-primary-900/20 rounded-2xl border border-accent-200 dark:border-accent-800/30'>
+        <div className='mt-16 mb-20 p-6 bg-gradient-to-br from-accent-50 to-primary-50 dark:from-accent-900/20 dark:to-primary-900/20 rounded-2xl border border-accent-200 dark:border-accent-800/30'>
           <h3 className='text-lg font-semibold text-neutral-900 dark:text-white mb-2'>
             About Translation Progress
           </h3>
@@ -397,6 +398,8 @@ export const LanguagesPage: React.FC = () => {
           </p>
         </div>
       </main>
+
+      <LandingFooter />
     </div>
   );
 };
