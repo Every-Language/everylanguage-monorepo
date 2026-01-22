@@ -3,7 +3,7 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      'react-native-reanimated/plugin',
+      'expo-router/babel',
       [
         'module-resolver',
         {
@@ -19,13 +19,15 @@ module.exports = function (api) {
             '.json',
           ],
           alias: {
-            '@': './src',
-            '@/app': './src/app',
+            // More specific aliases must come first
+            '@/powersync': './powersync',
             '@/features': './src/features',
             '@/shared': './src/shared',
+            '@': './src',
           },
         },
       ],
+      'react-native-reanimated/plugin',
     ],
   };
 };

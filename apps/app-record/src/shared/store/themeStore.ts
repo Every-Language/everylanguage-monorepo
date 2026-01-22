@@ -2,12 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appearance } from 'react-native';
-import { Theme, ThemeMode } from '../types/theme';
+import type { Theme, ThemeMode } from '../types/theme';
 import { themes } from '../constants/theme';
-import { logger } from '../utils/logger';
-
-// Logging configuration for this module
-const ENABLE_LOGGING = true;
 
 // Types
 export interface ThemeState {
@@ -28,7 +24,7 @@ export interface ThemeActions {
 export type ThemeStore = ThemeState & ThemeActions;
 
 // Theme storage key
-const THEME_STORAGE_KEY = '@theme_mode';
+const THEME_STORAGE_KEY = '@app_record_theme_mode';
 
 // Store
 export const useThemeStore = create<ThemeStore>()(
@@ -45,7 +41,10 @@ export const useThemeStore = create<ThemeStore>()(
         set({ mode, error: null });
         // Save to AsyncStorage
         AsyncStorage.setItem(THEME_STORAGE_KEY, mode).catch(error => {
-          logger.error(ENABLE_LOGGING, 'Error saving theme preference:', error);
+          if (__DEV__) {
+            // eslint-disable-next-line no-console
+            console.error('Error saving theme preference:', error);
+          }
           set({ error: 'Failed to save theme preference' });
         });
       },
@@ -65,13 +64,17 @@ export const useThemeStore = create<ThemeStore>()(
       },
 
       getTheme: () => {
-        const { mode, systemScheme } = get();
-        const effectiveMode = mode === 'system' ? systemScheme : mode;
-        return themes[effectiveMode];
+        try {
+          const { mode, systemScheme } = get();
+          const effectiveMode = mode === 'system' ? systemScheme : mode;
+          return themes[effectiveMode] || themes.light;
+        } catch {
+          return themes.light;
+        }
       },
     }),
     {
-      name: 'theme-store',
+      name: 'app-record-theme-store',
       storage: createJSONStorage(() => AsyncStorage),
       // Only persist the mode, not loading/error states
       partialize: state => ({ mode: state.mode }),
@@ -80,7 +83,7 @@ export const useThemeStore = create<ThemeStore>()(
 );
 
 // Initialize theme from system preference
-export const initializeThemeStore = async () => {
+export const initializeThemeStore = async (): Promise<void> => {
   const store = useThemeStore.getState();
 
   try {
@@ -109,9 +112,15 @@ export const initializeThemeStore = async () => {
     };
     Appearance.addChangeListener(listener);
   } catch (error) {
-    logger.error(ENABLE_LOGGING, 'Error loading theme preference:', error);
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.error('Error loading theme preference:', error);
+    }
     store.setTheme('light'); // Fallback to light theme
   } finally {
     store.setLoading(false);
   }
 };
+
+// Global declaration for React Native __DEV__ variable
+declare const __DEV__: boolean;

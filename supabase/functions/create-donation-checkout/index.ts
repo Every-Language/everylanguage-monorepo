@@ -66,12 +66,26 @@ Deno.serve(async (req: Request) => {
     console.log('🔵 Intent type:', intent?.type);
     console.log('🔵 languageEntityId:', intent?.languageEntityId);
 
-    // Validation
-    if (!donor?.email || !donor.firstName || !donor.lastName) {
-      return createErrorResponse('Missing donor details', 400);
+    // Validation - check for missing or empty strings
+    if (!donor?.email || !donor.firstName?.trim() || !donor.lastName?.trim()) {
+      console.error('❌ Validation failed: Missing donor details', {
+        hasEmail: !!donor?.email,
+        hasFirstName: !!donor?.firstName?.trim(),
+        hasLastName: !!donor?.lastName?.trim(),
+        email: donor?.email,
+        firstName: donor?.firstName,
+        lastName: donor?.lastName,
+      });
+      return createErrorResponse(
+        'Missing donor details: first name, last name, and email are required',
+        400
+      );
     }
 
     if (!intent?.type) {
+      console.error('❌ Validation failed: Missing donation intent', {
+        intent,
+      });
       return createErrorResponse('Missing donation intent', 400);
     }
 
@@ -100,10 +114,19 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!paymentMethod || !['card', 'bank_transfer'].includes(paymentMethod)) {
+      console.error('❌ Validation failed: Invalid payment method', {
+        paymentMethod,
+        isValid:
+          paymentMethod && ['card', 'bank_transfer'].includes(paymentMethod),
+      });
       return createErrorResponse('Invalid payment method', 400);
     }
 
     if (!amountCents || amountCents <= 0) {
+      console.error('❌ Validation failed: Invalid amount', {
+        amountCents,
+        isValid: amountCents && amountCents > 0,
+      });
       return createErrorResponse('Invalid amount', 400);
     }
 
@@ -533,7 +556,6 @@ Deno.serve(async (req: Request) => {
             currency_code: 'USD',
             status: paymentIntent.status as any,
             stripe_event_id: null, // Will be populated by webhook
-            created_by: userId, // Always set since we require Authorization header
           });
         }
       } catch (error) {
@@ -611,7 +633,6 @@ Deno.serve(async (req: Request) => {
         currency_code: 'USD',
         status: paymentIntent.status as any, // Cast to match enum
         stripe_event_id: null, // Will be populated by webhook
-        created_by: userId, // Always set since we require Authorization header
       }));
 
       const { error: attemptErr } = await supabase

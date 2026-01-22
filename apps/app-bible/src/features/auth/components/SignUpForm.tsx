@@ -7,13 +7,11 @@ import { logger } from '../../../shared/utils/logger';
 import { useTheme } from '@/shared/hooks';
 import { Button, createThemedStyles } from '@everylanguage/shared-native-ui';
 import { useTranslations } from '@/shared/hooks';
-import {
-  ControlledTextInput,
-  ControlledEmailInput,
-  ControlledPasswordInput,
-  ControlledConfirmPasswordInput,
-  ControlledPhoneInput,
-} from './';
+import { ControlledTextInput } from './ControlledTextInput';
+import { ControlledEmailInput } from './ControlledEmailInput';
+import { ControlledPasswordInput } from './ControlledPasswordInput';
+import { ControlledConfirmPasswordInput } from './ControlledConfirmPasswordInput';
+import { ControlledPhoneInput } from './ControlledPhoneInput';
 import {
   SignUpFormData,
   signUpValidationRules,

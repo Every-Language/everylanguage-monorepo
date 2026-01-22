@@ -5,10 +5,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '@/shared/utils/logger';
 
 // Logging configuration for this module
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = __DEV__;
 
 // Import translation files
 import enTranslations from './locales/en.json';
+import ptTranslations from './locales/pt.json';
+
 // Storage keys
 const LOCALE_STORAGE_KEY = '@app_locale';
 const FIRST_LAUNCH_KEY = '@app_first_launch';
@@ -16,11 +18,13 @@ const FIRST_LAUNCH_KEY = '@app_first_launch';
 // Available locales
 export const SUPPORTED_LOCALES = [
   { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
 ];
 
 // Translation resources
 const resources = {
   en: { translation: enTranslations },
+  pt: { translation: ptTranslations },
 };
 
 // Check if this is the first app launch
@@ -29,7 +33,9 @@ async function isFirstLaunch(): Promise<boolean> {
     const hasLaunched = await AsyncStorage.getItem(FIRST_LAUNCH_KEY);
     return hasLaunched === null;
   } catch (error) {
-    logger.error(ENABLE_LOGGING, 'Error checking first launch:', error);
+    if (ENABLE_LOGGING) {
+      logger.error('Error checking first launch:', error);
+    }
     return true; // Assume first launch if error
   }
 }
@@ -39,7 +45,9 @@ async function markAppLaunched(): Promise<void> {
   try {
     await AsyncStorage.setItem(FIRST_LAUNCH_KEY, 'true');
   } catch (error) {
-    logger.error(ENABLE_LOGGING, 'Error marking app as launched:', error);
+    if (ENABLE_LOGGING) {
+      logger.error('Error marking app as launched:', error);
+    }
   }
 }
 
@@ -47,10 +55,14 @@ async function markAppLaunched(): Promise<void> {
 function getDeviceLocale(): string {
   try {
     const deviceLocales = Localization.getLocales();
-    logger.info(ENABLE_LOGGING, 'Device locales detected:', deviceLocales);
+    if (ENABLE_LOGGING) {
+      logger.info('Device locales detected:', deviceLocales);
+    }
 
     if (!deviceLocales || deviceLocales.length === 0) {
-      logger.warn(ENABLE_LOGGING, 'No device locales found, using default: en');
+      if (ENABLE_LOGGING) {
+        logger.warn('No device locales found, using default: en');
+      }
       return 'en';
     }
 
@@ -61,10 +73,9 @@ function getDeviceLocale(): string {
     if (primaryLocale) {
       const localeCode = primaryLocale.languageCode?.toLowerCase();
       if (localeCode && supportedCodes.includes(localeCode)) {
-        logger.info(
-          ENABLE_LOGGING,
-          `Using primary device locale: ${localeCode}`
-        );
+        if (ENABLE_LOGGING) {
+          logger.info(`Using primary device locale: ${localeCode}`);
+        }
         return localeCode;
       }
     }
@@ -73,18 +84,21 @@ function getDeviceLocale(): string {
     for (const locale of deviceLocales) {
       const localeCode = locale.languageCode?.toLowerCase();
       if (localeCode && supportedCodes.includes(localeCode)) {
-        logger.info(ENABLE_LOGGING, `Using device locale: ${localeCode}`);
+        if (ENABLE_LOGGING) {
+          logger.info(`Using device locale: ${localeCode}`);
+        }
         return localeCode;
       }
     }
 
-    logger.info(
-      ENABLE_LOGGING,
-      'No supported device locale found, using default: en'
-    );
+    if (ENABLE_LOGGING) {
+      logger.info('No supported device locale found, using default: en');
+    }
     return 'en'; // Default fallback
   } catch (error) {
-    logger.error(ENABLE_LOGGING, 'Error getting device locale:', error);
+    if (ENABLE_LOGGING) {
+      logger.error('Error getting device locale:', error);
+    }
     return 'en'; // Default fallback
   }
 }
@@ -94,7 +108,9 @@ async function getSavedLocale(): Promise<string | null> {
   try {
     return await AsyncStorage.getItem(LOCALE_STORAGE_KEY);
   } catch (error) {
-    logger.error(ENABLE_LOGGING, 'Error getting saved locale:', error);
+    if (ENABLE_LOGGING) {
+      logger.error('Error getting saved locale:', error);
+    }
     return null;
   }
 }
@@ -104,12 +120,14 @@ export async function saveLocalePreference(localeCode: string): Promise<void> {
   try {
     await AsyncStorage.setItem(LOCALE_STORAGE_KEY, localeCode);
   } catch (error) {
-    logger.error(ENABLE_LOGGING, 'Error saving locale preference:', error);
+    if (ENABLE_LOGGING) {
+      logger.error('Error saving locale preference:', error);
+    }
   }
 }
 
 // Initialize i18n with automatic locale detection on first launch
-export const initializeI18n = async () => {
+export const initializeI18n = async (): Promise<void> => {
   try {
     const isFirst = await isFirstLaunch();
     const savedLocale = await getSavedLocale();
@@ -121,7 +139,6 @@ export const initializeI18n = async () => {
       // First launch: automatically use device locale if supported, otherwise default to 'en'
       initialLocale = deviceLocale;
       logger.info(
-        true,
         `First app launch: automatically setting locale to ${initialLocale} (device: ${deviceLocale})`
       );
 
@@ -132,7 +149,6 @@ export const initializeI18n = async () => {
       // Not first launch: use saved locale or fall back to device locale
       initialLocale = savedLocale || deviceLocale;
       logger.info(
-        true,
         `App already launched: using locale ${initialLocale} (saved: ${savedLocale}, device: ${deviceLocale})`
       );
     }
@@ -167,10 +183,7 @@ export const initializeI18n = async () => {
       // Missing key handler
       missingKeyHandler: (lng, _ns, key, fallbackValue) => {
         if (__DEV__) {
-          logger.warn(
-            true,
-            `Missing translation key: ${key} for locale: ${lng}`
-          );
+          logger.warn(`Missing translation key: ${key} for locale: ${lng}`);
         }
         return fallbackValue || key;
       },
@@ -184,12 +197,11 @@ export const initializeI18n = async () => {
       // Note: RN does not use i18next-browser-languagedetector; detection handled manually above
     });
 
-    logger.info(
-      true,
-      `i18n initialized successfully with locale: ${initialLocale}`
-    );
+    logger.info(`i18n initialized successfully with locale: ${initialLocale}`);
   } catch (error) {
-    logger.error(ENABLE_LOGGING, 'Failed to initialize i18n:', error);
+    if (ENABLE_LOGGING) {
+      logger.error('Failed to initialize i18n:', error);
+    }
     // Fallback initialization with English
     try {
       await i18n.use(initReactI18next).init({
@@ -199,13 +211,11 @@ export const initializeI18n = async () => {
         interpolation: { escapeValue: false },
         react: { useSuspense: false },
       });
-      logger.info(ENABLE_LOGGING, 'i18n fallback initialization successful');
+      if (ENABLE_LOGGING) {
+        logger.info('i18n fallback initialization successful');
+      }
     } catch (fallbackError) {
-      logger.error(
-        true,
-        'Failed to initialize i18n with fallback:',
-        fallbackError
-      );
+      logger.error('Failed to initialize i18n with fallback:', fallbackError);
     }
   }
 };
@@ -214,7 +224,9 @@ export const initializeI18n = async () => {
 export default i18n;
 
 // Helper function to get current locale info
-export function getCurrentLocaleInfo() {
+export function getCurrentLocaleInfo():
+  | (typeof SUPPORTED_LOCALES)[0]
+  | undefined {
   const currentLocale = i18n.language;
   return (
     SUPPORTED_LOCALES.find(locale => locale.code === currentLocale) ||

@@ -32,8 +32,9 @@ function extractSyncedTablesMap(generatedContent) {
   const keyed = Array.from(
     schemaObjectLiteral.matchAll(/\b([a-zA-Z0-9_]+)\b\s*:/g)
   ).map(m => m[1]);
+  // Match table names followed by comma OR closing brace (for last item)
   const shorthand = Array.from(
-    schemaObjectLiteral.matchAll(/\b([a-zA-Z0-9_]+)\b\s*,/g)
+    schemaObjectLiteral.matchAll(/\b([a-zA-Z0-9_]+)\b\s*[,}]/g)
   ).map(m => m[1]);
   const candidateNames = Array.from(new Set([...keyed, ...shorthand]));
   const declaredTables = candidateNames.filter(name =>

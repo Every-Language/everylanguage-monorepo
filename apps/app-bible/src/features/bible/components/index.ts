@@ -6,4 +6,5 @@ export { ChapterVersesHeader } from './ChapterVersesHeader';
 export { ChapterVersesLoading } from './ChapterVersesLoading';
 export { ChapterVersesList } from './ChapterVersesList';
 export { ChapterVersesDetails } from './ChapterVersesDetails';
-export { BibleContainer } from './BibleContainer';
+// BibleContainer removed from barrel export to break circular dependency
+// Import directly: import { BibleContainer } from '../components/BibleContainer'

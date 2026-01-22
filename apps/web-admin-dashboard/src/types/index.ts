@@ -35,6 +35,7 @@ export interface LanguageFunding {
   language_entity_id: string;
   funding_status: LanguageFundingStatus;
   budget_cents: number | null;
+  priority: number | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -147,7 +148,6 @@ export interface DonationWithAllocations extends Donation {
     last_name: string;
     email: string;
   } | null;
-  is_manual?: boolean;
 }
 
 export interface AllocationWithDetails extends DonationAllocation {

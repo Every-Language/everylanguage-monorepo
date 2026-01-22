@@ -502,6 +502,7 @@ export const AppSchema = new Schema({
   user_playlist_groups,
   user_playlists,
   playlists,
+  playlist_items,
   // Local-only tables
   ...__localTables,
 });
