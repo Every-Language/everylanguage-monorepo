@@ -286,9 +286,33 @@ export function SignUpForm({
         ]);
       }
     } catch (error) {
-      logger.error(ENABLE_LOGGING, 'Sign up error:', error);
       let message =
         error instanceof Error ? error.message : t('auth.errors.generic');
+
+      // Handle phone number already registered (expected scenario)
+      if (
+        message.includes('already been registered') ||
+        message.includes('phone number has already been registered') ||
+        message.includes('phone_exists')
+      ) {
+        logger.info(
+          ENABLE_LOGGING,
+          'Phone number already registered (expected):',
+          message
+        );
+        Alert.alert(
+          t('auth.phoneAlreadyRegistered'),
+          t('auth.phoneAlreadyRegisteredMessage'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: t('auth.goToSignIn'),
+              onPress: () => onSwitchToSignIn(),
+            },
+          ]
+        );
+        return;
+      }
 
       // Customize the weak password error message from Supabase
       if (
@@ -299,6 +323,8 @@ export function SignUpForm({
         message = t('auth.errors.weakPasswordSupabase');
       }
 
+      // Log other errors as errors
+      logger.error(ENABLE_LOGGING, 'Sign up error:', error);
       Alert.alert(t('common.error'), message);
     }
   };
