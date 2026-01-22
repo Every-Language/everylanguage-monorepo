@@ -536,6 +536,11 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/stripe-webhook-donations/index.ts"
 
+[functions.reset-password-with-email]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/reset-password-with-email/index.ts"
+
 # -----------------------------------------------------------------------------
 # AUTHENTICATED ENDPOINTS - JWT verification required
 # These functions require user authentication and use auth middleware
