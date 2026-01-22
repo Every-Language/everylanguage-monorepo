@@ -418,7 +418,9 @@ export function SignInForm({
         <TouchableOpacity
           style={styles.forgotPasswordButton}
           onPress={handleForgotPassword}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          <Text style={styles.forgotPasswordText}>
+            {t('auth.forgotPassword')}
+          </Text>
         </TouchableOpacity>
       </View>
 
