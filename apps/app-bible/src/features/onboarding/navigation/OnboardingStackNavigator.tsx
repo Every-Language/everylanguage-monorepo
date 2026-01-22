@@ -10,6 +10,7 @@ import { OfflineBibleSetupScreen } from '../screens/OfflineBibleSetupScreen';
 import { LocaleSelectionModal } from '../screens/LocaleSelectionModal';
 import { OnboardingAuthScreen } from '../screens/OnboardingAuthScreen';
 import { SignInSyncScreen } from '@/features/auth/screens/SignInSyncScreen';
+import { ForgotPasswordScreen } from '@/features/auth/screens/ForgotPasswordScreen';
 import { PermissionsScreen } from '@/features/permissions/screens/PermissionsScreen';
 import { VersionSelectionStackNavigator } from '@/features/languages/navigation/VersionSelectionStackNavigator';
 import { useOnboardingStore } from '@/features/onboarding/store/onboardingStore';
@@ -20,6 +21,11 @@ import { i18n } from '@/shared/services';
 export type OnboardingStackParamList = {
   Auth: undefined;
   SignInSync: undefined;
+  ForgotPassword: {
+    email?: string;
+    phone?: string;
+    method: 'email' | 'phone';
+  };
   OnboardingMain: undefined;
   MotherTongueSearch: undefined;
   ImportBible: undefined;
@@ -74,7 +80,24 @@ const AuthScreenWrapper: React.FC<AuthScreenProps> = ({ navigation }) => {
     navigation.navigate('OnboardingMain');
   };
 
-  return <OnboardingAuthScreen onSkipAuth={handleSkipAuth} />;
+  const handleForgotPassword = (
+    email?: string,
+    phone?: string,
+    method?: 'email' | 'phone'
+  ) => {
+    navigation.navigate('ForgotPassword', {
+      ...(email && { email }),
+      ...(phone && { phone }),
+      method: method || 'email',
+    });
+  };
+
+  return (
+    <OnboardingAuthScreen
+      onSkipAuth={handleSkipAuth}
+      onForgotPassword={handleForgotPassword}
+    />
+  );
 };
 
 const OnboardingMainScreenWrapper: React.FC<OnboardingMainScreenProps> = ({
@@ -169,6 +192,13 @@ export const OnboardingStackNavigator: React.FC = () => {
           title: i18n.t('auth.sync.title'),
           gestureEnabled: false, // Prevent back navigation during sync
           animation: 'none', // No animation for sync screen
+        }}
+      />
+      <OnboardingStack.Screen
+        name='ForgotPassword'
+        component={ForgotPasswordScreen}
+        options={{
+          title: i18n.t('auth.forgotPassword'),
         }}
       />
       <OnboardingStack.Screen

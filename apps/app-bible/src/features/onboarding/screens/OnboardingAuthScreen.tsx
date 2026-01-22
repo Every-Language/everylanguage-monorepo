@@ -13,10 +13,16 @@ import { useState, useEffect } from 'react';
 
 interface OnboardingAuthScreenProps {
   onSkipAuth: () => void;
+  onForgotPassword?: (
+    email?: string,
+    phone?: string,
+    method?: 'email' | 'phone'
+  ) => void;
 }
 
 export const OnboardingAuthScreen: React.FC<OnboardingAuthScreenProps> = ({
   onSkipAuth,
+  onForgotPassword,
 }) => {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const { theme } = useTheme();
@@ -60,7 +66,10 @@ export const OnboardingAuthScreen: React.FC<OnboardingAuthScreenProps> = ({
       ]}>
       <View style={styles.content}>
         {mode === 'signin' ? (
-          <SignInForm onSwitchToSignUp={handleSwitchToSignUp} />
+          <SignInForm
+            onSwitchToSignUp={handleSwitchToSignUp}
+            onForgotPassword={onForgotPassword}
+          />
         ) : (
           <SignUpForm onSwitchToSignIn={handleSwitchToSignIn} />
         )}
