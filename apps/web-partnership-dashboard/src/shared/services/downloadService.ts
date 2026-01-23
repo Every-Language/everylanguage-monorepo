@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { env } from '@/lib/env';
 
 /**
  * @deprecated Legacy interface for old download API. Use DownloadUrlByIdResponse instead.
@@ -23,7 +24,7 @@ export class DownloadService {
 
   constructor() {
     // Next.js uses process.env for environment variables
-    this.supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    this.supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || '';
     if (!this.supabaseUrl) {
       throw new Error('Supabase URL not configured');
     }

@@ -23,12 +23,54 @@ export interface LanguageSearchResult {
   }> | null;
 }
 
+type NormalizedRegion = NonNullable<LanguageSearchResult['regions']>[number];
+
 interface UseSearchLanguagesResult {
   data: LanguageSearchResult[] | undefined;
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
 }
+
+const normalizeRegions = (
+  regionsValue: unknown
+): LanguageSearchResult['regions'] => {
+  if (!Array.isArray(regionsValue)) {
+    return null;
+  }
+
+  const normalized = regionsValue
+    .map((item: unknown): NormalizedRegion | null => {
+      if (item === null || typeof item !== 'object') {
+        return null;
+      }
+
+      const record = item as Record<string, unknown>;
+      const regionId =
+        typeof record['region_id'] === 'string' ? record['region_id'] : null;
+      const regionName =
+        typeof record['region_name'] === 'string'
+          ? record['region_name']
+          : null;
+      const regionLevel =
+        typeof record['region_level'] === 'string'
+          ? record['region_level']
+          : null;
+
+      if (!regionId || !regionName || !regionLevel) {
+        return null;
+      }
+
+      return {
+        region_id: regionId,
+        region_name: regionName,
+        region_level: regionLevel,
+      };
+    })
+    .filter((region): region is NormalizedRegion => region !== null);
+
+  return normalized.length > 0 ? normalized : null;
+};
 
 /**
  * Hook for searching languages using fuzzy search
@@ -100,7 +142,7 @@ export const useSearchLanguages = (
           alias_id: row.alias_id,
           alias_name: row.alias_name,
           alias_similarity_score: row.alias_similarity_score,
-          regions: row.regions || null,
+          regions: normalizeRegions(row.regions),
         }));
         setData(transformed);
       }
