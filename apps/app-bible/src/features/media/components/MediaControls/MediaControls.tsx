@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { logger } from '@/shared/utils/logger';
 import { useCurrentTrack } from '../../store/PlaybackStore';
@@ -25,8 +25,22 @@ export const MediaControls: React.FC<MediaControlsProps> = React.memo(
     // Only need currentTrack to check if we should render
     const currentTrack = useCurrentTrack();
 
+    // Track first render to prevent speed controls flash on initial mount
+    // This fixes the issue where speed controls briefly appear when media player
+    // is first shown in minimized state due to React/Zustand subscription timing
+    const isFirstRender = useRef(true);
+
     // Get expanded state from store
-    const isExpanded = useMediaPlayerExpanded();
+    const storeIsExpanded = useMediaPlayerExpanded();
+
+    // Force false on first render to prevent speed controls from appearing
+    // when media player is first shown in minimized state
+    const isExpanded = isFirstRender.current ? false : storeIsExpanded;
+
+    // Mark first render as complete after mount to allow normal store behavior
+    useEffect(() => {
+      isFirstRender.current = false;
+    }, []);
 
     const setRate = useCallback(async (rate: PlaybackRate) => {
       try {
