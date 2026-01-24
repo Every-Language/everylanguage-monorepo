@@ -2,6 +2,7 @@ import React, { useRef, useCallback } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useTheme } from '@/shared/hooks';
 import { VerseCard } from './VerseCard';
+import { VerseCardSkeleton } from './VerseCardSkeleton';
 import { useVerseAutoScroll } from '../hooks/useVerseAutoScroll';
 import { useChapterVersesLogic } from '../hooks/useChapterVersesLogic';
 import { useCurrentVersions } from '../../languages/hooks';
@@ -16,7 +17,7 @@ export const ChapterVersesList: React.FC = () => {
   const { theme } = useTheme();
 
   // Get data directly from hooks - no props needed!
-  const { versesWithTexts, chapter, book, incomingVerseId } =
+  const { versesWithTexts, chapter, book, incomingVerseId, versesLoading } =
     useChapterVersesLogic();
   const { currentAudioVersion, currentTextVersion } = useCurrentVersions();
   const scrollRef = useRef<ScrollView | null>(null);
@@ -77,6 +78,17 @@ export const ChapterVersesList: React.FC = () => {
     },
     [chapter, book, currentAudioVersion, currentTextVersion, theme]
   );
+
+  // Show skeleton placeholders while loading
+  if (versesLoading && versesWithTexts.length === 0) {
+    return (
+      <View style={styles.listContent}>
+        {Array.from({ length: 8 }).map((_, index) => (
+          <VerseCardSkeleton key={`skeleton-${index}`} />
+        ))}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.listContent}>
