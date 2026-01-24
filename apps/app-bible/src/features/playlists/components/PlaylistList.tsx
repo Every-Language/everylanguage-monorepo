@@ -10,6 +10,7 @@ import { useTheme, useLocalization } from '@/shared/hooks';
 import type { Theme } from '@everylanguage/shared-native-ui';
 
 import { PlaylistCard } from './PlaylistCard';
+import { PlaylistCardSkeleton } from './PlaylistCardSkeleton';
 import type { Playlist } from '../types';
 
 interface PlaylistListProps {
@@ -33,11 +34,19 @@ export const PlaylistList: React.FC<PlaylistListProps> = ({
 
   const styles = createStyles(theme);
 
-  if (loading) {
+  if (loading && playlists.length === 0) {
+    const skeletonData = Array.from({ length: 6 }).map((_, i) => ({
+      id: `skeleton-${i}`,
+    }));
     return (
-      <View style={styles.centered}>
-        <Text style={styles.loadingText}>{t('playlists.loading')}</Text>
-      </View>
+      <FlatList
+        data={skeletonData}
+        renderItem={() => <PlaylistCardSkeleton />}
+        keyExtractor={item => item.id}
+        style={styles.list}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      />
     );
   }
 
