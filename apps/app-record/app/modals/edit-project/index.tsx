@@ -6,8 +6,8 @@ import { useEditProjectStore } from '@/features/projects/store/editProjectStore'
 /**
  * Edit Project Form Screen
  *
- * Route screen wrapper for editing an existing project.
- * Thin wrapper that handles navigation and delegates to EditProjectForm component.
+ * Root-level modal screen for editing an existing project.
+ * Renders above tab bar on both iOS and Android.
  */
 export default function EditProjectFormScreen(): React.JSX.Element {
   const router = useRouter();
@@ -31,13 +31,16 @@ export default function EditProjectFormScreen(): React.JSX.Element {
   }, [router]);
 
   const handleSelectSourceLanguage = useCallback((): void => {
-    router.push(`/(tabs)/projects/${projectId}/edit/source-language`);
+    router.push({
+      pathname: '/modals/edit-project/source-language',
+      params: { projectId },
+    });
   }, [router, projectId]);
 
   const handleViewSourceLanguage = useCallback((): void => {
     if (source_language_id && source_language_name) {
       router.push({
-        pathname: `/(tabs)/projects/[projectId]/edit/language-info`,
+        pathname: '/modals/edit-project/language-info',
         params: {
           projectId,
           languageId: source_language_id,
@@ -50,13 +53,16 @@ export default function EditProjectFormScreen(): React.JSX.Element {
   }, [router, projectId, source_language_id, source_language_name]);
 
   const handleSelectTargetLanguage = useCallback((): void => {
-    router.push(`/(tabs)/projects/${projectId}/edit/target-language`);
+    router.push({
+      pathname: '/modals/edit-project/target-language',
+      params: { projectId },
+    });
   }, [router, projectId]);
 
   const handleViewTargetLanguage = useCallback((): void => {
     if (target_language_id && target_language_name) {
       router.push({
-        pathname: `/(tabs)/projects/[projectId]/edit/language-info`,
+        pathname: '/modals/edit-project/language-info',
         params: {
           projectId,
           languageId: target_language_id,
@@ -69,13 +75,16 @@ export default function EditProjectFormScreen(): React.JSX.Element {
   }, [router, projectId, target_language_id, target_language_name]);
 
   const handleSelectRegion = useCallback((): void => {
-    router.push(`/(tabs)/projects/${projectId}/edit/region`);
+    router.push({
+      pathname: '/modals/edit-project/region',
+      params: { projectId },
+    });
   }, [router, projectId]);
 
   const handleViewRegion = useCallback((): void => {
     if (region_id && region_name) {
       router.push({
-        pathname: `/(tabs)/projects/[projectId]/edit/region-info`,
+        pathname: '/modals/edit-project/region-info',
         params: {
           projectId,
           regionId: region_id,

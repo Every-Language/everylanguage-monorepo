@@ -6,8 +6,8 @@ import { useCreateProjectStore } from '@/features/projects/store/createProjectSt
 /**
  * Create Project Form Screen
  *
- * Route screen wrapper for creating a new project.
- * Thin wrapper that handles navigation and delegates to CreateProjectForm component.
+ * Root-level modal screen for creating a new project.
+ * Renders above tab bar on both iOS and Android.
  */
 export default function CreateProjectFormScreen(): React.JSX.Element {
   const router = useRouter();
@@ -25,13 +25,13 @@ export default function CreateProjectFormScreen(): React.JSX.Element {
   }, [router]);
 
   const handleSelectSourceLanguage = useCallback((): void => {
-    router.push('/(tabs)/projects/create/source-language');
+    router.push('/modals/create-project/source-language');
   }, [router]);
 
   const handleViewSourceLanguage = useCallback((): void => {
     if (source_language_id && source_language_name) {
       router.push({
-        pathname: '/(tabs)/projects/create/language-info',
+        pathname: '/modals/create-project/language-info',
         params: {
           languageId: source_language_id,
           languageName: source_language_name,
@@ -43,13 +43,13 @@ export default function CreateProjectFormScreen(): React.JSX.Element {
   }, [router, source_language_id, source_language_name]);
 
   const handleSelectTargetLanguage = useCallback((): void => {
-    router.push('/(tabs)/projects/create/target-language');
+    router.push('/modals/create-project/target-language');
   }, [router]);
 
   const handleViewTargetLanguage = useCallback((): void => {
     if (target_language_id && target_language_name) {
       router.push({
-        pathname: '/(tabs)/projects/create/language-info',
+        pathname: '/modals/create-project/language-info',
         params: {
           languageId: target_language_id,
           languageName: target_language_name,
@@ -61,13 +61,13 @@ export default function CreateProjectFormScreen(): React.JSX.Element {
   }, [router, target_language_id, target_language_name]);
 
   const handleSelectRegion = useCallback((): void => {
-    router.push('/(tabs)/projects/create/select-region');
+    router.push('/modals/create-project/select-region');
   }, [router]);
 
   const handleViewRegion = useCallback((): void => {
     if (region_id && region_name) {
       router.push({
-        pathname: '/(tabs)/projects/create/region-info',
+        pathname: '/modals/create-project/region-info',
         params: {
           regionId: region_id,
           regionName: region_name,

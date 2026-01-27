@@ -20,7 +20,7 @@ export default function SelectRegionScreen(): React.JSX.Element {
   const handleRegionSelect = useCallback(
     (region: { region_id: string; region_name: string }): void => {
       router.push({
-        pathname: '/(tabs)/projects/create/region-info',
+        pathname: '/modals/create-project/region-info',
         params: {
           regionId: region.region_id,
           regionName: region.region_name,

@@ -26,7 +26,7 @@ export const ProjectsScreen: React.FC = () => {
   const { projects, error: projectsError } = useProjects();
 
   const handleOpenCreateModal = useCallback((): void => {
-    router.push('/(tabs)/projects/create');
+    router.push('/modals/create-project');
   }, [router]);
 
   const handleProjectPress = useCallback(
