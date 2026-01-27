@@ -34,20 +34,6 @@ const ProjectDetailStackLayout: React.FC = () => {
           headerShown: false,
         }}
       />
-      <Stack.Screen
-        name='create-sequence'
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-        }}
-      />
-      <Stack.Screen
-        name='edit'
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-        }}
-      />
     </Stack>
   );
 };
