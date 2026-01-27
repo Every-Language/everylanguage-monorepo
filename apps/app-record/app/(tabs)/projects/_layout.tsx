@@ -31,13 +31,6 @@ const ProjectsStackLayout: React.FC = () => {
         }}
       />
       <Stack.Screen
-        name='create'
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-        }}
-      />
-      <Stack.Screen
         name='[projectId]'
         options={{
           headerShown: false,

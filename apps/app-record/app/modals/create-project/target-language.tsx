@@ -20,7 +20,7 @@ export default function SelectTargetLanguageScreen(): React.JSX.Element {
   const handleLanguageSelect = useCallback(
     (language: { entity_id: string; entity_name: string }): void => {
       router.push({
-        pathname: '/(tabs)/projects/create/language-info',
+        pathname: '/modals/create-project/language-info',
         params: {
           languageId: language.entity_id,
           languageName: language.entity_name,
