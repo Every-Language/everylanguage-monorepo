@@ -6,7 +6,8 @@ import { useTheme } from '@/shared/hooks';
 /**
  * Project Detail Stack Layout
  *
- * Nested Stack navigator for project detail section (sequences, create sequence, edit).
+ * Nested Stack navigator for project detail section (sequences).
+ * Create sequence and edit project modals are now root-level modals.
  * Provides native iOS/Android navigation with proper animations and gestures.
  */
 export const unstable_settings = {
