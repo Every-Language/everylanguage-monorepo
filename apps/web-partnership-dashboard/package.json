@@ -79,7 +79,7 @@
     "lru-cache": "^10.2.0",
     "lucide-react": "^0.525.0",
     "maplibre-gl": "^5.7.1",
-    "next": "^15.5.8",
+    "next": "^15.5.10",
     "openai": "^4.89.0",
     "ora": "^8.2.0",
     "papaparse": "^5.5.3",
