@@ -103,7 +103,10 @@ export const SequencesScreen: React.FC = () => {
   }, [router]);
 
   const handleOpenCreateSequenceModal = useCallback((): void => {
-    router.push(`/(tabs)/projects/${projectId}/create-sequence`);
+    router.push({
+      pathname: '/modals/create-sequence',
+      params: { projectId },
+    });
   }, [router, projectId]);
 
   const handleSequencePress = useCallback(
@@ -128,7 +131,10 @@ export const SequencesScreen: React.FC = () => {
   }, []);
 
   const handleEditProject = useCallback((): void => {
-    router.push(`/(tabs)/projects/${projectId}/edit`);
+    router.push({
+      pathname: '/modals/edit-project',
+      params: { projectId },
+    });
   }, [router, projectId]);
 
   if (!projectId) {

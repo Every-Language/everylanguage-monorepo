@@ -4,16 +4,16 @@ import { Platform } from 'react-native';
 import { useTheme } from '@/shared/hooks';
 
 /**
- * Create Project Modal Stack Layout
+ * Create Sequence Modal Stack Layout
  *
- * Nested Stack navigator for create project modal flow.
- * Provides native iOS/Android navigation with proper animations and gestures.
+ * Root-level modal stack navigator for create sequence flow.
+ * Renders above tab bar on both iOS and Android.
  */
 export const unstable_settings = {
   initialRouteName: 'index',
 };
 
-const CreateProjectStackLayout: React.FC = () => {
+const CreateSequenceModalLayout: React.FC = () => {
   const { theme } = useTheme();
 
   return (
@@ -35,37 +35,13 @@ const CreateProjectStackLayout: React.FC = () => {
         }}
       />
       <Stack.Screen
-        name='source-language'
+        name='select-book'
         options={{
           headerShown: false,
         }}
       />
       <Stack.Screen
-        name='target-language'
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name='region'
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name='select-region'
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name='language-info'
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name='region-info'
+        name='select-chapter'
         options={{
           headerShown: false,
         }}
@@ -74,4 +50,4 @@ const CreateProjectStackLayout: React.FC = () => {
   );
 };
 
-export default CreateProjectStackLayout;
+export default CreateSequenceModalLayout;
