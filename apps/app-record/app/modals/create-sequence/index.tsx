@@ -23,8 +23,8 @@ import {
 /**
  * Create Sequence Form Screen
  *
- * Main form screen for creating a new sequence.
- * Allows selection of book and chapter.
+ * Root-level modal screen for creating a new sequence.
+ * Renders above tab bar on both iOS and Android.
  */
 export default function CreateSequenceFormScreen(): React.JSX.Element {
   const router = useRouter();
@@ -65,18 +65,18 @@ export default function CreateSequenceFormScreen(): React.JSX.Element {
   }, [router, reset]);
 
   const handleSelectBook = useCallback((): void => {
-    // Navigate to select-book route within the create-sequence stack
-    // Using absolute path to ensure correct resolution within nested modal stack
-    const path = `/(tabs)/projects/${projectId}/create-sequence/select-book`;
-    router.push(path);
+    router.push({
+      pathname: '/modals/create-sequence/select-book',
+      params: { projectId },
+    });
   }, [router, projectId]);
 
   const handleSelectChapter = useCallback((): void => {
     if (!book_id) return;
-    // Navigate to select-chapter route within the create-sequence stack
-    // Using absolute path to ensure correct resolution within nested modal stack
-    const path = `/(tabs)/projects/${projectId}/create-sequence/select-chapter`;
-    router.push(path);
+    router.push({
+      pathname: '/modals/create-sequence/select-chapter',
+      params: { projectId },
+    });
   }, [router, projectId, book_id]);
 
   const handleCreate = useCallback(async (): Promise<void> => {

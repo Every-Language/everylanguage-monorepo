@@ -1,16 +1,18 @@
 import React, { useCallback } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from '@/shared/hooks';
 import { LanguageSelector } from '@/features/projects/components';
 
 /**
- * Select Source Language Screen
+ * Select Source Language Screen (Edit)
  *
- * Route screen wrapper for selecting source language when creating a project.
+ * Route screen wrapper for selecting source language when editing a project.
  * Thin wrapper that handles navigation and delegates to LanguageSelector component.
  */
 export default function SelectSourceLanguageScreen(): React.JSX.Element {
   const router = useRouter();
+  const params = useLocalSearchParams<{ projectId: string }>();
+  const projectId = params.projectId || '';
   const { t } = useTranslation();
 
   const handleBack = useCallback((): void => {
@@ -20,15 +22,16 @@ export default function SelectSourceLanguageScreen(): React.JSX.Element {
   const handleLanguageSelect = useCallback(
     (language: { entity_id: string; entity_name: string }): void => {
       router.push({
-        pathname: '/(tabs)/projects/create/language-info',
+        pathname: '/modals/edit-project/language-info',
         params: {
+          projectId,
           languageId: language.entity_id,
           languageName: language.entity_name,
           type: 'source',
         },
       });
     },
-    [router]
+    [router, projectId]
   );
 
   return (
