@@ -75,17 +75,17 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
+      <CardHeader className='py-3 px-4'>
+        <CardTitle className='text-base'>Recent Activity</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className='px-4 pb-4 pt-0'>
         {isLoading ? (
-          <div className='flex items-center justify-center py-8'>
-            <LoadingSpinner />
+          <div className='flex items-center justify-center py-6'>
+            <LoadingSpinner size='sm' />
           </div>
         ) : activityData.length === 0 ? (
-          <div className='text-center py-8'>
-            <p className='text-neutral-600 dark:text-neutral-400'>
+          <div className='text-center py-6'>
+            <p className='text-sm text-neutral-600 dark:text-neutral-400'>
               No recent activity to display
             </p>
           </div>
@@ -94,7 +94,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
             columns={recentActivityColumns}
             data={activityData}
             emptyMessage='No recent activity'
-            className='text-sm'
+            className='text-xs'
           />
         )}
       </CardContent>

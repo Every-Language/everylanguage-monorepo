@@ -6,10 +6,7 @@ import React, {
   useRef,
 } from 'react';
 import type { ReactNode } from 'react';
-import {
-  type Project,
-  useIsSystemAdmin,
-} from '../../../shared/hooks/query/projects';
+import { type Project } from '../../../shared/hooks/query/projects';
 import { useAuth } from '../../auth/hooks/useAuth';
 
 export interface ProjectContextValue {
@@ -24,7 +21,7 @@ export const ProjectContext = createContext<ProjectContextValue | undefined>(
   undefined
 );
 
-const SELECTED_PROJECT_STORAGE_KEY = 'omt_selected_project';
+const SELECTED_PROJECT_STORAGE_KEY = 'current_project_id';
 
 interface ProjectProviderProps {
   children: ReactNode;
@@ -37,7 +34,6 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({
     null
   );
   const { user } = useAuth();
-  const { data: isSystemAdmin = false } = useIsSystemAdmin();
   const prevUserIdRef = useRef<string | null>(null);
 
   // Load selected project from localStorage on mount
@@ -59,7 +55,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({
     const currentUserId = user?.id ?? null;
     const prevUserId = prevUserIdRef.current;
 
-    if (prevUserId !== currentUserId) {
+    if (prevUserId !== null && prevUserId !== currentUserId) {
       // If user changed (includes logout), clear selection
       if (selectedProject) {
         setSelectedProjectState(null);
@@ -83,11 +79,6 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({
       return;
     }
 
-    // System admins can select any project, so skip validation for them
-    if (isSystemAdmin) {
-      return;
-    }
-
     // If a project is selected but doesn't belong to the current user, clear it
     if (
       selectedProject &&
@@ -104,7 +95,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({
         );
       }
     }
-  }, [user, selectedProject, isSystemAdmin]);
+  }, [user, selectedProject]);
 
   const setSelectedProject = useCallback((project: Project | null) => {
     setSelectedProjectState(project);

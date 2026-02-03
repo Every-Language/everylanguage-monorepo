@@ -91,6 +91,7 @@ export const AudioFileManager: React.FC<AudioFileManagerProps> = ({
       handleRowSelect={audioFileState.handleRowSelect}
       handleEditClick={audioFileState.handleEditClick}
       handlePublishStatusChange={audioFileState.handlePublishStatusChange}
+      handleCheckStatusChange={audioFileState.handleCheckStatusChange}
       handlePlay={audioFileState.handlePlay}
       handleDownload={audioFileState.handleDownload}
       handleVerseMarking={audioFileState.handleVerseMarking}

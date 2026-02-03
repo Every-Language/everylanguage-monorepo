@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/shared/design-system/hooks/useToast';
 import { useR2UploadStore } from '@/shared/stores/mediaFileUpload';
-import { useSelectedProject } from '@/features/dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '@/features/dashboard/hooks/useCurrentProject';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useOptimisticMediaFileUpdates } from '@/shared/hooks/query/media-files';
 import type { ProcessedAudioFile } from '@/shared/services/audioFileProcessor';
 
 export function useR2AudioUpload() {
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const { user } = useAuth();
   const { toast } = useToast();
   const { addOptimisticUploads, removeOptimisticUploads } =
@@ -45,8 +45,6 @@ export function useR2AudioUpload() {
       completedFiles: string[],
       failedFiles: string[]
     ) => {
-      console.log('🎉 Upload completed:', { completedFiles, failedFiles });
-
       // Remove optimistic uploads since real data should now be available
       if (selectedProjectRef.current?.id) {
         removeOptimisticUploadsRef.current(selectedProjectRef.current.id);
@@ -68,10 +66,7 @@ export function useR2AudioUpload() {
       }
     };
 
-    const handleBatchComplete = (
-      batchProgress: import('@/shared/types/upload').UploadBatchProgress
-    ) => {
-      console.log('📊 Batch completed:', batchProgress);
+    const handleBatchComplete = () => {
       // Additional batch completion logic can be added here
     };
 
@@ -134,15 +129,8 @@ export function useR2AudioUpload() {
       }
 
       try {
-        console.log(
-          '🚀 Starting Cloudflare R2 upload process for',
-          validFiles.length,
-          'files'
-        );
-
         // Add optimistic uploads to show files in table immediately
         if (selectedProject?.id) {
-          console.log('📝 Adding optimistic uploads for immediate UI feedback');
           const optimisticUploads = validFiles.map(file => ({
             fileName: file.file.name,
             bookName: file.filenameParseResult.detectedBook || 'Unknown',
@@ -207,11 +195,7 @@ export function useR2AudioUpload() {
           description: `Processing ${validFiles.length} file${validFiles.length > 1 ? 's' : ''} in the background`,
           variant: 'info',
         });
-
-        console.log('✅ Upload initiated successfully');
       } catch (error) {
-        console.error('❌ Upload initialization error:', error);
-
         // Remove optimistic uploads on error
         if (selectedProject?.id) {
           removeOptimisticUploads(selectedProject.id);
@@ -242,7 +226,6 @@ export function useR2AudioUpload() {
   );
 
   const handleCancelUpload = useCallback(() => {
-    console.log('🛑 Cancelling upload');
     cancelUpload();
     toast({
       title: 'Upload cancelled',

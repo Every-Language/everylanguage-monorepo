@@ -4,6 +4,7 @@ import {
   resolveFullChapterEndVersesBatch,
   validateParsedFilenameBatch,
   type ParsedFilename,
+  type FilenameFormat,
 } from './filenameParser';
 
 export interface AudioMetadata {
@@ -44,12 +45,13 @@ export interface ProcessedAudioFile {
 export class AudioFileProcessor {
   async processFile(
     file: File,
-    bibleVersionId?: string
+    bibleVersionId?: string,
+    filenameFormat?: FilenameFormat
   ): Promise<ProcessedAudioFile> {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Parse filename
-    let filenameParseResult = parseFilename(file.name);
+    // Parse filename with optional format
+    let filenameParseResult = parseFilename(file.name, filenameFormat);
 
     // Resolve full chapter end verses if needed and we have a bible version
     if (filenameParseResult.isFullChapter && bibleVersionId) {
@@ -224,27 +226,22 @@ export class AudioFileProcessor {
 
   async processFiles(
     files: File[],
-    bibleVersionId?: string
+    bibleVersionId?: string,
+    filenameFormat?: FilenameFormat
   ): Promise<ProcessedAudioFile[]> {
     if (files.length === 0) {
       return [];
     }
 
-    console.log(
-      `📁 Processing ${files.length} files${bibleVersionId ? ' with bible version resolution' : ''}...`
-    );
-    const startTime = Date.now();
-
     // Step 1: Parse all filenames first (no DB calls)
     const filenameParseResults = files.map(file => ({
       file,
-      parseResult: parseFilename(file.name),
+      parseResult: parseFilename(file.name, filenameFormat),
     }));
 
     // Step 2: Batch resolve full chapter end verses (single DB query for all)
     let resolvedParseResults: typeof filenameParseResults;
     if (bibleVersionId) {
-      const batchStartTime = Date.now();
       const parseResults = filenameParseResults.map(item => item.parseResult);
       const resolvedResults = await resolveFullChapterEndVersesBatch(
         parseResults,
@@ -256,11 +253,7 @@ export class AudioFileProcessor {
         parseResult: resolvedResults[index],
       }));
 
-      const batchTime = Date.now() - batchStartTime;
-      console.log(`✅ Batch chapter resolution completed in ${batchTime}ms`);
-
       // Step 2.5: Batch validate against database (book, chapter, verse existence)
-      const validationStartTime = Date.now();
       const parseResultsForValidation = resolvedParseResults.map(
         item => item.parseResult
       );
@@ -273,17 +266,11 @@ export class AudioFileProcessor {
         file: item.file,
         parseResult: validatedResults[index],
       }));
-
-      const validationTime = Date.now() - validationStartTime;
-      console.log(
-        `✅ Batch validation completed in ${validationTime}ms (${validatedResults.filter(r => r.errors && r.errors.length > 0).length} with errors)`
-      );
     } else {
       resolvedParseResults = filenameParseResults;
     }
 
     // Step 3: Process files in parallel (extract metadata, validate)
-    const metadataStartTime = Date.now();
     const promises = resolvedParseResults.map(async ({ file, parseResult }) => {
       try {
         return await this.processFileWithParsedResult(file, parseResult);
@@ -316,15 +303,6 @@ export class AudioFileProcessor {
     });
 
     const processedFiles = await Promise.all(promises);
-
-    const metadataTime = Date.now() - metadataStartTime;
-    const totalTime = Date.now() - startTime;
-    const avgTimePerFile = totalTime / files.length;
-
-    console.log(
-      `🎉 Processed ${files.length} files in ${totalTime}ms (${avgTimePerFile.toFixed(1)}ms per file)`
-    );
-    console.log(`   • Metadata extraction: ${metadataTime}ms`);
 
     return processedFiles;
   }

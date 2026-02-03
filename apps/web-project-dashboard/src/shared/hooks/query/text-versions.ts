@@ -586,10 +586,6 @@ export function useChunkedBulkInsertVerseTexts() {
       const totalRecords = verseTextsData.length;
       const totalBatches = Math.ceil(totalRecords / BATCH_SIZE);
 
-      console.log(
-        `🚀 Starting chunked bulk insert: ${totalRecords} records in ${totalBatches} batches`
-      );
-
       const results = [];
       let completed = 0;
 
@@ -597,10 +593,6 @@ export function useChunkedBulkInsertVerseTexts() {
         const start = i * BATCH_SIZE;
         const end = Math.min(start + BATCH_SIZE, totalRecords);
         const batch = verseTextsData.slice(start, end);
-
-        console.log(
-          `📦 Processing batch ${i + 1}/${totalBatches}: ${batch.length} records`
-        );
 
         // Update progress before processing batch
         onProgress?.({
@@ -678,10 +670,6 @@ export function useChunkedBulkInsertVerseTexts() {
         results.push(...(data || []));
         completed += batch.length;
 
-        console.log(
-          `✅ Batch ${i + 1}/${totalBatches} completed: ${batch.length} records`
-        );
-
         // Update progress after batch completion
         onProgress?.({
           completed,
@@ -696,9 +684,6 @@ export function useChunkedBulkInsertVerseTexts() {
         }
       }
 
-      console.log(
-        `🎉 Chunked bulk insert completed: ${results.length} records inserted`
-      );
       return results;
     },
     onSuccess: (_, variables) => {

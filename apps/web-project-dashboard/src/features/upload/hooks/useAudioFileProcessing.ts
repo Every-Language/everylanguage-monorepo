@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '../../../shared/design-system/hooks/useToast';
-import { useSelectedProject } from '../../dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '../../dashboard/hooks/useCurrentProject';
 import {
   AudioFileProcessor,
   type ProcessedAudioFile,
@@ -11,7 +11,7 @@ import { supabase } from '../../../shared/services/supabase';
 export function useAudioFileProcessing() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const audioProcessor = useRef(new AudioFileProcessor()).current;
 
   // Get the default bible version for full chapter resolution

@@ -20,7 +20,6 @@ import {
 } from '../../../../shared/components/FuzzySearchSelector';
 import { LocationPicker } from '../../../../shared/components/LocationPicker/LocationPicker';
 import { useUpdateProject } from '../../../../shared/hooks/query/project-mutations';
-import { useSelectedProject } from '../../hooks/useSelectedProject';
 import { useToast } from '../../../../shared/design-system/hooks/useToast';
 import { useQueryClient } from '@tanstack/react-query';
 import { locationToPostGIS } from '../../../../shared/utils/locationUtils';
@@ -44,7 +43,6 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
   project,
   projectMetadata,
 }) => {
-  const { setSelectedProject } = useSelectedProject();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateProject = useUpdateProject();
@@ -166,7 +164,7 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
           ? locationToPostGIS(formData.location)
           : null;
 
-        const updatedProject = await updateProject.mutateAsync({
+        await updateProject.mutateAsync({
           id: project.id,
           updates: {
             name: formData.name.trim(),
@@ -180,9 +178,12 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
           },
         });
 
-        // Invalidate project metadata query to refresh dashboard
+        // Invalidate project queries to refresh data
         queryClient.invalidateQueries({
           queryKey: ['project-metadata', project.id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['projects', project.id],
         });
 
         toast({
@@ -190,11 +191,6 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
           description: `Project "${formData.name}" has been updated.`,
           variant: 'success',
         });
-
-        // Update the selected project if this is the currently selected one
-        if (updatedProject) {
-          setSelectedProject(updatedProject);
-        }
 
         onClose();
       } catch (error) {
@@ -223,7 +219,6 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
       updateProject,
       queryClient,
       toast,
-      setSelectedProject,
       onClose,
     ]
   );
