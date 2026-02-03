@@ -1,7 +1,12 @@
-export * from './components';
-export * from './constants/theme';
-export * from './hooks';
-export * from './services';
-export * from './store';
-export * from './types/theme';
-export * from './utils/theme';
+// Infrastructure
+export * from './infrastructure/powersync';
+export * from './infrastructure/supabase';
+
+// Auth
+export * from './auth';
+
+// UI Components
+export * from './ui';
+
+// Utils
+export * from './utils/logger';

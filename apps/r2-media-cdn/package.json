@@ -17,6 +17,6 @@
   "license": "ISC",
   "dependencies": {
     "@cloudflare/workers-types": "^4.20250813.0",
-    "wrangler": "^4.34.0"
+    "wrangler": "^4.59.1"
   }
 }

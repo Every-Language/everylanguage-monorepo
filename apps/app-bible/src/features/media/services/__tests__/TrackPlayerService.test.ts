@@ -13,9 +13,7 @@ describe('TrackPlayerService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset static state before each test
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (TrackPlayerService as any).isInitialized = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (TrackPlayerService as any).initializationPromise = null;
   });
 
