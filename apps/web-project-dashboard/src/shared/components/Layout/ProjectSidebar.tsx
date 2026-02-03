@@ -96,9 +96,9 @@ export const ProjectSidebar: React.FC = () => {
         <SidebarHeader>
           <div className='flex items-center justify-between w-full'>
             <div className='flex items-center'>
-              <div className='h-8 w-8 bg-gradient-to-br from-accent-600 to-accent-800 rounded-lg flex items-center justify-center mr-3'>
+              <div className='h-6 w-6 bg-gradient-to-br from-accent-600 to-accent-800 rounded-md flex items-center justify-center mr-2'>
                 <svg
-                  className='h-5 w-5 text-white'
+                  className='h-3.5 w-3.5 text-white'
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'>
@@ -111,53 +111,53 @@ export const ProjectSidebar: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <h1 className='text-sm font-black text-neutral-900 dark:text-neutral-100'>
+                <h1 className='text-xs font-black text-neutral-900 dark:text-neutral-100'>
                   OMT
                 </h1>
-                <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+                <p className='text-[10px] text-neutral-500 dark:text-neutral-400'>
                   Project Management
                 </p>
               </div>
             </div>
             <button
               onClick={toggleSidebar}
-              className='p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
+              className='p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors'
               title='Collapse sidebar'>
-              <PanelLeftClose className='h-4 w-4 text-neutral-500 dark:text-neutral-400' />
+              <PanelLeftClose className='h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400' />
             </button>
           </div>
         </SidebarHeader>
 
         <SidebarContent>
           {/* Current Project Info with Close Button */}
-          <div className='mb-6 px-1'>
-            <div className='mb-2 flex items-center justify-between'>
-              <label className='block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide'>
+          <div className='mb-4 px-0.5'>
+            <div className='mb-1.5 flex items-center justify-between'>
+              <label className='block text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide'>
                 Current Project
               </label>
               <Button
                 variant='ghost'
                 size='sm'
                 onClick={closeProject}
-                className='h-6 w-6 p-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'
+                className='h-5 w-5 p-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'
                 title='Close project'>
-                <X className='h-4 w-4' />
+                <X className='h-3 w-3' />
               </Button>
             </div>
 
             {isLoading ? (
-              <div className='p-3 border border-neutral-200 dark:border-neutral-700 rounded-md bg-neutral-50 dark:bg-neutral-800'>
-                <div className='animate-pulse space-y-2'>
-                  <div className='h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4'></div>
-                  <div className='h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2'></div>
+              <div className='p-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-neutral-50 dark:bg-neutral-800'>
+                <div className='animate-pulse space-y-1.5'>
+                  <div className='h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4'></div>
+                  <div className='h-2.5 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2'></div>
                 </div>
               </div>
             ) : project ? (
-              <div className='p-3 border border-neutral-200 dark:border-neutral-700 rounded-md bg-neutral-50 dark:bg-neutral-800'>
-                <div className='font-medium text-neutral-900 dark:text-neutral-100 text-sm mb-1'>
+              <div className='p-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-neutral-50 dark:bg-neutral-800'>
+                <div className='font-medium text-neutral-900 dark:text-neutral-100 text-xs mb-0.5'>
                   {project.name}
                 </div>
-                <div className='text-xs text-neutral-500 dark:text-neutral-400 space-y-0.5'>
+                <div className='text-[10px] text-neutral-500 dark:text-neutral-400 space-y-0'>
                   <div className='break-words'>
                     <span className='font-medium'>Source:</span>{' '}
                     {sourceLanguage}
@@ -169,8 +169,8 @@ export const ProjectSidebar: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className='p-3 border border-neutral-200 dark:border-neutral-700 rounded-md text-center'>
-                <p className='text-sm text-neutral-500 dark:text-neutral-400'>
+              <div className='p-2 border border-neutral-200 dark:border-neutral-700 rounded-md text-center'>
+                <p className='text-xs text-neutral-500 dark:text-neutral-400'>
                   Project not found
                 </p>
               </div>
@@ -178,7 +178,7 @@ export const ProjectSidebar: React.FC = () => {
           </div>
 
           {/* Bible Version Selector */}
-          <div className='mb-6'>
+          <div className='mb-4'>
             <SidebarBibleVersionSelector />
           </div>
 
@@ -189,23 +189,23 @@ export const ProjectSidebar: React.FC = () => {
         <SidebarFooter>
           <button
             onClick={handleProfileClick}
-            className='flex items-center space-x-3 mb-3 w-full text-left p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors group cursor-pointer'>
-            <div className='h-8 w-8 bg-gradient-to-br from-accent-600 to-accent-700 rounded-full flex items-center justify-center'>
-              <span className='text-white text-sm font-medium'>
+            className='flex items-center space-x-2 mb-2 w-full text-left p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors group cursor-pointer'>
+            <div className='h-6 w-6 bg-gradient-to-br from-accent-600 to-accent-700 rounded-full flex items-center justify-center'>
+              <span className='text-white text-[10px] font-medium'>
                 {user?.email?.charAt(0).toUpperCase()}
               </span>
             </div>
             <div className='flex-1 min-w-0'>
-              <p className='text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors'>
+              <p className='text-xs font-medium text-neutral-900 dark:text-neutral-100 truncate group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors'>
                 {displayName}
               </p>
-              <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+              <p className='text-[10px] text-neutral-500 dark:text-neutral-400 truncate'>
                 {user?.email}
               </p>
             </div>
             <div className='text-neutral-400 dark:text-neutral-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors'>
               <svg
-                className='h-4 w-4'
+                className='h-3 w-3'
                 fill='none'
                 stroke='currentColor'
                 viewBox='0 0 24 24'>
@@ -224,11 +224,11 @@ export const ProjectSidebar: React.FC = () => {
               size='sm'
               variant='ghost'
               onClick={handleThemeToggle}
-              className='text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+              className='text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 h-7 w-7 p-0'
               title={`Current theme: ${theme}. Click to cycle through themes.`}>
               {theme === 'system' ? (
                 <svg
-                  className='h-4 w-4'
+                  className='h-3.5 w-3.5'
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'>
@@ -241,7 +241,7 @@ export const ProjectSidebar: React.FC = () => {
                 </svg>
               ) : resolvedTheme === 'light' ? (
                 <svg
-                  className='h-4 w-4'
+                  className='h-3.5 w-3.5'
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'>
@@ -254,7 +254,7 @@ export const ProjectSidebar: React.FC = () => {
                 </svg>
               ) : (
                 <svg
-                  className='h-4 w-4'
+                  className='h-3.5 w-3.5'
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'>
@@ -272,10 +272,10 @@ export const ProjectSidebar: React.FC = () => {
               size='sm'
               variant='ghost'
               onClick={handleSignOut}
-              className='text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+              className='text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 h-7 w-7 p-0'
               title='Sign out'>
               <svg
-                className='h-4 w-4'
+                className='h-3.5 w-3.5'
                 fill='none'
                 stroke='currentColor'
                 viewBox='0 0 24 24'>

@@ -233,11 +233,6 @@ export class AudioFileProcessor {
       return [];
     }
 
-    console.log(
-      `📁 Processing ${files.length} files${bibleVersionId ? ' with bible version resolution' : ''}${filenameFormat ? ` using format: ${filenameFormat}` : ''}...`
-    );
-    const startTime = Date.now();
-
     // Step 1: Parse all filenames first (no DB calls)
     const filenameParseResults = files.map(file => ({
       file,
@@ -247,7 +242,6 @@ export class AudioFileProcessor {
     // Step 2: Batch resolve full chapter end verses (single DB query for all)
     let resolvedParseResults: typeof filenameParseResults;
     if (bibleVersionId) {
-      const batchStartTime = Date.now();
       const parseResults = filenameParseResults.map(item => item.parseResult);
       const resolvedResults = await resolveFullChapterEndVersesBatch(
         parseResults,
@@ -259,11 +253,7 @@ export class AudioFileProcessor {
         parseResult: resolvedResults[index],
       }));
 
-      const batchTime = Date.now() - batchStartTime;
-      console.log(`✅ Batch chapter resolution completed in ${batchTime}ms`);
-
       // Step 2.5: Batch validate against database (book, chapter, verse existence)
-      const validationStartTime = Date.now();
       const parseResultsForValidation = resolvedParseResults.map(
         item => item.parseResult
       );
@@ -276,17 +266,11 @@ export class AudioFileProcessor {
         file: item.file,
         parseResult: validatedResults[index],
       }));
-
-      const validationTime = Date.now() - validationStartTime;
-      console.log(
-        `✅ Batch validation completed in ${validationTime}ms (${validatedResults.filter(r => r.errors && r.errors.length > 0).length} with errors)`
-      );
     } else {
       resolvedParseResults = filenameParseResults;
     }
 
     // Step 3: Process files in parallel (extract metadata, validate)
-    const metadataStartTime = Date.now();
     const promises = resolvedParseResults.map(async ({ file, parseResult }) => {
       try {
         return await this.processFileWithParsedResult(file, parseResult);
@@ -319,15 +303,6 @@ export class AudioFileProcessor {
     });
 
     const processedFiles = await Promise.all(promises);
-
-    const metadataTime = Date.now() - metadataStartTime;
-    const totalTime = Date.now() - startTime;
-    const avgTimePerFile = totalTime / files.length;
-
-    console.log(
-      `🎉 Processed ${files.length} files in ${totalTime}ms (${avgTimePerFile.toFixed(1)}ms per file)`
-    );
-    console.log(`   • Metadata extraction: ${metadataTime}ms`);
 
     return processedFiles;
   }

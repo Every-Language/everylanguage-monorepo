@@ -131,7 +131,12 @@ export function LoginPage() {
         <div className='bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md rounded-2xl shadow-xl dark:shadow-dark-card p-8 animate-scale-in'>
           {/* Header */}
           <div className='text-center mb-8'>
-            <div className='flex items-center justify-center mb-4'>
+            <div className='flex items-center justify-center gap-3 mb-4'>
+              <img
+                src='/images/every-language-logo-300x221.png'
+                alt='Every Language Logo'
+                className='h-12 w-auto object-contain'
+              />
               <div className='text-left'>
                 <h1 className='text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-accent-600 to-accent-600 dark:from-accent-600 dark:to-accent-600'>
                   Every Language Project Management

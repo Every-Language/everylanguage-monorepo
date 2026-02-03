@@ -106,6 +106,12 @@ const LandingPage = React.lazy(() =>
   }))
 );
 
+const LanguagesPage = React.lazy(() =>
+  import('./app/pages/LanguagesPage').then(module => ({
+    default: module.LanguagesPage,
+  }))
+);
+
 // Loading fallback component
 const PageLoadingFallback = () => (
   <div className='flex items-center justify-center min-h-screen'>
@@ -136,6 +142,16 @@ function App() {
                 element={
                   <Suspense fallback={<PageLoadingFallback />}>
                     <LandingPage />
+                  </Suspense>
+                }
+              />
+
+              {/* Languages Page (public) */}
+              <Route
+                path='/languages'
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <LanguagesPage />
                   </Suspense>
                 }
               />

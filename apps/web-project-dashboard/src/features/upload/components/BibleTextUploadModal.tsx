@@ -610,16 +610,9 @@ export function BibleTextUploadModal({
         created_by: user.id,
       }));
 
-      console.log(
-        'Starting chunked upload for:',
-        verseTextsToInsert.length,
-        'verses'
-      );
-
       await chunkedBulkInsertMutation.mutateAsync({
         verseTextsData: verseTextsToInsert,
-        onProgress: progress => {
-          console.log('Upload progress:', progress);
+        onProgress: () => {
           updateTextProgress();
         },
       });

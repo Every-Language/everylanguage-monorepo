@@ -162,9 +162,8 @@ export const BibleProgressTable: React.FC<BibleProgressTableProps> = ({
     return bookData.filter(book => book.bookName.toLowerCase().includes(query));
   }, [bookData, searchQuery]);
 
-  const handleUpload = (chapterId: string) => {
+  const handleUpload = () => {
     // TODO: Open upload modal with pre-filled chapter info
-    console.log('Upload for chapter:', chapterId);
   };
 
   if (isLoading) {
