@@ -54,24 +54,6 @@ export const CreateUpdateForm: React.FC<CreateUpdateFormProps> = ({
       setIsSubmitting(true);
 
       try {
-        // DEBUG: Log user, project, and data being sent
-        console.log(
-          '[DEBUG] CreateUpdateForm - Attempting to create project update'
-        );
-        console.log('[DEBUG] User ID:', user.id);
-        console.log('[DEBUG] User email:', user.email);
-        console.log('[DEBUG] User metadata:', {
-          app_metadata: user.app_metadata,
-          user_metadata: user.user_metadata,
-        });
-        console.log('[DEBUG] Project ID:', projectId);
-        console.log('[DEBUG] Data being sent:', {
-          project_id: projectId,
-          title: title.trim(),
-          body: body.trim(),
-          created_by: user.id,
-        });
-
         // Step 1: Create the project update
         const update = await createUpdate.mutateAsync({
           project_id: projectId,

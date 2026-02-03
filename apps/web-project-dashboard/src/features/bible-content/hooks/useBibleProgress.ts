@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useBibleVersions } from '../../../shared/stores/project';
-import { useSelectedProject } from '../../dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '../../dashboard/hooks/useCurrentProject';
 import { useAudioVersionsByProject } from '../../../shared/hooks/query/audio-versions';
 import { useTextVersionsByProject } from '../../../shared/hooks/query/text-versions';
 import {
@@ -56,7 +56,7 @@ export interface ProgressStats {
 }
 
 export function useBibleProgress() {
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const bibleVersions = useBibleVersions(); // This is now an array directly
   const { data: audioVersions } = useAudioVersionsByProject(
     selectedProject?.id || ''

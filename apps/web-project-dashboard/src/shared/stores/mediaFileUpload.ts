@@ -63,8 +63,6 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
       throw new Error('Another upload is already in progress');
     }
 
-    console.log('🚀 Starting R2 by-id upload for', files.length, 'files');
-
     // Validate all files have required selections
     const invalidFiles = files.filter(
       f =>
@@ -94,9 +92,6 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
 
     try {
       // Get metadata for each file to include in R2 upload (parallelized with Promise.all)
-      console.log('📊 Fetching metadata for', files.length, 'files...');
-      const metadataStartTime = Date.now();
-
       const filesWithMetadata = await Promise.all(
         files.map(async (file, index) => {
           try {
@@ -151,31 +146,12 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
         })
       );
 
-      const metadataTime = Date.now() - metadataStartTime;
-      console.log(
-        `✅ Metadata fetched in ${metadataTime}ms (${(metadataTime / files.length).toFixed(1)}ms per file)`
-      );
-
       // Batch create pending media_files rows (much faster than individual inserts)
-      console.log(
-        '📝 Creating pending media files batch for',
-        filesWithMetadata.length,
-        'files'
-      );
-      const startTime = Date.now();
-
       // Ensure projectId is available
       const finalProjectId = projectId || projectData.projectId;
       if (!finalProjectId) {
         throw new Error('projectId is required for media file upload');
       }
-
-      console.log('🔍 DEBUG: Upload project data:', {
-        projectId: finalProjectId,
-        audioVersionId: projectData.audioVersionId,
-        languageEntityId: projectData.languageEntityId,
-        userId,
-      });
 
       const pendingIds = await mediaFileService.createPendingMediaFilesBatch({
         processedFiles: filesWithMetadata.map(item => item.file),
@@ -186,20 +162,7 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
         userId,
       });
 
-      const batchTime = Date.now() - startTime;
-      console.log(
-        `✅ Created ${pendingIds.length} pending files in ${batchTime}ms (${(batchTime / pendingIds.length).toFixed(1)}ms per file)`
-      );
-      console.log('📋 Pending media file IDs:', pendingIds);
-
       // Get by-id presigned PUT URLs with chunking for large batches
-      console.log(
-        '🔗 Requesting upload URLs for',
-        pendingIds.length,
-        'files...'
-      );
-      const urlStartTime = Date.now();
-
       // Pass original filenames mapping for backend object key generation
       const originalFilenames: Record<string, string> = {};
       filesWithMetadata.forEach((item, index) => {
@@ -251,19 +214,9 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
         allUrlResponses = byId.media;
       } else {
         // Chunked URL requests for large batches
-        console.log(
-          `📊 Using chunked URL requests: ${Math.ceil(pendingIds.length / urlChunkSize)} chunks of ${urlChunkSize} IDs`
-        );
-
         for (let i = 0; i < pendingIds.length; i += urlChunkSize) {
           const chunk = pendingIds.slice(i, i + urlChunkSize);
           const chunkNum = Math.floor(i / urlChunkSize) + 1;
-          const totalChunks = Math.ceil(pendingIds.length / urlChunkSize);
-
-          console.log(
-            `🔗 Requesting URLs for chunk ${chunkNum}/${totalChunks} (${chunk.length} files)`
-          );
-          const chunkStartTime = Date.now();
 
           // Create chunk-specific filename mapping
           const chunkFilenames: Record<string, string> = {};
@@ -317,18 +270,8 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
           }
 
           allUrlResponses.push(...byId.media);
-
-          const chunkTime = Date.now() - chunkStartTime;
-          console.log(
-            `✅ Chunk ${chunkNum} URLs generated in ${chunkTime}ms (${(chunkTime / chunk.length).toFixed(1)}ms per URL)`
-          );
         }
       }
-
-      const urlTime = Date.now() - urlStartTime;
-      console.log(
-        `✅ All upload URLs generated in ${urlTime}ms (${(urlTime / pendingIds.length).toFixed(1)}ms per URL)`
-      );
 
       // Validate that we have URLs for all pending IDs
       if (allUrlResponses.length !== pendingIds.length) {
@@ -370,10 +313,6 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
       get().updateBatchProgress(batchProgress);
 
       const concurrency = recommendedConfig.concurrency || 3;
-      console.log(
-        `🚀 Starting ${files.length} uploads with ${concurrency} concurrent workers (${totalSizeMB.toFixed(1)}MB total)`
-      );
-      const uploadStartTime = Date.now();
 
       // Track completed uploads for batch finalization
       const completedUploads: Array<{
@@ -385,9 +324,6 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
       // Throttle progress updates to prevent React infinite loops
       const progressThrottleMap = new Map<string, number>(); // fileName -> lastUpdateTime
       const PROGRESS_THROTTLE_MS = 200; // Update at most every 200ms per file
-      console.log(
-        `🚫 Progress throttling enabled: max ${1000 / PROGRESS_THROTTLE_MS} updates/sec per file`
-      );
 
       let idx = 0;
       const worker = async () => {
@@ -527,43 +463,19 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
         )
       );
 
-      const uploadTime = Date.now() - uploadStartTime;
-      const avgTimePerFile = uploadTime / files.length;
-      const totalMBPerSecond = (totalSizeMB / (uploadTime / 1000)).toFixed(2);
-
-      console.log(
-        `✅ Upload phase completed in ${uploadTime}ms (${avgTimePerFile.toFixed(1)}ms per file, ${totalMBPerSecond}MB/s)`
-      );
-
       // Batch finalize all successful uploads
       if (completedUploads.length > 0) {
-        console.log(
-          `📝 Finalizing ${completedUploads.length} successful uploads...`
-        );
-        const finalizeStartTime = Date.now();
-
         try {
           await mediaFileService.finalizeMediaFilesBatch({
             updates: completedUploads,
           });
-          const finalizeTime = Date.now() - finalizeStartTime;
-          console.log(
-            `✅ Finalized ${completedUploads.length} records in ${finalizeTime}ms`
-          );
-        } catch (error) {
-          console.error(
-            '❌ Batch finalization failed, falling back to individual updates:',
-            error
-          );
+        } catch {
           // Fallback to individual finalization
           for (const update of completedUploads) {
             try {
               await mediaFileService.finalizeMediaFile(update);
-            } catch (individualError) {
-              console.error(
-                `Failed to finalize ${update.mediaFileId}:`,
-                individualError
-              );
+            } catch {
+              // Ignore individual finalization errors
             }
           }
         }
@@ -578,11 +490,6 @@ export const useR2UploadStore = create<R2UploadState>((set, get) => ({
           queryKey: ['media_files_with_verse_info', projectId],
         });
       }
-
-      const totalTime = Date.now() - metadataStartTime;
-      console.log(
-        `🎉 Total upload process completed in ${totalTime}ms for ${files.length} files (${batchProgress.completedFiles} successful, ${batchProgress.failedFiles} failed)`
-      );
 
       // Call completion callbacks
       const { onUploadComplete, onBatchComplete } = get();

@@ -12,7 +12,7 @@ import {
   LoadingSpinner,
 } from '@/shared/design-system/components';
 import { useMediaFilesByProject } from '@/shared/hooks/query/media-files';
-import { useSelectedProject } from '@/features/dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '@/features/dashboard/hooks/useCurrentProject';
 import { useUpdateMediaFileCheckStatus } from '@/shared/hooks/query/verse-feedback';
 import { useAudioVersionsByProject } from '@/shared/hooks/query/audio-versions';
 import { useBooks } from '@/shared/hooks/query/bible-structure';
@@ -71,7 +71,7 @@ export function CommunityCheckTable({
   selectedFileId,
   compact = false,
 }: CommunityCheckTableProps) {
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [searchText, setSearchText] = useState('');
   const [selectedAudioVersion, setSelectedAudioVersion] = useState('all');

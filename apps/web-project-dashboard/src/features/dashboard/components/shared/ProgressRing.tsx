@@ -55,15 +55,15 @@ const colorStyles = {
 
 const sizeStyles = {
   sm: {
-    ring: 'w-12 h-12',
-    text: 'text-xs',
+    ring: 'w-10 h-10',
+    text: 'text-[10px]',
   },
   md: {
-    ring: 'w-20 h-20',
+    ring: 'w-14 h-14',
     text: 'text-xs',
   },
   lg: {
-    ring: 'w-32 h-32',
+    ring: 'w-24 h-24',
     text: 'text-sm',
   },
 };

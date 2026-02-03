@@ -1,6 +1,7 @@
 import React from 'react';
-import { useSelectedProject } from '../../dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '../../dashboard/hooks/useCurrentProject';
 import { BibleProgressManager } from '../components';
+import { LoadingSpinner } from '../../../shared/design-system';
 
 const ProjectRequiredMessage: React.FC = () => (
   <div className='p-8'>
@@ -22,11 +23,19 @@ const ProjectRequiredMessage: React.FC = () => (
 );
 
 export const BibleProgressPage: React.FC = () => {
-  const { selectedProject } = useSelectedProject();
+  const { project, isLoading } = useCurrentProject();
 
-  if (!selectedProject) {
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-center h-64'>
+        <LoadingSpinner size='lg' />
+      </div>
+    );
+  }
+
+  if (!project) {
     return <ProjectRequiredMessage />;
   }
 
-  return <BibleProgressManager projectName={selectedProject.name} />;
+  return <BibleProgressManager projectName={project.name} />;
 };

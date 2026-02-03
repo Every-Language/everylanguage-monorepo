@@ -4,20 +4,28 @@ import { cn } from '../utils';
 export interface SidebarProps {
   children: React.ReactNode;
   className?: string;
+  collapsed?: boolean;
 }
 
 export const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
-  ({ children, className, ...props }, ref) => {
+  ({ children, className, collapsed = false, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={cn(
-          'fixed left-0 top-0 z-40 h-screen w-64 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-700',
-          'shadow-sidebar transition-theme',
+          'fixed left-0 top-0 z-40 h-screen bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-700',
+          'shadow-sidebar transition-all duration-300 ease-in-out',
+          collapsed ? 'w-0 -translate-x-full' : 'w-60 translate-x-0',
           className
         )}
         {...props}>
-        {children}
+        <div
+          className={cn(
+            'h-full flex flex-col transition-opacity duration-200',
+            collapsed ? 'opacity-0' : 'opacity-100'
+          )}>
+          {children}
+        </div>
       </div>
     );
   }
@@ -38,7 +46,7 @@ export const SidebarHeader = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        'flex items-center h-16 px-6 border-b border-neutral-200 dark:border-neutral-700',
+        'flex items-center h-12 px-4 border-b border-neutral-200 dark:border-neutral-700',
         className
       )}
       {...props}>
@@ -61,7 +69,7 @@ export const SidebarContent = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn('flex-1 overflow-y-auto px-3 py-4', className)}
+      className={cn('flex-1 overflow-y-auto px-2 py-3', className)}
       {...props}>
       {children}
     </div>
@@ -78,7 +86,7 @@ export interface SidebarNavProps {
 export const SidebarNav = React.forwardRef<HTMLElement, SidebarNavProps>(
   ({ children, className, ...props }, ref) => {
     return (
-      <nav ref={ref} className={cn('space-y-2', className)} {...props}>
+      <nav ref={ref} className={cn('space-y-0.5', className)} {...props}>
         {children}
       </nav>
     );
@@ -106,7 +114,7 @@ export const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
   ...props
 }) => {
   const baseClassName = cn(
-    'flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200',
+    'flex items-center gap-2 w-full px-2.5 py-2 text-xs font-medium rounded-lg transition-all duration-200',
     'hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100',
     active
       ? 'bg-accent-100 dark:bg-accent-800/20 text-accent-900 dark:text-accent-200 shadow-sm'
@@ -116,7 +124,7 @@ export const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
 
   const content = (
     <>
-      {icon && <div className='flex-shrink-0 w-5 h-5'>{icon}</div>}
+      {icon && <div className='flex-shrink-0 w-4 h-4'>{icon}</div>}
       <span className='flex-1 text-left'>{children}</span>
     </>
   );
@@ -151,7 +159,7 @@ export const SidebarFooter = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        'border-t border-neutral-200 dark:border-neutral-700 p-4',
+        'border-t border-neutral-200 dark:border-neutral-700 p-3',
         className
       )}
       {...props}>

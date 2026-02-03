@@ -89,26 +89,28 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 
   return (
     <Card className={styles.card}>
-      <CardHeader className='pb-3'>
-        <CardTitle className={`flex items-center gap-2 ${styles.title}`}>
+      <CardHeader className='pb-2 pt-3 px-4'>
+        <CardTitle
+          className={`flex items-center gap-2 text-sm ${styles.title}`}>
           {icon && (
-            <div className={`w-2 h-2 ${styles.indicator} rounded-full`}></div>
+            <div
+              className={`w-1.5 h-1.5 ${styles.indicator} rounded-full`}></div>
           )}
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className='px-4 pb-3 pt-0'>
         {isLoading ? (
-          <LoadingSpinner />
+          <LoadingSpinner size='sm' />
         ) : (
-          <div className='space-y-4'>
+          <div className='space-y-3'>
             <div className='flex items-center justify-between'>
               <div>
-                <div className={`text-3xl font-bold ${styles.value}`}>
+                <div className={`text-2xl font-bold ${styles.value}`}>
                   {value}
                 </div>
                 {subtitle && (
-                  <div className={`text-sm ${styles.subtitle}`}>{subtitle}</div>
+                  <div className={`text-xs ${styles.subtitle}`}>{subtitle}</div>
                 )}
               </div>
               {icon}
