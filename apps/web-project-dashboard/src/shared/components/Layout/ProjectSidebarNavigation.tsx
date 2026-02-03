@@ -8,6 +8,7 @@ interface NavigationItem {
   pathSuffix: string;
   icon: React.ReactNode;
   description?: string;
+  isExternalRoute?: boolean;
 }
 
 const navigationItems: NavigationItem[] = [
@@ -17,7 +18,7 @@ const navigationItems: NavigationItem[] = [
     pathSuffix: '/dashboard',
     icon: (
       <svg
-        className='h-5 w-5'
+        className='h-4 w-4'
         fill='none'
         stroke='currentColor'
         viewBox='0 0 24 24'>
@@ -38,32 +39,12 @@ const navigationItems: NavigationItem[] = [
     description: 'Project overview and recent activity',
   },
   {
-    id: 'updates',
-    label: 'Project Updates',
-    pathSuffix: '/updates',
-    icon: (
-      <svg
-        className='h-5 w-5'
-        fill='none'
-        stroke='currentColor'
-        viewBox='0 0 24 24'>
-        <path
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          strokeWidth={2}
-          d='M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z'
-        />
-      </svg>
-    ),
-    description: 'Share progress and updates',
-  },
-  {
     id: 'progress',
     label: 'Bible Progress',
     pathSuffix: '/progress',
     icon: (
       <svg
-        className='h-5 w-5'
+        className='h-4 w-4'
         fill='none'
         stroke='currentColor'
         viewBox='0 0 24 24'>
@@ -79,11 +60,11 @@ const navigationItems: NavigationItem[] = [
   },
   {
     id: 'audio-versions',
-    label: 'Audio Versions',
+    label: 'Audio Management',
     pathSuffix: '/audio-versions',
     icon: (
       <svg
-        className='h-5 w-5'
+        className='h-4 w-4'
         fill='none'
         stroke='currentColor'
         viewBox='0 0 24 24'>
@@ -98,32 +79,12 @@ const navigationItems: NavigationItem[] = [
     description: 'Manage audio versions and files',
   },
   {
-    id: 'text-versions',
-    label: 'Text Versions',
-    pathSuffix: '/text-versions',
-    icon: (
-      <svg
-        className='h-5 w-5'
-        fill='none'
-        stroke='currentColor'
-        viewBox='0 0 24 24'>
-        <path
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          strokeWidth={2}
-          d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-        />
-      </svg>
-    ),
-    description: 'Manage Bible text versions',
-  },
-  {
     id: 'community-check',
     label: 'Community Check',
     pathSuffix: '/community-check',
     icon: (
       <svg
-        className='h-5 w-5'
+        className='h-4 w-4'
         fill='none'
         stroke='currentColor'
         viewBox='0 0 24 24'>
@@ -138,12 +99,79 @@ const navigationItems: NavigationItem[] = [
     description: 'Review and approve content',
   },
   {
+    id: 'updates',
+    label: 'Project Updates',
+    pathSuffix: '/updates',
+    icon: (
+      <svg
+        className='h-4 w-4'
+        fill='none'
+        stroke='currentColor'
+        viewBox='0 0 24 24'>
+        <path
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth={2}
+          d='M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z'
+        />
+      </svg>
+    ),
+    description: 'Share progress and updates',
+  },
+  {
+    id: 'text-versions',
+    label: 'Text Versions',
+    pathSuffix: '/text-versions',
+    icon: (
+      <svg
+        className='h-4 w-4'
+        fill='none'
+        stroke='currentColor'
+        viewBox='0 0 24 24'>
+        <path
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth={2}
+          d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+        />
+      </svg>
+    ),
+    description: 'Manage Bible text versions',
+  },
+  {
+    id: 'language-search',
+    label: 'Language Search',
+    pathSuffix: '/languages',
+    isExternalRoute: true,
+    icon: (
+      <svg
+        className='h-4 w-4'
+        fill='none'
+        stroke='currentColor'
+        viewBox='0 0 24 24'>
+        <path
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth={2}
+          d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
+        />
+        <path
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth={2}
+          d='M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945'
+        />
+      </svg>
+    ),
+    description: 'Search languages and translation progress',
+  },
+  {
     id: 'members',
     label: 'Members',
     pathSuffix: '/members',
     icon: (
       <svg
-        className='h-5 w-5'
+        className='h-4 w-4'
         fill='none'
         stroke='currentColor'
         viewBox='0 0 24 24'>
@@ -164,15 +192,21 @@ export const ProjectSidebarNavigation: React.FC = () => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
 
-  const handleNavigate = (pathSuffix: string) => {
-    if (projectId) {
-      navigate(`/project/${projectId}${pathSuffix}`);
+  const handleNavigate = (item: NavigationItem) => {
+    if (item.isExternalRoute) {
+      // Navigate to external route (outside project context)
+      navigate(item.pathSuffix);
+    } else if (projectId) {
+      navigate(`/project/${projectId}${item.pathSuffix}`);
     }
   };
 
   // Check if current path matches a nav item (accounting for nested routes)
-  const isActive = (pathSuffix: string) => {
-    const basePath = `/project/${projectId}${pathSuffix}`;
+  const isActive = (item: NavigationItem) => {
+    if (item.isExternalRoute) {
+      return location.pathname === item.pathSuffix;
+    }
+    const basePath = `/project/${projectId}${item.pathSuffix}`;
     return (
       location.pathname === basePath ||
       location.pathname.startsWith(basePath + '/')
@@ -185,8 +219,8 @@ export const ProjectSidebarNavigation: React.FC = () => {
         <SidebarNavItem
           key={item.id}
           icon={item.icon}
-          active={isActive(item.pathSuffix)}
-          onClick={() => handleNavigate(item.pathSuffix)}>
+          active={isActive(item)}
+          onClick={() => handleNavigate(item)}>
           {item.label}
         </SidebarNavItem>
       ))}

@@ -60,24 +60,18 @@ export class AuthService {
    */
   async getDbUser(userId: string): Promise<DbUser | null> {
     try {
-      console.log('Fetching dbUser for userId:', userId);
-
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
 
-      console.log('DbUser query result:', { data, error });
-
       if (error) {
-        console.error('Error getting database user:', error);
         return null;
       }
 
       return data;
-    } catch (error) {
-      console.error('Unexpected error getting database user:', error);
+    } catch {
       return null;
     }
   }
@@ -204,55 +198,36 @@ export class AuthService {
    * Sign in with phone and password
    */
   async signInWithPhone(phone: string, password: string) {
-    try {
-      console.log('📱 Signing in with phone and password:', phone);
+    // Normalize phone number for consistent storage
+    const normalizedPhone = normalizePhoneNumber(phone);
 
-      // Normalize phone number for consistent storage
-      const normalizedPhone = normalizePhoneNumber(phone);
-      console.log('📱 Normalized phone number:', normalizedPhone);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      phone: normalizedPhone,
+      password,
+    });
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        phone: normalizedPhone,
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      console.log('✅ Phone sign in successful:', data);
-      return data;
-    } catch (error) {
-      console.error('Error signing in with phone:', error);
+    if (error) {
       throw error;
     }
+
+    return data;
   }
 
   /**
    * Request OTP for phone login (passwordless)
    */
   async requestPhoneOtp(phone: string) {
-    try {
-      console.log('📱 Requesting OTP for phone:', phone);
+    // Normalize phone number for consistent storage
+    const normalizedPhone = normalizePhoneNumber(phone);
 
-      // Normalize phone number for consistent storage
-      const normalizedPhone = normalizePhoneNumber(phone);
-      console.log('📱 Normalized phone number:', normalizedPhone);
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: normalizedPhone,
+      options: {
+        shouldCreateUser: false, // Prevent automatic user creation for login
+      },
+    });
 
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: normalizedPhone,
-        options: {
-          shouldCreateUser: false, // Prevent automatic user creation for login
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      console.log('✅ OTP requested successfully');
-    } catch (error) {
-      console.error('Error requesting phone OTP:', error);
+    if (error) {
       throw error;
     }
   }
@@ -262,28 +237,18 @@ export class AuthService {
    * This method allows user creation during signup flow
    */
   async requestPhoneOtpForSignup(phone: string, userData?: Partial<DbUser>) {
-    try {
-      console.log('📱 Requesting OTP for phone signup:', phone);
+    // Normalize phone number for consistent storage
+    const normalizedPhone = normalizePhoneNumber(phone);
 
-      // Normalize phone number for consistent storage
-      const normalizedPhone = normalizePhoneNumber(phone);
-      console.log('📱 Normalized phone number:', normalizedPhone);
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: normalizedPhone,
+      options: {
+        shouldCreateUser: true, // Allow user creation during signup
+        data: userData,
+      },
+    });
 
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: normalizedPhone,
-        options: {
-          shouldCreateUser: true, // Allow user creation during signup
-          data: userData,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      console.log('✅ Signup OTP requested successfully');
-    } catch (error) {
-      console.error('Error requesting phone OTP for signup:', error);
+    if (error) {
       throw error;
     }
   }
@@ -296,48 +261,32 @@ export class AuthService {
     password: string,
     userData?: Partial<DbUser>
   ) {
-    try {
-      console.log('📱 Signing up with phone:', phone);
+    // Normalize phone number for consistent storage
+    const normalizedPhone = normalizePhoneNumber(phone);
 
-      // Normalize phone number for consistent storage
-      const normalizedPhone = normalizePhoneNumber(phone);
-      console.log('📱 Normalized phone number:', normalizedPhone);
+    const { data, error } = await supabase.auth.signUp({
+      phone: normalizedPhone,
+      password,
+      options: {
+        data: userData,
+      },
+    });
 
-      const { data, error } = await supabase.auth.signUp({
-        phone: normalizedPhone,
-        password,
-        options: {
-          data: userData,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      console.log('✅ Phone signup successful, now sending verification SMS');
-
-      // After successful signup, send verification SMS
-      // This ensures the user gets the verification code
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        phone: normalizedPhone,
-        options: {
-          shouldCreateUser: false, // User already exists
-        },
-      });
-
-      if (otpError) {
-        console.error('Warning: SMS verification could not be sent:', otpError);
-        // Don't throw here - signup was successful, just SMS failed
-      } else {
-        console.log('✅ Verification SMS sent successfully');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error signing up with phone:', error);
+    if (error) {
       throw error;
     }
+
+    // After successful signup, send verification SMS
+    // This ensures the user gets the verification code
+    await supabase.auth.signInWithOtp({
+      phone: normalizedPhone,
+      options: {
+        shouldCreateUser: false, // User already exists
+      },
+    });
+    // Don't throw on OTP error - signup was successful, just SMS might have failed
+
+    return data;
   }
 
   /**
@@ -348,46 +297,34 @@ export class AuthService {
     token: string,
     type: 'sms' | 'phone_change' = 'sms'
   ) {
-    try {
-      // Normalize phone number for consistent verification
-      const normalizedPhone = normalizePhoneNumber(phone);
-      console.log('📱 Verifying OTP for normalized phone:', normalizedPhone);
+    // Normalize phone number for consistent verification
+    const normalizedPhone = normalizePhoneNumber(phone);
 
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: normalizedPhone,
-        token,
-        type,
-      });
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: normalizedPhone,
+      token,
+      type,
+    });
 
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
+    if (error) {
       throw error;
     }
+
+    return data;
   }
 
   /**
    * Update user's phone number
    */
   async updatePhone(phone: string) {
-    try {
-      // Normalize phone number for consistent storage
-      const normalizedPhone = normalizePhoneNumber(phone);
-      console.log('📱 Updating to normalized phone:', normalizedPhone);
+    // Normalize phone number for consistent storage
+    const normalizedPhone = normalizePhoneNumber(phone);
 
-      const { error } = await supabase.auth.updateUser({
-        phone: normalizedPhone,
-      });
+    const { error } = await supabase.auth.updateUser({
+      phone: normalizedPhone,
+    });
 
-      if (error) {
-        throw error;
-      }
-    } catch (error) {
-      console.error('Error updating phone:', error);
+    if (error) {
       throw error;
     }
   }
@@ -400,66 +337,57 @@ export class AuthService {
     lastName?: string;
     phone?: string;
   }) {
-    try {
-      console.log('📝 Updating user profile:', profileData);
+    // Get current user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('User not authenticated');
+    }
 
-      // Get current user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user) {
-        throw new Error('User not authenticated');
+    // Prepare update data for auth.users table (via updateUser)
+    const authUpdateData: { phone?: string } = {};
+    if (profileData.phone) {
+      authUpdateData.phone = normalizePhoneNumber(profileData.phone);
+    }
+
+    // Update auth user if needed
+    if (Object.keys(authUpdateData).length > 0) {
+      const { error: authError } =
+        await supabase.auth.updateUser(authUpdateData);
+      if (authError) {
+        throw authError;
       }
+    }
 
-      // Prepare update data for auth.users table (via updateUser)
-      const authUpdateData: { phone?: string } = {};
-      if (profileData.phone) {
-        authUpdateData.phone = normalizePhoneNumber(profileData.phone);
-      }
+    // Update database user record
+    const dbUpdateData: {
+      updated_at: string;
+      first_name?: string;
+      last_name?: string;
+      phone_number?: string;
+    } = {
+      updated_at: new Date().toISOString(),
+    };
 
-      // Update auth user if needed
-      if (Object.keys(authUpdateData).length > 0) {
-        const { error: authError } =
-          await supabase.auth.updateUser(authUpdateData);
-        if (authError) {
-          throw authError;
-        }
-      }
+    if (profileData.firstName !== undefined) {
+      dbUpdateData.first_name = profileData.firstName;
+    }
+    if (profileData.lastName !== undefined) {
+      dbUpdateData.last_name = profileData.lastName;
+    }
+    if (profileData.phone !== undefined) {
+      dbUpdateData.phone_number = normalizePhoneNumber(profileData.phone);
+    }
 
-      // Update database user record
-      const dbUpdateData: {
-        updated_at: string;
-        first_name?: string;
-        last_name?: string;
-        phone_number?: string;
-      } = {
-        updated_at: new Date().toISOString(),
-      };
+    const { error: dbError } = await supabase
+      .from('users')
+      .update(dbUpdateData)
+      .eq('id', user.id);
 
-      if (profileData.firstName !== undefined) {
-        dbUpdateData.first_name = profileData.firstName;
-      }
-      if (profileData.lastName !== undefined) {
-        dbUpdateData.last_name = profileData.lastName;
-      }
-      if (profileData.phone !== undefined) {
-        dbUpdateData.phone_number = normalizePhoneNumber(profileData.phone);
-      }
-
-      const { error: dbError } = await supabase
-        .from('users')
-        .update(dbUpdateData)
-        .eq('id', user.id);
-
-      if (dbError) {
-        throw dbError;
-      }
-
-      console.log('✅ Profile updated successfully');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      throw error;
+    if (dbError) {
+      throw dbError;
     }
   }
 

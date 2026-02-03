@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Clock, LogOut, Book, FolderOpen } from 'lucide-react';
+import { Search, Plus, Clock, LogOut, FolderOpen } from 'lucide-react';
 import { useProjectsByUser } from '../../shared/hooks/query/projects';
 import { useLanguageEntitiesByIds } from '../../shared/hooks/query/language-entities';
 import { useAuth } from '../../features/auth/hooks/useAuth';
@@ -173,9 +173,11 @@ export const ProjectsPage: React.FC = () => {
           <div className='flex items-center justify-between h-16'>
             {/* Logo */}
             <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 bg-gradient-to-br from-accent-500 to-accent-700 rounded-xl flex items-center justify-center shadow-lg shadow-accent-500/20'>
-                <Book className='h-6 w-6 text-white' />
-              </div>
+              <img
+                src='/images/every-language-logo-300x221.png'
+                alt='Every Language Logo'
+                className='h-10 w-auto object-contain'
+              />
               <div>
                 <h1 className='text-lg font-bold text-neutral-900 dark:text-white'>
                   Every

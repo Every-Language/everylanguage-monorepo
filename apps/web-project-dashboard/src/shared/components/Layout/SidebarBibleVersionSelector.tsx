@@ -40,25 +40,28 @@ export const SidebarBibleVersionSelector: React.FC = () => {
   }
 
   return (
-    <div className='px-1'>
-      <div className='mb-2'>
-        <label className='block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2'>
+    <div className='px-0.5'>
+      <div className='mb-1'>
+        <label className='block text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide'>
           Bible Version
         </label>
       </div>
 
-      <div className='border border-neutral-200 dark:border-neutral-700 rounded-md'>
-        <Select
-          value={selectedBibleVersionId || ''}
-          onValueChange={handleVersionChange}
-          disabled={bibleVersions.length === 0}>
-          {bibleVersions.map(version => (
-            <SelectItem key={version.id} value={version.id}>
-              {version.name}
-            </SelectItem>
-          ))}
-        </Select>
-      </div>
+      <Select
+        value={selectedBibleVersionId || ''}
+        onValueChange={handleVersionChange}
+        disabled={bibleVersions.length === 0}
+        size='sm'
+        className='text-[11px] h-7'>
+        {bibleVersions.map(version => (
+          <SelectItem
+            key={version.id}
+            value={version.id}
+            className='text-[11px] py-1.5'>
+            {version.name}
+          </SelectItem>
+        ))}
+      </Select>
     </div>
   );
 };

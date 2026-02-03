@@ -97,8 +97,6 @@ export function useVerseMarking() {
       verses: TempVerse[];
       totalAudioDuration: number;
     }) => {
-      console.log('Saving verses for media file:', mediaFileId, verses);
-
       // Ensure user is authenticated for RLS policies
       const {
         data: { user },
@@ -122,7 +120,6 @@ export function useVerseMarking() {
 
       // Step 2: If there are no verses to save, we're done
       if (verses.length === 0) {
-        console.log('No verses to save, deletion complete');
         return [];
       }
 
@@ -189,10 +186,6 @@ export function useVerseMarking() {
         throw new Error('Could not fetch verses in the specified range');
       }
 
-      console.log(
-        `Found ${rangeVerses.length} verses in range ${startVerse.verse_number}-${endVerse.verse_number}`
-      );
-
       // Step 6: Validate that we have enough verses for the markings
       if (verses.length > rangeVerses.length) {
         throw new Error(
@@ -215,10 +208,6 @@ export function useVerseMarking() {
           );
         }
 
-        console.log(
-          `Mapping temp verse ${index + 1} (${item.verse.timestamp}s) to verse ${targetVerse.verse_number} (${targetVerse.id})`
-        );
-
         return {
           media_file_id: mediaFileId,
           verse_id: targetVerse.id,
@@ -240,7 +229,6 @@ export function useVerseMarking() {
         throw insertError;
       }
 
-      console.log('Successfully saved verse markings:', data);
       return data;
     },
     onSuccess: () => {

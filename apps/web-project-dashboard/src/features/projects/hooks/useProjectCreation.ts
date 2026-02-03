@@ -27,8 +27,8 @@ export function useProjectCreation() {
 
     try {
       // Project creation logic would go here
-      console.log('Creating project:', data);
       // Placeholder for actual implementation
+      void data;
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       return { success: true, projectId: 'temp-id' };
