@@ -25,6 +25,3 @@ export const isSupabaseConnected = async (): Promise<boolean> => {
     return false;
   }
 };
-
-// Log successful initialization
-console.log('Supabase client initialized successfully');

@@ -202,7 +202,12 @@ export function RegisterPage() {
         <div className='bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md rounded-2xl shadow-xl dark:shadow-dark-card p-8 animate-scale-in border border-neutral-200/50 dark:border-neutral-700/50'>
           {/* Header */}
           <div className='text-center mb-8'>
-            <div className='flex items-center justify-center mb-4'>
+            <div className='flex items-center justify-center gap-3 mb-4'>
+              <img
+                src='/images/every-language-logo-300x221.png'
+                alt='Every Language Logo'
+                className='h-12 w-auto object-contain'
+              />
               <div className='text-left'>
                 <h1 className='text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-accent-600 to-accent-600 dark:from-accent-600 dark:to-accent-600'>
                   Every Language Project Manager

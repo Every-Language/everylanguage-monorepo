@@ -114,11 +114,6 @@ export function useMediaFilesByProject(projectId: string | null) {
   useEffect(() => {
     if (!projectId) return;
 
-    console.log(
-      '🔔 Setting up media files real-time subscription for project:',
-      projectId
-    );
-
     const subscription = supabase
       .channel(`media_files_${projectId}`)
       .on(
@@ -129,13 +124,8 @@ export function useMediaFilesByProject(projectId: string | null) {
           table: 'media_files',
         },
         payload => {
-          console.log('📡 Media file change detected:', payload);
-
           // For INSERT events, we can remove optimistic entries since real data is coming
           if (payload.eventType === 'INSERT') {
-            console.log(
-              '📡 New media file inserted, removing optimistic entries'
-            );
             queryClient.setQueryData(
               ['media_files_with_verse_info', projectId],
               (oldData: MediaFileWithVerseInfo[] = []) => {
@@ -152,20 +142,14 @@ export function useMediaFilesByProject(projectId: string | null) {
           });
         }
       )
-      .subscribe(status => {
-        console.log('🔔 Media files subscription status:', status);
-      });
+      .subscribe();
 
     // Cleanup subscription on unmount
     return () => {
-      console.log('🧹 Cleaning up media files subscription');
       try {
         supabase.removeChannel(subscription);
-      } catch (error) {
-        console.warn(
-          'Failed to remove media files subscription channel:',
-          error
-        );
+      } catch {
+        // Ignore cleanup errors
       }
     };
   }, [projectId, queryClient]);
@@ -326,11 +310,6 @@ export function useMediaFilesByProjectPaginated(
   useEffect(() => {
     if (!projectId) return;
 
-    console.log(
-      '🔔 Setting up media files paginated real-time subscription for project:',
-      projectId
-    );
-
     const subscription = supabase
       .channel(`media_files_paginated_${projectId}`)
       .on(
@@ -340,9 +319,7 @@ export function useMediaFilesByProjectPaginated(
           schema: 'public',
           table: 'media_files',
         },
-        payload => {
-          console.log('📡 Media file change detected (paginated):', payload);
-
+        () => {
           // Invalidate and refetch the paginated media files query
           // We need to invalidate all queries that start with the base key since options vary
           queryClient.invalidateQueries({
@@ -350,20 +327,14 @@ export function useMediaFilesByProjectPaginated(
           });
         }
       )
-      .subscribe(status => {
-        console.log('🔔 Media files paginated subscription status:', status);
-      });
+      .subscribe();
 
     // Cleanup subscription on unmount
     return () => {
-      console.log('🧹 Cleaning up media files paginated subscription');
       try {
         supabase.removeChannel(subscription);
-      } catch (error) {
-        console.warn(
-          'Failed to remove media files paginated subscription channel:',
-          error
-        );
+      } catch {
+        // Ignore cleanup errors
       }
     };
   }, [projectId, queryClient]);
@@ -1073,8 +1044,6 @@ export function useBulkInsertVerseTimestamps() {
         );
       }
 
-      console.log(`Bulk insert starting for user: ${user.id}`);
-
       onProgress?.({
         completed: 0,
         total: totalRecords,
@@ -1088,10 +1057,6 @@ export function useBulkInsertVerseTimestamps() {
       const allVerseIds = [
         ...new Set(verseTimestampsData.map(item => item.verse_id)),
       ];
-
-      console.log(
-        `Starting deletion for ${mediaFileIds.length} media files and ${allVerseIds.length} unique verses`
-      );
 
       // First, check what records exist that we might conflict with
       // Use batching to avoid URL length limits with large datasets
@@ -1125,29 +1090,11 @@ export function useBulkInsertVerseTimestamps() {
         }
       }
 
-      console.log(
-        `Found ${existingRecords.length} existing records to potentially delete`
-      );
-
       if (existingRecords && existingRecords.length > 0) {
         // Filter to only records created by current user
         const userOwnedRecords = existingRecords.filter(
           record => record.created_by === user.id
         );
-        const otherUsersRecords = existingRecords.filter(
-          record => record.created_by !== user.id
-        );
-
-        console.log(
-          `User owns ${userOwnedRecords.length} records, ${otherUsersRecords.length} belong to other users`
-        );
-
-        if (otherUsersRecords.length > 0) {
-          console.warn(
-            'Found records owned by other users that will cause conflicts:',
-            otherUsersRecords.slice(0, 5)
-          );
-        }
 
         // Delete user's own records in smaller, more targeted batches
         if (userOwnedRecords.length > 0) {
@@ -1183,10 +1130,6 @@ export function useBulkInsertVerseTimestamps() {
             }
             // Count doesn't work reliably with RLS, so we'll trust the operation succeeded
           }
-
-          console.log(
-            `Deletion completed for ${userOwnedRecords.length} user-owned records`
-          );
         }
       }
 
@@ -1219,13 +1162,6 @@ export function useBulkInsertVerseTimestamps() {
 
       const insertData = Array.from(deduplicatedMap.values());
 
-      // Log deduplication results
-      if (rawInsertData.length !== insertData.length) {
-        console.log(
-          `Deduplication: ${rawInsertData.length} -> ${insertData.length} records (removed ${rawInsertData.length - insertData.length} duplicates)`
-        );
-      }
-
       // Update progress with actual record count after deduplication
       const actualTotalRecords = insertData.length;
       onProgress?.({
@@ -1249,59 +1185,34 @@ export function useBulkInsertVerseTimestamps() {
 
         // If insert fails with unique constraint violation, handle individual records
         if (error && error.code === '23505') {
-          console.log(
-            `Batch ${Math.floor(i / batchSize) + 1}: Insert failed with constraint violation, trying individual inserts...`
-          );
-
           const successfulInserts = [];
           const skippedRecords = [];
 
           // Try each record individually to identify which ones conflict
           for (const record of batch) {
-            try {
-              const { data: singleData, error: singleError } = await supabase
-                .from('media_files_verses')
-                .insert([record])
-                .select();
+            const { data: singleData, error: singleError } = await supabase
+              .from('media_files_verses')
+              .insert([record])
+              .select();
 
-              if (singleError) {
-                if (singleError.code === '23505') {
-                  // Constraint violation - record already exists, skip it
-                  console.log(
-                    `Skipping duplicate record: ${record.media_file_id}/${record.verse_id}`
-                  );
-                  skippedRecords.push(record);
-                } else {
-                  // Other error - this is a real problem
-                  throw singleError;
-                }
-              } else if (singleData) {
-                successfulInserts.push(...singleData);
+            if (singleError) {
+              if (singleError.code === '23505') {
+                // Constraint violation - record already exists, skip it
+                skippedRecords.push(record);
+              } else {
+                // Other error - this is a real problem
+                throw singleError;
               }
-            } catch (recordError) {
-              console.error(
-                `Failed to process record ${record.media_file_id}/${record.verse_id}:`,
-                recordError
-              );
-              throw recordError;
+            } else if (singleData) {
+              successfulInserts.push(...singleData);
             }
           }
 
           data = successfulInserts;
           error = null; // Clear the batch error since we handled it
-
-          if (skippedRecords.length > 0) {
-            console.log(
-              `Batch ${Math.floor(i / batchSize) + 1}: Successfully inserted ${successfulInserts.length} records, skipped ${skippedRecords.length} duplicates`
-            );
-          }
         }
 
         if (error) {
-          console.error(
-            `Error inserting batch ${Math.floor(i / batchSize) + 1}:`,
-            error
-          );
           throw new Error(
             `Batch insert failed at record ${i + 1}: ${error.message}`
           );
