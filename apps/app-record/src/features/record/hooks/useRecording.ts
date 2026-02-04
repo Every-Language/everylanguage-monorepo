@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAudioRecorder, trimAudio } from '@siteed/expo-audio-studio';
+import {
+  useAudioRecorder,
+  trimAudio,
+  ExpoAudioStreamModule,
+} from '@siteed/expo-audio-studio';
 import * as FileSystem from 'expo-file-system';
 import { FilePathService } from '../services/FilePathService';
 import { RECORDING_CONFIG } from '../constants/recordingConfig';
@@ -336,12 +340,18 @@ export const useRecording = (
 
   const handleStartRecording = useCallback(async (): Promise<void> => {
     try {
+      // Request microphone permissions first
+      const { status } = await ExpoAudioStreamModule.requestPermissionsAsync();
+      if (status !== 'granted') {
+        // eslint-disable-next-line no-console
+        console.error('Recording permission not granted:', status);
+        throw new Error('Recording permission has not been granted');
+      }
+
       // Ensure directory exists
       await FilePathService.ensureSequenceDirectory(sequenceId);
 
       // Start recording with config
-      // Note: useAudioRecorder handles permissions automatically
-
       await startRecording({
         sampleRate: RECORDING_CONFIG.sample_rate,
         channels: (RECORDING_CONFIG.channels === 1 ? 1 : 2) as 1 | 2,
@@ -367,6 +377,7 @@ export const useRecording = (
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Failed to start recording:', error);
+      throw error; // Re-throw to allow UI to handle the error
     }
   }, [sequenceId, startRecording]);
 
