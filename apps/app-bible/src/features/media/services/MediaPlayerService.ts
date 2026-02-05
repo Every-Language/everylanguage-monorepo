@@ -287,32 +287,10 @@ export class MediaPlayerService {
       logger.error(ENABLE_LOGGING, 'Playback error:', error);
     });
 
-    // Remote control events (for background playback)
-    TrackPlayer.addEventListener(Event.RemotePause, () => {
-      logger.info(ENABLE_LOGGING, 'Remote pause event received');
-      TrackPlayer.pause();
-    });
-
-    TrackPlayer.addEventListener(Event.RemotePlay, () => {
-      logger.info(ENABLE_LOGGING, 'Remote play event received');
-      TrackPlayer.play();
-    });
-
-    TrackPlayer.addEventListener(Event.RemoteNext, () => {
-      logger.info(ENABLE_LOGGING, 'Remote next event received');
-      TrackPlayer.skipToNext();
-    });
-
-    TrackPlayer.addEventListener(Event.RemotePrevious, () => {
-      logger.info(ENABLE_LOGGING, 'Remote previous event received');
-      TrackPlayer.skipToPrevious();
-    });
-
-    TrackPlayer.addEventListener(Event.RemoteStop, () => {
-      logger.info(ENABLE_LOGGING, 'Remote stop event received');
-      TrackPlayer.pause();
-      TrackPlayer.seekTo(0);
-    });
+    // Remote control events (RemotePlay, RemotePause, RemoteNext, RemotePrevious, RemoteStop)
+    // are handled in PlaybackService.ts, which is the registered background service.
+    // This follows RNTP best practices: remote events should only be handled in the
+    // registered playback service to avoid duplicate handlers and ensure proper business logic.
 
     // Queue ended
     TrackPlayer.addEventListener(

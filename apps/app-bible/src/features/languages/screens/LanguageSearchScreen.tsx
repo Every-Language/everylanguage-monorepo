@@ -1,11 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  ActivityIndicator,
-  TextInput,
-} from 'react-native';
+import { View, Text, ScrollView, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -19,6 +13,7 @@ import type {
   VersionSelectionStackNavigationProp,
 } from '../navigation/VersionSelectionStackNavigator';
 import { SearchResultItem } from '../components/SearchResultItem';
+import { SearchResultSkeleton } from '@/features/search/components/SearchResultSkeleton';
 //
 import { StyleSheet } from 'react-native';
 import { ModalHeader } from '@everylanguage/shared-native-ui';
@@ -167,13 +162,11 @@ export const LanguageSearchScreen: React.FC<LanguageSearchScreenProps> = ({
 
       {/* Loading */}
       {isSearching && (
-        <View style={styles.searchLoadingContainer}>
-          <ActivityIndicator size='large' color={theme.colors.primary} />
-          <Text
-            style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-            {t('languages.search.searching')}
-          </Text>
-        </View>
+        <ScrollView style={styles.scrollView}>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <SearchResultSkeleton key={`skeleton-${index}`} />
+          ))}
+        </ScrollView>
       )}
 
       {/* Results */}
@@ -220,16 +213,11 @@ export const LanguageSearchScreen: React.FC<LanguageSearchScreenProps> = ({
         {!hasSearched && searchQuery.length < 2 && (
           <>
             {isLoadingPopular ? (
-              <View style={styles.searchLoadingContainer}>
-                <ActivityIndicator size='large' color={theme.colors.primary} />
-                <Text
-                  style={[
-                    styles.loadingText,
-                    { color: theme.colors.textSecondary },
-                  ]}>
-                  {t('languages.search.loadingPopular')}
-                </Text>
-              </View>
+              <>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <SearchResultSkeleton key={`popular-skeleton-${index}`} />
+                ))}
+              </>
             ) : popularResults.length > 0 ? (
               <>
                 <View style={styles.sectionHeader}>
@@ -280,15 +268,6 @@ const styles = StyleSheet.create({
   errorText: {
     textAlign: 'center',
     fontSize: 14,
-  },
-  searchLoadingContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    textAlign: 'center',
   },
   scrollView: {
     flex: 1,

@@ -22,6 +22,7 @@ import {
 import { useChaptersWithMetadata } from '../hooks/useChaptersWithMetadata';
 import { useAudioAvailabilityInvalidation } from '../hooks';
 import { ChapterCard } from '../components/ChapterCard';
+import { ChapterCardSkeleton } from '../components/ChapterCardSkeleton';
 import { getBookImageByNumber } from '../assets/bookArtRegistry';
 import { useBibleNavigationV2 } from '../services/BibleNavigationServiceV2';
 import { useBibleNavigationStore } from '../store/bibleNavigationStore';
@@ -407,16 +408,19 @@ export const BookChaptersScreen: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (loading) {
+    if (loading && chapters.length === 0) {
+      const skeletonData = Array.from({ length: 6 }).map((_, i) => ({
+        id: `skeleton-${i}`,
+      }));
       return (
-        <View style={styles.loadingContainer}>
-          <MaterialIcons
-            name='hourglass-empty'
-            size={48}
-            color={theme.colors.textSecondary}
-          />
-          <Text style={styles.loadingText}>{t('chapters.loading')}</Text>
-        </View>
+        <FlatList
+          data={skeletonData}
+          renderItem={() => <ChapterCardSkeleton />}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.chaptersList}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
+        />
       );
     }
 

@@ -161,9 +161,8 @@ export function useUserManagement(projectId: string) {
     );
   };
 
-  const handleEditUser = (user: ProjectUser) => {
+  const handleEditUser = () => {
     // TODO: Implement edit user modal with role selection
-    console.log('Edit user:', user);
   };
 
   const handleRemoveUser = (userId: string) => {
@@ -216,7 +215,6 @@ export function useUserManagement(projectId: string) {
         );
       } else {
         // For activate/deactivate, we'd need additional implementation
-        console.log(`Bulk ${action} for users:`, Array.from(selectedUsers));
         setSelectedUsers(new Set());
       }
     }

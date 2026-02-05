@@ -1,170 +1,95 @@
-import {
+import type {
   Theme,
   ThemeColors,
   ThemeSpacing,
   ThemeTypography,
   ThemeBorderRadius,
-} from '@/shared/types/theme';
+} from '../types/theme';
 
-// Brand Colors from Brandkit
+// Brand Colors
 export const BRAND_COLORS = {
-  CHARCOAL: '#282927',
-  CREAM: '#EBE5D9',
-  GOLD: '#AF915A',
-  BLACK: '#070707',
-  WHITE: '#FFFFFF',
-};
-
-// Color Variations
-export const COLOR_VARIATIONS = {
-  // Charcoal variations
-  CHARCOAL_LIGHT: '#3D3E3B',
-  CHARCOAL_DARK: '#1A1B19',
-  CHARCOAL_DARKER: '#111211',
-
-  // Cream variations
-  CREAM_LIGHT: '#F5F3ED',
-  CREAM_DARK: '#D4CFC3',
-
-  // Gold variations
-  GOLD_LIGHT: '#C4A76A',
-  GOLD_DARK: '#8A7143',
-
-  // Neutral variations
-  GRAY_50: '#F9FAFB',
-  GRAY_100: '#F3F4F6',
-  GRAY_200: '#E5E7EB',
-  GRAY_300: '#D1D5DB',
-  GRAY_400: '#9CA3AF',
-  GRAY_500: '#6B7280',
-  GRAY_600: '#4B5563',
-  GRAY_700: '#374151',
-  GRAY_800: '#1F2937',
-  GRAY_900: '#111827',
-
-  // Status colors
-  SUCCESS: '#10B981',
-  WARNING: '#F59E0B',
-  ERROR: '#EF4444',
-  INFO: '#3B82F6',
-
-  // Transparent variations
-  OVERLAY_LIGHT: 'rgba(0, 0, 0, 0.1)',
-  OVERLAY_DARK: 'rgba(0, 0, 0, 0.6)',
-  SHADOW_LIGHT: 'rgba(0, 0, 0, 0.08)',
-  SHADOW_DARK: 'rgba(0, 0, 0, 0.25)',
-
-  // Additional rgba colors
-  BLACK_05: 'rgba(0, 0, 0, 0.05)',
-  BLACK_10: 'rgba(0, 0, 0, 0.1)',
-  BLACK_15: 'rgba(0, 0, 0, 0.15)',
-  BLACK_50: 'rgba(0, 0, 0, 0.5)',
-  BLACK_90: 'rgba(0, 0, 0, 0.9)',
-  WHITE_08: 'rgba(255, 255, 255, 0.08)',
-  WHITE_10: 'rgba(255, 255, 255, 0.1)',
-  WHITE_20: 'rgba(255, 255, 255, 0.2)',
-  WHITE_90: 'rgba(255, 255, 255, 0.9)',
-  BLUE_10: 'rgba(0, 122, 255, 0.1)',
-  GREEN_10: 'rgba(76, 175, 80, 0.1)',
-
-  // Additional colors for specific use cases
-  TRANSPARENT: 'transparent',
-  CHARCOAL_95: 'rgba(40, 41, 39, 0.95)',
-  CREAM_95: 'rgba(212, 207, 195, 0.95)',
-  CHARCOAL_98: 'rgba(40, 41, 39, 0.98)',
-  CREAM_98: 'rgba(212, 207, 195, 0.98)',
-
-  // Additional colors for inline styles
-  SHADOW_BLACK: '#000',
-  ERROR_RED: '#ff4444',
-  GRAY_LIGHT: '#f5f5f5',
-  GRAY_MEDIUM: '#666',
-  GRAY_DARK: '#333',
-  GRAY_VERY_LIGHT: '#f0f0f0',
-  BLUE_PRIMARY: '#1976d2',
-  GREEN_SUCCESS: '#4caf50',
-  RED_ERROR: '#d32f2f',
-  GRAY_VERY_DARK: '#999',
-  BLUE_LIGHT: '#e3f2fd',
-  PURPLE_LIGHT: '#f3e5f5',
-  GREEN_LIGHT: '#e8f5e8',
-  WHITE_PURE: '#fff',
-  BORDER_LIGHT: '#e0e0e0',
-  BORDER_GRAY: '#E0E0E0',
-};
+  CREAM: '#ebe5d9',
+  WHITE: '#ffffff',
+  GOLD: '#ad915a',
+  LIGHT_BLUE: '#92bec3',
+  ALMOST_BLACK: '#070707',
+  DARK_GREY: '#282827',
+} as const;
 
 // Light Theme Colors
 const lightColors: ThemeColors = {
   // Primary brand colors
   primary: BRAND_COLORS.GOLD,
-  secondary: BRAND_COLORS.CREAM,
+  secondary: BRAND_COLORS.LIGHT_BLUE,
   accent: BRAND_COLORS.GOLD,
+  accent2: BRAND_COLORS.LIGHT_BLUE,
 
   // Background colors
-  background: BRAND_COLORS.WHITE,
+  background: BRAND_COLORS.CREAM,
   surface: BRAND_COLORS.WHITE,
   surfaceVariant: BRAND_COLORS.WHITE,
-  modalBackground: COLOR_VARIATIONS.CREAM_LIGHT,
+  modalBackground: BRAND_COLORS.WHITE,
 
   // Text colors
-  text: BRAND_COLORS.CHARCOAL,
-  textSecondary: COLOR_VARIATIONS.CHARCOAL_LIGHT,
+  text: BRAND_COLORS.ALMOST_BLACK,
+  textSecondary: '#666666',
   textInverse: BRAND_COLORS.WHITE,
 
   // UI colors
-  border: COLOR_VARIATIONS.CREAM_DARK,
-  shadow: COLOR_VARIATIONS.SHADOW_LIGHT,
-  overlay: COLOR_VARIATIONS.OVERLAY_LIGHT,
-  surfaceOverlay: COLOR_VARIATIONS.BLACK_15,
+  border: 'rgba(0, 0, 0, 0.1)',
+  shadow: 'rgba(0, 0, 0, 0.08)',
+  overlay: 'rgba(0, 0, 0, 0.1)',
+  surfaceOverlay: 'rgba(0, 0, 0, 0.15)',
 
   // Status colors
-  success: COLOR_VARIATIONS.SUCCESS,
-  warning: COLOR_VARIATIONS.WARNING,
-  error: COLOR_VARIATIONS.ERROR,
-  info: COLOR_VARIATIONS.INFO,
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  info: '#3B82F6',
 
   // Interactive colors
   interactive: BRAND_COLORS.GOLD,
-  interactiveHover: COLOR_VARIATIONS.GOLD_LIGHT,
-  interactivePressed: COLOR_VARIATIONS.GOLD_DARK,
-  interactiveDisabled: COLOR_VARIATIONS.GRAY_300,
+  interactiveHover: '#c4a76a',
+  interactivePressed: '#8a7143',
+  interactiveDisabled: '#D1D5DB',
 };
 
 // Dark Theme Colors
 const darkColors: ThemeColors = {
   // Primary brand colors
   primary: BRAND_COLORS.GOLD,
-  secondary: BRAND_COLORS.CHARCOAL,
+  secondary: BRAND_COLORS.LIGHT_BLUE,
   accent: BRAND_COLORS.GOLD,
+  accent2: BRAND_COLORS.LIGHT_BLUE,
 
   // Background colors
-  background: BRAND_COLORS.BLACK,
-  surface: COLOR_VARIATIONS.CHARCOAL_DARK,
-  surfaceVariant: BRAND_COLORS.CHARCOAL,
-  modalBackground: COLOR_VARIATIONS.CHARCOAL_DARKER,
+  background: BRAND_COLORS.ALMOST_BLACK,
+  surface: BRAND_COLORS.DARK_GREY,
+  surfaceVariant: BRAND_COLORS.DARK_GREY,
+  modalBackground: BRAND_COLORS.DARK_GREY,
 
   // Text colors
   text: BRAND_COLORS.CREAM,
-  textSecondary: COLOR_VARIATIONS.CREAM_DARK,
-  textInverse: BRAND_COLORS.CHARCOAL,
+  textSecondary: '#a0a0a0',
+  textInverse: BRAND_COLORS.ALMOST_BLACK,
 
   // UI colors
-  border: COLOR_VARIATIONS.CHARCOAL_LIGHT,
-  shadow: COLOR_VARIATIONS.SHADOW_DARK,
-  overlay: COLOR_VARIATIONS.OVERLAY_DARK,
-  surfaceOverlay: COLOR_VARIATIONS.WHITE_20,
+  border: 'rgba(255, 255, 255, 0.1)',
+  shadow: 'rgba(0, 0, 0, 0.25)',
+  overlay: 'rgba(0, 0, 0, 0.6)',
+  surfaceOverlay: 'rgba(255, 255, 255, 0.2)',
 
   // Status colors
-  success: COLOR_VARIATIONS.SUCCESS,
-  warning: COLOR_VARIATIONS.WARNING,
-  error: COLOR_VARIATIONS.ERROR,
-  info: COLOR_VARIATIONS.INFO,
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  info: '#3B82F6',
 
   // Interactive colors
   interactive: BRAND_COLORS.GOLD,
-  interactiveHover: COLOR_VARIATIONS.GOLD_LIGHT,
-  interactivePressed: COLOR_VARIATIONS.GOLD_DARK,
-  interactiveDisabled: COLOR_VARIATIONS.GRAY_600,
+  interactiveHover: '#c4a76a',
+  interactivePressed: '#8a7143',
+  interactiveDisabled: '#4B5563',
 };
 
 // Spacing system
@@ -180,9 +105,9 @@ export const spacing: ThemeSpacing = {
 // Typography system
 export const typography: ThemeTypography = {
   fontFamily: {
-    regular: 'System', // Will use platform default
-    medium: 'System', // Will use platform default
-    bold: 'System', // Will use platform default
+    regular: 'System',
+    medium: 'System',
+    bold: 'System',
   },
   fontSize: {
     xs: 12,
@@ -231,7 +156,7 @@ export const darkTheme: Theme = {
 };
 
 // Theme map for easy access
-export const themes = {
+export const themes: Record<'light' | 'dark', Theme> = {
   light: lightTheme,
   dark: darkTheme,
 };

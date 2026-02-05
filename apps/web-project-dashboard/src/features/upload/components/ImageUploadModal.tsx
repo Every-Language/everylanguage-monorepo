@@ -76,11 +76,6 @@ export function ImageUploadModal({
   // Setup upload callbacks
   useEffect(() => {
     setOnUploadComplete((completedFiles, failedFiles) => {
-      console.log('🎉 Image upload completed:', {
-        completedFiles,
-        failedFiles,
-      });
-
       if (completedFiles.length > 0) {
         toast({
           title: 'Upload completed',
@@ -100,8 +95,8 @@ export function ImageUploadModal({
       onUploadComplete?.();
     });
 
-    setOnBatchComplete(batchProgress => {
-      console.log('📊 Image batch completed:', batchProgress);
+    setOnBatchComplete(() => {
+      // Batch completion logic can be added here
     });
 
     return () => {
@@ -229,8 +224,6 @@ export function ImageUploadModal({
     }
 
     try {
-      console.log('🚀 Starting image upload for', validFiles.length, 'files');
-
       const projectData = {
         setId: setSelectionMode === 'existing' ? selectedSetId : undefined,
         setName: setSelectionMode === 'new' ? newSetName.trim() : undefined,

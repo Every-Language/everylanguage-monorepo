@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardHeader,
@@ -34,7 +34,10 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({
   const creator = normalizeSupabaseRelation(
     'creator' in update ? update.creator : null
   );
-  const media = 'media' in update && update.media ? update.media : [];
+  const media = useMemo(
+    () => ('media' in update && update.media ? update.media : []),
+    [update]
+  );
   const projectName =
     showProject &&
     'project_name' in update &&

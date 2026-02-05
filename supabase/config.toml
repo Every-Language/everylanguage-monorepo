@@ -195,9 +195,11 @@ sql_paths = [
   # Test seeds - loaded after production seeds
   "seed/test/01_test_users/01_seed_test_users.sql",
   "seed/test/01_test_users/02_seed_rbac_test_users.sql",
+  "seed/test/02_test_projects/01_seed_test_projects.sql",
   "seed/test/02_recording_app/01_seed_sequences_segments.sql",
   "seed/test/03_bible_content/01_seed_tags_media.sql",
   "seed/test/04_finance/01_seed_sponsorships_donations.sql",
+  "seed/test/04_finance/02_seed_test_donations_for_el34.sql",
   "seed/test/05_user_data/01_seed_playlists_bookmarks.sql",
   "seed/test/06_analytics/01_seed_analytics.sql"
 ]
@@ -297,7 +299,7 @@ enable_signup = true
 enable_anonymous_sign_ins = true
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
-# Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
+# Passwords shorter than this value will be rejected as weak. Minimum 6 (Supabase requirement), recommended 8 or more.
 minimum_password_length = 6
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
@@ -543,6 +545,15 @@ entrypoint = "./functions/get-bible-audio/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/get-bible-text/index.ts"
+[functions.reset-password-with-email]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/reset-password-with-email/index.ts"
+
+[functions.reset-password-with-phone]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/reset-password-with-phone/index.ts"
 
 # -----------------------------------------------------------------------------
 # AUTHENTICATED ENDPOINTS - JWT verification required

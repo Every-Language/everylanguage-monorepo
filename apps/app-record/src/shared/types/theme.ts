@@ -5,6 +5,7 @@ export interface ThemeColors {
   primary: string;
   secondary: string;
   accent: string;
+  accent2: string;
 
   // Background colors
   background: string;
@@ -89,6 +90,6 @@ export interface Theme {
 export interface ThemeContextType {
   theme: Theme;
   mode: ThemeMode;
-  toggleTheme: () => void;
   setTheme: (mode: ThemeMode) => void;
+  toggleTheme: () => void;
 }

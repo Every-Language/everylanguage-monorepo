@@ -59,13 +59,6 @@ export function useDashboardData({ projectId }: DashboardDataProps) {
           };
         }
 
-        console.log(
-          'Calculating chapter-based progress for project:',
-          projectId,
-          'version:',
-          selectedBibleVersion
-        );
-
         // Get total chapters count for this bible version (much more efficient)
         const { count: totalChapters, error: chaptersCountError } =
           await supabase

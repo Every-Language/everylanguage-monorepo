@@ -31,6 +31,7 @@ import type { Theme } from '@everylanguage/shared-native-ui';
 import { usePlaylistItemsPS } from '../hooks/usePlaylistItemsPS';
 import { PlaylistItemWithVerses } from '../types';
 import { DraggablePlaylistItem } from '../components/DraggablePlaylistItem';
+import { VerseCardSkeleton } from '@/features/bible/components/VerseCardSkeleton';
 import { usePlaylistActions } from '../hooks/usePlaylistActions';
 import { usePlaylistPS } from '../hooks/usePlaylistPS';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
@@ -334,15 +335,10 @@ export const PlaylistItemsScreen: React.FC = () => {
   const renderEmptyState = () => {
     if (loading && playlistItems.length === 0) {
       return (
-        <View style={styles.loadingContainer}>
-          <MaterialIcons
-            name='hourglass-empty'
-            size={48}
-            color={theme.colors.textSecondary}
-          />
-          <Text style={styles.loadingText}>
-            {t('verses.loading', 'Loading verses...')}
-          </Text>
+        <View style={styles.listContainer}>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <VerseCardSkeleton key={`skeleton-${index}`} />
+          ))}
         </View>
       );
     }
@@ -486,6 +482,11 @@ const createStyles = (theme: Theme) =>
     },
     listContent: {
       paddingHorizontal: 8,
+      paddingBottom: 100,
+    },
+    listContainer: {
+      paddingHorizontal: 8,
+      paddingTop: 8,
       paddingBottom: 100,
     },
     container: {

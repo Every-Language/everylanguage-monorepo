@@ -1,2 +1,2 @@
-export { SettingsToggle } from './SettingsToggle';
-export { MediaSettingsSection } from './MediaSettingsSection';
+export { DebugSection } from './DebugSection';
+export { MyProfileSection } from './MyProfileSection';

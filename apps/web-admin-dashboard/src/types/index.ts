@@ -35,6 +35,7 @@ export interface LanguageFunding {
   language_entity_id: string;
   funding_status: LanguageFundingStatus;
   budget_cents: number | null;
+  priority: number | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -131,7 +132,7 @@ export interface SponsorshipWithDetails {
 
 // Donation types
 export interface DonationWithAllocations extends Donation {
-  allocations: DonationAllocation[];
+  allocations: DonationAllocationWithNested[];
   allocated_cents: number;
   remaining_cents: number;
   intent_language?: LanguageEntity | null;
@@ -147,7 +148,6 @@ export interface DonationWithAllocations extends Donation {
     last_name: string;
     email: string;
   } | null;
-  is_manual?: boolean;
 }
 
 export interface AllocationWithDetails extends DonationAllocation {
@@ -159,6 +159,17 @@ export interface AllocationWithDetails extends DonationAllocation {
     first_name: string;
     last_name: string;
     email: string;
+  } | null;
+}
+
+// Type for donation allocation with nested operation and project data from Supabase query
+export interface DonationAllocationWithNested extends DonationAllocation {
+  operation?: { id: string; name: string; category: string } | null;
+  project?: {
+    id: string;
+    name: string;
+    target_language_entity_id: string | null;
+    target_language?: { id: string; name: string; level: string } | null;
   } | null;
 }
 

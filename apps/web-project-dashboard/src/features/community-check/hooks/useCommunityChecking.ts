@@ -4,12 +4,12 @@ import {
   useUpdateMediaFileCheckStatus,
   useBulkUpdateMediaFileCheckStatus,
 } from '@/shared/hooks/query/verse-feedback';
-import { useSelectedProject } from '@/features/dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '@/features/dashboard/hooks/useCurrentProject';
 import type { MediaFile } from '@/shared/hooks/query/media-files';
 import type { CheckStatus } from '../types';
 
 export function useCommunityChecking() {
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const [selectedFileForChecking, setSelectedFileForChecking] =
     useState<MediaFile | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
