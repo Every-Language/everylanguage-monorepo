@@ -15,7 +15,7 @@ import {
   SelectItem,
 } from '../../../shared/design-system/components';
 import { useToast } from '../../../shared/design-system/hooks/useToast';
-import { useSelectedProject } from '../../dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '../../dashboard/hooks/useCurrentProject';
 import { useAuth } from '../../auth/hooks/useAuth';
 import {
   useTextVersionsByProject,
@@ -198,7 +198,7 @@ export function BibleTextUploadModal({
 }: BibleTextUploadModalProps) {
   // Data fetching
   const { user } = useAuth();
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const { toast } = useToast();
   const { data: textVersions, refetch: refetchTextVersions } =
     useTextVersionsByProject(selectedProject?.id || '');
@@ -610,16 +610,9 @@ export function BibleTextUploadModal({
         created_by: user.id,
       }));
 
-      console.log(
-        'Starting chunked upload for:',
-        verseTextsToInsert.length,
-        'verses'
-      );
-
       await chunkedBulkInsertMutation.mutateAsync({
         verseTextsData: verseTextsToInsert,
-        onProgress: progress => {
-          console.log('Upload progress:', progress);
+        onProgress: () => {
           updateTextProgress();
         },
       });

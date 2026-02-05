@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -83,6 +89,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
           paddingBottom: insets.bottom,
           paddingLeft: insets.left,
           paddingRight: insets.right,
+          paddingTop: Platform.OS === 'android' ? insets.top : 0,
         },
       ]}>
       {/* Header */}

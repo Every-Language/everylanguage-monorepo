@@ -11,6 +11,11 @@ import { useTheme } from '@/shared/hooks';
  * Floating tab bar with rounded corners and solid background.
  * Selected tab shows accent color for text and icons.
  */
+export const unstable_settings = {
+  // Anchor modals to tabs for proper deep linking
+  // When modals are presented, tabs remain in background
+};
+
 const TabsLayout: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();

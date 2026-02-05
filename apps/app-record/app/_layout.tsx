@@ -205,6 +205,27 @@ const RootLayout: React.FC = () => {
                 },
               }}>
               <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+              <Stack.Screen
+                name='modals/create-project'
+                options={{
+                  headerShown: false,
+                  presentation: 'modal',
+                }}
+              />
+              <Stack.Screen
+                name='modals/edit-project'
+                options={{
+                  headerShown: false,
+                  presentation: 'modal',
+                }}
+              />
+              <Stack.Screen
+                name='modals/create-sequence'
+                options={{
+                  headerShown: false,
+                  presentation: 'modal',
+                }}
+              />
             </Stack>
           </View>
         </SafeAreaProvider>

@@ -14,7 +14,7 @@ import {
   Progress,
 } from '../../../../shared/design-system/components';
 import { useToast } from '../../../../shared/design-system/hooks/useToast';
-import { useSelectedProject } from '../../../dashboard/hooks/useSelectedProject';
+import { useCurrentProject } from '../../../dashboard/hooks/useCurrentProject';
 import {
   useBulkInsertVerseTimestamps,
   useMediaFilesByProject,
@@ -194,7 +194,7 @@ export function VerseTimestampImportModal({
   selectedAudioVersionId,
 }: VerseTimestampImportModalProps) {
   const { toast } = useToast();
-  const { selectedProject } = useSelectedProject();
+  const { project: selectedProject } = useCurrentProject();
   const { data: allMediaFiles } = useMediaFilesByProject(
     selectedProject?.id || null
   );
@@ -638,8 +638,6 @@ export function VerseTimestampImportModal({
           }
         }
       }
-
-      console.log('Attempting to insert verse timestamps:', allVerseTimestamps);
 
       // Use optimized bulk insert with progress tracking
       // Choose batch size based on dataset size

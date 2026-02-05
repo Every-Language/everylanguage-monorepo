@@ -49,9 +49,9 @@ Deno.serve(async (req: Request) => {
       return createErrorResponse('newPassword is required', 400);
     }
 
-    // Validate password strength
-    if (newPassword.length < 8) {
-      return createErrorResponse('Password must be at least 8 characters', 400);
+    // Validate password strength - match Supabase config minimum (4 characters)
+    if (newPassword.length < 4) {
+      return createErrorResponse('Password must be at least 4 characters', 400);
     }
 
     // Use service role key for Admin API operations
