@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Audio } from 'expo-av';
@@ -49,6 +50,10 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
   const [currentPosition, setCurrentPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
+  // Animated value for background color transition
+  const backgroundColorAnim = useRef(
+    new Animated.Value(isActive || isShadow ? 1 : 0)
+  ).current;
 
   // Determine the file path based on segment type
   // TempSegment has local_file_path, Segment (from PowerSync) has object_key
@@ -237,72 +242,86 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
       : 0;
   const displayDuration = duration > 0 ? duration : fallbackDuration;
 
-  // Calculate background color with green tint if active
-  const getBackgroundColor = (): string => {
-    if (isActive || isShadow) {
-      // Apply green tint to surface color
-      const baseColor = theme.colors.surface;
-      // Simple green tint: blend with success color
-      return baseColor; // We'll use opacity/border instead for better visibility
-    }
-    return theme.colors.surface;
-  };
+  // Animate background color transition
+  useEffect(() => {
+    Animated.timing(backgroundColorAnim, {
+      toValue: isActive || isShadow ? 1 : 0,
+      duration: 300, // 300ms fade transition
+      useNativeDriver: false, // backgroundColor doesn't support native driver
+    }).start();
+  }, [isActive, isShadow, backgroundColorAnim]);
+
+  // Interpolate background color between surface and success
+  const backgroundColor = backgroundColorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [theme.colors.surface, theme.colors.success],
+  });
 
   return (
-    <View
+    <Animated.View
       style={[
         styles.audioPlayerContainer,
         {
-          backgroundColor: getBackgroundColor(),
-          borderColor:
-            isActive || isShadow ? theme.colors.success : theme.colors.border,
-          borderWidth: isActive || isShadow ? 2 : 1,
-          opacity: isDisabled ? 0.6 : 1,
+          backgroundColor,
         },
       ]}>
-      <TouchableOpacity
-        style={[
-          styles.playButton,
-          {
-            backgroundColor: isDisabled
-              ? theme.colors.border
-              : theme.colors.accent,
-            borderColor: theme.colors.border,
-            opacity: isDisabled ? 0.5 : 1,
-          },
-        ]}
-        onPress={handlePlayPause}
-        disabled={isLoading || !!error || isDisabled}
-        accessibilityLabel={isPlaying ? 'Pause audio' : 'Play audio'}
-        accessibilityRole='button'>
-        {isLoading ? (
-          <ActivityIndicator size='small' color={theme.colors.textInverse} />
-        ) : error ? (
-          <Ionicons name='alert-circle' size={20} color={theme.colors.error} />
-        ) : isPlaying ? (
-          <Ionicons name='pause' size={20} color={theme.colors.textInverse} />
-        ) : (
-          <Ionicons name='play' size={20} color={theme.colors.textInverse} />
-        )}
-      </TouchableOpacity>
-      <View style={styles.sliderContainer}>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={displayDuration}
-          value={currentPosition}
-          onValueChange={handleSeek}
-          minimumTrackTintColor={theme.colors.accent}
-          maximumTrackTintColor={theme.colors.border}
-          thumbTintColor={theme.colors.accent}
-          disabled={isLoading || !!error || !soundRef.current || isDisabled}
-        />
-      </View>
+      {!isDisabled && (
+        <TouchableOpacity
+          style={[
+            styles.playButton,
+            {
+              backgroundColor: theme.colors.accent,
+            },
+          ]}
+          onPress={handlePlayPause}
+          disabled={isLoading || !!error}
+          accessibilityLabel={isPlaying ? 'Pause audio' : 'Play audio'}
+          accessibilityRole='button'>
+          {isLoading ? (
+            <ActivityIndicator size='small' color={theme.colors.textInverse} />
+          ) : error ? (
+            <Ionicons
+              name='alert-circle'
+              size={20}
+              color={theme.colors.error}
+            />
+          ) : isPlaying ? (
+            <Ionicons name='pause' size={20} color={theme.colors.textInverse} />
+          ) : (
+            <Ionicons name='play' size={20} color={theme.colors.textInverse} />
+          )}
+        </TouchableOpacity>
+      )}
+      {!isDisabled && (
+        <View style={styles.sliderContainer}>
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={displayDuration}
+            value={currentPosition}
+            onValueChange={handleSeek}
+            minimumTrackTintColor={theme.colors.accent}
+            maximumTrackTintColor={theme.colors.border}
+            thumbTintColor={theme.colors.accent}
+            disabled={isLoading || !!error || !soundRef.current}
+          />
+        </View>
+      )}
       <Text
-        style={[styles.durationText, { color: theme.colors.textSecondary }]}>
+        style={[
+          styles.durationText,
+          {
+            color:
+              isActive || isShadow
+                ? theme.colors.textInverse
+                : theme.colors.textSecondary,
+            textAlign: isDisabled ? 'center' : 'right',
+            flex: isDisabled ? 1 : 0,
+          },
+        ]}>
         {formatDuration(currentPosition || displayDuration)}
       </Text>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -313,7 +332,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 12,
     borderRadius: 8,
-    borderWidth: 1,
     marginBottom: 8,
     gap: 8,
   },
