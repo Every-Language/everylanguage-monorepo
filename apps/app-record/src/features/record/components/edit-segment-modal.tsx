@@ -186,12 +186,14 @@ export const EditSegmentModal: React.FC<EditSegmentModalProps> = ({
                       key={index}
                       style={[
                         styles.waveformBar,
+                        isClipped
+                          ? styles.waveformBarClipped
+                          : styles.waveformBarNormal,
                         {
-                          height: `${value * 100}%`,
+                          flex: value,
                           backgroundColor: isClipped
                             ? theme.colors.textSecondary
                             : theme.colors.accent,
-                          opacity: isClipped ? 0.3 : 1,
                         },
                       ]}
                     />
@@ -378,6 +380,12 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 1,
     minHeight: 2,
+  },
+  waveformBarClipped: {
+    opacity: 0.3,
+  },
+  waveformBarNormal: {
+    opacity: 1,
   },
   clipHandle: {
     position: 'absolute',
