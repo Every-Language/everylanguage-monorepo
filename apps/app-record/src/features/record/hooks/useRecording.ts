@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   useAudioRecorder,
   trimAudio,
+  extractAudioAnalysis,
   ExpoAudioStreamModule,
 } from '@siteed/expo-audio-studio';
 import * as FileSystem from 'expo-file-system';
@@ -351,27 +352,27 @@ export const useRecording = (
       // Ensure directory exists
       await FilePathService.ensureSequenceDirectory(sequenceId);
 
-      // Start recording with config
-      await startRecording({
+      const recordingConfig = {
         sampleRate: RECORDING_CONFIG.sample_rate,
         channels: (RECORDING_CONFIG.channels === 1 ? 1 : 2) as 1 | 2,
-        encoding: 'pcm_16bit',
-        enableProcessing: true, // Enable for waveform and analysis
-        interval: 50, // Update raw audio stream every 50ms
-        intervalAnalysis: 50, // Update analysisData every 50ms (20 times per second)
+        encoding: 'pcm_16bit' as const,
+        enableProcessing: true,
+        interval: 50,
+        intervalAnalysis: 50,
         output: {
           primary: {
             enabled: true,
           },
           compressed: {
             enabled: true,
-            format: 'aac',
-            bitrate: 128000,
           },
         },
         autoResumeAfterInterruption: true,
         keepAwake: true,
-      });
+      };
+
+      // Start recording with config
+      await startRecording(recordingConfig);
 
       currentSegmentRef.current = null;
     } catch (error) {
@@ -383,9 +384,6 @@ export const useRecording = (
 
   const handleStopRecording = useCallback(async (): Promise<void> => {
     try {
-      // eslint-disable-next-line no-console
-      console.log('handleStopRecording called');
-
       // Stop recording and get the main recording file
       const recording = await stopRecording();
 
@@ -418,75 +416,182 @@ export const useRecording = (
       // Store main recording URI for potential re-extraction
       mainRecordingUriRef.current = mainRecordingUri;
 
-      // If there's an active segment, finalize it
-      if (currentSegmentRef.current?.isActive) {
-        const segment = currentSegmentRef.current;
-        const segmentStartTimeMs = segment.startTimeMs; // Relative to recording start
-        const segmentEndTimeMs = recording.durationMs; // Final recording duration
-        const segmentDurationMs = segmentEndTimeMs - segmentStartTimeMs;
-        const segmentDurationSeconds = segmentDurationMs / 1000;
-        const now = new Date().toISOString();
-        const relativePath = FilePathService.getRelativePath(
-          sequenceId,
-          segment.id
-        );
+      // Check if real-time analysis produced any data points
+      const hasRealTimeData = (analysisData?.dataPoints?.length ?? 0) > 0;
 
-        // Get latest audio level from analysis
-        const latestPoint =
-          analysisData?.dataPoints && analysisData.dataPoints.length > 0
-            ? analysisData.dataPoints[analysisData.dataPoints.length - 1]
-            : null;
-        const latestRms = latestPoint?.rms ?? segment.startAudioLevel;
+      if (hasRealTimeData) {
+        // === NORMAL PATH: Real-time analysis worked ===
+        // If there's an active segment, finalize it
+        if (currentSegmentRef.current?.isActive) {
+          const segment = currentSegmentRef.current;
+          const segmentStartTimeMs = segment.startTimeMs;
+          const segmentEndTimeMs = recording.durationMs;
+          const segmentDurationMs = segmentEndTimeMs - segmentStartTimeMs;
+          const segmentDurationSeconds = segmentDurationMs / 1000;
+          const now = new Date().toISOString();
+          const relativePath = FilePathService.getRelativePath(
+            sequenceId,
+            segment.id
+          );
 
-        const newSegment: TempSegment = {
-          id: segment.id,
-          local_file_path: relativePath,
-          sequence_id: sequenceId,
-          project_id: projectId,
-          segment_index: nextSegmentIndex,
-          is_hidden: false,
-          audio_level: latestRms,
-          duration_seconds: segmentDurationSeconds,
-          start_time_ms: segmentStartTimeMs,
-          end_time_ms: segmentEndTimeMs,
-          recording_status: 'completed',
-          created_at: now,
-          updated_at: now,
-        };
+          const latestPoint =
+            analysisData?.dataPoints && analysisData.dataPoints.length > 0
+              ? analysisData.dataPoints[analysisData.dataPoints.length - 1]
+              : null;
+          const latestRms = latestPoint?.rms ?? segment.startAudioLevel;
 
-        // Add final segment
-        setTempSegments(prev => [...prev, newSegment]);
-        setNextSegmentIndex(prev => prev + 1);
+          const newSegment: TempSegment = {
+            id: segment.id,
+            local_file_path: relativePath,
+            sequence_id: sequenceId,
+            project_id: projectId,
+            segment_index: nextSegmentIndex,
+            is_hidden: false,
+            audio_level: latestRms,
+            duration_seconds: segmentDurationSeconds,
+            start_time_ms: segmentStartTimeMs,
+            end_time_ms: segmentEndTimeMs,
+            recording_status: 'completed',
+            created_at: now,
+            updated_at: now,
+          };
 
-        // Extract all segments including the new one
-        const allSegments = [...segmentsRef.current, newSegment];
-        // eslint-disable-next-line no-console
-        console.log('Extracting segments (with final):', {
-          segmentCount: allSegments.length,
-          segments: allSegments.map(s => ({
-            id: s.id,
-            startTimeMs: s.start_time_ms,
-            endTimeMs: s.end_time_ms,
-          })),
-        });
-        await extractSegmentsFromRecording(mainRecordingUri, allSegments);
-        setSegmentsExtracted(true);
+          setTempSegments(prev => [...prev, newSegment]);
+          setNextSegmentIndex(prev => prev + 1);
+
+          const allSegments = [...segmentsRef.current, newSegment];
+          await extractSegmentsFromRecording(mainRecordingUri, allSegments);
+          setSegmentsExtracted(true);
+        } else {
+          await extractSegmentsFromRecording(
+            mainRecordingUri,
+            segmentsRef.current
+          );
+          setSegmentsExtracted(true);
+        }
       } else {
-        // Extract segments for existing ones (no final segment was active)
+        // === FALLBACK PATH: Real-time analysis unavailable (e.g. iOS simulator tap issue) ===
+        // Use post-recording analysis on the compressed file to detect segments
         // eslint-disable-next-line no-console
-        console.log('Extracting segments (no final):', {
-          segmentCount: segmentsRef.current.length,
-          segments: segmentsRef.current.map(s => ({
-            id: s.id,
-            startTimeMs: s.start_time_ms,
-            endTimeMs: s.end_time_ms,
-          })),
-        });
-        await extractSegmentsFromRecording(
-          mainRecordingUri,
-          segmentsRef.current
+        console.log(
+          'Real-time analysis unavailable, using post-recording analysis fallback'
         );
-        setSegmentsExtracted(true);
+
+        try {
+          const postAnalysis = await extractAudioAnalysis({
+            fileUri: mainRecordingUri,
+            segmentDurationMs: 50,
+          });
+
+          // Detect segments from post-recording analysis
+          // Use amplitude (peak) values which match the scale of the thresholds
+          // Post-analysis RMS values are on a different scale than real-time RMS
+          const startThreshold = RECORDING_CONFIG.start_segment_threshold;
+          const endThreshold = RECORDING_CONFIG.end_segment_threshold;
+          const fallbackSegments: TempSegment[] = [];
+          let activeSegmentStart: {
+            timeMs: number;
+            level: number;
+          } | null = null;
+          let segIdx = 1;
+
+          for (const point of postAnalysis.dataPoints) {
+            // Use absolute amplitude (peak) for threshold comparison
+            // because post-analysis RMS is on a different scale
+            const level = Math.abs(point.amplitude ?? 0);
+            // startTime/endTime from extractAudioAnalysis are in seconds; convert to ms
+            const pointStartMs =
+              point.startTime != null
+                ? point.startTime * 1000
+                : point.id * postAnalysis.segmentDurationMs;
+            const pointEndMs =
+              point.endTime != null
+                ? point.endTime * 1000
+                : (point.id + 1) * postAnalysis.segmentDurationMs;
+
+            if (!activeSegmentStart && level >= startThreshold) {
+              activeSegmentStart = {
+                timeMs: pointStartMs,
+                level,
+              };
+            } else if (activeSegmentStart && level <= endThreshold) {
+              const segDurationMs = pointEndMs - activeSegmentStart.timeMs;
+              const segDurationSeconds = segDurationMs / 1000;
+
+              if (segDurationSeconds > 0.1) {
+                const segmentId = generateUUID();
+                const now = new Date().toISOString();
+                const relativePath = FilePathService.getRelativePath(
+                  sequenceId,
+                  segmentId
+                );
+
+                fallbackSegments.push({
+                  id: segmentId,
+                  local_file_path: relativePath,
+                  sequence_id: sequenceId,
+                  project_id: projectId,
+                  segment_index: segIdx,
+                  is_hidden: false,
+                  audio_level: level,
+                  duration_seconds: segDurationSeconds,
+                  start_time_ms: activeSegmentStart.timeMs,
+                  end_time_ms: pointEndMs,
+                  recording_status: 'completed',
+                  created_at: now,
+                  updated_at: now,
+                });
+                segIdx++;
+              }
+              activeSegmentStart = null;
+            }
+          }
+
+          // Finalize any segment still active at end of recording
+          if (activeSegmentStart) {
+            const segDurationMs =
+              recording.durationMs - activeSegmentStart.timeMs;
+            const segDurationSeconds = segDurationMs / 1000;
+
+            if (segDurationSeconds > 0.1) {
+              const segmentId = generateUUID();
+              const now = new Date().toISOString();
+              const relativePath = FilePathService.getRelativePath(
+                sequenceId,
+                segmentId
+              );
+
+              fallbackSegments.push({
+                id: segmentId,
+                local_file_path: relativePath,
+                sequence_id: sequenceId,
+                project_id: projectId,
+                segment_index: segIdx,
+                is_hidden: false,
+                audio_level: activeSegmentStart.level,
+                duration_seconds: segDurationSeconds,
+                start_time_ms: activeSegmentStart.timeMs,
+                end_time_ms: recording.durationMs,
+                recording_status: 'completed',
+                created_at: now,
+                updated_at: now,
+              });
+            }
+          }
+
+          if (fallbackSegments.length > 0) {
+            setTempSegments(fallbackSegments);
+            setNextSegmentIndex(segIdx);
+            await extractSegmentsFromRecording(
+              mainRecordingUri,
+              fallbackSegments
+            );
+          }
+          setSegmentsExtracted(true);
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('Post-recording analysis fallback failed:', err);
+        }
       }
 
       currentSegmentRef.current = null;
