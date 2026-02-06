@@ -2,7 +2,9 @@ import React from 'react';
 import { View, StyleSheet, Modal, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/shared/hooks';
+import { useShallow } from 'zustand/react/shallow';
 import { useRecording, useRecordingMutations } from '../hooks';
+import { useRecordingSettingsStore } from '../stores/recording-settings-store';
 import {
   WaveformDisplay,
   VUMeter,
@@ -44,6 +46,16 @@ export const RecordModal: React.FC<RecordModalProps> = ({
     handlePauseRecording,
     handleCleanup,
   } = useRecording(sequenceId, projectId, visible);
+
+  // Get thresholds and measurement type for VU meter display
+  const { startThreshold, endThreshold, measurementType } =
+    useRecordingSettingsStore(
+      useShallow(state => ({
+        startThreshold: state.startThreshold,
+        endThreshold: state.endThreshold,
+        measurementType: state.measurementType,
+      }))
+    );
 
   const { insertSegments } = useRecordingMutations();
 
@@ -158,6 +170,10 @@ export const RecordModal: React.FC<RecordModalProps> = ({
                 analysisData={analysisData}
                 isRecording={isRecording}
                 isPaused={isPaused}
+                startThreshold={startThreshold}
+                endThreshold={endThreshold}
+                scaleType={measurementType}
+                showThresholdValues={false}
               />
             </View>
           </View>

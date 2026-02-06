@@ -3,11 +3,15 @@ import { useRecordingSettingsStore } from '../stores/recording-settings-store';
 import { useAudioMonitor } from './useAudioMonitor';
 import type { AudioAnalysis } from '@siteed/expo-audio-studio';
 
+import type { MeasurementType } from '../stores/recording-settings-store';
+
 export interface UseRecordingSettingsReturn {
   startThreshold: number;
   endThreshold: number;
+  measurementType: MeasurementType;
   setStartThreshold: (threshold: number) => void;
   setEndThreshold: (threshold: number) => void;
+  setMeasurementType: (type: MeasurementType) => void;
   resetToDefaults: () => void;
   analysisData: AudioAnalysis | undefined;
   isMonitoring: boolean;
@@ -28,8 +32,10 @@ export const useRecordingSettings = (
   const {
     startThreshold,
     endThreshold,
+    measurementType,
     setStartThreshold,
     setEndThreshold,
+    setMeasurementType,
     resetToDefaults,
   } = useRecordingSettingsStore();
 
@@ -81,8 +87,10 @@ export const useRecordingSettings = (
   return {
     startThreshold,
     endThreshold,
+    measurementType,
     setStartThreshold,
     setEndThreshold,
+    setMeasurementType,
     resetToDefaults,
     analysisData,
     isMonitoring,

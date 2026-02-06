@@ -72,13 +72,6 @@ export const RecordScreen: React.FC = () => {
           title='Recording'
           leftButton={{
             onPress: handleBack,
-            icon: (
-              <Ionicons
-                name='chevron-back'
-                size={24}
-                color={theme.colors.accent}
-              />
-            ),
           }}
         />
         <View style={styles.content}>
@@ -101,13 +94,6 @@ export const RecordScreen: React.FC = () => {
         title={sequence.name}
         leftButton={{
           onPress: handleBack,
-          icon: (
-            <Ionicons
-              name='chevron-back'
-              size={24}
-              color={theme.colors.accent}
-            />
-          ),
         }}
         rightButtons={[
           {
@@ -115,7 +101,7 @@ export const RecordScreen: React.FC = () => {
             icon: (
               <Ionicons
                 name='settings-outline'
-                size={24}
+                size={32}
                 color={theme.colors.accent}
               />
             ),

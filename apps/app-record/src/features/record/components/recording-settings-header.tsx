@@ -24,16 +24,16 @@ export const RecordingSettingsHeader: React.FC<
           backgroundColor: theme.colors.background,
         },
       ]}>
-      <View style={styles.headerLeft} />
-      <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-        Recording Settings
-      </Text>
       <TouchableOpacity
         style={[styles.closeButton, { backgroundColor: theme.colors.error }]}
         onPress={onClose}
         accessibilityLabel='Close'>
         <Ionicons name='close' size={20} color={theme.colors.textInverse} />
       </TouchableOpacity>
+      <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+        Recording Settings
+      </Text>
+      <View style={styles.headerRight} />
     </View>
   );
 };
@@ -47,14 +47,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerLeft: {
-    width: 28,
-  },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
     flex: 1,
     textAlign: 'center',
+  },
+  headerRight: {
+    width: 28,
   },
   closeButton: {
     width: 28,

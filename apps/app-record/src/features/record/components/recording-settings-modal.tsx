@@ -32,8 +32,10 @@ export const RecordingSettingsModal: React.FC<RecordingSettingsModalProps> = ({
   const {
     startThreshold,
     endThreshold,
+    measurementType,
     setStartThreshold,
     setEndThreshold,
+    setMeasurementType,
     analysisData,
     isMonitoring,
     error,
@@ -75,8 +77,10 @@ export const RecordingSettingsModal: React.FC<RecordingSettingsModalProps> = ({
             isMonitoring={isMonitoring}
             startThreshold={startThreshold}
             endThreshold={endThreshold}
+            measurementType={measurementType}
             onStartThresholdChange={setStartThreshold}
             onEndThresholdChange={setEndThreshold}
+            onMeasurementTypeChange={setMeasurementType}
           />
         </ScrollView>
       </SafeAreaView>

@@ -1,17 +1,22 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { MenuView, MenuAction } from '@react-native-menu/menu';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@/shared/hooks';
 import { VUMeter } from './vu-meter';
+import { rmsToDb } from '../utils/audio-level-utils';
 import type { AudioAnalysis } from '@siteed/expo-audio-studio';
+import type { MeasurementType } from '../stores/recording-settings-store';
 
 export interface RecordingSettingsContentProps {
   analysisData: AudioAnalysis | undefined;
   isMonitoring: boolean;
   startThreshold: number;
   endThreshold: number;
+  measurementType: MeasurementType;
   onStartThresholdChange: (value: number) => void;
   onEndThresholdChange: (value: number) => void;
+  onMeasurementTypeChange: (type: MeasurementType) => void;
 }
 
 /**
@@ -26,8 +31,10 @@ export const RecordingSettingsContent: React.FC<
   isMonitoring,
   startThreshold,
   endThreshold,
+  measurementType,
   onStartThresholdChange,
   onEndThresholdChange,
+  onMeasurementTypeChange,
 }) => {
   const { theme } = useTheme();
 
@@ -36,11 +43,52 @@ export const RecordingSettingsContent: React.FC<
     analysisData?.dataPoints?.length &&
     analysisData.dataPoints[analysisData.dataPoints.length - 1]?.rms;
   const currentLevel = latestRms ?? 0;
+  const currentLevelDb = rmsToDb(currentLevel);
+
+  // Format current level based on measurement type
+  const formattedCurrentLevel =
+    measurementType === 'db'
+      ? `${currentLevelDb.toFixed(1)} dB`
+      : `${currentLevel.toFixed(3)} RMS`;
+
+  // Format thresholds based on measurement type
+  const formatThreshold = (threshold: number): string => {
+    if (measurementType === 'db') {
+      return `${rmsToDb(threshold).toFixed(1)} dB`;
+    }
+    return `${threshold.toFixed(3)} RMS`;
+  };
 
   // Determine if current level would trigger segment start/end
   const wouldStartSegment = currentLevel >= startThreshold;
   const wouldEndSegment = currentLevel <= endThreshold;
   const isSegmentActive = wouldStartSegment && !wouldEndSegment;
+
+  const actions: MenuAction[] = useMemo(() => {
+    const entries: Array<{ id: MeasurementType; title: string }> = [
+      { id: 'db', title: 'dB' },
+      { id: 'rms', title: 'RMS' },
+    ];
+    return entries.map(({ id, title }) => ({
+      id,
+      title,
+      state: measurementType === id ? 'on' : 'off',
+    }));
+  }, [measurementType]);
+
+  const onPressAction = useCallback(
+    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
+      const selected = nativeEvent.event as MeasurementType;
+      if (selected === 'db' || selected === 'rms') {
+        onMeasurementTypeChange(selected);
+      }
+    },
+    [onMeasurementTypeChange]
+  );
+
+  const getMeasurementLabel = useCallback((type: MeasurementType): string => {
+    return type === 'db' ? 'dB' : 'RMS';
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -55,7 +103,15 @@ export const RecordingSettingsContent: React.FC<
             { backgroundColor: theme.colors.surface },
           ]}>
           <View style={styles.meterWrapper}>
-            <VUMeter analysisData={analysisData} isActive={isMonitoring} />
+            <VUMeter
+              analysisData={analysisData}
+              isActive={isMonitoring}
+              startThreshold={startThreshold}
+              endThreshold={endThreshold}
+              scaleType={measurementType}
+              showThresholdValues={true}
+              thresholdValueType={measurementType}
+            />
           </View>
           {isMonitoring && (
             <View style={styles.meterStatus}>
@@ -71,7 +127,7 @@ export const RecordingSettingsContent: React.FC<
                   styles.meterLevelText,
                   { color: theme.colors.textSecondary },
                 ]}>
-                Level: {currentLevel.toFixed(3)}
+                Level: {formattedCurrentLevel}
               </Text>
             </View>
           )}
@@ -85,6 +141,36 @@ export const RecordingSettingsContent: React.FC<
             </Text>
           )}
         </View>
+      </View>
+
+      {/* Audio Levels Measurement */}
+      <View style={styles.measurementSection}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+          Audio Levels Measurement
+        </Text>
+        <MenuView onPressAction={onPressAction} actions={actions}>
+          <TouchableOpacity
+            style={[
+              styles.measurementRow,
+              { backgroundColor: theme.colors.surface },
+            ]}
+            activeOpacity={0.7}>
+            <Text
+              style={[
+                styles.measurementRowTitle,
+                { color: theme.colors.text },
+              ]}>
+              Measurement Type
+            </Text>
+            <Text
+              style={[
+                styles.measurementRowValue,
+                { color: theme.colors.textSecondary },
+              ]}>
+              {getMeasurementLabel(measurementType)}
+            </Text>
+          </TouchableOpacity>
+        </MenuView>
       </View>
 
       {/* Threshold Controls */}
@@ -110,7 +196,7 @@ export const RecordingSettingsContent: React.FC<
               ]}
             />
             <Text style={[styles.thresholdValue, { color: theme.colors.text }]}>
-              {startThreshold.toFixed(3)}
+              {formatThreshold(startThreshold)}
             </Text>
           </View>
           <Slider
@@ -150,7 +236,7 @@ export const RecordingSettingsContent: React.FC<
               ]}
             />
             <Text style={[styles.thresholdValue, { color: theme.colors.text }]}>
-              {endThreshold.toFixed(3)}
+              {formatThreshold(endThreshold)}
             </Text>
           </View>
           <Slider
@@ -219,6 +305,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
+  measurementSection: {
+    gap: 12,
+  },
+  measurementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  measurementRowTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  measurementRowValue: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
   thresholdsSection: {
     gap: 12,
   },
@@ -243,7 +348,7 @@ const styles = StyleSheet.create({
   thresholdValue: {
     fontSize: 15,
     fontWeight: '600',
-    minWidth: 50,
+    minWidth: 80,
     textAlign: 'right',
   },
   slider: {

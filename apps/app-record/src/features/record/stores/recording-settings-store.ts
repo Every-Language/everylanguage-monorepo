@@ -4,14 +4,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RECORDING_CONFIG } from '../constants/recordingConfig';
 
 // Types
+export type MeasurementType = 'db' | 'rms';
+
 export interface RecordingSettingsState {
   startThreshold: number;
   endThreshold: number;
+  measurementType: MeasurementType;
 }
 
 export interface RecordingSettingsActions {
   setStartThreshold: (threshold: number) => void;
   setEndThreshold: (threshold: number) => void;
+  setMeasurementType: (type: MeasurementType) => void;
   resetToDefaults: () => void;
 }
 
@@ -25,6 +29,7 @@ export const useRecordingSettingsStore = create<RecordingSettingsStore>()(
       // Initial state (defaults from RECORDING_CONFIG)
       startThreshold: RECORDING_CONFIG.start_segment_threshold,
       endThreshold: RECORDING_CONFIG.end_segment_threshold,
+      measurementType: 'rms' as MeasurementType,
 
       // Actions
       setStartThreshold: (threshold: number) => {
@@ -39,20 +44,26 @@ export const useRecordingSettingsStore = create<RecordingSettingsStore>()(
         set({ endThreshold: clamped });
       },
 
+      setMeasurementType: (type: MeasurementType) => {
+        set({ measurementType: type });
+      },
+
       resetToDefaults: () => {
         set({
           startThreshold: RECORDING_CONFIG.start_segment_threshold,
           endThreshold: RECORDING_CONFIG.end_segment_threshold,
+          measurementType: 'rms' as MeasurementType,
         });
       },
     }),
     {
       name: 'app-record-recording-settings-store',
       storage: createJSONStorage(() => AsyncStorage),
-      // Only persist threshold values
+      // Only persist threshold values and measurement type
       partialize: state => ({
         startThreshold: state.startThreshold,
         endThreshold: state.endThreshold,
+        measurementType: state.measurementType,
       }),
     }
   )
