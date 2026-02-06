@@ -57,7 +57,7 @@ export const TempSegmentsList: React.FC<TempSegmentsListProps> = ({
             segment={segment}
             isDisabled={isRecording}
             isActive={isActiveSegment}
-            liveDurationMs={liveDurationMs}
+            {...(liveDurationMs !== undefined && { liveDurationMs })}
           />
         );
       })}

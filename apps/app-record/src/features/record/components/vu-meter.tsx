@@ -151,7 +151,7 @@ export const VUMeter: React.FC<VUMeterProps> = ({
               style={[
                 styles.thresholdIndicator,
                 {
-                  bottom: endThresholdHeight,
+                  bottom: endThresholdHeight as `${number}%`,
                   backgroundColor: theme.colors.error,
                   borderColor: theme.colors.error,
                 },
@@ -163,7 +163,7 @@ export const VUMeter: React.FC<VUMeterProps> = ({
               style={[
                 styles.thresholdIndicator,
                 {
-                  bottom: startThresholdHeight,
+                  bottom: startThresholdHeight as `${number}%`,
                   backgroundColor: theme.colors.success,
                   borderColor: theme.colors.success,
                 },
@@ -177,7 +177,7 @@ export const VUMeter: React.FC<VUMeterProps> = ({
             style={[
               styles.thresholdMarker,
               {
-                bottom: endThresholdHeight,
+                bottom: endThresholdHeight as `${number}%`,
                 backgroundColor: theme.colors.error,
               },
             ]}
@@ -188,7 +188,7 @@ export const VUMeter: React.FC<VUMeterProps> = ({
             style={[
               styles.thresholdMarker,
               {
-                bottom: startThresholdHeight,
+                bottom: startThresholdHeight as `${number}%`,
                 backgroundColor: theme.colors.success,
               },
             ]}
@@ -203,7 +203,7 @@ export const VUMeter: React.FC<VUMeterProps> = ({
               style={[
                 styles.thresholdValueContainer,
                 {
-                  bottom: endThresholdHeight,
+                  bottom: endThresholdHeight as `${number}%`,
                 },
               ]}>
               <Text
@@ -217,7 +217,7 @@ export const VUMeter: React.FC<VUMeterProps> = ({
               style={[
                 styles.thresholdValueContainer,
                 {
-                  bottom: startThresholdHeight,
+                  bottom: startThresholdHeight as `${number}%`,
                 },
               ]}>
               <Text

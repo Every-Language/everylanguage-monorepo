@@ -1,5 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+} from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from '@/shared/hooks';
 import { useRecordingSettingsStore } from '../stores/recording-settings-store';
@@ -49,93 +55,105 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
     }))
   );
 
-  // Maintain a rolling buffer of 50 bar data (height + color)
-  const waveformBufferRef = useRef<WaveformBarData[]>(
-    Array.from({ length: 50 }, () => ({ height: 0, isSegmentActive: false }))
-  );
+  // Accumulate ALL waveform bars (full history, not rolling buffer)
+  const waveformBufferRef = useRef<WaveformBarData[]>([]);
   // Track last processed point ID to avoid reprocessing same point
+  // Using ID tracking handles both growing arrays and rolling buffers
   const lastProcessedPointIdRef = useRef<number | undefined>(undefined);
-  const lastProcessedLengthRef = useRef<number>(0);
   const analysisDataRef = useRef(analysisData);
-  const [waveformData, setWaveformData] = useState<WaveformBarData[]>(
-    Array.from({ length: 50 }, () => ({ height: 0, isSegmentActive: false }))
-  );
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [waveformData, setWaveformData] = useState<WaveformBarData[]>([]);
   // Track segment state: once start threshold is crossed, stay active until end threshold
   // Use ref so we can update it synchronously as we process each point
   // This ensures each bar captures the segment state at the time it was created
   const isSegmentActiveRef = useRef<boolean>(false);
+  // Track if we should auto-scroll (true while recording, false when user manually scrolls)
+  const shouldAutoScrollRef = useRef<boolean>(true);
+  // Track if we've started a recording session (to detect new sessions)
+  const hasStartedRecordingRef = useRef<boolean>(false);
 
   // Update ref when analysisData changes
   useEffect(() => {
     analysisDataRef.current = analysisData;
   }, [analysisData]);
 
+  // Detect when a new recording session starts
   useEffect(() => {
-    if (!isRecording || !analysisData?.dataPoints || isPaused) {
-      // Reset when not recording or paused
-      if (!isRecording) {
-        waveformBufferRef.current = Array.from({ length: 50 }, () => ({
-          height: 0,
-          isSegmentActive: false,
-        }));
+    if (isRecording && !hasStartedRecordingRef.current) {
+      // Recording just started - check if this is a new session or resuming
+      // If analysisData exists and has points, check if they're newer than what we've processed
+      const isNewSession =
+        waveformData.length === 0 || // No existing data
+        !analysisData?.dataPoints || // No analysis data yet
+        analysisData.dataPoints.length === 0 || // Empty analysis data
+        (lastProcessedPointIdRef.current !== undefined &&
+          analysisData.dataPoints.length > 0 &&
+          analysisData.dataPoints[0]?.id !== undefined &&
+          analysisData.dataPoints[0].id <= lastProcessedPointIdRef.current); // Points reset (rolling buffer or new session)
+
+      if (isNewSession) {
+        // New recording session - reset everything
+        waveformBufferRef.current = [];
         lastProcessedPointIdRef.current = undefined;
-        lastProcessedLengthRef.current = 0;
         isSegmentActiveRef.current = false;
-        setWaveformData(
-          Array.from({ length: 50 }, () => ({
-            height: 0,
-            isSegmentActive: false,
-          }))
-        );
+        setWaveformData([]);
+        shouldAutoScrollRef.current = true;
       }
-      // When paused, keep current buffer but don't process new data
+      hasStartedRecordingRef.current = true;
+    } else if (!isRecording && hasStartedRecordingRef.current) {
+      // Recording stopped - preserve waveform data for scrolling
+      // Just reset the flag so we can detect the next new session
+      hasStartedRecordingRef.current = false;
+    }
+  }, [isRecording, analysisData, waveformData.length]);
+
+  useEffect(() => {
+    // When paused, keep current buffer but don't process new data
+    if (isPaused || !analysisData?.dataPoints) {
       return;
     }
 
-    const dataPoints = analysisData.dataPoints;
-    const currentLength = dataPoints.length;
-    const lengthChanged = lastProcessedLengthRef.current !== currentLength;
+    // Enable auto-scroll when recording starts
+    if (isRecording) {
+      shouldAutoScrollRef.current = true;
+    }
 
-    // Get the latest data point
-    const latestPointIndex =
-      lengthChanged && currentLength > lastProcessedLengthRef.current
-        ? currentLength - 1
-        : Math.max(0, currentLength - 1);
-
-    const latestPoint = dataPoints[latestPointIndex];
-    if (!latestPoint) {
+    // Access analysisData from ref to get latest data
+    const currentAnalysisData = analysisDataRef.current;
+    if (!currentAnalysisData?.dataPoints) {
       return;
     }
 
-    // Check if this is actually a new point by comparing point ID
-    const currentPointId = latestPoint.id;
     const lastProcessedPointId = lastProcessedPointIdRef.current;
 
-    // Skip if we've already processed this point
-    if (
-      lastProcessedPointId !== undefined &&
-      currentPointId === lastProcessedPointId &&
-      !lengthChanged
-    ) {
+    // Find all unprocessed points (points with ID > lastProcessedPointId)
+    // This handles both growing arrays and rolling buffers (same approach as useRecordingSegments)
+    const unprocessedPoints: Array<{
+      point: (typeof currentAnalysisData.dataPoints)[0];
+      index: number;
+    }> = [];
+
+    for (let i = 0; i < currentAnalysisData.dataPoints.length; i++) {
+      const point = currentAnalysisData.dataPoints[i];
+      if (!point) continue;
+
+      // If we haven't processed any points yet, or this point is newer
+      if (
+        lastProcessedPointId === undefined ||
+        point.id > lastProcessedPointId
+      ) {
+        unprocessedPoints.push({ point, index: i });
+      }
+    }
+
+    // If no new points, skip processing
+    if (unprocessedPoints.length === 0) {
       return;
     }
 
-    // Determine which points to process
-    let startIndex = 0;
-    if (lengthChanged && currentLength > lastProcessedLengthRef.current) {
-      // Array grew: process only new points
-      startIndex = lastProcessedLengthRef.current;
-    } else {
-      // Rolling buffer: process latest point only
-      startIndex = latestPointIndex;
-    }
-
-    // Process data points
+    // Process all unprocessed data points
     const newBarData: WaveformBarData[] = [];
-    for (let i = startIndex; i < currentLength; i++) {
-      const point = dataPoints[i];
-      if (!point) continue;
-
+    for (const { point } of unprocessedPoints) {
       // Convert RMS to dB (same scale as VUMeter)
       const rmsValue = point.rms ?? 0;
       const audioLevelDb = getAudioLevelDb(rmsValue);
@@ -165,50 +183,85 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
       });
     }
 
-    // Only update if we have new data
-    if (newBarData.length === 0) {
-      // Still update tracking refs even if no new data
-      lastProcessedPointIdRef.current = currentPointId;
-      lastProcessedLengthRef.current = currentLength;
-      return;
-    }
-
-    // Update rolling buffer: shift left and add new values to the right
-    const buffer = [...waveformBufferRef.current];
-    buffer.splice(0, newBarData.length); // Remove from left
-    buffer.push(...newBarData); // Add to right
+    // Accumulate new bars (append to existing buffer, don't remove old ones)
+    const buffer = [...waveformBufferRef.current, ...newBarData];
     waveformBufferRef.current = buffer;
 
     // Update state to trigger re-render
     setWaveformData([...buffer]);
 
-    // Update tracking refs
-    lastProcessedPointIdRef.current = currentPointId;
-    lastProcessedLengthRef.current = currentLength;
+    // Update tracking ref - use the highest ID from processed points
+    const highestId = Math.max(
+      ...unprocessedPoints.map(({ point }) => point.id)
+    );
+    lastProcessedPointIdRef.current = highestId;
   }, [analysisData, isRecording, isPaused, startThreshold, endThreshold]);
 
   const isActive = isRecording && !isPaused;
   const waveformBarOpacity = isActive ? 1 : 0.3;
 
+  // When recording becomes active, jump to end and enable auto-scroll
+  useEffect(() => {
+    if (isActive && waveformData.length > 0) {
+      // Force scroll to end when recording becomes active
+      shouldAutoScrollRef.current = true;
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 50);
+    }
+  }, [isActive, waveformData.length]);
+
+  // Auto-scroll to end while recording (when new bars are added)
+  useEffect(() => {
+    if (isActive && shouldAutoScrollRef.current && waveformData.length > 0) {
+      // Use setTimeout to ensure the ScrollView has rendered the new content
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 50);
+    }
+  }, [waveformData.length, isActive]);
+
+  // Handle scroll events (only relevant when scrolling is enabled, i.e., when paused/stopped)
+  const handleScroll = (
+    _event: NativeSyntheticEvent<NativeScrollEvent>
+  ): void => {
+    // Only track scroll position when not actively recording
+    // This helps maintain scroll position when paused
+    if (!isActive) {
+      // User can scroll freely when paused or stopped
+      // No need to track or disable auto-scroll since it's already disabled
+    }
+  };
+
   return (
     <View style={styles.waveform}>
-      <View style={styles.waveformBars}>
-        {waveformData.map((barData, index) => (
-          <View
-            key={index}
-            style={[
-              styles.waveformBar,
-              {
-                backgroundColor: barData.isSegmentActive
-                  ? theme.colors.success
-                  : theme.colors.error,
-                opacity: waveformBarOpacity,
-                height: `${barData.height}%` as `${number}%`,
-              },
-            ]}
-          />
-        ))}
-      </View>
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        showsHorizontalScrollIndicator={true}
+        scrollEnabled={!isActive} // Disable scrolling while recording is active
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}>
+        <View style={styles.waveformBars}>
+          {waveformData.map((barData, index) => (
+            <View
+              key={index}
+              style={[
+                styles.waveformBar,
+                {
+                  backgroundColor: barData.isSegmentActive
+                    ? theme.colors.success
+                    : theme.colors.error,
+                  opacity: waveformBarOpacity,
+                  height: `${barData.height}%` as `${number}%`,
+                },
+              ]}
+            />
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -219,17 +272,23 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'flex-end', // Align to bottom to match VUMeter
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   waveformBars: {
     flexDirection: 'row',
     alignItems: 'flex-end', // Bars grow upward from bottom
-    justifyContent: 'space-between',
     height: '100%',
     paddingHorizontal: 4,
     paddingBottom: 0, // Align x-axis with bottom of VUMeter
     paddingTop: 8,
+    minWidth: '100%', // Ensure content is at least full width
   },
   waveformBar: {
-    flex: 1,
+    width: 3, // Fixed width for each bar (adjust as needed)
     marginHorizontal: 1,
     minHeight: 0, // Remove minHeight so bars can be truly zero
     borderRadius: 1,
