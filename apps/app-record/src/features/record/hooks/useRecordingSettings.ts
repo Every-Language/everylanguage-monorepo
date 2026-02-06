@@ -8,9 +8,11 @@ import type { MeasurementType } from '../stores/recording-settings-store';
 export interface UseRecordingSettingsReturn {
   startThreshold: number;
   endThreshold: number;
+  endThresholdSustainMs: number;
   measurementType: MeasurementType;
   setStartThreshold: (threshold: number) => void;
   setEndThreshold: (threshold: number) => void;
+  setEndThresholdSustainMs: (sustainMs: number) => void;
   setMeasurementType: (type: MeasurementType) => void;
   resetToDefaults: () => void;
   analysisData: AudioAnalysis | undefined;
@@ -32,9 +34,11 @@ export const useRecordingSettings = (
   const {
     startThreshold,
     endThreshold,
+    endThresholdSustainMs,
     measurementType,
     setStartThreshold,
     setEndThreshold,
+    setEndThresholdSustainMs,
     setMeasurementType,
     resetToDefaults,
   } = useRecordingSettingsStore();
@@ -87,9 +91,11 @@ export const useRecordingSettings = (
   return {
     startThreshold,
     endThreshold,
+    endThresholdSustainMs,
     measurementType,
     setStartThreshold,
     setEndThreshold,
+    setEndThresholdSustainMs,
     setMeasurementType,
     resetToDefaults,
     analysisData,

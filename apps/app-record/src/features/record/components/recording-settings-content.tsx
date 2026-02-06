@@ -13,9 +13,11 @@ export interface RecordingSettingsContentProps {
   isMonitoring: boolean;
   startThreshold: number;
   endThreshold: number;
+  endThresholdSustainMs: number;
   measurementType: MeasurementType;
   onStartThresholdChange: (value: number) => void;
   onEndThresholdChange: (value: number) => void;
+  onEndThresholdSustainMsChange: (value: number) => void;
   onMeasurementTypeChange: (type: MeasurementType) => void;
 }
 
@@ -31,9 +33,11 @@ export const RecordingSettingsContent: React.FC<
   isMonitoring,
   startThreshold,
   endThreshold,
+  endThresholdSustainMs,
   measurementType,
   onStartThresholdChange,
   onEndThresholdChange,
+  onEndThresholdSustainMsChange,
   onMeasurementTypeChange,
 }) => {
   const { theme } = useTheme();
@@ -256,6 +260,37 @@ export const RecordingSettingsContent: React.FC<
               { color: theme.colors.textSecondary },
             ]}>
             Audio level must drop below this to end a segment
+          </Text>
+        </View>
+
+        {/* End Threshold Sustain */}
+        <View style={styles.thresholdControl}>
+          <View style={styles.thresholdHeader}>
+            <Text style={[styles.thresholdLabel, { color: theme.colors.text }]}>
+              End Threshold Sustain
+            </Text>
+            <Text style={[styles.thresholdValue, { color: theme.colors.text }]}>
+              {endThresholdSustainMs}ms
+            </Text>
+          </View>
+          <Slider
+            style={styles.slider}
+            minimumValue={50}
+            maximumValue={500}
+            step={50}
+            value={endThresholdSustainMs}
+            onValueChange={onEndThresholdSustainMsChange}
+            minimumTrackTintColor={theme.colors.accent}
+            maximumTrackTintColor={theme.colors.border}
+            thumbTintColor={theme.colors.accent}
+          />
+          <Text
+            style={[
+              styles.thresholdHint,
+              { color: theme.colors.textSecondary },
+            ]}>
+            Duration audio must stay below end threshold before segment ends (
+            {Math.ceil(endThresholdSustainMs / 50)} data points)
           </Text>
         </View>
       </View>

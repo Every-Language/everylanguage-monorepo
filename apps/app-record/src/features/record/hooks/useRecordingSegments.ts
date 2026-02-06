@@ -33,12 +33,14 @@ export const useRecordingSegments = (
   const [nextSegmentIndex, setNextSegmentIndex] = useState(1);
 
   // Get threshold values from store
-  const { startThreshold, endThreshold } = useRecordingSettingsStore(
-    useShallow(state => ({
-      startThreshold: state.startThreshold,
-      endThreshold: state.endThreshold,
-    }))
-  );
+  const { startThreshold, endThreshold, endThresholdSustainMs } =
+    useRecordingSettingsStore(
+      useShallow(state => ({
+        startThreshold: state.startThreshold,
+        endThreshold: state.endThreshold,
+        endThresholdSustainMs: state.endThresholdSustainMs,
+      }))
+    );
 
   // Track current segment state
   const currentSegmentRef = useRef<CurrentSegmentState | null>(null);
@@ -46,6 +48,8 @@ export const useRecordingSegments = (
   // When reference changes, check if point ID changed before processing
   const lastProcessedPointIdRef = useRef<number | undefined>(undefined);
   const lastProcessedLengthRef = useRef<number>(0);
+  // Track consecutive data points below end threshold for sustain logic
+  const pendingEndCountRef = useRef<number>(0);
   // Store current analysisData in ref to avoid dependency issues
   const analysisDataRef = useRef(analysisData);
   // Store segments in ref to access in callbacks
@@ -68,6 +72,7 @@ export const useRecordingSegments = (
     currentSegmentRef.current = null;
     lastProcessedPointIdRef.current = undefined;
     lastProcessedLengthRef.current = 0;
+    pendingEndCountRef.current = 0;
   }, []);
 
   // Threshold detection for automatic segment creation
@@ -84,80 +89,105 @@ export const useRecordingSegments = (
       return;
     }
 
-    const lengthChanged = lastProcessedLengthRef.current !== dataPointsLength;
-
-    // Get the latest data point
-    // If length increased, use the newest point
-    // Otherwise, use the latest point (rolling buffer case)
-    const latestPointIndex =
-      lengthChanged && dataPointsLength > lastProcessedLengthRef.current
-        ? dataPointsLength - 1
-        : Math.max(0, dataPointsLength - 1);
-
-    const latestPoint = currentAnalysisData.dataPoints[latestPointIndex];
-    if (!latestPoint) {
-      return;
-    }
-
-    // Check if this is actually a new point by comparing point ID
-    const currentPointId = latestPoint.id;
     const lastProcessedPointId = lastProcessedPointIdRef.current;
 
-    // Skip if we've already processed this point
-    if (
-      lastProcessedPointId !== undefined &&
-      currentPointId === lastProcessedPointId &&
-      !lengthChanged
-    ) {
+    // Find all unprocessed points (points with ID > lastProcessedPointId)
+    // This handles both growing arrays and rolling buffers
+    const unprocessedPoints: Array<{
+      point: (typeof currentAnalysisData.dataPoints)[0];
+      index: number;
+    }> = [];
+
+    for (let i = 0; i < currentAnalysisData.dataPoints.length; i++) {
+      const point = currentAnalysisData.dataPoints[i];
+      if (!point) continue;
+
+      // If we haven't processed any points yet, or this point is newer
+      if (
+        lastProcessedPointId === undefined ||
+        point.id > lastProcessedPointId
+      ) {
+        unprocessedPoints.push({ point, index: i });
+      }
+    }
+
+    // If no new points, skip processing
+    if (unprocessedPoints.length === 0) {
       return;
     }
 
-    // Update tracking refs
-    lastProcessedPointIdRef.current = currentPointId;
-    lastProcessedLengthRef.current = dataPointsLength;
-    const currentLevel = latestPoint.rms ?? 0;
+    // Calculate how many data points we need to sustain below threshold
+    // Each data point is ~50ms (intervalAnalysis), so divide sustainMs by 50
+    const requiredDataPoints = Math.ceil(endThresholdSustainMs / 50);
 
-    // Check if we should start a new segment
-    if (
-      !currentSegmentRef.current?.isActive &&
-      currentLevel >= startThreshold
-    ) {
-      // Start new segment
-      const segmentId = generateSegmentId();
-      currentSegmentRef.current = {
-        id: segmentId,
-        startTimeMs: durationMs,
-        startAudioLevel: currentLevel,
-        isActive: true,
-      };
-    }
+    // Process each unprocessed point sequentially
+    // This ensures we don't miss any below-threshold points
+    for (const { point } of unprocessedPoints) {
+      const currentPointId = point.id;
+      const currentLevel = point.rms ?? 0;
 
-    // Check if we should end current segment
-    if (currentSegmentRef.current?.isActive && currentLevel <= endThreshold) {
-      // End segment and create temp segment
-      const segment = currentSegmentRef.current;
-      const segmentStartTimeMs = segment.startTimeMs;
-      const segmentEndTimeMs = durationMs;
-      const segmentDurationSeconds =
-        (segmentEndTimeMs - segmentStartTimeMs) / 1000;
+      // Update tracking refs for this point
+      lastProcessedPointIdRef.current = currentPointId;
+      lastProcessedLengthRef.current = dataPointsLength;
 
-      if (segmentDurationSeconds > 0.1) {
-        // Only create segment if it's longer than 100ms
-        const newSegment = RecordingSegmentService.createTempSegment(
-          segment.id,
-          segmentStartTimeMs,
-          segmentEndTimeMs,
-          currentLevel,
-          sequenceId,
-          projectId,
-          nextSegmentIndex
-        );
-
-        setTempSegments(prev => [...prev, newSegment]);
-        setNextSegmentIndex(prev => prev + 1);
+      // Check if we should start a new segment
+      if (
+        !currentSegmentRef.current?.isActive &&
+        currentLevel >= startThreshold
+      ) {
+        // Start new segment
+        const segmentId = generateSegmentId();
+        currentSegmentRef.current = {
+          id: segmentId,
+          startTimeMs: durationMs,
+          startAudioLevel: currentLevel,
+          isActive: true,
+        };
+        // Reset pending end count when starting a new segment
+        pendingEndCountRef.current = 0;
       }
 
-      currentSegmentRef.current = null;
+      // Check if we should end current segment (with sustain logic)
+      if (currentSegmentRef.current?.isActive) {
+        if (currentLevel <= endThreshold) {
+          // Increment counter for consecutive below-threshold points
+          pendingEndCountRef.current += 1;
+
+          // Only end if we've been below threshold for the required duration
+          if (pendingEndCountRef.current >= requiredDataPoints) {
+            // End segment and create temp segment
+            const segment = currentSegmentRef.current;
+            const segmentStartTimeMs = segment.startTimeMs;
+            const segmentEndTimeMs = durationMs;
+            const segmentDurationSeconds =
+              (segmentEndTimeMs - segmentStartTimeMs) / 1000;
+
+            if (segmentDurationSeconds > 0.1) {
+              // Only create segment if it's longer than 100ms
+              const newSegment = RecordingSegmentService.createTempSegment(
+                segment.id,
+                segmentStartTimeMs,
+                segmentEndTimeMs,
+                currentLevel,
+                sequenceId,
+                projectId,
+                nextSegmentIndex
+              );
+
+              setTempSegments(prev => [...prev, newSegment]);
+              setNextSegmentIndex(prev => prev + 1);
+            }
+
+            currentSegmentRef.current = null;
+            pendingEndCountRef.current = 0;
+            // Break out of loop since segment ended
+            break;
+          }
+        } else {
+          // Audio level went back above threshold, reset pending end count
+          pendingEndCountRef.current = 0;
+        }
+      }
     }
   }, [
     dataPointsLength,
@@ -169,6 +199,7 @@ export const useRecordingSegments = (
     nextSegmentIndex,
     startThreshold,
     endThreshold,
+    endThresholdSustainMs,
   ]);
 
   // Finalize active segment if recording stops

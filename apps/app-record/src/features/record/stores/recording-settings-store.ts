@@ -9,12 +9,14 @@ export type MeasurementType = 'db' | 'rms';
 export interface RecordingSettingsState {
   startThreshold: number;
   endThreshold: number;
+  endThresholdSustainMs: number;
   measurementType: MeasurementType;
 }
 
 export interface RecordingSettingsActions {
   setStartThreshold: (threshold: number) => void;
   setEndThreshold: (threshold: number) => void;
+  setEndThresholdSustainMs: (sustainMs: number) => void;
   setMeasurementType: (type: MeasurementType) => void;
   resetToDefaults: () => void;
 }
@@ -29,6 +31,7 @@ export const useRecordingSettingsStore = create<RecordingSettingsStore>()(
       // Initial state (defaults from RECORDING_CONFIG)
       startThreshold: RECORDING_CONFIG.start_segment_threshold,
       endThreshold: RECORDING_CONFIG.end_segment_threshold,
+      endThresholdSustainMs: RECORDING_CONFIG.end_threshold_sustain_ms,
       measurementType: 'rms' as MeasurementType,
 
       // Actions
@@ -44,6 +47,12 @@ export const useRecordingSettingsStore = create<RecordingSettingsStore>()(
         set({ endThreshold: clamped });
       },
 
+      setEndThresholdSustainMs: (sustainMs: number) => {
+        // Clamp to valid range (50 to 500ms)
+        const clamped = Math.max(50, Math.min(500, sustainMs));
+        set({ endThresholdSustainMs: clamped });
+      },
+
       setMeasurementType: (type: MeasurementType) => {
         set({ measurementType: type });
       },
@@ -52,6 +61,7 @@ export const useRecordingSettingsStore = create<RecordingSettingsStore>()(
         set({
           startThreshold: RECORDING_CONFIG.start_segment_threshold,
           endThreshold: RECORDING_CONFIG.end_segment_threshold,
+          endThresholdSustainMs: RECORDING_CONFIG.end_threshold_sustain_ms,
           measurementType: 'rms' as MeasurementType,
         });
       },
@@ -59,10 +69,11 @@ export const useRecordingSettingsStore = create<RecordingSettingsStore>()(
     {
       name: 'app-record-recording-settings-store',
       storage: createJSONStorage(() => AsyncStorage),
-      // Only persist threshold values and measurement type
+      // Only persist threshold values, sustain time, and measurement type
       partialize: state => ({
         startThreshold: state.startThreshold,
         endThreshold: state.endThreshold,
+        endThresholdSustainMs: state.endThresholdSustainMs,
         measurementType: state.measurementType,
       }),
     }
