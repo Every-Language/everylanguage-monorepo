@@ -196,8 +196,8 @@ export class RecordingSegmentService {
     let segIdx = 1;
 
     for (const point of postAnalysis.dataPoints) {
-      // Use absolute amplitude (peak) for threshold comparison
-      const level = Math.abs(point.amplitude ?? 0);
+      // Use RMS for threshold comparison (standardized with real-time detection)
+      const level = point.rms ?? 0;
       // startTime/endTime from extractAudioAnalysis are in seconds; convert to ms
       const pointStartMs =
         point.startTime != null

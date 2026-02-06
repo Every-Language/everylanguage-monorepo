@@ -41,6 +41,8 @@ export const RecordModal: React.FC<RecordModalProps> = ({
     isRecording,
     isPaused,
     analysisData,
+    hasActiveSegment,
+    activeSegmentId,
     handleStartRecording,
     handleStopRecording,
     handlePauseRecording,
@@ -150,36 +152,40 @@ export const RecordModal: React.FC<RecordModalProps> = ({
         ]}>
         <RecordModalHeader onClose={onClose} />
 
-        {/* Content */}
+        {/* Recording Meter - Fixed at top */}
+        <View style={styles.meterContainer}>
+          <View
+            style={[
+              styles.waveformWrapper,
+              { backgroundColor: theme.colors.surface },
+            ]}>
+            <WaveformDisplay
+              analysisData={analysisData}
+              isRecording={isRecording}
+              isPaused={isPaused}
+            />
+            <VUMeter
+              analysisData={analysisData}
+              isRecording={isRecording}
+              isPaused={isPaused}
+              startThreshold={startThreshold}
+              endThreshold={endThreshold}
+              scaleType={measurementType}
+              showThresholdValues={false}
+            />
+          </View>
+        </View>
+
+        {/* Segments List - Scrollable */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}>
-          {/* Waveform - Always visible */}
-          <View style={styles.waveformContainer}>
-            <View
-              style={[
-                styles.waveformWrapper,
-                { backgroundColor: theme.colors.surface },
-              ]}>
-              <WaveformDisplay
-                analysisData={analysisData}
-                isRecording={isRecording}
-                isPaused={isPaused}
-              />
-              <VUMeter
-                analysisData={analysisData}
-                isRecording={isRecording}
-                isPaused={isPaused}
-                startThreshold={startThreshold}
-                endThreshold={endThreshold}
-                scaleType={measurementType}
-                showThresholdValues={false}
-              />
-            </View>
-          </View>
-
-          {/* Segments List */}
-          <TempSegmentsList segments={tempSegments} />
+          <TempSegmentsList
+            segments={tempSegments}
+            isRecording={isRecording}
+            hasActiveSegment={hasActiveSegment}
+            activeSegmentId={activeSegmentId}
+          />
         </ScrollView>
 
         {/* Footer Controls */}
@@ -200,14 +206,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  meterContainer: {
+    padding: 16,
+    paddingBottom: 0,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: 16,
-  },
-  waveformContainer: {
-    marginBottom: 24,
+    paddingTop: 16,
   },
   waveformWrapper: {
     flexDirection: 'row',

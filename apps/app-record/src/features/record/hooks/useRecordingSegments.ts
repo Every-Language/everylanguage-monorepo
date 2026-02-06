@@ -42,8 +42,10 @@ export const useRecordingSegments = (
 
   // Track current segment state
   const currentSegmentRef = useRef<CurrentSegmentState | null>(null);
-  // Track last processed data point index to avoid reprocessing
-  const lastProcessedIndexRef = useRef<number>(0);
+  // Track last processed point ID to avoid reprocessing same point
+  // When reference changes, check if point ID changed before processing
+  const lastProcessedPointIdRef = useRef<number | undefined>(undefined);
+  const lastProcessedLengthRef = useRef<number>(0);
   // Store current analysisData in ref to avoid dependency issues
   const analysisDataRef = useRef(analysisData);
   // Store segments in ref to access in callbacks
@@ -64,7 +66,8 @@ export const useRecordingSegments = (
     setTempSegments([]);
     setNextSegmentIndex(1);
     currentSegmentRef.current = null;
-    lastProcessedIndexRef.current = 0;
+    lastProcessedPointIdRef.current = undefined;
+    lastProcessedLengthRef.current = 0;
   }, []);
 
   // Threshold detection for automatic segment creation
@@ -75,22 +78,43 @@ export const useRecordingSegments = (
       return;
     }
 
-    // Only process if we have new data points
-    if (dataPointsLength <= lastProcessedIndexRef.current) {
-      return;
-    }
-
     // Access analysisData from ref to avoid dependency
     const currentAnalysisData = analysisDataRef.current;
     if (!currentAnalysisData?.dataPoints) {
       return;
     }
 
-    // Get latest RMS value from the most recent data point
-    const latestPoint = currentAnalysisData.dataPoints[dataPointsLength - 1];
-    if (!latestPoint) return;
+    const lengthChanged = lastProcessedLengthRef.current !== dataPointsLength;
 
-    lastProcessedIndexRef.current = dataPointsLength;
+    // Get the latest data point
+    // If length increased, use the newest point
+    // Otherwise, use the latest point (rolling buffer case)
+    const latestPointIndex =
+      lengthChanged && dataPointsLength > lastProcessedLengthRef.current
+        ? dataPointsLength - 1
+        : Math.max(0, dataPointsLength - 1);
+
+    const latestPoint = currentAnalysisData.dataPoints[latestPointIndex];
+    if (!latestPoint) {
+      return;
+    }
+
+    // Check if this is actually a new point by comparing point ID
+    const currentPointId = latestPoint.id;
+    const lastProcessedPointId = lastProcessedPointIdRef.current;
+
+    // Skip if we've already processed this point
+    if (
+      lastProcessedPointId !== undefined &&
+      currentPointId === lastProcessedPointId &&
+      !lengthChanged
+    ) {
+      return;
+    }
+
+    // Update tracking refs
+    lastProcessedPointIdRef.current = currentPointId;
+    lastProcessedLengthRef.current = dataPointsLength;
     const currentLevel = latestPoint.rms ?? 0;
 
     // Check if we should start a new segment

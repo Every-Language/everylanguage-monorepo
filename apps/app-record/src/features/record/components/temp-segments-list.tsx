@@ -6,6 +6,9 @@ import { SegmentAudioPlayer } from './segment-audio-player';
 
 export interface TempSegmentsListProps {
   segments: TempSegment[];
+  isRecording?: boolean;
+  hasActiveSegment?: boolean;
+  activeSegmentId?: string | null;
 }
 
 /**
@@ -15,18 +18,57 @@ export interface TempSegmentsListProps {
  */
 export const TempSegmentsList: React.FC<TempSegmentsListProps> = ({
   segments,
+  isRecording = false,
+  hasActiveSegment = false,
+  activeSegmentId = null,
 }) => {
   const { theme } = useTheme();
+
+  // Check if active segment is already in the segments list
+  const activeSegmentInList = activeSegmentId
+    ? segments.some(s => s.id === activeSegmentId)
+    : false;
+
+  // Only show shadow segment if there's an active segment that's not yet in the list
+  const shouldShowShadow =
+    hasActiveSegment && activeSegmentId && !activeSegmentInList;
 
   return (
     <View style={styles.segmentsContainer}>
       <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-        Segments ({segments.length})
+        Segments ({segments.length + (shouldShowShadow ? 1 : 0)})
       </Text>
       {segments.map(segment => (
-        <SegmentAudioPlayer key={segment.id} segment={segment} />
+        <SegmentAudioPlayer
+          key={segment.id}
+          segment={segment}
+          isDisabled={isRecording}
+          isActive={hasActiveSegment && segment.id === activeSegmentId}
+        />
       ))}
-      {segments.length === 0 && (
+      {shouldShowShadow && (
+        <SegmentAudioPlayer
+          segment={{
+            id: activeSegmentId!,
+            sequence_id: '',
+            project_id: null,
+            segment_index: segments.length + 1,
+            start_time_ms: 0,
+            end_time_ms: 0,
+            duration_seconds: 0,
+            recording_status: 'recording',
+            local_file_path: '',
+            is_hidden: false,
+            audio_level: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }}
+          isDisabled={true}
+          isActive={true}
+          isShadow={true}
+        />
+      )}
+      {segments.length === 0 && !hasActiveSegment && (
         <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
           No segments yet. Start recording to generate segments.
         </Text>

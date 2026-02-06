@@ -31,10 +31,16 @@ const formatDuration = (seconds: number): string => {
  */
 export interface SegmentAudioPlayerProps {
   segment: Segment | TempSegment;
+  isDisabled?: boolean;
+  isActive?: boolean;
+  isShadow?: boolean;
 }
 
 export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
   segment,
+  isDisabled = false,
+  isActive = false,
+  isShadow = false,
 }) => {
   const { theme } = useTheme();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -89,6 +95,9 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
   }, []);
 
   const handlePlayPause = async (): Promise<void> => {
+    if (isDisabled) {
+      return;
+    }
     try {
       if (soundRef.current) {
         // If sound is already loaded, toggle play/pause
@@ -202,6 +211,9 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
   };
 
   const handleSeek = async (value: number): Promise<void> => {
+    if (isDisabled) {
+      return;
+    }
     try {
       if (soundRef.current) {
         const status = await soundRef.current.getStatusAsync();
@@ -225,25 +237,42 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
       : 0;
   const displayDuration = duration > 0 ? duration : fallbackDuration;
 
+  // Calculate background color with green tint if active
+  const getBackgroundColor = (): string => {
+    if (isActive || isShadow) {
+      // Apply green tint to surface color
+      const baseColor = theme.colors.surface;
+      // Simple green tint: blend with success color
+      return baseColor; // We'll use opacity/border instead for better visibility
+    }
+    return theme.colors.surface;
+  };
+
   return (
     <View
       style={[
         styles.audioPlayerContainer,
         {
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
+          backgroundColor: getBackgroundColor(),
+          borderColor:
+            isActive || isShadow ? theme.colors.success : theme.colors.border,
+          borderWidth: isActive || isShadow ? 2 : 1,
+          opacity: isDisabled ? 0.6 : 1,
         },
       ]}>
       <TouchableOpacity
         style={[
           styles.playButton,
           {
-            backgroundColor: theme.colors.accent,
+            backgroundColor: isDisabled
+              ? theme.colors.border
+              : theme.colors.accent,
             borderColor: theme.colors.border,
+            opacity: isDisabled ? 0.5 : 1,
           },
         ]}
         onPress={handlePlayPause}
-        disabled={isLoading || !!error}
+        disabled={isLoading || !!error || isDisabled}
         accessibilityLabel={isPlaying ? 'Pause audio' : 'Play audio'}
         accessibilityRole='button'>
         {isLoading ? (
@@ -266,7 +295,7 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
           minimumTrackTintColor={theme.colors.accent}
           maximumTrackTintColor={theme.colors.border}
           thumbTintColor={theme.colors.accent}
-          disabled={isLoading || !!error || !soundRef.current}
+          disabled={isLoading || !!error || !soundRef.current || isDisabled}
         />
       </View>
       <Text

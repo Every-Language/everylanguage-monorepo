@@ -211,6 +211,10 @@ export const useRecording = (
     }
   }, [isPaused, pauseRecording, resumeRecording]);
 
+  // Check if there's an active segment being generated
+  const hasActiveSegment = currentSegmentRef.current?.isActive ?? false;
+  const activeSegmentId = currentSegmentRef.current?.id ?? null;
+
   return {
     // State
     tempSegments,
@@ -219,6 +223,8 @@ export const useRecording = (
     durationMs,
     analysisData,
     segmentsExtracted,
+    hasActiveSegment,
+    activeSegmentId,
     // Handlers
     handleStartRecording,
     handleStopRecording,
