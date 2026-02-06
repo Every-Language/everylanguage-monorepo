@@ -5,8 +5,9 @@ import type { AudioAnalysis } from '@siteed/expo-audio-studio';
 
 export interface VUMeterProps {
   analysisData: AudioAnalysis | undefined;
-  isRecording: boolean;
-  isPaused: boolean;
+  isRecording?: boolean;
+  isPaused?: boolean;
+  isActive?: boolean; // For monitoring mode (overrides isRecording && !isPaused)
 }
 
 /**
@@ -29,8 +30,9 @@ const getAudioLevelDb = (level: number): number => {
  */
 export const VUMeter: React.FC<VUMeterProps> = ({
   analysisData,
-  isRecording,
-  isPaused,
+  isRecording = false,
+  isPaused = false,
+  isActive,
 }) => {
   const { theme } = useTheme();
 
@@ -44,7 +46,11 @@ export const VUMeter: React.FC<VUMeterProps> = ({
 
   const vuMeterFillHeight =
     `${Math.max(0, Math.min(100, ((audioLevelDb + 34) / 34) * 100))}%` as const;
-  const isHighLevel = audioLevelDb > -12;
+
+  // Use isActive if provided, otherwise fall back to isRecording && !isPaused
+  const shouldShowFill =
+    (isActive !== undefined ? isActive : isRecording && !isPaused) &&
+    audioLevel > 0;
 
   return (
     <View style={styles.vuMeter}>
@@ -68,15 +74,13 @@ export const VUMeter: React.FC<VUMeterProps> = ({
       </View>
       <View
         style={[styles.vuMeterBar, { backgroundColor: theme.colors.border }]}>
-        {isRecording && !isPaused && audioLevel > 0 && (
+        {shouldShowFill && (
           <View
             style={[
               styles.vuMeterFill,
               {
                 height: vuMeterFillHeight as `${number}%`,
-                backgroundColor: isHighLevel
-                  ? theme.colors.error
-                  : theme.colors.success,
+                backgroundColor: theme.colors.success, // Always green - threshold indicators show status
               },
             ]}
           />

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   useAudioRecorder,
   trimAudio,
@@ -8,6 +9,7 @@ import {
 import * as FileSystem from 'expo-file-system';
 import { FilePathService } from '../services/FilePathService';
 import { RECORDING_CONFIG } from '../constants/recordingConfig';
+import { useRecordingSettingsStore } from '../stores/recording-settings-store';
 import type { TempSegment } from '../types';
 
 /**
@@ -36,6 +38,14 @@ export const useRecording = (
 ) => {
   const [tempSegments, setTempSegments] = useState<TempSegment[]>([]);
   const [nextSegmentIndex, setNextSegmentIndex] = useState(1);
+
+  // Get threshold values from store
+  const { startThreshold, endThreshold } = useRecordingSettingsStore(
+    useShallow(state => ({
+      startThreshold: state.startThreshold,
+      endThreshold: state.endThreshold,
+    }))
+  );
 
   // Audio recorder hook
   const {
@@ -272,8 +282,6 @@ export const useRecording = (
 
     lastProcessedIndexRef.current = dataPointsLength;
     const currentLevel = latestPoint.rms ?? 0;
-    const startThreshold = RECORDING_CONFIG.start_segment_threshold;
-    const endThreshold = RECORDING_CONFIG.end_segment_threshold;
 
     // Check if we should start a new segment
     if (
@@ -337,6 +345,8 @@ export const useRecording = (
     sequenceId,
     projectId,
     nextSegmentIndex,
+    startThreshold,
+    endThreshold,
   ]);
 
   const handleStartRecording = useCallback(async (): Promise<void> => {
@@ -486,8 +496,6 @@ export const useRecording = (
           // Detect segments from post-recording analysis
           // Use amplitude (peak) values which match the scale of the thresholds
           // Post-analysis RMS values are on a different scale than real-time RMS
-          const startThreshold = RECORDING_CONFIG.start_segment_threshold;
-          const endThreshold = RECORDING_CONFIG.end_segment_threshold;
           const fallbackSegments: TempSegment[] = [];
           let activeSegmentStart: {
             timeMs: number;
@@ -606,6 +614,8 @@ export const useRecording = (
     projectId,
     nextSegmentIndex,
     extractSegmentsFromRecording,
+    startThreshold,
+    endThreshold,
   ]);
 
   const handlePauseRecording = useCallback(async (): Promise<void> => {
