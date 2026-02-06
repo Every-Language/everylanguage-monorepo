@@ -154,11 +154,6 @@ export const useRecording = (
       } else {
         // === FALLBACK PATH: Real-time analysis unavailable ===
         // Use post-recording analysis on the compressed file to detect segments
-        // eslint-disable-next-line no-console
-        console.log(
-          'Real-time analysis unavailable, using post-recording analysis fallback'
-        );
-
         const fallbackSegments = await detectSegmentsFromPostAnalysis(
           mainRecordingUri,
           recording.durationMs

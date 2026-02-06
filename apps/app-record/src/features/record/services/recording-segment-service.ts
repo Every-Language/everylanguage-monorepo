@@ -31,21 +31,10 @@ export class RecordingSegmentService {
     sequenceId: string
   ): Promise<void> {
     if (segments.length === 0 || !mainRecordingUri) {
-      // eslint-disable-next-line no-console
-      console.log('Skipping extraction:', {
-        segmentsCount: segments.length,
-        hasMainUri: !!mainRecordingUri,
-      });
       return;
     }
 
     try {
-      // eslint-disable-next-line no-console
-      console.log('Starting segment extraction:', {
-        segmentsCount: segments.length,
-        mainRecordingUri,
-      });
-
       // Ensure directory exists
       await FilePathService.ensureSequenceDirectory(sequenceId);
 
@@ -55,14 +44,6 @@ export class RecordingSegmentService {
           const absolutePath = FilePathService.getAbsolutePath(
             segment.local_file_path
           );
-
-          // eslint-disable-next-line no-console
-          console.log('Extracting segment:', {
-            segmentId: segment.id,
-            startTimeMs: segment.start_time_ms,
-            endTimeMs: segment.end_time_ms,
-            targetPath: absolutePath,
-          });
 
           // Extract segment using trimAudio
           const trimmedResult = await trimAudio({
@@ -76,9 +57,6 @@ export class RecordingSegmentService {
             mode: 'keep',
             outputFormat: { format: 'aac' },
           });
-
-          // eslint-disable-next-line no-console
-          console.log('trimAudio result:', trimmedResult);
 
           // Get the trimmed file URI from the result
           let trimmedFileUri =
@@ -117,12 +95,6 @@ export class RecordingSegmentService {
             }
           }
 
-          // eslint-disable-next-line no-console
-          console.log('Copying file:', {
-            from: trimmedFileUri,
-            to: absolutePath,
-          });
-
           // Check if target file already exists and remove it
           const targetExists = await FileSystem.getInfoAsync(absolutePath);
           if (targetExists.exists) {
@@ -159,10 +131,7 @@ export class RecordingSegmentService {
 
           // Verify file was created
           const fileInfo = await FileSystem.getInfoAsync(absolutePath);
-          if (fileInfo.exists) {
-            // eslint-disable-next-line no-console
-            console.log('Segment file created successfully:', absolutePath);
-          } else {
+          if (!fileInfo.exists) {
             // eslint-disable-next-line no-console
             console.error('Segment file not found after move:', absolutePath);
           }
