@@ -13,7 +13,7 @@ import { AppHeader } from '@/shared/ui';
 import { useTheme, useTranslation } from '@/shared/hooks';
 import { logger } from '@/shared/utils/logger';
 import { useSequences, useBooks, useChaptersForBooks } from '../hooks';
-import type { Sequence, Chapter } from '../types/sequence';
+import type { Sequence, Chapter } from '@/shared/types/sequence';
 import { useProject } from '@/features/projects/hooks';
 import { ProjectInfoCard } from '@/features/projects/components';
 import { BookSection } from '../components';

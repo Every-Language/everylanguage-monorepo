@@ -1,5 +1,5 @@
 import { useQuery } from '@powersync/react';
-import type { Sequence } from '../types/sequence';
+import type { Sequence } from '@/shared/types/sequence';
 
 /**
  * Hook for fetching sequences for a project

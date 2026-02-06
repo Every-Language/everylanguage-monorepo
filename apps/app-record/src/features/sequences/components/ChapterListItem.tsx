@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme, useTranslation } from '@/shared/hooks';
-import type { Chapter, Sequence } from '../types/sequence';
+import type { Chapter, Sequence } from '@/shared/types/sequence';
 
 export interface ChapterListItemProps {
   chapter: Chapter;

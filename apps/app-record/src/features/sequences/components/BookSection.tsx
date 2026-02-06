@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
 import { ChapterListItem } from './ChapterListItem';
-import type { Book, Chapter, Sequence } from '../types/sequence';
+import type { Book, Chapter, Sequence } from '@/shared/types/sequence';
 
 export interface BookSectionProps {
   book: Book;

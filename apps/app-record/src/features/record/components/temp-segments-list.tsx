@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/shared/hooks';
 import type { TempSegment } from '../types';
-import { SegmentAudioPlayer } from './SegmentAudioPlayer';
+import { SegmentAudioPlayer } from './segment-audio-player';
 
 export interface TempSegmentsListProps {
   segments: TempSegment[];

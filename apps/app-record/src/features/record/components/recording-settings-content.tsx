@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@/shared/hooks';
-import { VUMeter } from './VUMeter';
+import { VUMeter } from './vu-meter';
 import type { AudioAnalysis } from '@siteed/expo-audio-studio';
 
 export interface RecordingSettingsContentProps {

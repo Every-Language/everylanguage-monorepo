@@ -11,8 +11,8 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
-import { FilePathService } from '../services/FilePathService';
-import { AudioService } from '../services/AudioService';
+import { FilePathService } from '../services/file-path-service';
+import { AudioService } from '../services/audio-service';
 import type { Segment, TempSegment } from '../types';
 
 /**

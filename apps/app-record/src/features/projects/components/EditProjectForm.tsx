@@ -1,42 +1,22 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Platform,
-  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { useTheme, useTranslation } from '@/shared/hooks';
-import {
-  useProject,
-  useUpdateProject,
-  useDeleteProject,
-  type UpdateProjectFormData,
-} from '@/features/projects/hooks';
-import { useEditProjectStore } from '@/features/projects/store/editProjectStore';
-
-// Form validation constants
-const MIN_NAME_LENGTH = 1;
-const MAX_NAME_LENGTH = 255;
-const MAX_DESCRIPTION_LENGTH = 1000;
-
-/**
- * Convert hex color to rgba string with opacity
- */
-const hexToRgba = (hex: string, opacity: number): string => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-};
+import { useProject } from '../hooks';
+import { useEditProjectForm } from '../hooks/useEditProjectForm';
+import { ProjectFormFields } from './edit-project-form/project-form-fields';
+import { LanguageSelectionField } from './edit-project-form/language-selection-field';
+import { RegionSelectionField } from './edit-project-form/region-selection-field';
+import { DeleteConfirmationModal } from './edit-project-form/delete-confirmation-modal';
 
 export interface EditProjectFormProps {
   projectId: string;
@@ -49,6 +29,16 @@ export interface EditProjectFormProps {
   onSelectRegion: () => void;
   onViewRegion: () => void;
 }
+
+/**
+ * Convert hex color to rgba string with opacity
+ */
+const hexToRgba = (hex: string, opacity: number): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
 
 /**
  * Edit Project Form Component
@@ -70,330 +60,64 @@ export const EditProjectForm: React.FC<EditProjectFormProps> = ({
   const { theme } = useTheme();
   const { t } = useTranslation();
   const { project } = useProject(projectId);
-  const { updateProject, isLoading, error } = useUpdateProject();
+
   const {
-    deleteProject,
-    isLoading: isDeleting,
-    error: deleteError,
-  } = useDeleteProject();
-  const {
-    source_language_id,
-    source_language_name,
-    target_language_id,
-    target_language_name,
-    region_id,
-    region_name,
-    setSourceLanguage,
-    setTargetLanguage,
-    setRegion,
-    reset: resetStore,
-  } = useEditProjectStore();
-  const [formData, setFormData] = useState<UpdateProjectFormData>({
-    name: '',
-    description: '',
-    source_language_entity_id: null,
-    source_language_name: null,
-    target_language_entity_id: null,
-    target_language_name: null,
-    region_id: null,
-    region_name: null,
-  });
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
-
-  // Pre-fill form and store when project data is available
-  useEffect(() => {
-    if (project) {
-      setFormData({
-        name: project.name || '',
-        description: project.description || '',
-        source_language_entity_id: null, // IDs not available from query, will be set when user selects
-        source_language_name: project.source_language_name || null,
-        target_language_entity_id: null, // IDs not available from query, will be set when user selects
-        target_language_name: project.target_language_name || null,
-        region_id: null, // IDs not available from query, will be set when user selects
-        region_name: project.region_name || null,
-      });
-      setValidationError(null);
-      // Pre-populate store with existing values
-      // Note: IDs will be set when user selects languages/regions
-      if (project.source_language_name) {
-        setSourceLanguage(null, project.source_language_name);
-      }
-      if (project.target_language_name) {
-        setTargetLanguage(null, project.target_language_name);
-      }
-      if (project.region_name) {
-        setRegion(null, project.region_name);
-      }
-    }
-  }, [project, setSourceLanguage, setTargetLanguage, setRegion]);
-
-  // Reset form and store when component unmounts
-  useEffect(() => {
-    return () => {
-      setFormData({
-        name: '',
-        description: '',
-        source_language_entity_id: null,
-        source_language_name: null,
-        target_language_entity_id: null,
-        target_language_name: null,
-        region_id: null,
-        region_name: null,
-      });
-      setValidationError(null);
-      setShowDeleteConfirmation(false);
-      setDeleteConfirmationText('');
-      resetStore();
-    };
-  }, [resetStore]);
-
-  const handleFieldChange = useCallback(
-    <K extends keyof UpdateProjectFormData>(
-      field: K,
-      value: UpdateProjectFormData[K]
-    ): void => {
-      setFormData(prev => {
-        const updated = { ...prev, [field]: value };
-
-        // Clear validation error when user starts typing
-        if (validationError) {
-          setValidationError(null);
-        }
-
-        return updated;
-      });
-    },
-    [validationError]
-  );
-
-  const validateForm = useCallback(
-    (data: UpdateProjectFormData): boolean => {
-      const trimmedName = data.name.trim();
-
-      if (trimmedName.length < MIN_NAME_LENGTH) {
-        setValidationError(t('projects.create.nameRequired'));
-        return false;
-      }
-
-      if (trimmedName.length > MAX_NAME_LENGTH) {
-        setValidationError(
-          t('projects.create.nameMaxLength', { max: MAX_NAME_LENGTH })
-        );
-        return false;
-      }
-
-      if (data.description.trim().length > MAX_DESCRIPTION_LENGTH) {
-        setValidationError(
-          t('projects.create.descriptionMaxLength', {
-            max: MAX_DESCRIPTION_LENGTH,
-          })
-        );
-        return false;
-      }
-
-      setValidationError(null);
-      return true;
-    },
-    [t]
-  );
-
-  const handleSubmit = useCallback(async (): Promise<void> => {
-    if (!validateForm(formData)) {
-      return;
-    }
-
-    try {
-      // Trim and sanitize data before submission
-      const sanitizedData: UpdateProjectFormData = {
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        source_language_entity_id: source_language_id,
-        source_language_name: source_language_name,
-        target_language_entity_id: target_language_id,
-        target_language_name: target_language_name,
-        region_id: region_id,
-        region_name: region_name,
-      };
-
-      await updateProject(projectId, sanitizedData);
-      onClose();
-    } catch (err) {
-      // Error is already logged in useUpdateProject hook
-      Alert.alert(
-        t('common.error'),
-        err instanceof Error
-          ? err.message
-          : t('projects.edit.error') ||
-              'Failed to update project. Please try again.'
-      );
-    }
-  }, [
     formData,
-    source_language_id,
-    source_language_name,
-    target_language_id,
-    target_language_name,
-    region_id,
-    region_name,
-    projectId,
-    updateProject,
-    validateForm,
-    onClose,
-    t,
-  ]);
+    validationError,
+    isFormValid,
+    sourceLanguageName,
+    targetLanguageName,
+    regionName,
+    isUpdating,
+    isDeleting,
+    updateError,
+    deleteError,
+    handleFieldChange,
+    handleSubmit,
+    handleDelete,
+    showDeleteConfirmation,
+    deleteConfirmationText,
+    setShowDeleteConfirmation,
+    setDeleteConfirmationText,
+  } = useEditProjectForm(project);
 
-  const handleClose = useCallback((): void => {
-    // Reset form and store on close
-    setFormData({
-      name: '',
-      description: '',
-      source_language_entity_id: null,
-      source_language_name: null,
-      target_language_entity_id: null,
-      target_language_name: null,
-      region_id: null,
-      region_name: null,
-    });
-    setValidationError(null);
-    setShowDeleteConfirmation(false);
-    setDeleteConfirmationText('');
-    resetStore();
+  const handleClose = (): void => {
     onClose();
-  }, [onClose, resetStore]);
+  };
 
-  const handleDeletePress = useCallback((): void => {
+  const handleDeletePress = (): void => {
     setShowDeleteConfirmation(true);
     setDeleteConfirmationText('');
-  }, []);
+  };
 
-  const handleDeleteCancel = useCallback((): void => {
+  const handleDeleteCancel = (): void => {
     setShowDeleteConfirmation(false);
     setDeleteConfirmationText('');
-  }, []);
+  };
 
-  const handleDeleteConfirm = useCallback(async (): Promise<void> => {
+  const handleDeleteConfirm = async (): Promise<void> => {
     if (!project) return;
+    await handleDelete(project.id, onDeleteSuccess);
+  };
 
-    try {
-      await deleteProject(project.id);
-      onDeleteSuccess();
-    } catch {
-      // Error is handled by the hook's error state
-      // The delete confirmation modal will stay open so user can try again
-    }
-  }, [project, deleteProject, onDeleteSuccess]);
+  const displayError = updateError || validationError || deleteError;
+  const errorMessage =
+    displayError instanceof Error
+      ? displayError.message
+      : typeof displayError === 'string'
+        ? displayError
+        : displayError
+          ? String(displayError)
+          : null;
 
-  const isDeleteEnabled = useMemo(() => {
-    if (!project) return false;
-    return deleteConfirmationText.trim() === project.name.trim();
-  }, [deleteConfirmationText, project]);
-
-  const sourceLanguageActions: MenuAction[] = useMemo(
-    () => [
-      { id: 'view', title: 'View Language' },
-      { id: 'change', title: 'Change Language' },
-    ],
-    []
-  );
-
-  const targetLanguageActions: MenuAction[] = useMemo(
-    () => [
-      { id: 'view', title: 'View Language' },
-      { id: 'change', title: 'Change Language' },
-    ],
-    []
-  );
-
-  const regionActions: MenuAction[] = useMemo(
-    () => [
-      { id: 'view', title: 'View Region' },
-      { id: 'change', title: 'Change Region' },
-    ],
-    []
-  );
-
-  const handleSourceLanguageMenuAction = useCallback(
-    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
-      if (nativeEvent.event === 'view') {
-        onViewSourceLanguage();
-      } else if (nativeEvent.event === 'change') {
-        onSelectSourceLanguage();
-      }
+  const errorBackgroundColor = hexToRgba(theme.colors.error, 0.1);
+  const deleteButtonStyle = [
+    styles.deleteButton,
+    {
+      backgroundColor: theme.colors.error,
+      opacity: isUpdating || isDeleting ? 0.5 : 1,
     },
-    [onViewSourceLanguage, onSelectSourceLanguage]
-  );
-
-  const handleTargetLanguageMenuAction = useCallback(
-    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
-      if (nativeEvent.event === 'view') {
-        onViewTargetLanguage();
-      } else if (nativeEvent.event === 'change') {
-        onSelectTargetLanguage();
-      }
-    },
-    [onViewTargetLanguage, onSelectTargetLanguage]
-  );
-
-  const handleRegionMenuAction = useCallback(
-    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
-      if (nativeEvent.event === 'view') {
-        onViewRegion();
-      } else if (nativeEvent.event === 'change') {
-        onSelectRegion();
-      }
-    },
-    [onViewRegion, onSelectRegion]
-  );
-
-  const displayError = error || validationError || deleteError;
-  const isFormValid =
-    formData.name.trim().length >= MIN_NAME_LENGTH &&
-    formData.name.trim().length <= MAX_NAME_LENGTH &&
-    formData.description.trim().length <= MAX_DESCRIPTION_LENGTH;
-
-  // Convert error to displayable string
-  const errorMessage = useMemo(() => {
-    if (!displayError) return null;
-    if (typeof displayError === 'string') return displayError;
-    if (displayError instanceof Error) return displayError.message;
-    return String(displayError);
-  }, [displayError]);
-
-  // Memoize error background color to avoid recalculation
-  const errorBackgroundColor = useMemo(
-    () => hexToRgba(theme.colors.error, 0.1),
-    [theme.colors.error]
-  );
-
-  // Memoize delete button style to avoid inline style warning
-  const deleteButtonStyle = useMemo(
-    () => [
-      styles.deleteButton,
-      {
-        backgroundColor: theme.colors.error,
-        opacity: isLoading || isDeleting ? 0.5 : 1,
-      },
-    ],
-    [theme.colors.error, isLoading, isDeleting]
-  );
-
-  // Memoize delete button text style
-  const deleteButtonTextStyle = useMemo(
-    () => [styles.deleteButtonText, { color: theme.colors.textInverse }],
-    [theme.colors.textInverse]
-  );
-
-  // Memoize modal overlay style
-  const deleteModalOverlayStyle = useMemo(
-    () => [
-      styles.deleteModalOverlay,
-      { backgroundColor: hexToRgba(theme.colors.text, 0.5) },
-    ],
-    [theme.colors.text]
-  );
+  ];
 
   // Show loading state while project is being fetched
   if (!projectId) {
@@ -466,267 +190,53 @@ export const EditProjectForm: React.FC<EditProjectFormProps> = ({
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps='handled'>
-        {/* Name Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t('projects.create.name')}{' '}
-            <Text style={[styles.required, { color: theme.colors.error }]}>
-              *
-            </Text>
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                color: theme.colors.text,
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.surface,
-              },
-            ]}
-            placeholder={t('projects.create.namePlaceholder')}
-            placeholderTextColor={theme.colors.textSecondary}
-            value={formData.name}
-            onChangeText={value => handleFieldChange('name', value)}
-            autoCapitalize='words'
-            autoComplete='off'
-            maxLength={MAX_NAME_LENGTH}
-            editable={!isLoading}
-          />
-        </View>
+        {/* Form Fields */}
+        <ProjectFormFields
+          name={formData.name}
+          description={formData.description}
+          onNameChange={value => handleFieldChange('name', value)}
+          onDescriptionChange={value => handleFieldChange('description', value)}
+          disabled={isUpdating}
+        />
 
-        {/* Description Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t('projects.create.description')}
-          </Text>
-          <TextInput
-            style={[
-              styles.textArea,
-              {
-                color: theme.colors.text,
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.surface,
-              },
-            ]}
-            placeholder={t('projects.create.descriptionPlaceholder')}
-            placeholderTextColor={theme.colors.textSecondary}
-            value={formData.description}
-            onChangeText={value => handleFieldChange('description', value)}
-            multiline
-            numberOfLines={4}
-            textAlignVertical='top'
-            autoCapitalize='sentences'
-            maxLength={MAX_DESCRIPTION_LENGTH}
-            editable={!isLoading}
-          />
-          <Text
-            style={[
-              styles.characterCount,
-              { color: theme.colors.textSecondary },
-            ]}>
-            {formData.description.length}/{MAX_DESCRIPTION_LENGTH}
-          </Text>
-        </View>
+        {/* Source Language Selection */}
+        <LanguageSelectionField
+          label={t('projects.create.sourceLanguage') || 'Source Language'}
+          selectedLanguageName={sourceLanguageName}
+          onSelect={onSelectSourceLanguage}
+          onView={onViewSourceLanguage}
+          disabled={isUpdating}
+        />
 
-        {/* Source Language Selection Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t('projects.create.sourceLanguage') || 'Source Language'}
-          </Text>
-          {source_language_name ? (
-            <MenuView
-              actions={sourceLanguageActions}
-              onPressAction={handleSourceLanguageMenuAction}>
-              <TouchableOpacity
-                style={[
-                  styles.selectField,
-                  {
-                    borderColor: theme.colors.border,
-                    backgroundColor: theme.colors.surface,
-                  },
-                ]}>
-                <View style={styles.selectFieldContent}>
-                  <Text
-                    style={[
-                      styles.selectFieldText,
-                      { color: theme.colors.text },
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode='tail'>
-                    {source_language_name}
-                  </Text>
-                </View>
-                <Ionicons
-                  name='chevron-forward'
-                  size={20}
-                  color={theme.colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </MenuView>
-          ) : (
-            <TouchableOpacity
-              style={[
-                styles.selectField,
-                {
-                  borderColor: theme.colors.border,
-                  backgroundColor: theme.colors.surface,
-                },
-              ]}
-              onPress={onSelectSourceLanguage}>
-              <View style={styles.selectFieldContent}>
-                <Text
-                  style={[
-                    styles.selectFieldText,
-                    { color: theme.colors.text },
-                  ]}>
-                  {t('projects.create.selectSourceLanguage') ||
-                    'Select Source Language'}
-                </Text>
-              </View>
-              <Ionicons
-                name='chevron-forward'
-                size={20}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* Target Language Selection */}
+        <LanguageSelectionField
+          label={t('projects.create.targetLanguage') || 'Target Language'}
+          selectedLanguageName={targetLanguageName}
+          onSelect={onSelectTargetLanguage}
+          onView={onViewTargetLanguage}
+          disabled={isUpdating}
+        />
 
-        {/* Target Language Selection Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t('projects.create.targetLanguage') || 'Target Language'}
-          </Text>
-          {target_language_name ? (
-            <MenuView
-              actions={targetLanguageActions}
-              onPressAction={handleTargetLanguageMenuAction}>
-              <TouchableOpacity
-                style={[
-                  styles.selectField,
-                  {
-                    borderColor: theme.colors.border,
-                    backgroundColor: theme.colors.surface,
-                  },
-                ]}>
-                <View style={styles.selectFieldContent}>
-                  <Text
-                    style={[
-                      styles.selectFieldText,
-                      { color: theme.colors.text },
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode='tail'>
-                    {target_language_name}
-                  </Text>
-                </View>
-                <Ionicons
-                  name='chevron-forward'
-                  size={20}
-                  color={theme.colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </MenuView>
-          ) : (
-            <TouchableOpacity
-              style={[
-                styles.selectField,
-                {
-                  borderColor: theme.colors.border,
-                  backgroundColor: theme.colors.surface,
-                },
-              ]}
-              onPress={onSelectTargetLanguage}>
-              <View style={styles.selectFieldContent}>
-                <Text
-                  style={[
-                    styles.selectFieldText,
-                    { color: theme.colors.text },
-                  ]}>
-                  {t('projects.create.selectTargetLanguage') ||
-                    'Select Target Language'}
-                </Text>
-              </View>
-              <Ionicons
-                name='chevron-forward'
-                size={20}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Region Selection Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t('projects.create.region') || 'Region'}
-          </Text>
-          {region_name ? (
-            <MenuView
-              actions={regionActions}
-              onPressAction={handleRegionMenuAction}>
-              <TouchableOpacity
-                style={[
-                  styles.selectField,
-                  {
-                    borderColor: theme.colors.border,
-                    backgroundColor: theme.colors.surface,
-                  },
-                ]}>
-                <View style={styles.selectFieldContent}>
-                  <Text
-                    style={[
-                      styles.selectFieldText,
-                      { color: theme.colors.text },
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode='tail'>
-                    {region_name}
-                  </Text>
-                </View>
-                <Ionicons
-                  name='chevron-forward'
-                  size={20}
-                  color={theme.colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </MenuView>
-          ) : (
-            <TouchableOpacity
-              style={[
-                styles.selectField,
-                {
-                  borderColor: theme.colors.border,
-                  backgroundColor: theme.colors.surface,
-                },
-              ]}
-              onPress={onSelectRegion}>
-              <View style={styles.selectFieldContent}>
-                <Text
-                  style={[
-                    styles.selectFieldText,
-                    { color: theme.colors.text },
-                  ]}>
-                  {t('projects.create.selectRegion') || 'Select Region'}
-                </Text>
-              </View>
-              <Ionicons
-                name='chevron-forward'
-                size={20}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* Region Selection */}
+        <RegionSelectionField
+          selectedRegionName={regionName}
+          onSelect={onSelectRegion}
+          onView={onViewRegion}
+          disabled={isUpdating}
+        />
 
         {/* Delete Project Button */}
         <View style={styles.deleteButtonContainer}>
           <TouchableOpacity
             style={deleteButtonStyle}
             onPress={handleDeletePress}
-            disabled={isLoading || isDeleting}
+            disabled={isUpdating || isDeleting}
             accessibilityLabel={t('projects.edit.deleteButton')}>
-            <Text style={deleteButtonTextStyle}>
+            <Text
+              style={[
+                styles.deleteButtonText,
+                { color: theme.colors.textInverse },
+              ]}>
               {t('projects.edit.deleteButton')}
             </Text>
           </TouchableOpacity>
@@ -762,15 +272,15 @@ export const EditProjectForm: React.FC<EditProjectFormProps> = ({
             styles.saveButton,
             {
               backgroundColor:
-                isFormValid && !isLoading
+                isFormValid && !isUpdating
                   ? theme.colors.accent
                   : theme.colors.interactiveDisabled,
             },
           ]}
-          onPress={handleSubmit}
-          disabled={!isFormValid || isLoading || isDeleting}
+          onPress={() => handleSubmit(projectId, onClose)}
+          disabled={!isFormValid || isUpdating || isDeleting}
           accessibilityLabel={t('projects.edit.saveButton')}>
-          {isLoading ? (
+          {isUpdating ? (
             <ActivityIndicator color={theme.colors.textInverse} />
           ) : (
             <Text
@@ -789,123 +299,17 @@ export const EditProjectForm: React.FC<EditProjectFormProps> = ({
       </View>
 
       {/* Delete Confirmation Modal */}
-      <Modal
+      <DeleteConfirmationModal
         visible={showDeleteConfirmation}
-        transparent
-        animationType='fade'
-        onRequestClose={handleDeleteCancel}>
-        <View style={deleteModalOverlayStyle}>
-          <View
-            style={[
-              styles.deleteModalContent,
-              { backgroundColor: theme.colors.background },
-            ]}>
-            <Text
-              style={[styles.deleteModalTitle, { color: theme.colors.text }]}>
-              {t('projects.edit.deleteConfirmation.title')}
-            </Text>
-            <Text
-              style={[
-                styles.deleteModalMessage,
-                { color: theme.colors.textSecondary },
-              ]}>
-              {t('projects.edit.deleteConfirmation.message')}
-            </Text>
-
-            <View style={styles.deleteModalFieldContainer}>
-              <Text
-                style={[styles.deleteModalLabel, { color: theme.colors.text }]}>
-                {t('projects.edit.deleteConfirmation.enterProjectName')}
-              </Text>
-              <TextInput
-                style={[
-                  styles.deleteModalInput,
-                  {
-                    color: theme.colors.text,
-                    borderColor: theme.colors.border,
-                    backgroundColor: theme.colors.surface,
-                  },
-                ]}
-                placeholder={project?.name}
-                placeholderTextColor={theme.colors.textSecondary}
-                value={deleteConfirmationText}
-                onChangeText={setDeleteConfirmationText}
-                autoCapitalize='words'
-                autoComplete='off'
-                editable={!isDeleting}
-              />
-            </View>
-
-            {deleteError && (
-              <View
-                style={[
-                  styles.deleteErrorContainer,
-                  {
-                    backgroundColor: errorBackgroundColor,
-                  },
-                ]}>
-                <Text
-                  style={[
-                    styles.deleteErrorText,
-                    { color: theme.colors.error },
-                  ]}>
-                  {deleteError instanceof Error
-                    ? deleteError.message
-                    : String(deleteError)}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.deleteModalButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.deleteModalCancelButton,
-                  {
-                    borderColor: theme.colors.border,
-                    backgroundColor: theme.colors.surface,
-                  },
-                ]}
-                onPress={handleDeleteCancel}
-                disabled={isDeleting}>
-                <Text
-                  style={[
-                    styles.deleteModalCancelText,
-                    { color: theme.colors.text },
-                  ]}>
-                  {t('common.cancel')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.deleteModalDeleteButton,
-                  {
-                    backgroundColor: isDeleteEnabled
-                      ? theme.colors.error
-                      : theme.colors.interactiveDisabled,
-                  },
-                ]}
-                onPress={handleDeleteConfirm}
-                disabled={!isDeleteEnabled || isDeleting}>
-                {isDeleting ? (
-                  <ActivityIndicator color={theme.colors.textInverse} />
-                ) : (
-                  <Text
-                    style={[
-                      styles.deleteModalDeleteText,
-                      {
-                        color: isDeleteEnabled
-                          ? theme.colors.textInverse
-                          : theme.colors.textSecondary,
-                      },
-                    ]}>
-                    {t('projects.edit.deleteConfirmation.deleteButton')}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        projectName={project.name}
+        confirmationText={deleteConfirmationText}
+        onConfirmationTextChange={setDeleteConfirmationText}
+        onCancel={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        isDeleting={isDeleting}
+        error={deleteError}
+        isDeleteEnabled={deleteConfirmationText.trim() === project.name.trim()}
+      />
     </SafeAreaView>
   );
 };
@@ -945,57 +349,6 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  fieldContainer: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  required: {
-    // Color will be set dynamically via theme
-  },
-  input: {
-    fontSize: 17,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 44,
-  },
-  textArea: {
-    fontSize: 17,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 100,
-  },
-  characterCount: {
-    fontSize: 12,
-    marginTop: 4,
-    textAlign: 'right',
-  },
-  selectField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 44,
-  },
-  selectFieldContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  selectFieldText: {
-    fontSize: 17,
-  },
   errorContainer: {
     padding: 16,
     marginHorizontal: 16,
@@ -1034,81 +387,6 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   deleteButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  deleteModalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  deleteModalContent: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 12,
-    padding: 24,
-  },
-  deleteModalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  deleteModalMessage: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  deleteModalFieldContainer: {
-    marginBottom: 24,
-  },
-  deleteModalLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  deleteModalInput: {
-    fontSize: 17,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 44,
-  },
-  deleteErrorContainer: {
-    marginBottom: 16,
-    padding: 12,
-    borderRadius: 8,
-  },
-  deleteErrorText: {
-    fontSize: 14,
-  },
-  deleteModalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  deleteModalCancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 44,
-  },
-  deleteModalCancelText: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  deleteModalDeleteButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 44,
-  },
-  deleteModalDeleteText: {
     fontSize: 17,
     fontWeight: '600',
   },

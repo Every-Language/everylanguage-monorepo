@@ -1,37 +1,20 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { useTheme, useTranslation } from '@/shared/hooks';
-import { useCreateProject } from '@/features/projects/hooks';
-import type { CreateProjectFormData } from '@/features/projects/types/project';
-import { useCreateProjectStore } from '@/features/projects/store/createProjectStore';
-
-// Form validation constants
-const MIN_NAME_LENGTH = 1;
-const MAX_NAME_LENGTH = 255;
-const MAX_DESCRIPTION_LENGTH = 1000;
-
-/**
- * Convert hex color to rgba string with opacity
- */
-const hexToRgba = (hex: string, opacity: number): string => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-};
+import { useCreateProjectForm } from '../hooks/useCreateProjectForm';
+import { ProjectFormFields } from './edit-project-form/project-form-fields';
+import { LanguageSelectionField } from './edit-project-form/language-selection-field';
+import { RegionSelectionField } from './edit-project-form/region-selection-field';
 
 export interface CreateProjectFormProps {
   onClose: () => void;
@@ -42,6 +25,16 @@ export interface CreateProjectFormProps {
   onSelectRegion: () => void;
   onViewRegion: () => void;
 }
+
+/**
+ * Convert hex color to rgba string with opacity
+ */
+const hexToRgba = (hex: string, opacity: number): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
 
 /**
  * Create Project Form Component
@@ -60,221 +53,21 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({
 }) => {
   const { theme } = useTheme();
   const { t } = useTranslation();
-  const { createProject, isLoading, error } = useCreateProject();
+
   const {
-    source_language_id,
-    source_language_name,
-    target_language_id,
-    target_language_name,
-    region_id,
-    region_name,
-    reset: resetStore,
-  } = useCreateProjectStore();
-  const [formData, setFormData] = useState<CreateProjectFormData>({
-    name: '',
-    description: '',
-    source_language_entity_id: null,
-    source_language_name: null,
-    target_language_entity_id: null,
-    target_language_name: null,
-    region_id: null,
-    region_name: null,
-  });
-  const [validationError, setValidationError] = useState<string | null>(null);
-
-  // Reset form and store when component unmounts
-  useEffect(() => {
-    return () => {
-      setFormData({
-        name: '',
-        description: '',
-        source_language_entity_id: null,
-        source_language_name: null,
-        target_language_entity_id: null,
-        target_language_name: null,
-        region_id: null,
-        region_name: null,
-      });
-      setValidationError(null);
-      resetStore();
-    };
-  }, [resetStore]);
-
-  const handleFieldChange = useCallback(
-    <K extends keyof CreateProjectFormData>(
-      field: K,
-      value: CreateProjectFormData[K]
-    ): void => {
-      setFormData(prev => {
-        const updated = { ...prev, [field]: value };
-
-        // Clear validation error when user starts typing
-        if (validationError) {
-          setValidationError(null);
-        }
-
-        return updated;
-      });
-    },
-    [validationError]
-  );
-
-  const validateForm = useCallback(
-    (data: CreateProjectFormData): boolean => {
-      const trimmedName = data.name.trim();
-
-      if (trimmedName.length < MIN_NAME_LENGTH) {
-        setValidationError(t('projects.create.nameRequired'));
-        return false;
-      }
-
-      if (trimmedName.length > MAX_NAME_LENGTH) {
-        setValidationError(
-          t('projects.create.nameMaxLength', { max: MAX_NAME_LENGTH })
-        );
-        return false;
-      }
-
-      if (data.description.trim().length > MAX_DESCRIPTION_LENGTH) {
-        setValidationError(
-          t('projects.create.descriptionMaxLength', {
-            max: MAX_DESCRIPTION_LENGTH,
-          })
-        );
-        return false;
-      }
-
-      setValidationError(null);
-      return true;
-    },
-    [t]
-  );
-
-  const handleSubmit = useCallback(async (): Promise<void> => {
-    if (!validateForm(formData)) {
-      return;
-    }
-
-    try {
-      // Trim and sanitize data before submission
-      const sanitizedData: CreateProjectFormData = {
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        source_language_entity_id: source_language_id,
-        source_language_name: source_language_name,
-        target_language_entity_id: target_language_id,
-        target_language_name: target_language_name,
-        region_id: region_id,
-        region_name: region_name,
-      };
-
-      await createProject(sanitizedData);
-      onClose();
-    } catch (err) {
-      // Error is already logged in useCreateProject hook
-      Alert.alert(
-        t('common.error'),
-        err instanceof Error
-          ? err.message
-          : t('projects.create.error') ||
-              'Failed to create project. Please try again.'
-      );
-    }
-  }, [
     formData,
-    source_language_id,
-    source_language_name,
-    target_language_id,
-    target_language_name,
-    region_id,
-    region_name,
-    createProject,
-    validateForm,
-    onClose,
-    t,
-  ]);
+    validationError,
+    isFormValid,
+    sourceLanguageName,
+    targetLanguageName,
+    regionName,
+    isCreating,
+    createError,
+    handleFieldChange,
+    handleSubmit,
+  } = useCreateProjectForm();
 
-  const handleClose = useCallback((): void => {
-    // Reset form and store on close
-    setFormData({
-      name: '',
-      description: '',
-      source_language_entity_id: null,
-      source_language_name: null,
-      target_language_entity_id: null,
-      target_language_name: null,
-      region_id: null,
-      region_name: null,
-    });
-    setValidationError(null);
-    resetStore();
-    onClose();
-  }, [onClose, resetStore]);
-
-  const sourceLanguageActions: MenuAction[] = useMemo(
-    () => [
-      { id: 'view', title: 'View Language' },
-      { id: 'change', title: 'Change Language' },
-    ],
-    []
-  );
-
-  const targetLanguageActions: MenuAction[] = useMemo(
-    () => [
-      { id: 'view', title: 'View Language' },
-      { id: 'change', title: 'Change Language' },
-    ],
-    []
-  );
-
-  const regionActions: MenuAction[] = useMemo(
-    () => [
-      { id: 'view', title: 'View Region' },
-      { id: 'change', title: 'Change Region' },
-    ],
-    []
-  );
-
-  const handleSourceLanguageMenuAction = useCallback(
-    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
-      if (nativeEvent.event === 'view') {
-        onViewSourceLanguage();
-      } else if (nativeEvent.event === 'change') {
-        onSelectSourceLanguage();
-      }
-    },
-    [onViewSourceLanguage, onSelectSourceLanguage]
-  );
-
-  const handleTargetLanguageMenuAction = useCallback(
-    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
-      if (nativeEvent.event === 'view') {
-        onViewTargetLanguage();
-      } else if (nativeEvent.event === 'change') {
-        onSelectTargetLanguage();
-      }
-    },
-    [onViewTargetLanguage, onSelectTargetLanguage]
-  );
-
-  const handleRegionMenuAction = useCallback(
-    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
-      if (nativeEvent.event === 'view') {
-        onViewRegion();
-      } else if (nativeEvent.event === 'change') {
-        onSelectRegion();
-      }
-    },
-    [onViewRegion, onSelectRegion]
-  );
-
-  const displayError = error || validationError;
-  const isFormValid =
-    formData.name.trim().length >= MIN_NAME_LENGTH &&
-    formData.name.trim().length <= MAX_NAME_LENGTH &&
-    formData.description.trim().length <= MAX_DESCRIPTION_LENGTH;
-
-  // Convert error to displayable string
+  const displayError = createError || validationError;
   const errorMessage = useMemo(() => {
     if (!displayError) return null;
     if (typeof displayError === 'string') return displayError;
@@ -282,7 +75,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({
     return String(displayError);
   }, [displayError]);
 
-  // Memoize error background color to avoid recalculation
   const errorBackgroundColor = useMemo(
     () => hexToRgba(theme.colors.error, 0.1),
     [theme.colors.error]
@@ -305,7 +97,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({
         ]}>
         <TouchableOpacity
           style={[styles.closeButton, { backgroundColor: theme.colors.error }]}
-          onPress={handleClose}
+          onPress={onClose}
           accessibilityLabel={t('common.close')}>
           <Ionicons name='close' size={20} color={theme.colors.textInverse} />
         </TouchableOpacity>
@@ -320,258 +112,40 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps='handled'>
-        {/* Name Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t('projects.create.name')}{' '}
-            <Text style={[styles.required, { color: theme.colors.error }]}>
-              *
-            </Text>
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                color: theme.colors.text,
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.surface,
-              },
-            ]}
-            placeholder={t('projects.create.namePlaceholder')}
-            placeholderTextColor={theme.colors.textSecondary}
-            value={formData.name}
-            onChangeText={value => handleFieldChange('name', value)}
-            autoCapitalize='words'
-            autoComplete='off'
-            maxLength={MAX_NAME_LENGTH}
-            editable={!isLoading}
-          />
-        </View>
+        {/* Form Fields */}
+        <ProjectFormFields
+          name={formData.name}
+          description={formData.description}
+          onNameChange={value => handleFieldChange('name', value)}
+          onDescriptionChange={value => handleFieldChange('description', value)}
+          disabled={isCreating}
+        />
 
-        {/* Description Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t('projects.create.description')}
-          </Text>
-          <TextInput
-            style={[
-              styles.textArea,
-              {
-                color: theme.colors.text,
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.surface,
-              },
-            ]}
-            placeholder={t('projects.create.descriptionPlaceholder')}
-            placeholderTextColor={theme.colors.textSecondary}
-            value={formData.description}
-            onChangeText={value => handleFieldChange('description', value)}
-            multiline
-            numberOfLines={4}
-            textAlignVertical='top'
-            autoCapitalize='sentences'
-            maxLength={MAX_DESCRIPTION_LENGTH}
-            editable={!isLoading}
-          />
-          <Text
-            style={[
-              styles.characterCount,
-              { color: theme.colors.textSecondary },
-            ]}>
-            {formData.description.length}/{MAX_DESCRIPTION_LENGTH}
-          </Text>
-        </View>
+        {/* Source Language Selection */}
+        <LanguageSelectionField
+          label={t('projects.create.sourceLanguage') || 'Source Language'}
+          selectedLanguageName={sourceLanguageName}
+          onSelect={onSelectSourceLanguage}
+          onView={onViewSourceLanguage}
+          disabled={isCreating}
+        />
 
-        {/* Source Language Selection Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t('projects.create.sourceLanguage') || 'Source Language'}
-          </Text>
-          {source_language_name ? (
-            <MenuView
-              actions={sourceLanguageActions}
-              onPressAction={handleSourceLanguageMenuAction}>
-              <TouchableOpacity
-                style={[
-                  styles.selectField,
-                  {
-                    borderColor: theme.colors.border,
-                    backgroundColor: theme.colors.surface,
-                  },
-                ]}>
-                <View style={styles.selectFieldContent}>
-                  <Text
-                    style={[
-                      styles.selectFieldText,
-                      { color: theme.colors.text },
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode='tail'>
-                    {source_language_name}
-                  </Text>
-                </View>
-                <Ionicons
-                  name='chevron-forward'
-                  size={20}
-                  color={theme.colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </MenuView>
-          ) : (
-            <TouchableOpacity
-              style={[
-                styles.selectField,
-                {
-                  borderColor: theme.colors.border,
-                  backgroundColor: theme.colors.surface,
-                },
-              ]}
-              onPress={onSelectSourceLanguage}>
-              <View style={styles.selectFieldContent}>
-                <Text
-                  style={[
-                    styles.selectFieldText,
-                    { color: theme.colors.text },
-                  ]}>
-                  {t('projects.create.selectSourceLanguage') ||
-                    'Select Source Language'}
-                </Text>
-              </View>
-              <Ionicons
-                name='chevron-forward'
-                size={20}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* Target Language Selection */}
+        <LanguageSelectionField
+          label={t('projects.create.targetLanguage') || 'Target Language'}
+          selectedLanguageName={targetLanguageName}
+          onSelect={onSelectTargetLanguage}
+          onView={onViewTargetLanguage}
+          disabled={isCreating}
+        />
 
-        {/* Target Language Selection Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t('projects.create.targetLanguage') || 'Target Language'}
-          </Text>
-          {target_language_name ? (
-            <MenuView
-              actions={targetLanguageActions}
-              onPressAction={handleTargetLanguageMenuAction}>
-              <TouchableOpacity
-                style={[
-                  styles.selectField,
-                  {
-                    borderColor: theme.colors.border,
-                    backgroundColor: theme.colors.surface,
-                  },
-                ]}>
-                <View style={styles.selectFieldContent}>
-                  <Text
-                    style={[
-                      styles.selectFieldText,
-                      { color: theme.colors.text },
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode='tail'>
-                    {target_language_name}
-                  </Text>
-                </View>
-                <Ionicons
-                  name='chevron-forward'
-                  size={20}
-                  color={theme.colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </MenuView>
-          ) : (
-            <TouchableOpacity
-              style={[
-                styles.selectField,
-                {
-                  borderColor: theme.colors.border,
-                  backgroundColor: theme.colors.surface,
-                },
-              ]}
-              onPress={onSelectTargetLanguage}>
-              <View style={styles.selectFieldContent}>
-                <Text
-                  style={[
-                    styles.selectFieldText,
-                    { color: theme.colors.text },
-                  ]}>
-                  {t('projects.create.selectTargetLanguage') ||
-                    'Select Target Language'}
-                </Text>
-              </View>
-              <Ionicons
-                name='chevron-forward'
-                size={20}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Region Selection Field */}
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t('projects.create.region') || 'Region'}
-          </Text>
-          {region_name ? (
-            <MenuView
-              actions={regionActions}
-              onPressAction={handleRegionMenuAction}>
-              <TouchableOpacity
-                style={[
-                  styles.selectField,
-                  {
-                    borderColor: theme.colors.border,
-                    backgroundColor: theme.colors.surface,
-                  },
-                ]}>
-                <View style={styles.selectFieldContent}>
-                  <Text
-                    style={[
-                      styles.selectFieldText,
-                      { color: theme.colors.text },
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode='tail'>
-                    {region_name}
-                  </Text>
-                </View>
-                <Ionicons
-                  name='chevron-forward'
-                  size={20}
-                  color={theme.colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </MenuView>
-          ) : (
-            <TouchableOpacity
-              style={[
-                styles.selectField,
-                {
-                  borderColor: theme.colors.border,
-                  backgroundColor: theme.colors.surface,
-                },
-              ]}
-              onPress={onSelectRegion}>
-              <View style={styles.selectFieldContent}>
-                <Text
-                  style={[
-                    styles.selectFieldText,
-                    { color: theme.colors.text },
-                  ]}>
-                  {t('projects.create.selectRegion') || 'Select Region'}
-                </Text>
-              </View>
-              <Ionicons
-                name='chevron-forward'
-                size={20}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* Region Selection */}
+        <RegionSelectionField
+          selectedRegionName={regionName}
+          onSelect={onSelectRegion}
+          onView={onViewRegion}
+          disabled={isCreating}
+        />
 
         {/* Error Display */}
         {errorMessage && (
@@ -603,15 +177,15 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({
             styles.createButton,
             {
               backgroundColor:
-                isFormValid && !isLoading
+                isFormValid && !isCreating
                   ? theme.colors.accent
                   : theme.colors.interactiveDisabled,
             },
           ]}
-          onPress={handleSubmit}
-          disabled={!isFormValid || isLoading}
+          onPress={() => handleSubmit(onClose)}
+          disabled={!isFormValid || isCreating}
           accessibilityLabel={t('projects.create.createButton')}>
-          {isLoading ? (
+          {isCreating ? (
             <ActivityIndicator color={theme.colors.textInverse} />
           ) : (
             <Text
@@ -644,6 +218,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
@@ -653,13 +234,6 @@ const styles = StyleSheet.create({
   headerRight: {
     width: 32,
   },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   scrollView: {
     flex: 1,
   },
@@ -667,65 +241,15 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  fieldContainer: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  required: {
-    // Color will be set dynamically via theme
-  },
-  input: {
-    fontSize: 17,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 44,
-  },
-  textArea: {
-    fontSize: 17,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 100,
-  },
-  characterCount: {
-    fontSize: 12,
-    marginTop: 4,
-    textAlign: 'right',
-  },
-  selectField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 44,
-  },
-  selectFieldContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  selectFieldText: {
-    fontSize: 17,
-  },
   errorContainer: {
+    padding: 16,
     marginHorizontal: 16,
     marginTop: 8,
-    padding: 12,
     borderRadius: 8,
   },
   errorText: {
     fontSize: 14,
+    textAlign: 'center',
   },
   footer: {
     paddingHorizontal: 16,

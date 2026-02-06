@@ -124,7 +124,7 @@ export const useAudioMonitor = (): UseAudioMonitorReturn => {
       setIsMonitoring(false);
       isStoppingRef.current = false;
     }
-  }, [isMonitoring, isRecording, startRecording, stopRecording]);
+  }, [isMonitoring, isRecording, stopRecording]);
 
   // Store state in refs for cleanup function
   const isMonitoringRef = useRef(isMonitoring);

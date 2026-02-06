@@ -20,7 +20,7 @@ import {
   SegmentAudioPlayer,
   RecordingSettingsModal,
 } from '../components';
-import { DeleteAllSegmentsButton } from '../components/DeleteAllSegmentsButton';
+import { DeleteAllSegmentsButton } from '../components/delete-all-segments-button';
 import type { Segment } from '../hooks';
 
 /**

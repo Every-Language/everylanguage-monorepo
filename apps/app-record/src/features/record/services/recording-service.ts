@@ -1,6 +1,6 @@
 import { powerSyncSystem } from '@/shared/infrastructure/powersync';
 import { logger } from '@/shared/utils/logger';
-import { FilePathService } from './FilePathService';
+import { FilePathService } from './file-path-service';
 import type { TempSegment } from '../types';
 
 /**

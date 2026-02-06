@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useRecordingSettingsStore } from '../stores/recording-settings-store';
-import { useAudioMonitor } from './use-audio-monitor';
+import { useAudioMonitor } from './useAudioMonitor';
 import type { AudioAnalysis } from '@siteed/expo-audio-studio';
 
 export interface UseRecordingSettingsReturn {

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/shared/hooks';
-import { useRecordingSettings } from '../hooks/use-recording-settings';
+import { useRecordingSettings } from '../hooks/useRecordingSettings';
 import { RecordingSettingsHeader } from './recording-settings-header';
 import { RecordingSettingsContent } from './recording-settings-content';
 

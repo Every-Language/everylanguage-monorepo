@@ -56,7 +56,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
 
     // Verify segment files exist before saving (more reliable than state check)
     if (tempSegments.length > 0) {
-      const { FilePathService } = await import('../services/FilePathService');
+      const { FilePathService } = await import('../services/file-path-service');
       const allFilesExist = await Promise.all(
         tempSegments.map(segment =>
           FilePathService.fileExists(segment.local_file_path)
