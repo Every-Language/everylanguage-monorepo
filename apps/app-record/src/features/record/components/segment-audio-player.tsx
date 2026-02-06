@@ -35,6 +35,7 @@ export interface SegmentAudioPlayerProps {
   isDisabled?: boolean;
   isActive?: boolean;
   isShadow?: boolean;
+  liveDurationMs?: number; // Live duration in milliseconds for active segments
 }
 
 export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
@@ -42,6 +43,7 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
   isDisabled = false,
   isActive = false,
   isShadow = false,
+  liveDurationMs,
 }) => {
   const { theme } = useTheme();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -54,6 +56,10 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
   const backgroundColorAnim = useRef(
     new Animated.Value(isActive || isShadow ? 1 : 0)
   ).current;
+  // State for live duration display
+  const [liveDisplayDuration, setLiveDisplayDuration] = useState<number | null>(
+    null
+  );
 
   // Determine the file path based on segment type
   // TempSegment has local_file_path, Segment (from PowerSync) has object_key
@@ -235,12 +241,29 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
     }
   };
 
+  // Update live display duration when liveDurationMs prop changes
+  useEffect(() => {
+    if (liveDurationMs !== undefined) {
+      // Convert milliseconds to seconds
+      setLiveDisplayDuration(liveDurationMs / 1000);
+    } else {
+      setLiveDisplayDuration(null);
+    }
+  }, [liveDurationMs]);
+
   // Get fallback duration from segment if available, otherwise use 0
   const fallbackDuration =
     'duration_seconds' in segment
       ? (segment as TempSegment).duration_seconds
       : 0;
-  const displayDuration = duration > 0 ? duration : fallbackDuration;
+
+  // Use live duration if available (for active segments), otherwise use loaded duration or fallback
+  const displayDuration =
+    liveDisplayDuration !== null
+      ? liveDisplayDuration
+      : duration > 0
+        ? duration
+        : fallbackDuration;
 
   // Animate background color transition
   useEffect(() => {
@@ -319,7 +342,9 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
             flex: isDisabled ? 1 : 0,
           },
         ]}>
-        {formatDuration(currentPosition || displayDuration)}
+        {formatDuration(
+          isDisabled ? displayDuration : currentPosition || displayDuration
+        )}
       </Text>
     </Animated.View>
   );

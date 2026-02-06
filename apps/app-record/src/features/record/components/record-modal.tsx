@@ -40,9 +40,11 @@ export const RecordModal: React.FC<RecordModalProps> = ({
     tempSegments,
     isRecording,
     isPaused,
+    durationMs,
     analysisData,
     hasActiveSegment,
     activeSegmentId,
+    activeSegmentStartTimeMs,
     handleStartRecording,
     handleStopRecording,
     handlePauseRecording,
@@ -185,6 +187,8 @@ export const RecordModal: React.FC<RecordModalProps> = ({
             isRecording={isRecording}
             hasActiveSegment={hasActiveSegment}
             activeSegmentId={activeSegmentId}
+            durationMs={durationMs}
+            activeSegmentStartTimeMs={activeSegmentStartTimeMs}
           />
         </ScrollView>
 

@@ -125,13 +125,6 @@ export const useRecording = (
         return;
       }
 
-      // eslint-disable-next-line no-console
-      console.log('Recording stopped:', {
-        durationMs: recording.durationMs,
-        fileUri: recording.fileUri,
-        compressedFileUri: recording.compression?.compressedFileUri,
-      });
-
       // Get the main recording file URI (use compressed if available, otherwise primary)
       const mainRecordingUri =
         recording.compression?.compressedFileUri || recording.fileUri;
@@ -141,9 +134,6 @@ export const useRecording = (
         console.error('No recording file URI available');
         return;
       }
-
-      // eslint-disable-next-line no-console
-      console.log('Main recording URI:', mainRecordingUri);
 
       // Store main recording URI for potential re-extraction
       setMainRecordingUri(mainRecordingUri);
@@ -214,6 +204,8 @@ export const useRecording = (
   // Check if there's an active segment being generated
   const hasActiveSegment = currentSegmentRef.current?.isActive ?? false;
   const activeSegmentId = currentSegmentRef.current?.id ?? null;
+  const activeSegmentStartTimeMs =
+    currentSegmentRef.current?.startTimeMs ?? null;
 
   return {
     // State
@@ -225,6 +217,7 @@ export const useRecording = (
     segmentsExtracted,
     hasActiveSegment,
     activeSegmentId,
+    activeSegmentStartTimeMs,
     // Handlers
     handleStartRecording,
     handleStopRecording,

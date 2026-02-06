@@ -9,6 +9,8 @@ export interface TempSegmentsListProps {
   isRecording?: boolean;
   hasActiveSegment?: boolean;
   activeSegmentId?: string | null;
+  durationMs?: number;
+  activeSegmentStartTimeMs?: number | null;
 }
 
 /**
@@ -21,6 +23,8 @@ export const TempSegmentsList: React.FC<TempSegmentsListProps> = ({
   isRecording = false,
   hasActiveSegment = false,
   activeSegmentId = null,
+  durationMs = 0,
+  activeSegmentStartTimeMs = null,
 }) => {
   const { theme } = useTheme();
 
@@ -38,22 +42,33 @@ export const TempSegmentsList: React.FC<TempSegmentsListProps> = ({
       <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
         Segments ({segments.length + (shouldShowShadow ? 1 : 0)})
       </Text>
-      {segments.map(segment => (
-        <SegmentAudioPlayer
-          key={segment.id}
-          segment={segment}
-          isDisabled={isRecording}
-          isActive={hasActiveSegment && segment.id === activeSegmentId}
-        />
-      ))}
-      {shouldShowShadow && (
+      {segments.map(segment => {
+        // Calculate live duration if this is the active segment
+        const isActiveSegment =
+          hasActiveSegment && segment.id === activeSegmentId;
+        const liveDurationMs =
+          isActiveSegment && activeSegmentStartTimeMs !== null
+            ? durationMs - activeSegmentStartTimeMs
+            : undefined;
+
+        return (
+          <SegmentAudioPlayer
+            key={segment.id}
+            segment={segment}
+            isDisabled={isRecording}
+            isActive={isActiveSegment}
+            liveDurationMs={liveDurationMs}
+          />
+        );
+      })}
+      {shouldShowShadow && activeSegmentStartTimeMs !== null && (
         <SegmentAudioPlayer
           segment={{
             id: activeSegmentId!,
             sequence_id: '',
             project_id: null,
             segment_index: segments.length + 1,
-            start_time_ms: 0,
+            start_time_ms: activeSegmentStartTimeMs,
             end_time_ms: 0,
             duration_seconds: 0,
             recording_status: 'recording',
@@ -66,6 +81,7 @@ export const TempSegmentsList: React.FC<TempSegmentsListProps> = ({
           isDisabled={true}
           isActive={true}
           isShadow={true}
+          liveDurationMs={durationMs - activeSegmentStartTimeMs}
         />
       )}
       {segments.length === 0 && !hasActiveSegment && (
