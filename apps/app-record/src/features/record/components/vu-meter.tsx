@@ -154,6 +154,7 @@ export const VUMeter: React.FC<VUMeterProps> = ({
                   bottom: endThresholdHeight as `${number}%`,
                   backgroundColor: theme.colors.error,
                   borderColor: theme.colors.error,
+                  shadowColor: theme.colors.shadow,
                 },
               ]}
             />
@@ -166,6 +167,7 @@ export const VUMeter: React.FC<VUMeterProps> = ({
                   bottom: startThresholdHeight as `${number}%`,
                   backgroundColor: theme.colors.success,
                   borderColor: theme.colors.success,
+                  shadowColor: theme.colors.shadow,
                 },
               ]}
             />
@@ -179,6 +181,7 @@ export const VUMeter: React.FC<VUMeterProps> = ({
               {
                 bottom: endThresholdHeight as `${number}%`,
                 backgroundColor: theme.colors.error,
+                borderColor: theme.colors.border,
               },
             ]}
           />
@@ -190,6 +193,7 @@ export const VUMeter: React.FC<VUMeterProps> = ({
               {
                 bottom: startThresholdHeight as `${number}%`,
                 backgroundColor: theme.colors.success,
+                borderColor: theme.colors.border,
               },
             ]}
           />
@@ -279,7 +283,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     zIndex: 20,
     borderWidth: 1,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.3,
     shadowRadius: 1,
@@ -292,7 +295,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.2)',
     zIndex: 30,
   },
   thresholdValuesContainer: {

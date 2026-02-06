@@ -333,13 +333,12 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
       <Text
         style={[
           styles.durationText,
+          isDisabled ? styles.durationTextDisabled : styles.durationTextEnabled,
           {
             color:
               isActive || isShadow
                 ? theme.colors.textInverse
                 : theme.colors.textSecondary,
-            textAlign: isDisabled ? 'center' : 'right',
-            flex: isDisabled ? 1 : 0,
           },
         ]}>
         {formatDuration(
@@ -378,6 +377,13 @@ const styles = StyleSheet.create({
   durationText: {
     fontSize: 12,
     minWidth: 40,
+  },
+  durationTextEnabled: {
     textAlign: 'right',
+    flex: 0,
+  },
+  durationTextDisabled: {
+    textAlign: 'center',
+    flex: 1,
   },
 });
