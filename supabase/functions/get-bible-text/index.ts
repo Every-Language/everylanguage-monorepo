@@ -17,7 +17,7 @@ interface VerseText {
 
 interface TextVersion {
   id: string;
-  language_id: string;
+  language_entity_id: string;
   bible_version_id: string;
   project_id: string | null;
   name: string;
@@ -97,13 +97,12 @@ Deno.serve(async (req: Request) => {
     );
 
     // Build query for text_versions with nested verse_texts
-    // Note: text_versions uses 'language_id' column, not 'language_entity_id'
     let query = supabase
       .from('text_versions')
       .select(
         `
         id,
-        language_id,
+        language_entity_id,
         bible_version_id,
         project_id,
         name,
@@ -126,9 +125,8 @@ Deno.serve(async (req: Request) => {
       .is('verse_texts.deleted_at', null);
 
     // Apply optional filters
-    // Note: text_versions uses 'language_id' column name
     if (params.language_entity_id) {
-      query = query.eq('language_id', params.language_entity_id);
+      query = query.eq('language_entity_id', params.language_entity_id);
     }
 
     if (params.bible_version_id) {
