@@ -13,7 +13,6 @@ interface MediaFileVerse {
   verse_id: string;
   start_time_seconds: number;
   duration_seconds: number;
-  verse_text_id: string | null;
   created_at: string;
 }
 
@@ -170,7 +169,6 @@ Deno.serve(async (req: Request) => {
             verse_id,
             start_time_seconds,
             duration_seconds,
-            verse_text_id,
             created_at
           )
         )
