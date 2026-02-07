@@ -23,6 +23,13 @@ const setIsConnected = (value: boolean): void => {
   });
 };
 
+const setIsInitialized = (value: boolean): void => {
+  Object.defineProperty(mockPowerSyncSystem, 'isInitialized', {
+    configurable: true,
+    get: () => value,
+  });
+};
+
 describe('authStore', () => {
   const mockUser: User = {
     id: 'user-123',
@@ -78,7 +85,11 @@ describe('authStore', () => {
     } as any;
 
     mockPowerSyncSystem.disconnect = jest.fn().mockResolvedValue(undefined);
+    mockPowerSyncSystem.connect = jest.fn().mockResolvedValue(undefined);
+    mockPowerSyncSystem.execute = jest.fn().mockResolvedValue(undefined);
+    mockPowerSyncSystem.getAll = jest.fn().mockResolvedValue([]);
     setIsConnected(false);
+    setIsInitialized(true);
   });
 
   describe('initial state', () => {
@@ -296,6 +307,73 @@ describe('authStore', () => {
         newSession.user?.email
       );
     });
+
+    it('should update projects and connect PowerSync on SIGNED_IN event', async () => {
+      mockSupabase.auth.getSession = jest.fn().mockResolvedValue({
+        data: { session: null },
+        error: null,
+      });
+
+      await act(async () => {
+        await useAuthStore.getState().initialize();
+      });
+
+      expect(mockSupabase.auth.onAuthStateChange).toHaveBeenCalledTimes(1);
+      const authCalls = onAuthStateChangeMock.mock.calls[0];
+      if (!authCalls) {
+        throw new Error('Expected auth state change listener to be registered');
+      }
+      const listenerCallback = authCalls[0] as (
+        event: AuthChangeEvent,
+        session: Session | null
+      ) => void;
+
+      // Simulate SIGNED_IN event
+      await act(async () => {
+        listenerCallback('SIGNED_IN', mockSession);
+      });
+
+      // Wait for async operations
+      await waitFor(() => {
+        expect(mockPowerSyncSystem.execute).toHaveBeenCalled();
+      });
+
+      expect(mockPowerSyncSystem.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE projects'),
+        [mockUser.id]
+      );
+      expect(mockPowerSyncSystem.getAll).toHaveBeenCalled();
+      expect(mockPowerSyncSystem.connect).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not update projects on non-SIGNED_IN events', async () => {
+      mockSupabase.auth.getSession = jest.fn().mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      await act(async () => {
+        await useAuthStore.getState().initialize();
+      });
+
+      const authCalls = onAuthStateChangeMock.mock.calls[0];
+      if (!authCalls) {
+        throw new Error('Expected auth state change listener to be registered');
+      }
+      const listenerCallback = authCalls[0] as (
+        event: AuthChangeEvent,
+        session: Session | null
+      ) => void;
+
+      // Simulate TOKEN_REFRESHED event (should not trigger PowerSync operations)
+      act(() => {
+        listenerCallback('TOKEN_REFRESHED', mockSession);
+      });
+
+      // PowerSync operations should not be called for non-SIGNED_IN events
+      expect(mockPowerSyncSystem.execute).not.toHaveBeenCalled();
+      expect(mockPowerSyncSystem.connect).not.toHaveBeenCalled();
+    });
   });
 
   describe('signIn', () => {
@@ -392,6 +470,159 @@ describe('authStore', () => {
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Sign in failed:',
         expect.any(Error)
+      );
+    });
+
+    it('should update projects with user_id after sign in', async () => {
+      const email = 'test@example.com';
+      const password = 'password123';
+
+      mockSupabase.auth.signInWithPassword = jest.fn().mockResolvedValue({
+        data: { session: mockSession, user: mockUser },
+        error: null,
+      });
+
+      await act(async () => {
+        await useAuthStore.getState().signIn(email, password);
+      });
+
+      expect(mockPowerSyncSystem.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE projects'),
+        [mockUser.id]
+      );
+    });
+
+    it('should validate projects before connecting PowerSync', async () => {
+      const email = 'test@example.com';
+      const password = 'password123';
+
+      mockSupabase.auth.signInWithPassword = jest.fn().mockResolvedValue({
+        data: { session: mockSession, user: mockUser },
+        error: null,
+      });
+
+      await act(async () => {
+        await useAuthStore.getState().signIn(email, password);
+      });
+
+      expect(mockPowerSyncSystem.getAll).toHaveBeenCalledWith(
+        'SELECT id, created_by FROM projects WHERE deleted_at IS NULL'
+      );
+    });
+
+    it('should connect PowerSync after sign in', async () => {
+      const email = 'test@example.com';
+      const password = 'password123';
+
+      mockSupabase.auth.signInWithPassword = jest.fn().mockResolvedValue({
+        data: { session: mockSession, user: mockUser },
+        error: null,
+      });
+      setIsConnected(false);
+
+      await act(async () => {
+        await useAuthStore.getState().signIn(email, password);
+      });
+
+      expect(mockPowerSyncSystem.connect).toHaveBeenCalledTimes(1);
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'PowerSync connected after sign-in'
+      );
+    });
+
+    it('should not connect PowerSync if already connected', async () => {
+      const email = 'test@example.com';
+      const password = 'password123';
+
+      mockSupabase.auth.signInWithPassword = jest.fn().mockResolvedValue({
+        data: { session: mockSession, user: mockUser },
+        error: null,
+      });
+      setIsConnected(true);
+
+      await act(async () => {
+        await useAuthStore.getState().signIn(email, password);
+      });
+
+      expect(mockPowerSyncSystem.connect).not.toHaveBeenCalled();
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'PowerSync already connected, skipping connection'
+      );
+    });
+
+    it('should handle PowerSync connection failure gracefully', async () => {
+      const email = 'test@example.com';
+      const password = 'password123';
+      const connectionError = new Error('Connection failed');
+
+      mockSupabase.auth.signInWithPassword = jest.fn().mockResolvedValue({
+        data: { session: mockSession, user: mockUser },
+        error: null,
+      });
+      mockPowerSyncSystem.connect = jest
+        .fn()
+        .mockRejectedValue(connectionError);
+      setIsConnected(false);
+
+      await act(async () => {
+        await useAuthStore.getState().signIn(email, password);
+      });
+
+      // Sign-in should still succeed despite PowerSync failure
+      const state = useAuthStore.getState();
+      expect(state.session).toBe(mockSession);
+      expect(state.user).toBe(mockUser);
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to connect PowerSync after sign-in:',
+        connectionError
+      );
+    });
+
+    it('should skip PowerSync operations if not initialized', async () => {
+      const email = 'test@example.com';
+      const password = 'password123';
+
+      mockSupabase.auth.signInWithPassword = jest.fn().mockResolvedValue({
+        data: { session: mockSession, user: mockUser },
+        error: null,
+      });
+      setIsInitialized(false);
+
+      await act(async () => {
+        await useAuthStore.getState().signIn(email, password);
+      });
+
+      // Sign-in should still succeed
+      const state = useAuthStore.getState();
+      expect(state.session).toBe(mockSession);
+      expect(state.user).toBe(mockUser);
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'PowerSync not initialized, skipping project update with user_id'
+      );
+    });
+
+    it('should handle projects with invalid created_by', async () => {
+      const email = 'test@example.com';
+      const password = 'password123';
+      const otherUserId = 'other-user-123';
+
+      mockSupabase.auth.signInWithPassword = jest.fn().mockResolvedValue({
+        data: { session: mockSession, user: mockUser },
+        error: null,
+      });
+      // Mock projects with invalid created_by
+      mockPowerSyncSystem.getAll = jest.fn().mockResolvedValue([
+        { id: 'project-1', created_by: mockUser.id },
+        { id: 'project-2', created_by: otherUserId }, // Invalid
+      ]);
+
+      await act(async () => {
+        await useAuthStore.getState().signIn(email, password);
+      });
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Projects with invalid created_by found (will be skipped on sync):',
+        [{ id: 'project-2', created_by: otherUserId }]
       );
     });
   });
