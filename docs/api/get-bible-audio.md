@@ -40,6 +40,7 @@ All parameters are optional. Multiple parameters can be combined to filter resul
       {
         "id": "dffd85ec-d3ba-49cd-acb7-b17ccaa7f312",
         "language_entity_id": "39040994-e865-4914-bc0d-a0ec94c683dd",
+        "language_name": "English",
         "bible_version_id": "bible-version-protestant-standard",
         "project_id": "c8fc4478-62b2-4e8d-8d12-56fa3e8782a3",
         "name": "Main",
@@ -93,6 +94,7 @@ All parameters are optional. Multiple parameters can be combined to filter resul
 
 - `id` (string, UUID) - Unique identifier for the audio version
 - `language_entity_id` (string, UUID) - Language entity this version is for
+- `language_name` (string) - Display name of the language (e.g., "English", "Spanish", "French")
 - `bible_version_id` (string) - Bible structure version (e.g., "bible-version-protestant-standard")
 - `project_id` (string, UUID | null) - Associated project ID, if any
 - `name` (string) - Display name of the audio version (e.g., "BSB", "OMT", "Main")

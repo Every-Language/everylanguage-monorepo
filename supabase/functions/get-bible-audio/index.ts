@@ -36,6 +36,7 @@ interface MediaFile {
 interface AudioVersion {
   id: string;
   language_entity_id: string;
+  language_name: string;
   bible_version_id: string;
   project_id: string | null;
   name: string;
@@ -146,6 +147,9 @@ Deno.serve(async (req: Request) => {
         `
         id,
         language_entity_id,
+        language_entities!inner(
+          name
+        ),
         bible_version_id,
         project_id,
         name,
@@ -180,6 +184,7 @@ Deno.serve(async (req: Request) => {
       .eq('media_files.publish_status', 'published')
       // Exclude soft-deleted records
       .is('deleted_at', null)
+      .is('language_entities.deleted_at', null)
       .is('media_files.deleted_at', null)
       .is('media_files.media_files_verses.deleted_at', null);
 
@@ -208,9 +213,15 @@ Deno.serve(async (req: Request) => {
     const expiresInSeconds = DEFAULT_EXPIRATION_HOURS * 3600;
     const urlErrors: Record<string, string> = {};
 
-    const audioVersions = (data as AudioVersion[]) ?? [];
+    const audioVersions = (data as any[]) ?? [];
 
-    for (const audioVersion of audioVersions) {
+    // Transform the data to flatten language_entities.name to language_name
+    const transformedAudioVersions: AudioVersion[] = audioVersions.map(av => ({
+      ...av,
+      language_name: (av.language_entities as { name: string })?.name ?? '',
+    }));
+
+    for (const audioVersion of transformedAudioVersions) {
       for (const mediaFile of audioVersion.media_files) {
         if (!mediaFile.object_key) {
           urlErrors[mediaFile.id] = 'Missing object key';
@@ -238,7 +249,7 @@ Deno.serve(async (req: Request) => {
       expires_in_seconds: number;
       url_errors?: Record<string, string>;
     } = {
-      audio_versions: audioVersions,
+      audio_versions: transformedAudioVersions,
       expires_in_seconds: expiresInSeconds,
     };
 

@@ -40,6 +40,7 @@ All parameters are optional. Multiple parameters can be combined to filter resul
       {
         "id": "b572e95a-9e12-416d-9966-59ec170e4507",
         "language_entity_id": "bf937d24-ae29-4219-9102-b8e2b471fee8",
+        "language_name": "English",
         "bible_version_id": "bible-version-protestant-standard",
         "project_id": "307a348b-218e-40ca-8477-5e94261550ed",
         "name": "BSB - text",
@@ -78,6 +79,7 @@ All parameters are optional. Multiple parameters can be combined to filter resul
 
 - `id` (string, UUID) - Unique identifier for the text version
 - `language_entity_id` (string, UUID) - Language entity this version is for
+- `language_name` (string) - Display name of the language (e.g., "English", "Spanish", "French")
 - `bible_version_id` (string) - Bible structure version (e.g., "bible-version-protestant-standard")
 - `project_id` (string, UUID | null) - Associated project ID, if any
 - `name` (string) - Display name of the text version (e.g., "BSB - text", "NIV")
