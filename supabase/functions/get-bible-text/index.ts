@@ -18,6 +18,7 @@ interface VerseText {
 interface TextVersion {
   id: string;
   language_entity_id: string;
+  language_name: string;
   bible_version_id: string;
   project_id: string | null;
   name: string;
@@ -103,6 +104,9 @@ Deno.serve(async (req: Request) => {
         `
         id,
         language_entity_id,
+        language_entities!inner(
+          name
+        ),
         bible_version_id,
         project_id,
         name,
@@ -122,6 +126,7 @@ Deno.serve(async (req: Request) => {
       .eq('publish_status', 'published')
       // Exclude soft-deleted records
       .is('deleted_at', null)
+      .is('language_entities.deleted_at', null)
       .is('verse_texts.deleted_at', null);
 
     // Apply optional filters
@@ -145,11 +150,17 @@ Deno.serve(async (req: Request) => {
       return createErrorResponse(`Database error: ${error.message}`, 500);
     }
 
-    const textVersions = (data as TextVersion[]) ?? [];
+    const textVersions = (data as any[]) ?? [];
+
+    // Transform the data to flatten language_entities.name to language_name
+    const transformedTextVersions: TextVersion[] = textVersions.map(tv => ({
+      ...tv,
+      language_name: (tv.language_entities as { name: string })?.name ?? '',
+    }));
 
     // Build response
     const response = {
-      text_versions: textVersions,
+      text_versions: transformedTextVersions,
     };
 
     return createSuccessResponse(response);
