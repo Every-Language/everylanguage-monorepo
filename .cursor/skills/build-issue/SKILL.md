@@ -1,3 +1,9 @@
+---
+name: build-issue
+description: Build Issue
+disable-model-invocation: true
+---
+
 # Build Issue
 
 Implement Linear issue(s) with comprehensive testing and incremental commits.
