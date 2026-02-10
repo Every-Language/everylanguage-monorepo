@@ -1,3 +1,9 @@
+---
+name: write-issue
+description: Write Issue
+disable-model-invocation: true
+---
+
 # Write Issue
 
 Write out a linear issue properly, and enhance it with detailed context from the codebase to prepare it for implementation.

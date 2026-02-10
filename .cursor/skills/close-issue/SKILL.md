@@ -1,3 +1,9 @@
+---
+name: close-issue
+description: Close Issue
+disable-model-invocation: true
+---
+
 # Close Issue
 
 Finalize issue implementation with comprehensive checks, commit final changes, and mark PR ready for review.
