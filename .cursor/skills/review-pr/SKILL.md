@@ -1,3 +1,9 @@
+---
+name: review-pr
+description: Review Pull Request
+disable-model-invocation: true
+---
+
 # Review Pull Request
 
 Comprehensive review of a pull request or branch, including code analysis, automated testing, and merge recommendation.
@@ -442,8 +448,7 @@ If gaps are found:
 
 For each Linear issue, create a summary:
 
-\`\`\`markdown
-
+```markdown
 ### Linear Issue: {issue_id} - {issue_title}
 
 **Issue Status**: {status}
@@ -479,7 +484,7 @@ For each Linear issue, create a summary:
 **Recommendation**:
 
 - {APPROVE if all criteria met / REQUEST CHANGES if gaps / NEEDS CLARIFICATION if unclear}
-  \`\`\`
+```
 
 **If No Linear Issues Found:**
 

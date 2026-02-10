@@ -1,3 +1,9 @@
+---
+name: commit
+description: Commit
+disable-model-invocation: true
+---
+
 # Commit
 
 Analyze staged changes and create a conventional commit message following project standards.
