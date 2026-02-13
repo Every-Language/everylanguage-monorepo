@@ -48,14 +48,9 @@ export class RecordingSegmentService {
           // Extract segment using trimAudio
           const trimmedResult = await trimAudio({
             fileUri: mainRecordingUri,
-            ranges: [
-              {
-                startTimeMs: segment.start_time_ms,
-                endTimeMs: segment.end_time_ms,
-              },
-            ],
-            mode: 'keep',
-            outputFormat: { format: 'aac' },
+            startTimeMs: Math.round(segment.start_time_ms),
+            endTimeMs: Math.round(segment.end_time_ms),
+            outputFormat: { format: 'aac' as const },
           });
 
           // Get the trimmed file URI from the result
@@ -69,30 +64,46 @@ export class RecordingSegmentService {
             continue;
           }
 
-          // Normalize the path
-          trimmedFileUri = trimmedFileUri
+          // Normalize the path to a raw filesystem path (no scheme, no trailing slashes)
+          let rawPath = trimmedFileUri
+            .replace(/^file:\/+/, '') // strip existing file: prefix if present
             .replace(/\/\.\.\/?$/, '')
             .replace(/\/+$/, '');
 
+          // Build a proper file:// URI for expo-file-system
+          let sourceUri = `file://${rawPath}`;
+
           // Check if the path is a directory - if so, find the audio file inside
-          const sourceInfo = await FileSystem.getInfoAsync(trimmedFileUri);
+          const sourceInfo = await FileSystem.getInfoAsync(sourceUri);
           if (sourceInfo.exists && sourceInfo.isDirectory) {
-            const dirContents =
-              await FileSystem.readDirectoryAsync(trimmedFileUri);
+            const dirContents = await FileSystem.readDirectoryAsync(sourceUri);
             const audioFile = dirContents.find(
               f =>
                 f.endsWith('.aac') || f.endsWith('.m4a') || f.endsWith('.wav')
             );
             if (audioFile) {
-              trimmedFileUri = `${trimmedFileUri}/${audioFile}`;
+              rawPath = `${rawPath}/${audioFile}`;
+              sourceUri = `file://${rawPath}`;
             } else {
               // eslint-disable-next-line no-console
-              console.error(
-                'No audio file found in directory:',
-                trimmedFileUri
-              );
+              console.error('No audio file found in directory:', sourceUri);
               continue;
             }
+          }
+
+          // If the source file still doesn't exist, skip this segment to avoid
+          // throwing in FileSystem.copyAsync and log for diagnosis.
+          const finalSourceInfo = await FileSystem.getInfoAsync(sourceUri);
+          if (!finalSourceInfo.exists) {
+            // eslint-disable-next-line no-console
+            console.error(
+              'Trimmed source file does not exist before copyAsync:',
+              {
+                trimmedFileUri: sourceUri,
+                segmentId: segment.id,
+              }
+            );
+            continue;
           }
 
           // Check if target file already exists and remove it
@@ -103,7 +114,7 @@ export class RecordingSegmentService {
 
           // Copy the trimmed file to the segment's path
           await FileSystem.copyAsync({
-            from: trimmedFileUri,
+            from: sourceUri,
             to: absolutePath,
           });
 

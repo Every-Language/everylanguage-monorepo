@@ -125,9 +125,18 @@ export const useRecording = (
         return;
       }
 
-      // Get the main recording file URI (use compressed if available, otherwise primary)
+      // Get the main recording file URI.
+      // Prefer the primary (PCM/WAV) file for trimming, as trimming on
+      // compressed AAC can fail on Android for some ranges.
       const mainRecordingUri =
-        recording.compression?.compressedFileUri || recording.fileUri;
+        recording.fileUri || recording.compression?.compressedFileUri;
+
+      // Log original recording info so we can inspect/pull it from the device.
+      // eslint-disable-next-line no-console
+      console.log('handleStopRecording: main recording info', {
+        mainRecordingUri,
+        recording,
+      });
 
       if (!mainRecordingUri) {
         // eslint-disable-next-line no-console
