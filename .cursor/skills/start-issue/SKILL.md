@@ -1,3 +1,9 @@
+---
+name: start-issue
+description: Start Issue
+disable-model-invocation: true
+---
+
 # Start Issue
 
 Create a feature branch and draft PR for one or more Linear issues, following the Every Language workflow.
