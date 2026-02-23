@@ -16,6 +16,9 @@ import { VersionSelectionStackNavigator } from '@/features/languages/navigation/
 import { useOnboardingStore } from '@/features/onboarding/store/onboardingStore';
 import { useTheme } from '@/shared/hooks';
 import { i18n } from '@/shared/services';
+import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
+
+const SEED_WAIT_TIMEOUT_MS = 15000;
 
 // Type definitions for the onboarding stack
 export type OnboardingStackParamList = {
@@ -117,10 +120,14 @@ const OnboardingMainScreenWrapper: React.FC<OnboardingMainScreenProps> = ({
 const MotherTongueSearchScreenWrapper: React.FC<
   MotherTongueSearchScreenProps
 > = ({ navigation }) => {
+  const handleComplete = async () => {
+    await powerSyncSystem.waitUntilSeededWithTimeout(SEED_WAIT_TIMEOUT_MS);
+    navigation.navigate('Permissions');
+  };
   return (
     <OnlineBibleSetupScreen
       onBack={() => navigation.goBack()}
-      onComplete={() => navigation.navigate('Permissions')}
+      onComplete={handleComplete}
       onAudioVersionPress={() =>
         navigation.navigate('VersionSelectionModal', {
           versionType: 'audio',
@@ -142,10 +149,14 @@ const MotherTongueSearchScreenWrapper: React.FC<
 const ImportBibleScreenWrapper: React.FC<ImportBibleScreenProps> = ({
   navigation,
 }) => {
+  const handleComplete = async () => {
+    await powerSyncSystem.waitUntilSeededWithTimeout(SEED_WAIT_TIMEOUT_MS);
+    navigation.navigate('Permissions');
+  };
   return (
     <OfflineBibleSetupScreen
       onBack={() => navigation.goBack()}
-      onComplete={() => navigation.navigate('Permissions')}
+      onComplete={handleComplete}
     />
   );
 };

@@ -22,6 +22,29 @@ import { useAuthStore } from '@/shared/store/authStore';
 import { userVersionSupabaseService } from '../services/userVersionSupabaseService';
 import type { UserVersionData } from '../services/userVersionSupabaseService';
 import { NoNetworkModal } from '../components/NoNetworkModal';
+import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
+
+const SEED_WAIT_TIMEOUT_MS = 15000;
+const USER_DATA_POLL_TIMEOUT_MS = 10000;
+const USER_DATA_POLL_INTERVAL_MS = 500;
+
+/** Poll local PowerSync DB for user_current_selections row for userId; resolve when found or after timeout. */
+async function waitForUserDataInLocalDB(userId: string): Promise<void> {
+  if (!powerSyncSystem.isInitialized) return;
+  const deadline = Date.now() + USER_DATA_POLL_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    try {
+      const result = (await powerSyncSystem.get(
+        'SELECT COUNT(*) as count FROM user_current_selections WHERE user_id = ?',
+        [userId]
+      )) as { count?: number } | undefined;
+      if (Number(result?.count ?? 0) > 0) return;
+    } catch {
+      // ignore and retry
+    }
+    await new Promise(r => setTimeout(r, USER_DATA_POLL_INTERVAL_MS));
+  }
+}
 
 export const SignInSyncScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -41,6 +64,8 @@ export const SignInSyncScreen: React.FC = () => {
     useState<UserVersionData | null>(null);
   const [versionDataLoading, setVersionDataLoading] = useState(false);
   const [versionDataFetched, setVersionDataFetched] = useState(false);
+  const [isPreparingForSkip, setIsPreparingForSkip] = useState(false);
+  const [preparingMessage, setPreparingMessage] = useState<string | null>(null);
 
   const isOnboardingContext = showOnboarding === true;
 
@@ -113,12 +138,26 @@ export const SignInSyncScreen: React.FC = () => {
     }
   };
 
-  const handleSkipOnboarding = () => {
-    if (isOnboardingContext) {
-      (navigation as OnboardingStackNavigationProp).navigate('Permissions');
-    } else {
+  const handleSkipOnboarding = async () => {
+    if (!isOnboardingContext) {
       navigation.getParent()?.goBack();
+      return;
     }
+    if (syncState.canSkipOnboarding && userId) {
+      setIsPreparingForSkip(true);
+      setPreparingMessage(t('auth.sync.preparingBible'));
+      try {
+        await powerSyncSystem.waitUntilSeededWithTimeout(SEED_WAIT_TIMEOUT_MS);
+        setPreparingMessage(t('auth.sync.syncingData'));
+        await waitForUserDataInLocalDB(userId);
+      } catch (e) {
+        logger.warn(true, 'SignInSyncScreen: prepare for skip failed', e);
+      } finally {
+        setIsPreparingForSkip(false);
+        setPreparingMessage(null);
+      }
+    }
+    (navigation as OnboardingStackNavigationProp).navigate('Permissions');
   };
 
   const handleRetryVersionData = useCallback(() => {
@@ -309,7 +348,7 @@ export const SignInSyncScreen: React.FC = () => {
           style={styles.spinner}
         />
         <Text style={[styles.message, { color: theme.colors.text }]}>
-          {syncState.message}
+          {preparingMessage ?? syncState.message}
         </Text>
 
         {syncState.progress > 0 && (
@@ -374,7 +413,8 @@ export const SignInSyncScreen: React.FC = () => {
                   styles.skipOnboardingButton,
                   { backgroundColor: theme.colors.primary },
                 ]}
-                onPress={handleSkipOnboarding}>
+                onPress={handleSkipOnboarding}
+                disabled={isPreparingForSkip}>
                 <Text
                   style={[
                     styles.buttonText,

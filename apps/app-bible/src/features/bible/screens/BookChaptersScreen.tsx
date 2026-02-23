@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -45,7 +45,6 @@ import type { MenuAction } from '@react-native-menu/menu';
 import { useMediaBottomInset } from '@/features/media/layout/useMediaBottomInset';
 import { useNavigation } from '@react-navigation/native';
 import { useResolvedBibleLocation } from '../hooks/useResolvedBibleLocation';
-import { useEffect } from 'react';
 import { Alert } from 'react-native';
 import { DeepLinkState } from '@/shared/services/deeplink/DeepLinkState';
 import {
@@ -152,6 +151,37 @@ export const BookChaptersScreen: React.FC = () => {
   // Always call chapters hook (empty id will yield no results), to keep hooks order stable
   const bookIdForQuery = resolvedBook?.id ?? '';
   const chaptersQuery = useChaptersWithMetadata(bookIdForQuery);
+
+  // One-time recovery: if we have a valid book but no chapters (e.g. seed was still in progress), wait for seed and refetch
+  const recoveryAttemptedRef = useRef(false);
+  useEffect(() => {
+    const { chapters, loading, isRefetching, fetchChapters } = chaptersQuery;
+    if (
+      !resolvedBook?.id ||
+      chapters.length > 0 ||
+      loading ||
+      isRefetching ||
+      recoveryAttemptedRef.current
+    ) {
+      return;
+    }
+    recoveryAttemptedRef.current = true;
+    const run = async () => {
+      try {
+        await powerSyncSystem.waitUntilSeeded();
+        await fetchChapters();
+      } catch {
+        // non-fatal
+      }
+    };
+    void run();
+  }, [
+    resolvedBook?.id,
+    chaptersQuery.chapters.length,
+    chaptersQuery.loading,
+    chaptersQuery.isRefetching,
+    chaptersQuery.fetchChapters,
+  ]);
 
   // Invalidate chapters metadata reactively as media_files for current audio version change
   useAudioAvailabilityInvalidation(currentAudioVersion?.id ?? null);

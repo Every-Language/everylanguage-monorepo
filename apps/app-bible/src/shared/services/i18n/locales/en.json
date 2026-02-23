@@ -154,7 +154,9 @@
       "savedTextVersions": "Saved text versions",
       "savedAudioVersions": "Saved audio versions",
       "noSelection": "None",
-      "loadingVersions": "Loading your versions..."
+      "loadingVersions": "Loading your versions...",
+      "preparingBible": "Preparing your Bible…",
+      "syncingData": "Syncing your data…"
     },
     "errors": {
       "fillAllFields": "Please fill in all fields",
