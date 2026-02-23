@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
@@ -16,8 +17,11 @@ import { useOnboardingStore } from '@/features/onboarding/store/onboardingStore'
 import { useNavigation } from '@react-navigation/native';
 import type { OnboardingStackNavigationProp } from '@/features/onboarding/navigation/OnboardingStackNavigator';
 import type { AuthStackNavigationProp } from '@/features/auth/navigation/AuthStackNavigator';
-import { userVersionCheckService } from '../services/userVersionCheckService';
 import { logger } from '@/shared/utils/logger';
+import { useAuthStore } from '@/shared/store/authStore';
+import { userVersionSupabaseService } from '../services/userVersionSupabaseService';
+import type { UserVersionData } from '../services/userVersionSupabaseService';
+import { NoNetworkModal } from '../components/NoNetworkModal';
 
 export const SignInSyncScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -27,109 +31,101 @@ export const SignInSyncScreen: React.FC = () => {
   const navigation = useNavigation<
     OnboardingStackNavigationProp | AuthStackNavigationProp
   >();
+  const { userId } = useAuthStore();
 
   const { syncState, retrySync, continueOffline, updateSyncState } =
     useSyncScreenStore();
 
-  // Detect if we're in onboarding context
+  const [showNoNetworkModal, setShowNoNetworkModal] = useState(false);
+  const [userVersionData, setUserVersionData] =
+    useState<UserVersionData | null>(null);
+  const [versionDataLoading, setVersionDataLoading] = useState(false);
+  const [versionDataFetched, setVersionDataFetched] = useState(false);
+
   const isOnboardingContext = showOnboarding === true;
 
-  // Check versions when sync completes
+  const fetchUserVersionData = useCallback(async () => {
+    if (!userId) return;
+    if (!isOnline || !isConnected) {
+      setShowNoNetworkModal(true);
+      return;
+    }
+    setVersionDataLoading(true);
+    setVersionDataFetched(true);
+    try {
+      const data = await userVersionSupabaseService.getUserVersionData(userId);
+      setUserVersionData(data);
+      const hasData =
+        (data.currentSelections &&
+          (data.currentSelections.current_audio_version_id != null ||
+            data.currentSelections.current_text_version_id != null)) ||
+        data.savedAudioVersions.length > 0 ||
+        data.savedTextVersions.length > 0;
+      updateSyncState({
+        hasUserDataFromServer: hasData,
+        hasSavedVersions: hasData,
+        hasVersions: hasData,
+        canSkipOnboarding: hasData,
+      });
+    } catch (e) {
+      logger.warn(true, 'SignInSyncScreen: fetchUserVersionData failed', e);
+      setUserVersionData(null);
+    } finally {
+      setVersionDataLoading(false);
+    }
+  }, [userId, isOnline, isConnected, updateSyncState]);
+
   useEffect(() => {
-    const checkVersions = async () => {
-      if (syncState.phase === 'complete' && !syncState.hasVersions) {
-        try {
-          logger.info(true, 'SignInSyncScreen: Checking user versions...');
-
-          // Get current user ID from auth store
-          const { useAuthStore } = await import('@/shared/store/authStore');
-          const userId = useAuthStore.getState().userId;
-
-          if (!userId) {
-            logger.warn(
-              true,
-              'SignInSyncScreen: No user ID available for version check'
-            );
-            return;
-          }
-
-          // Check user version needs
-          const versionCheck =
-            await userVersionCheckService.checkUserVersionNeeds(userId);
-          const defaultVersions =
-            await userVersionCheckService.getDefaultVersions();
-
-          // Log version information
-          logger.info(true, 'SignInSyncScreen: Version check results:', {
-            needsVersionSelection: versionCheck.needsVersionSelection,
-            hasCurrentSelections: versionCheck.hasCurrentSelections,
-            hasSavedVersions: versionCheck.hasSavedVersions,
-            hasDefaultVersions: versionCheck.hasDefaultVersions,
-            availableAudioVersions: defaultVersions.audio.length,
-            availableTextVersions: defaultVersions.text.length,
-          });
-
-          // Determine if user can skip onboarding
-          const hasVersions =
-            versionCheck.hasCurrentSelections || versionCheck.hasSavedVersions;
-          const canSkipOnboarding =
-            hasVersions && versionCheck.hasDefaultVersions;
-
-          // Update sync state with version info
-          updateSyncState({
-            hasVersions,
-            canSkipOnboarding,
-          });
-        } catch (error) {
-          logger.error(true, 'SignInSyncScreen: Version check failed:', error);
-          // Don't fail the sync if version check fails
-        }
+    if (
+      syncState.phase === 'complete' &&
+      userId &&
+      !versionDataFetched &&
+      !versionDataLoading
+    ) {
+      if (!isConnected || !isOnline) {
+        setShowNoNetworkModal(true);
+        setVersionDataFetched(true);
+        return;
       }
-    };
-
-    checkVersions();
-  }, [syncState.phase, syncState.hasVersions, updateSyncState]);
-
-  // Handle manual navigation to onboarding
-  const handleGetStarted = () => {
-    if (isOnboardingContext) {
-      // In onboarding context, navigate to OnboardingMain
-      (navigation as OnboardingStackNavigationProp).navigate('OnboardingMain');
-    } else {
-      // In main app context, close the auth modal
-      navigation.getParent()?.goBack();
+      void fetchUserVersionData();
     }
-  };
+  }, [
+    syncState.phase,
+    userId,
+    versionDataFetched,
+    versionDataLoading,
+    isOnline,
+    isConnected,
+    fetchUserVersionData,
+  ]);
 
-  // Handle skip onboarding navigation
-  const handleSkipOnboarding = () => {
-    if (isOnboardingContext) {
-      // In onboarding context, navigate to Permissions (skip version selection)
-      (navigation as OnboardingStackNavigationProp).navigate('Permissions');
-    } else {
-      // In main app context, close the auth modal
-      navigation.getParent()?.goBack();
-    }
-  };
-
-  // REMOVED: Automatic navigation on sync completion
-  // Now user must click "Get Started" button to proceed
-  // useEffect(() => {
-  //   if (syncState.phase === 'complete') {
-  //     if (isOnboardingContext) {
-  //       (navigation as OnboardingStackNavigationProp).navigate('OnboardingMain');
-  //     } else {
-  //       // In main app context, the auth modal will be closed automatically
-  //     }
-  //   }
-  // }, [syncState.phase, isOnboardingContext, navigation]);
-
-  // Update network status when network state changes
   useEffect(() => {
     const networkStatus =
       !isConnected || !isOnline ? 'disconnected' : 'connected';
     updateSyncState({ networkStatus });
   }, [isConnected, isOnline, updateSyncState]);
+
+  const handleGetStarted = () => {
+    if (isOnboardingContext) {
+      (navigation as OnboardingStackNavigationProp).navigate('OnboardingMain');
+    } else {
+      navigation.getParent()?.goBack();
+    }
+  };
+
+  const handleSkipOnboarding = () => {
+    if (isOnboardingContext) {
+      (navigation as OnboardingStackNavigationProp).navigate('Permissions');
+    } else {
+      navigation.getParent()?.goBack();
+    }
+  };
+
+  const handleRetryVersionData = useCallback(() => {
+    setVersionDataFetched(false);
+    setUserVersionData(null);
+    void fetchUserVersionData();
+  }, [fetchUserVersionData]);
 
   const getNetworkStatusColor = () => {
     switch (syncState.networkStatus) {
@@ -153,39 +149,169 @@ export const SignInSyncScreen: React.FC = () => {
     }
   };
 
-  const handleRetry = () => {
-    retrySync();
-  };
+  const renderVersionDataSection = () => {
+    if (syncState.phase !== 'complete') return null;
+    if (versionDataLoading) {
+      return (
+        <View style={styles.versionDataSection}>
+          <Text style={[styles.versionDataLabel, { color: theme.colors.text }]}>
+            {t('auth.sync.loadingVersions')}
+          </Text>
+          <ActivityIndicator size='small' color={theme.colors.primary} />
+          <TouchableOpacity
+            style={[
+              styles.retryVersionButton,
+              { borderColor: theme.colors.border },
+            ]}
+            onPress={handleRetryVersionData}
+            disabled={versionDataLoading}>
+            <Text
+              style={[styles.retryVersionText, { color: theme.colors.text }]}>
+              {t('common.retry')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    if (!userVersionData) {
+      return (
+        <View style={styles.versionDataSection}>
+          <TouchableOpacity
+            style={[
+              styles.retryVersionButton,
+              { borderColor: theme.colors.primary },
+            ]}
+            onPress={handleRetryVersionData}>
+            <Text
+              style={[
+                styles.retryVersionText,
+                { color: theme.colors.primary },
+              ]}>
+              {t('common.retry')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
 
-  const handleContinueOffline = () => {
-    continueOffline();
+    const { currentSelections, savedTextVersions, savedAudioVersions } =
+      userVersionData;
+    const audioId = currentSelections?.current_audio_version_id ?? null;
+    const textId = currentSelections?.current_text_version_id ?? null;
+
+    return (
+      <ScrollView
+        style={styles.versionDataScroll}
+        contentContainerStyle={styles.versionDataScrollContent}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.versionDataSection}>
+          <Text style={[styles.versionDataTitle, { color: theme.colors.text }]}>
+            {t('auth.sync.currentSelections')}
+          </Text>
+          <Text
+            style={[
+              styles.versionDataRow,
+              { color: theme.colors.textSecondary ?? theme.colors.text },
+            ]}>
+            Audio: {audioId ?? t('auth.sync.noSelection')}
+          </Text>
+          <Text
+            style={[
+              styles.versionDataRow,
+              { color: theme.colors.textSecondary ?? theme.colors.text },
+            ]}>
+            Text: {textId ?? t('auth.sync.noSelection')}
+          </Text>
+        </View>
+
+        <View style={styles.versionDataSection}>
+          <Text style={[styles.versionDataTitle, { color: theme.colors.text }]}>
+            {t('auth.sync.savedTextVersions')} ({savedTextVersions.length})
+          </Text>
+          {savedTextVersions.length === 0 ? (
+            <Text
+              style={[
+                styles.versionDataRow,
+                { color: theme.colors.textSecondary ?? theme.colors.text },
+              ]}>
+              {t('auth.sync.noSelection')}
+            </Text>
+          ) : (
+            savedTextVersions.map(row => (
+              <Text
+                key={row.id}
+                style={[
+                  styles.versionDataRow,
+                  { color: theme.colors.textSecondary ?? theme.colors.text },
+                ]}>
+                {row.text_version_id}
+              </Text>
+            ))
+          )}
+        </View>
+
+        <View style={styles.versionDataSection}>
+          <Text style={[styles.versionDataTitle, { color: theme.colors.text }]}>
+            {t('auth.sync.savedAudioVersions')} ({savedAudioVersions.length})
+          </Text>
+          {savedAudioVersions.length === 0 ? (
+            <Text
+              style={[
+                styles.versionDataRow,
+                { color: theme.colors.textSecondary ?? theme.colors.text },
+              ]}>
+              {t('auth.sync.noSelection')}
+            </Text>
+          ) : (
+            savedAudioVersions.map(row => (
+              <Text
+                key={row.id}
+                style={[
+                  styles.versionDataRow,
+                  { color: theme.colors.textSecondary ?? theme.colors.text },
+                ]}>
+                {row.audio_version_id}
+              </Text>
+            ))
+          )}
+        </View>
+
+        <View style={styles.versionDataSection}>
+          <TouchableOpacity
+            style={[
+              styles.retryVersionButton,
+              { borderColor: theme.colors.border },
+            ]}
+            onPress={handleRetryVersionData}>
+            <Text
+              style={[styles.retryVersionText, { color: theme.colors.text }]}>
+              {t('common.retry')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
   };
 
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
           {t('auth.sync.title')}
         </Text>
       </View>
 
-      {/* Content */}
       <View style={styles.content}>
-        {/* Loading Spinner */}
         <ActivityIndicator
           size='large'
           color={theme.colors.primary}
           style={styles.spinner}
         />
-
-        {/* Message */}
         <Text style={[styles.message, { color: theme.colors.text }]}>
           {syncState.message}
         </Text>
 
-        {/* Progress Bar */}
         {syncState.progress > 0 && (
           <View style={styles.progressContainer}>
             <View
@@ -209,7 +335,6 @@ export const SignInSyncScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Network Status */}
         <View style={styles.networkStatus}>
           <MaterialIcons
             name={getNetworkStatusIcon() as keyof typeof MaterialIcons.glyphMap}
@@ -224,7 +349,8 @@ export const SignInSyncScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Error Message */}
+        {renderVersionDataSection()}
+
         {syncState.error && (
           <View
             style={[
@@ -238,7 +364,6 @@ export const SignInSyncScreen: React.FC = () => {
         )}
       </View>
 
-      {/* Actions */}
       <View style={styles.actions}>
         {syncState.phase === 'complete' && (
           <>
@@ -287,7 +412,7 @@ export const SignInSyncScreen: React.FC = () => {
                   styles.retryButton,
                   { backgroundColor: theme.colors.primary },
                 ]}
-                onPress={handleRetry}>
+                onPress={() => retrySync()}>
                 <Text
                   style={[
                     styles.buttonText,
@@ -297,7 +422,6 @@ export const SignInSyncScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
             )}
-
             {syncState.canContinueOffline && (
               <TouchableOpacity
                 style={[
@@ -305,7 +429,7 @@ export const SignInSyncScreen: React.FC = () => {
                   styles.offlineButton,
                   { borderColor: theme.colors.border },
                 ]}
-                onPress={handleContinueOffline}>
+                onPress={() => continueOffline()}>
                 <Text style={[styles.buttonText, { color: theme.colors.text }]}>
                   {t('auth.sync.continueOffline')}
                 </Text>
@@ -314,6 +438,11 @@ export const SignInSyncScreen: React.FC = () => {
           </>
         )}
       </View>
+
+      <NoNetworkModal
+        visible={showNoNetworkModal}
+        onDismiss={() => setShowNoNetworkModal(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -334,7 +463,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
   },
@@ -376,11 +504,47 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontWeight: '500',
   },
+  versionDataScroll: {
+    width: '100%',
+    maxHeight: 220,
+  },
+  versionDataScrollContent: {
+    paddingBottom: 16,
+  },
+  versionDataSection: {
+    marginBottom: 16,
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  versionDataTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  versionDataLabel: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  versionDataRow: {
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  retryVersionButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  retryVersionText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   errorContainer: {
     marginTop: 20,
     padding: 15,
     borderRadius: 8,
-    // backgroundColor will be set dynamically using theme.colors.error
   },
   errorText: {
     fontSize: 14,
@@ -398,18 +562,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  retryButton: {
-    // backgroundColor set dynamically
-  },
-  getStartedButton: {
-    // backgroundColor set dynamically
-  },
-  skipOnboardingButton: {
-    // backgroundColor set dynamically
-  },
+  retryButton: {},
+  getStartedButton: {},
+  skipOnboardingButton: {},
   offlineButton: {
     borderWidth: 1,
-    // borderColor set dynamically
   },
   buttonText: {
     fontSize: 16,
