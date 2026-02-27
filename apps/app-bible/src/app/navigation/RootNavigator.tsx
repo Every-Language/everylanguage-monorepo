@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { AppShell } from './AppShell';
+import type { AppTabsParamList } from './AppTabs';
 import { OnboardingStackNavigator } from '@/features/onboarding/navigation/OnboardingStackNavigator';
 import { VersionSelectionStackNavigator } from '@/features/languages/navigation/VersionSelectionStackNavigator';
 import {
@@ -34,7 +35,7 @@ import type { PlaylistWithItems } from '@/features/playlists/types';
 
 // Type definitions for the root navigation stack
 export type RootStackParamList = {
-  Home: undefined;
+  Home: NavigatorScreenParams<AppTabsParamList> | undefined;
   Onboarding: undefined;
   VersionSelectionModal: {
     versionType: 'audio' | 'text';

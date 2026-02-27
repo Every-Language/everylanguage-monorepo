@@ -61,9 +61,17 @@ try {
   );
 }
 
-// Validate URL format
-if (!supabaseUrl.startsWith('https://')) {
-  throw new Error('Invalid Supabase URL format. Must start with https://');
+// Validate URL format.
+// Allow local HTTP Supabase during development only.
+const isHttpsUrl = supabaseUrl.startsWith('https://');
+const isLocalHttpDevUrl =
+  environmentInfo.isDevelopment &&
+  /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(supabaseUrl);
+
+if (!isHttpsUrl && !isLocalHttpDevUrl) {
+  throw new Error(
+    'Invalid Supabase URL format. Use https:// (or local http://127.0.0.1 / http://localhost in development).'
+  );
 }
 
 // Log which configuration we're using (for debugging)

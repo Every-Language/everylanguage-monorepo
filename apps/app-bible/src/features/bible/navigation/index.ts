@@ -1,1 +1,3 @@
-// Navigation exports removed - now using conditional rendering with Zustand store
+export { BibleTabContainer } from './BibleTabContainer';
+export { BibleStackNavigator } from './BibleStackNavigator';
+export type { BibleStackParamList } from './BibleStackNavigator';

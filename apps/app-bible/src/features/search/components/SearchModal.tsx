@@ -55,15 +55,17 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         addSearch(query.trim(), results.length);
       }
 
-      // Navigate based on result type using SearchNavigationService
-      try {
-        const handler = createSearchResultPressHandler();
-        handler(result);
-      } catch (error) {
-        logger.error(true, 'Navigation error:', error);
-      }
-
+      // Close first so route changes happen on the base stack.
       onClose();
+      setTimeout(() => {
+        // Navigate based on result type using SearchNavigationService.
+        try {
+          const handler = createSearchResultPressHandler();
+          handler(result);
+        } catch (error) {
+          logger.error(true, 'Navigation error:', error);
+        }
+      }, 0);
     },
     [query, results.length, addSearch, onClose]
   );

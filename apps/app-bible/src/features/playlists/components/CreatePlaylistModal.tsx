@@ -112,7 +112,6 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
       navigation.goBack();
       setTimeout(() => {
         // Navigate: Root 'Home' -> Tab 'Playlists' -> Stack 'PlaylistItems'
-        // @ts-expect-error - navigation is of type RootStackNavigationProp
         navigation.replace('Home', {
           screen: 'Playlists',
           params: {

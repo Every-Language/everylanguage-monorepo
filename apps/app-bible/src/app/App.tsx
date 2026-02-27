@@ -25,6 +25,8 @@ import { authService } from '@/features/auth';
 import { powerSyncConnectionManager } from '@/shared/services/powersync';
 import { appInitializationService } from '@/shared/services/AppInitializationService';
 import { RootNavigator } from './navigation/RootNavigator';
+import { setRootNavigationRef } from './navigation/navigationRef';
+import type { RootStackParamList } from './navigation/RootNavigator';
 import { logger } from '@/shared/utils/logger';
 import { queryClient } from '@/shared/services/query/queryClient';
 import { UserVersionSelectionWrapper } from '@/features/auth/components/UserVersionSelectionWrapper';
@@ -316,17 +318,13 @@ const AppContent: React.FC = () => {
           screens: {
             Bible: {
               screens: {
-                BibleRoot: {
-                  screens: {
-                    BibleBooks: 'home',
-                    // Book links → Chapters screen
-                    BibleChapters: 'book/:bookId',
-                    // Chapter links → Verses screen (chapter-level view)
-                    BibleVersesChapter: 'chapter/:chapterId',
-                    // Verse links → Verses screen (verse targeted)
-                    BibleVerses: 'verse/:verseId',
-                  },
-                },
+                BibleBooks: 'home',
+                // Book links → Chapters screen
+                BibleChapters: 'book/:bookId',
+                // Chapter links → Verses screen (chapter-level view)
+                BibleVersesChapter: 'chapter/:chapterId',
+                // Verse links → Verses screen (verse targeted)
+                BibleVerses: 'verse/:verseId',
               },
             },
           },
@@ -391,7 +389,8 @@ const AppContent: React.FC = () => {
       <SafeAreaProvider>
         <BottomSheetModalProvider>
           <StatusBarWrapper />
-          <NavigationContainer
+          <NavigationContainer<RootStackParamList>
+            ref={setRootNavigationRef}
             linking={linking}
             fallback={
               <View

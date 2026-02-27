@@ -166,18 +166,24 @@ export const useQuickSelectionStore = create<
   },
 
   selectVerse: verse => {
-    set({ selectedVerse: verse });
-    // Navigate to bible chapter with verse highlighted
     const state = get();
-    if (state.selectedBook && state.selectedChapter) {
-      BibleNavigationServiceV2.navigateToVerse(
-        state.selectedBook,
-        state.selectedChapter,
-        verse.id
-      );
-    }
-    // Close the quick selection modal after navigation
+    const selectedBook = state.selectedBook;
+    const selectedChapter = state.selectedChapter;
+
+    set({ selectedVerse: verse });
+
+    // Close the quick selection modal before routing to avoid modal stack conflicts.
     get().resetAndClose();
+
+    if (selectedBook && selectedChapter) {
+      setTimeout(() => {
+        BibleNavigationServiceV2.navigateToVerse(
+          selectedBook,
+          selectedChapter,
+          verse.id
+        );
+      }, 0);
+    }
   },
 
   // Enhanced back navigation with search preservation

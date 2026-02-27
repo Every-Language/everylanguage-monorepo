@@ -43,7 +43,11 @@ import { useCurrentVersions } from '@/features/languages/hooks';
 import { useShare } from '@/features/sharing/hooks/useShare';
 import type { MenuAction } from '@react-native-menu/menu';
 import { useMediaBottomInset } from '@/features/media/layout/useMediaBottomInset';
-import { useNavigation } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import { useResolvedBibleLocation } from '../hooks/useResolvedBibleLocation';
 import { useEffect } from 'react';
 import { Alert } from 'react-native';
@@ -58,6 +62,7 @@ import { useBookChapterDownloadMap } from '@/features/downloads/hooks';
 import { queueManager } from '@/features/downloads/services/QueueManager';
 import { downloadManager } from '@/features/downloads/services/DownloadManager';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
+import type { BibleStackParamList } from '../navigation/BibleStackNavigator';
 
 export const BookChaptersScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -65,6 +70,7 @@ export const BookChaptersScreen: React.FC = () => {
   const bottomInset = useMediaBottomInset();
   const { navigateToChapter, goBack } = useBibleNavigationV2();
   const navigation = useNavigation<RootStackNavigationProp>();
+  const route = useRoute<RouteProp<BibleStackParamList, 'BibleChapters'>>();
 
   // Handler for opening add to playlist modal
   const handleOpenAddToPlaylist = (chapter: ChapterWithMetadata) => {
@@ -123,7 +129,7 @@ export const BookChaptersScreen: React.FC = () => {
 
   // Params and resolution
   const incomingBook = selectedBook;
-  const incomingBookId = incomingBook?.id ?? null;
+  const incomingBookId = incomingBook?.id ?? route.params?.bookId ?? null;
   const incomingChapterId = null; // No chapter ID for chapters screen
 
   const { resolvedBook } = useResolvedBibleLocation({
