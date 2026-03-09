@@ -57,18 +57,47 @@ const download_queue = new Table(
   }
 );
 
+// Temporary recording segments (before insertion)
+const segments_temp = new Table(
+  {
+    id: column.text, // UUID for this temporary segment
+    local_file_path: column.text, // Relative path to audio file
+    sequence_id: column.text, // FK to sequences.id
+    project_id: column.text, // FK to projects.id (nullable until inserted)
+    segment_index: column.integer, // Temporary index (10000+)
+    is_hidden: column.integer, // 0 or 1 (filtered by speaker threshold)
+    audio_level: column.real, // Peak audio level for filtering
+    duration_seconds: column.real,
+    start_time_ms: column.integer, // Start time in original recording
+    end_time_ms: column.integer, // End time in original recording
+    recording_status: column.text, // 'recording', 'completed', 'editing'
+    created_at: column.text,
+    updated_at: column.text,
+  },
+  {
+    localOnly: true,
+    indexes: {
+      sequence_status: ['sequence_id', 'recording_status'],
+      project_sequence: ['project_id', 'sequence_id'],
+    },
+  }
+);
+
 export const LocalSchema = new Schema({
   media_files_downloads,
   download_queue,
+  segments_temp,
 });
 
 // Export a map of local tables for schema combination scripts
 export const localTables = {
   media_files_downloads,
   download_queue,
+  segments_temp,
 };
 
 // Export types for TypeScript
 export type LocalDatabase = (typeof LocalSchema)['types'];
 export type MediaFileDownloadRecord = LocalDatabase['media_files_downloads'];
 export type DownloadQueueRecord = LocalDatabase['download_queue'];
+export type SegmentTempRecord = LocalDatabase['segments_temp'];

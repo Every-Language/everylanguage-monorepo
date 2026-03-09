@@ -1,5 +1,5 @@
-export { AppearanceScreen } from './AppearanceScreen';
-export { SettingsScreen } from './SettingsScreen';
-export { AppLanguageScreen } from './AppLanguageScreen';
-export { MyProfileScreen } from './MyProfileScreen';
-export { DebugScreen } from './DebugScreen';
+export { AppearanceScreen } from './appearance-screen';
+export { SettingsScreen } from './settings-screen';
+export { AppLanguageScreen } from './app-language-screen';
+export { MyProfileScreen } from './my-profile-screen';
+export { DebugScreen } from './debug-screen';

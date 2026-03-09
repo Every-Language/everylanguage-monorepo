@@ -1,2 +1,2 @@
-export { DebugSection } from './DebugSection';
-export { MyProfileSection } from './MyProfileSection';
+export { DebugSection } from './debug-section';
+export { MyProfileSection } from './my-profile-section';

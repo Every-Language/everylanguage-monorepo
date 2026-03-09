@@ -68,6 +68,28 @@ export default [
       // General
       'no-console': 'warn',
       'no-unused-vars': 'off', // Let TypeScript handle this
+
+      // Bulletproof React: Prevent cross-feature imports
+      // Note: To enable these rules, install eslint-plugin-import:
+      //   pnpm add -D eslint-plugin-import
+      // Then uncomment the rules below and add 'import' to plugins
+      //
+      // 'import/no-restricted-paths': [
+      //   'error',
+      //   {
+      //     zones: [
+      //       {
+      //         target: './src/features',
+      //         from: './src/app',
+      //       },
+      //       {
+      //         target: './src/features/*',
+      //         from: './src/features/*',
+      //         except: ['./shared'],
+      //       },
+      //     ],
+      //   },
+      // ],
     },
     settings: {
       react: {

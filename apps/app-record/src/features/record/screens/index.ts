@@ -1,1 +1,1 @@
-export { RecordScreen } from './RecordScreen';
+export { RecordScreen } from './record-screen';
