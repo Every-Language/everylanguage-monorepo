@@ -1,5 +1,5 @@
-export { LanguageCard } from './LanguageCard';
-export { RegionCard } from './RegionCard';
-export { HierarchySection } from './HierarchySection';
-export { LanguageStatsSection } from './LanguageStatsSection';
-export { RegionStatsSection } from './RegionStatsSection';
+export { LanguageCard } from './language-card';
+export { RegionCard } from './region-card';
+export { HierarchySection } from './hierarchy-section';
+export { LanguageStatsSection } from './language-stats-section';
+export { RegionStatsSection } from './region-stats-section';

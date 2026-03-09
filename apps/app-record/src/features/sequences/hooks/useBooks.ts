@@ -1,5 +1,5 @@
 import { useQuery } from '@powersync/react';
-import type { Book } from '../types/sequence';
+import type { Book } from '@/shared/types/sequence';
 
 /**
  * Hook for fetching books from local database

@@ -1,2 +1,2 @@
-export { BookSection } from './BookSection';
-export { ChapterListItem } from './ChapterListItem';
+export { BookSection } from './book-section';
+export { ChapterListItem } from './chapter-list-item';
