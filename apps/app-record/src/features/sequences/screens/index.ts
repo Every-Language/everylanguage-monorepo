@@ -1,1 +1,1 @@
-export { SequencesScreen } from './SequencesScreen';
+export { SequencesScreen } from './sequences-screen';

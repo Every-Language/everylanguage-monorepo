@@ -368,6 +368,9 @@ importers:
       '@react-native-community/netinfo':
         specifier: ^11.4.1
         version: 11.4.1(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))
+      '@react-native-community/slider':
+        specifier: 4.5.6
+        version: 4.5.6
       '@react-native-menu/menu':
         specifier: 1.2.4
         version: 1.2.4(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)
@@ -377,15 +380,24 @@ importers:
       '@react-navigation/native-stack':
         specifier: ^7.8.5
         version: 7.8.5(@react-navigation/native@7.1.24(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0))(react-native-safe-area-context@5.4.0(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0))(react-native-screens@4.11.1(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)
+      '@siteed/expo-audio-studio':
+        specifier: ^2.18.1
+        version: 2.18.1(expo-modules-core@2.5.0)(expo@53.0.23)(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)
       '@supabase/supabase-js':
         specifier: ^2.50.0
         version: 2.86.2
+      '@tanstack/react-query':
+        specifier: ^5.90.17
+        version: 5.90.17(react@19.0.0)
       expo:
         specifier: 53.0.23
         version: 53.0.23(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)
       expo-asset:
         specifier: ~11.1.7
         version: 11.1.7(expo@53.0.23)(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)
+      expo-av:
+        specifier: ~15.0.1
+        version: 15.0.2(expo@53.0.23)(react-native-web@0.20.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)
       expo-blur:
         specifier: ^14.1.5
         version: 14.1.5(expo@53.0.23)(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)
@@ -4154,6 +4166,9 @@ packages:
     peerDependencies:
       react-native: '>=0.59'
 
+  '@react-native-community/slider@4.5.6':
+    resolution: {integrity: sha512-UhLPFeqx0YfPLrEz8ffT3uqAyXWu6iqFjohNsbp4cOU7hnJwg2RXtDnYHoHMr7MOkZDVdlLMdrSrAuzY6KGqrg==}
+
   '@react-native-menu/menu@1.2.4':
     resolution: {integrity: sha512-63NU9NHd/KcBa7lhhV69xQmY3ORUxjMRmlzTY/qrY56GHnuKX+16dvUpKAuRSPK5kebBuRw5X4MFe2L9JHUlWA==}
     peerDependencies:
@@ -4474,6 +4489,14 @@ packages:
   '@sinonjs/fake-timers@13.0.5':
     resolution: {integrity: sha512-36/hTbH2uaWuGVERyC6da9YwGWnzUZXuPro/F2LfsdOsLnCojz/iSH8MxUt/FD2S5XBSVPhmArFUXcpCQ2Hkiw==}
 
+  '@siteed/expo-audio-studio@2.18.1':
+    resolution: {integrity: sha512-gyi02iaj/ZEpMOnFM7jlgXWhy4I6pvu7dK7f95nQgFkuSDogmM/pA/n+lS31ui5HzDbVRle426EpQ1hShVmqDA==}
+    peerDependencies:
+      expo: '*'
+      expo-modules-core: ~2.4.0
+      react: 19.0.0
+      react-native: '*'
+
   '@speed-highlight/core@1.2.12':
     resolution: {integrity: sha512-uilwrK0Ygyri5dToHYdZSjcvpS2ZwX0w5aSt3GCEN9hrjxWCoeV4Z2DTXuxjwbntaLQIEEAlCeNQss5SoHvAEA==}
 
@@ -4529,6 +4552,9 @@ packages:
   '@tanstack/query-core@5.90.12':
     resolution: {integrity: sha512-T1/8t5DhV/SisWjDnaiU2drl6ySvsHj1bHBCWNXd+/T+Hh1cf6JodyEYMd5sgwm+b/mETT4EV3H+zCVczCU5hg==}
 
+  '@tanstack/query-core@5.90.17':
+    resolution: {integrity: sha512-hDww+RyyYhjhUfoYQ4es6pbgxY7LNiPWxt4l1nJqhByjndxJ7HIjDxTBtfvMr5HwjYavMrd+ids5g4Rfev3lVQ==}
+
   '@tanstack/query-devtools@5.91.1':
     resolution: {integrity: sha512-l8bxjk6BMsCaVQH6NzQEE/bEgFy1hAs5qbgXl0xhzezlaQbPk6Mgz9BqEg2vTLPOHD8N4k+w/gdgCbEzecGyNg==}
 
@@ -4540,6 +4566,11 @@ packages:
 
   '@tanstack/react-query@5.90.12':
     resolution: {integrity: sha512-graRZspg7EoEaw0a8faiUASCyJrqjKPdqJ9EwuDRUF9mEYJ1YPczI9H+/agJ0mOJkPCJDk0lsz5QTrLZ/jQ2rg==}
+    peerDependencies:
+      react: 19.0.0
+
+  '@tanstack/react-query@5.90.17':
+    resolution: {integrity: sha512-PGc2u9KLwohDUSchjW9MZqeDQJfJDON7y4W7REdNBgiFKxQy+Pf7eGjiFWEj5xPqKzAeHYdAb62IWI1a9UJyGQ==}
     peerDependencies:
       react: 19.0.0
 
@@ -6495,6 +6526,17 @@ packages:
       expo: '*'
       react: 19.0.0
       react-native: '*'
+
+  expo-av@15.0.2:
+    resolution: {integrity: sha512-AHIHXdqLgK1dfHZF0JzX3YSVySGMrWn9QtPzaVjw54FAzvXfMt4sIoq4qRL/9XWCP9+ICcCs/u3EcvmxQjrfcA==}
+    peerDependencies:
+      expo: '*'
+      react: 19.0.0
+      react-native: '*'
+      react-native-web: '*'
+    peerDependenciesMeta:
+      react-native-web:
+        optional: true
 
   expo-background-fetch@13.1.6:
     resolution: {integrity: sha512-hl4kR32DaxoHFYqNsILLZG2mWssCkUb4wnEAHtDGmpxUP4SCnJILcAn99J6AGDFUw5lF6FXNZZCXNfcrFioO4Q==}
@@ -14480,6 +14522,8 @@ snapshots:
     dependencies:
       react-native: 0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0)
 
+  '@react-native-community/slider@4.5.6': {}
+
   '@react-native-menu/menu@1.2.4(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)':
     dependencies:
       react: 19.0.0
@@ -14883,6 +14927,13 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
+  '@siteed/expo-audio-studio@2.18.1(expo-modules-core@2.5.0)(expo@53.0.23)(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)':
+    dependencies:
+      expo: 53.0.23(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)
+      expo-modules-core: 2.5.0
+      react: 19.0.0
+      react-native: 0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0)
+
   '@speed-highlight/core@1.2.12': {}
 
   '@standard-schema/utils@0.3.0': {}
@@ -14950,6 +15001,8 @@ snapshots:
 
   '@tanstack/query-core@5.90.12': {}
 
+  '@tanstack/query-core@5.90.17': {}
+
   '@tanstack/query-devtools@5.91.1': {}
 
   '@tanstack/react-query-devtools@5.91.1(@tanstack/react-query@5.90.12(react@19.0.0))(react@19.0.0)':
@@ -14961,6 +15014,11 @@ snapshots:
   '@tanstack/react-query@5.90.12(react@19.0.0)':
     dependencies:
       '@tanstack/query-core': 5.90.12
+      react: 19.0.0
+
+  '@tanstack/react-query@5.90.17(react@19.0.0)':
+    dependencies:
+      '@tanstack/query-core': 5.90.17
       react: 19.0.0
 
   '@tanstack/react-table@8.21.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
@@ -17422,6 +17480,14 @@ snapshots:
       expo: 53.0.23(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)
       react: 19.0.0
       react-native: 0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0)
+
+  expo-av@15.0.2(expo@53.0.23)(react-native-web@0.20.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0):
+    dependencies:
+      expo: 53.0.23(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0))(react@19.0.0)
+      react: 19.0.0
+      react-native: 0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0)
+    optionalDependencies:
+      react-native-web: 0.20.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
 
   expo-background-fetch@13.1.6(expo@53.0.23)(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.1.8)(react@19.0.0)):
     dependencies:

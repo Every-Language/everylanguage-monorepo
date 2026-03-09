@@ -13,7 +13,7 @@ import { AppHeader } from '@/shared/ui';
 import { useTheme, useTranslation } from '@/shared/hooks';
 import { logger } from '@/shared/utils/logger';
 import { useSequences, useBooks, useChaptersForBooks } from '../hooks';
-import type { Sequence, Chapter } from '../types/sequence';
+import type { Sequence, Chapter } from '@/shared/types/sequence';
 import { useProject } from '@/features/projects/hooks';
 import { ProjectInfoCard } from '@/features/projects/components';
 import { BookSection } from '../components';
@@ -109,10 +109,14 @@ export const SequencesScreen: React.FC = () => {
     });
   }, [router, projectId]);
 
-  const handleSequencePress = useCallback((sequenceId: string): void => {
-    // TODO: Navigate to sequence detail screen
-    logger.debug('Sequence pressed:', { sequenceId });
-  }, []);
+  const handleSequencePress = useCallback(
+    (sequenceId: string): void => {
+      router.push(
+        `/(tabs)/projects/${projectId}/sequences/${sequenceId}/record`
+      );
+    },
+    [router, projectId]
+  );
 
   const toggleBookCollapse = useCallback((bookId: string): void => {
     setCollapsedBooks(prev => {

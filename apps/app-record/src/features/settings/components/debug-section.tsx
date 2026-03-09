@@ -9,8 +9,8 @@ import {
 import { useAuth } from '@/shared/hooks';
 import { usePowerSyncStatus } from '@/shared/infrastructure/powersync/hooks';
 import { colors } from '@/shared/constants/colors';
-import { LocalDataViewer } from '@/features/home/components/LocalDataViewer';
-import { DatabaseSchemaInspector } from '@/features/home/components/DatabaseSchemaInspector';
+import { LocalDataViewer } from '@/features/home/components/local-data-viewer';
+import { DatabaseSchemaInspector } from '@/features/home/components/database-schema-inspector';
 
 /**
  * Debug Section
