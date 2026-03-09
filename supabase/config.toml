@@ -536,6 +536,15 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/stripe-webhook-donations/index.ts"
 
+[functions.get-bible-audio]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/get-bible-audio/index.ts"
+
+[functions.get-bible-text]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/get-bible-text/index.ts"
 [functions.reset-password-with-email]
 enabled = true
 verify_jwt = false
