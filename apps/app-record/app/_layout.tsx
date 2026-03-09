@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { PowerSyncContext } from '@powersync/react';
 import { AbstractPowerSyncDatabase } from '@powersync/react-native';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { powerSyncSystem } from '@/shared/infrastructure/powersync/services/PowerSyncSystem';
 import { useAuthStore } from '@/shared/auth/store/authStore';
 import { logger } from '@/shared/utils/logger';
@@ -19,6 +20,7 @@ import { useThemeStore } from '@/shared/store/themeStore';
 import { useTheme, useSupabaseAppState } from '@/shared/hooks';
 import { appInitializationService } from '@/shared/services/AppInitializationService';
 import { BRAND_COLORS } from '@/shared/constants/theme';
+import { queryClient } from '@/shared/services/query/queryClient';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -163,36 +165,38 @@ const RootLayout: React.FC = () => {
   if (powerSyncError || initError) {
     return (
       <ErrorBoundary>
-        <SafeAreaProvider>
-          <View
-            style={[
-              styles.errorContainer,
-              {
-                backgroundColor:
-                  theme?.colors?.background || BRAND_COLORS.CREAM,
-              },
-            ]}
-            onLayout={onLayoutRootView}>
-            <Text
+        <QueryClientProvider client={queryClient}>
+          <SafeAreaProvider>
+            <View
               style={[
-                styles.errorTitle,
+                styles.errorContainer,
                 {
-                  color: theme?.colors?.text || BRAND_COLORS.ALMOST_BLACK,
+                  backgroundColor:
+                    theme?.colors?.background || BRAND_COLORS.CREAM,
                 },
-              ]}>
-              {powerSyncError ? 'PowerSync Error' : 'Initialization Error'}
-            </Text>
-            <Text
-              style={[
-                styles.errorText,
-                {
-                  color: theme?.colors?.textSecondary || '#666666',
-                },
-              ]}>
-              {(powerSyncError || initError)?.message}
-            </Text>
-          </View>
-        </SafeAreaProvider>
+              ]}
+              onLayout={onLayoutRootView}>
+              <Text
+                style={[
+                  styles.errorTitle,
+                  {
+                    color: theme?.colors?.text || BRAND_COLORS.ALMOST_BLACK,
+                  },
+                ]}>
+                {powerSyncError ? 'PowerSync Error' : 'Initialization Error'}
+              </Text>
+              <Text
+                style={[
+                  styles.errorText,
+                  {
+                    color: theme?.colors?.textSecondary || '#666666',
+                  },
+                ]}>
+                {(powerSyncError || initError)?.message}
+              </Text>
+            </View>
+          </SafeAreaProvider>
+        </QueryClientProvider>
       </ErrorBoundary>
     );
   }
@@ -200,57 +204,62 @@ const RootLayout: React.FC = () => {
   if (!powerSyncReady || !powerSync || isInitializing) {
     return (
       <ErrorBoundary>
-        <SafeAreaProvider>
-          <View style={styles.loadingContainer} onLayout={onLayoutRootView}>
-            <LoadingScreen
-              message={isInitializing ? 'Initializing...' : 'Loading...'}
-            />
-          </View>
-        </SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <SafeAreaProvider>
+            <View style={styles.loadingContainer} onLayout={onLayoutRootView}>
+              <LoadingScreen
+                message={isInitializing ? 'Initializing...' : 'Loading...'}
+              />
+            </View>
+          </SafeAreaProvider>
+        </QueryClientProvider>
       </ErrorBoundary>
     );
   }
 
   return (
     <ErrorBoundary>
-      <PowerSyncContext.Provider value={powerSync as AbstractPowerSyncDatabase}>
-        <SafeAreaProvider>
-          <View style={styles.rootContainer} onLayout={onLayoutRootView}>
-            <StatusBarWrapper />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'default',
-                contentStyle: {
-                  backgroundColor: theme?.colors?.background || '#ebe5d9',
-                },
-              }}>
-              <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
-              <Stack.Screen
-                name='modals/create-project'
-                options={{
+      <QueryClientProvider client={queryClient}>
+        <PowerSyncContext.Provider
+          value={powerSync as AbstractPowerSyncDatabase}>
+          <SafeAreaProvider>
+            <View style={styles.rootContainer} onLayout={onLayoutRootView}>
+              <StatusBarWrapper />
+              <Stack
+                screenOptions={{
                   headerShown: false,
-                  presentation: 'modal',
-                }}
-              />
-              <Stack.Screen
-                name='modals/edit-project'
-                options={{
-                  headerShown: false,
-                  presentation: 'modal',
-                }}
-              />
-              <Stack.Screen
-                name='modals/create-sequence'
-                options={{
-                  headerShown: false,
-                  presentation: 'modal',
-                }}
-              />
-            </Stack>
-          </View>
-        </SafeAreaProvider>
-      </PowerSyncContext.Provider>
+                  animation: 'default',
+                  contentStyle: {
+                    backgroundColor: theme?.colors?.background || '#ebe5d9',
+                  },
+                }}>
+                <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+                <Stack.Screen
+                  name='modals/create-project'
+                  options={{
+                    headerShown: false,
+                    presentation: 'modal',
+                  }}
+                />
+                <Stack.Screen
+                  name='modals/edit-project'
+                  options={{
+                    headerShown: false,
+                    presentation: 'modal',
+                  }}
+                />
+                <Stack.Screen
+                  name='modals/create-sequence'
+                  options={{
+                    headerShown: false,
+                    presentation: 'modal',
+                  }}
+                />
+              </Stack>
+            </View>
+          </SafeAreaProvider>
+        </PowerSyncContext.Provider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 };

@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system';
 import { useTheme } from '@/shared/hooks';
 import { environmentInfo } from '@/shared/config/env';
 import { powerSyncSystem } from '@/shared/infrastructure/powersync';
-import { FilePathService } from '../services/FilePathService';
+import { FilePathService } from '../services/file-path-service';
 
 export interface DeleteAllSegmentsButtonProps {
   sequenceId: string;

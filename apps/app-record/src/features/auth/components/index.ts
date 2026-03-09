@@ -1,2 +1,2 @@
-export { ProfileModal } from './ProfileModal';
-export type { ProfileModalProps } from './ProfileModal';
+export { ProfileModal } from './profile-modal';
+export type { ProfileModalProps } from './profile-modal';

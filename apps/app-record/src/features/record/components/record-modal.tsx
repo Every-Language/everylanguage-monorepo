@@ -2,7 +2,9 @@ import React from 'react';
 import { View, StyleSheet, Modal, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/shared/hooks';
+import { useShallow } from 'zustand/react/shallow';
 import { useRecording, useRecordingMutations } from '../hooks';
+import { useRecordingSettingsStore } from '../stores/recording-settings-store';
 import {
   WaveformDisplay,
   VUMeter,
@@ -38,12 +40,26 @@ export const RecordModal: React.FC<RecordModalProps> = ({
     tempSegments,
     isRecording,
     isPaused,
+    durationMs,
     analysisData,
+    hasActiveSegment,
+    activeSegmentId,
+    activeSegmentStartTimeMs,
     handleStartRecording,
     handleStopRecording,
     handlePauseRecording,
     handleCleanup,
   } = useRecording(sequenceId, projectId, visible);
+
+  // Get thresholds and measurement type for VU meter display
+  const { startThreshold, endThreshold, measurementType } =
+    useRecordingSettingsStore(
+      useShallow(state => ({
+        startThreshold: state.startThreshold,
+        endThreshold: state.endThreshold,
+        measurementType: state.measurementType,
+      }))
+    );
 
   const { insertSegments } = useRecordingMutations();
 
@@ -56,7 +72,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
 
     // Verify segment files exist before saving (more reliable than state check)
     if (tempSegments.length > 0) {
-      const { FilePathService } = await import('../services/FilePathService');
+      const { FilePathService } = await import('../services/file-path-service');
       const allFilesExist = await Promise.all(
         tempSegments.map(segment =>
           FilePathService.fileExists(segment.local_file_path)
@@ -138,32 +154,42 @@ export const RecordModal: React.FC<RecordModalProps> = ({
         ]}>
         <RecordModalHeader onClose={onClose} />
 
-        {/* Content */}
+        {/* Recording Meter - Fixed at top */}
+        <View style={styles.meterContainer}>
+          <View
+            style={[
+              styles.waveformWrapper,
+              { backgroundColor: theme.colors.surface },
+            ]}>
+            <WaveformDisplay
+              analysisData={analysisData}
+              isRecording={isRecording}
+              isPaused={isPaused}
+            />
+            <VUMeter
+              analysisData={analysisData}
+              isRecording={isRecording}
+              isPaused={isPaused}
+              startThreshold={startThreshold}
+              endThreshold={endThreshold}
+              scaleType={measurementType}
+              showThresholdValues={false}
+            />
+          </View>
+        </View>
+
+        {/* Segments List - Scrollable */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}>
-          {/* Waveform - Always visible */}
-          <View style={styles.waveformContainer}>
-            <View
-              style={[
-                styles.waveformWrapper,
-                { backgroundColor: theme.colors.surface },
-              ]}>
-              <WaveformDisplay
-                analysisData={analysisData}
-                isRecording={isRecording}
-                isPaused={isPaused}
-              />
-              <VUMeter
-                analysisData={analysisData}
-                isRecording={isRecording}
-                isPaused={isPaused}
-              />
-            </View>
-          </View>
-
-          {/* Segments List */}
-          <TempSegmentsList segments={tempSegments} />
+          <TempSegmentsList
+            segments={tempSegments}
+            isRecording={isRecording}
+            hasActiveSegment={hasActiveSegment}
+            activeSegmentId={activeSegmentId}
+            durationMs={durationMs}
+            activeSegmentStartTimeMs={activeSegmentStartTimeMs}
+          />
         </ScrollView>
 
         {/* Footer Controls */}
@@ -184,14 +210,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  meterContainer: {
+    padding: 16,
+    paddingBottom: 0,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: 16,
-  },
-  waveformContainer: {
-    marginBottom: 24,
+    paddingTop: 16,
   },
   waveformWrapper: {
     flexDirection: 'row',

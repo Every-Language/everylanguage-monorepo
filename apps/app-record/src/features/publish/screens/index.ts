@@ -1,1 +1,1 @@
-export { PublishScreen } from './PublishScreen';
+export { PublishScreen } from './publish-screen';

@@ -1,33 +1,10 @@
-import { useQuery } from '@powersync/react';
-
-/**
- * Chapter info for a sequence
- */
-export interface SequenceChapterInfo {
-  book_name: string;
-  chapter_number: number;
-}
-
 /**
  * Hook for fetching chapter/book info for a sequence
  *
- * Queries chapter and book information for displaying subtitles.
- * Returns book name and chapter number.
+ * @deprecated Use useGetSequenceChapterInfo from '../api/get-sequence-chapter-info' instead.
+ * This hook is kept for backward compatibility but will be removed in a future version.
  */
-export const useSequenceChapterInfo = (sequenceId: string) => {
-  const { data: chapterInfo, error } = useQuery<SequenceChapterInfo>(
-    `SELECT 
-       b.name as book_name,
-       c.chapter_number
-     FROM sequences s
-     JOIN chapters c ON s.chapter_id = c.id
-     JOIN books b ON c.book_id = b.id
-     WHERE s.id = ?`,
-    [sequenceId]
-  );
-
-  return {
-    chapterInfo: chapterInfo?.[0] ?? null,
-    error,
-  };
-};
+export {
+  useGetSequenceChapterInfo as useSequenceChapterInfo,
+  type SequenceChapterInfo,
+} from '../api/get-sequence-chapter-info';

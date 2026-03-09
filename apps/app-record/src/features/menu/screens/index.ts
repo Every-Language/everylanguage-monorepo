@@ -1,1 +1,1 @@
-export { MenuScreen } from './MenuScreen';
+export { MenuScreen } from './menu-screen';

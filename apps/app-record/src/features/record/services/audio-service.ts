@@ -1,5 +1,5 @@
 import { Audio } from 'expo-av';
-import { FilePathService } from './FilePathService';
+import { FilePathService } from './file-path-service';
 
 /**
  * Audio Service

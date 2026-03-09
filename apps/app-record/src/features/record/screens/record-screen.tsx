@@ -18,8 +18,9 @@ import {
   RecordModal,
   EditSegmentModal,
   SegmentAudioPlayer,
+  RecordingSettingsModal,
 } from '../components';
-import { DeleteAllSegmentsButton } from '../components/DeleteAllSegmentsButton';
+import { DeleteAllSegmentsButton } from '../components/delete-all-segments-button';
 import type { Segment } from '../hooks';
 
 /**
@@ -44,6 +45,7 @@ export const RecordScreen: React.FC = () => {
   const { chapterInfo } = useSequenceChapterInfo(sequenceId);
   const { segments } = useSegments(sequenceId);
   const [isRecordModalVisible, setIsRecordModalVisible] = useState(false);
+  const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false);
   const [editingSegment, setEditingSegment] = useState<Segment | null>(null);
 
   const handleBack = (): void => {
@@ -70,13 +72,6 @@ export const RecordScreen: React.FC = () => {
           title='Recording'
           leftButton={{
             onPress: handleBack,
-            icon: (
-              <Ionicons
-                name='chevron-back'
-                size={24}
-                color={theme.colors.accent}
-              />
-            ),
           }}
         />
         <View style={styles.content}>
@@ -99,14 +94,19 @@ export const RecordScreen: React.FC = () => {
         title={sequence.name}
         leftButton={{
           onPress: handleBack,
-          icon: (
-            <Ionicons
-              name='chevron-back'
-              size={24}
-              color={theme.colors.accent}
-            />
-          ),
         }}
+        rightButtons={[
+          {
+            onPress: () => setIsSettingsModalVisible(true),
+            icon: (
+              <Ionicons
+                name='settings-outline'
+                size={32}
+                color={theme.colors.accent}
+              />
+            ),
+          },
+        ]}
       />
 
       <ScrollView
@@ -208,6 +208,12 @@ export const RecordScreen: React.FC = () => {
           // Segments will refresh automatically via useSegments hook
           setEditingSegment(null);
         }}
+      />
+
+      {/* Recording Settings Modal */}
+      <RecordingSettingsModal
+        visible={isSettingsModalVisible}
+        onClose={() => setIsSettingsModalVisible(false)}
       />
     </View>
   );

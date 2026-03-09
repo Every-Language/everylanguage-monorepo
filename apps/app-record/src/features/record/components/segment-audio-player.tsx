@@ -5,14 +5,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
-import { FilePathService } from '../services/FilePathService';
-import { AudioService } from '../services/AudioService';
+import { FilePathService } from '../services/file-path-service';
+import { AudioService } from '../services/audio-service';
 import type { Segment, TempSegment } from '../types';
 
 /**
@@ -31,10 +32,18 @@ const formatDuration = (seconds: number): string => {
  */
 export interface SegmentAudioPlayerProps {
   segment: Segment | TempSegment;
+  isDisabled?: boolean;
+  isActive?: boolean;
+  isShadow?: boolean;
+  liveDurationMs?: number; // Live duration in milliseconds for active segments
 }
 
 export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
   segment,
+  isDisabled = false,
+  isActive = false,
+  isShadow = false,
+  liveDurationMs,
 }) => {
   const { theme } = useTheme();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -43,6 +52,14 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
   const [currentPosition, setCurrentPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
+  // Animated value for background color transition
+  const backgroundColorAnim = useRef(
+    new Animated.Value(isActive || isShadow ? 1 : 0)
+  ).current;
+  // State for live duration display
+  const [liveDisplayDuration, setLiveDisplayDuration] = useState<number | null>(
+    null
+  );
 
   // Determine the file path based on segment type
   // TempSegment has local_file_path, Segment (from PowerSync) has object_key
@@ -89,6 +106,9 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
   }, []);
 
   const handlePlayPause = async (): Promise<void> => {
+    if (isDisabled) {
+      return;
+    }
     try {
       if (soundRef.current) {
         // If sound is already loaded, toggle play/pause
@@ -202,6 +222,9 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
   };
 
   const handleSeek = async (value: number): Promise<void> => {
+    if (isDisabled) {
+      return;
+    }
     try {
       if (soundRef.current) {
         const status = await soundRef.current.getStatusAsync();
@@ -218,62 +241,111 @@ export const SegmentAudioPlayer: React.FC<SegmentAudioPlayerProps> = ({
     }
   };
 
+  // Update live display duration when liveDurationMs prop changes
+  useEffect(() => {
+    if (liveDurationMs !== undefined) {
+      // Convert milliseconds to seconds
+      setLiveDisplayDuration(liveDurationMs / 1000);
+    } else {
+      setLiveDisplayDuration(null);
+    }
+  }, [liveDurationMs]);
+
   // Get fallback duration from segment if available, otherwise use 0
   const fallbackDuration =
     'duration_seconds' in segment
       ? (segment as TempSegment).duration_seconds
       : 0;
-  const displayDuration = duration > 0 ? duration : fallbackDuration;
+
+  // Use live duration if available (for active segments), otherwise use loaded duration or fallback
+  const displayDuration =
+    liveDisplayDuration !== null
+      ? liveDisplayDuration
+      : duration > 0
+        ? duration
+        : fallbackDuration;
+
+  // Animate background color transition
+  useEffect(() => {
+    Animated.timing(backgroundColorAnim, {
+      toValue: isActive || isShadow ? 1 : 0,
+      duration: 300, // 300ms fade transition
+      useNativeDriver: false, // backgroundColor doesn't support native driver
+    }).start();
+  }, [isActive, isShadow, backgroundColorAnim]);
+
+  // Interpolate background color between surface and success
+  const backgroundColor = backgroundColorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [theme.colors.surface, theme.colors.success],
+  });
 
   return (
-    <View
+    <Animated.View
       style={[
         styles.audioPlayerContainer,
         {
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
+          backgroundColor,
         },
       ]}>
-      <TouchableOpacity
-        style={[
-          styles.playButton,
-          {
-            backgroundColor: theme.colors.accent,
-            borderColor: theme.colors.border,
-          },
-        ]}
-        onPress={handlePlayPause}
-        disabled={isLoading || !!error}
-        accessibilityLabel={isPlaying ? 'Pause audio' : 'Play audio'}
-        accessibilityRole='button'>
-        {isLoading ? (
-          <ActivityIndicator size='small' color={theme.colors.textInverse} />
-        ) : error ? (
-          <Ionicons name='alert-circle' size={20} color={theme.colors.error} />
-        ) : isPlaying ? (
-          <Ionicons name='pause' size={20} color={theme.colors.textInverse} />
-        ) : (
-          <Ionicons name='play' size={20} color={theme.colors.textInverse} />
-        )}
-      </TouchableOpacity>
-      <View style={styles.sliderContainer}>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={displayDuration}
-          value={currentPosition}
-          onValueChange={handleSeek}
-          minimumTrackTintColor={theme.colors.accent}
-          maximumTrackTintColor={theme.colors.border}
-          thumbTintColor={theme.colors.accent}
-          disabled={isLoading || !!error || !soundRef.current}
-        />
-      </View>
+      {!isDisabled && (
+        <TouchableOpacity
+          style={[
+            styles.playButton,
+            {
+              backgroundColor: theme.colors.accent,
+            },
+          ]}
+          onPress={handlePlayPause}
+          disabled={isLoading || !!error}
+          accessibilityLabel={isPlaying ? 'Pause audio' : 'Play audio'}
+          accessibilityRole='button'>
+          {isLoading ? (
+            <ActivityIndicator size='small' color={theme.colors.textInverse} />
+          ) : error ? (
+            <Ionicons
+              name='alert-circle'
+              size={20}
+              color={theme.colors.error}
+            />
+          ) : isPlaying ? (
+            <Ionicons name='pause' size={20} color={theme.colors.textInverse} />
+          ) : (
+            <Ionicons name='play' size={20} color={theme.colors.textInverse} />
+          )}
+        </TouchableOpacity>
+      )}
+      {!isDisabled && (
+        <View style={styles.sliderContainer}>
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={displayDuration}
+            value={currentPosition}
+            onValueChange={handleSeek}
+            minimumTrackTintColor={theme.colors.accent}
+            maximumTrackTintColor={theme.colors.border}
+            thumbTintColor={theme.colors.accent}
+            disabled={isLoading || !!error || !soundRef.current}
+          />
+        </View>
+      )}
       <Text
-        style={[styles.durationText, { color: theme.colors.textSecondary }]}>
-        {formatDuration(currentPosition || displayDuration)}
+        style={[
+          styles.durationText,
+          isDisabled ? styles.durationTextDisabled : styles.durationTextEnabled,
+          {
+            color:
+              isActive || isShadow
+                ? theme.colors.textInverse
+                : theme.colors.textSecondary,
+          },
+        ]}>
+        {formatDuration(
+          isDisabled ? displayDuration : currentPosition || displayDuration
+        )}
       </Text>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -284,7 +356,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 12,
     borderRadius: 8,
-    borderWidth: 1,
     marginBottom: 8,
     gap: 8,
   },
@@ -306,6 +377,13 @@ const styles = StyleSheet.create({
   durationText: {
     fontSize: 12,
     minWidth: 40,
+  },
+  durationTextEnabled: {
     textAlign: 'right',
+    flex: 0,
+  },
+  durationTextDisabled: {
+    textAlign: 'center',
+    flex: 1,
   },
 });

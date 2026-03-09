@@ -4,9 +4,19 @@ import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/hooks';
 import type { Segment } from '../hooks';
+import type { TempSegment } from '../types';
+
+/**
+ * Segment with optional duration for MediaPlayer
+ * Database segments don't have duration_seconds, but TempSegments do
+ */
+type SegmentWithDuration =
+  | Segment
+  | (Segment & { duration_seconds?: number })
+  | TempSegment;
 
 export interface MediaPlayerProps {
-  segments: Segment[];
+  segments: SegmentWithDuration[];
   onSegmentChange?: (segmentId: string) => void;
 }
 
@@ -24,14 +34,24 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPosition, setCurrentPosition] = useState(0);
   const [totalDuration, setTotalDuration] = useState(0);
-  // TODO: Use currentSegmentIndex when implementing segment navigation
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
+  const [, setCurrentSegmentIndex] = useState(0); // Used in handleSeek but not read elsewhere
+
+  /**
+   * Get duration from segment, handling both Segment and TempSegment types
+   */
+  const getSegmentDuration = (seg: SegmentWithDuration): number => {
+    if ('duration_seconds' in seg && typeof seg.duration_seconds === 'number') {
+      return seg.duration_seconds;
+    }
+    // Database segments don't have duration_seconds - would need to calculate from audio file
+    // For now, return 0 as fallback
+    return 0;
+  };
 
   // Calculate total duration from segments
   useEffect(() => {
     const total = segments.reduce((sum, seg) => {
-      return sum + (seg.duration_seconds || 0);
+      return sum + getSegmentDuration(seg);
     }, 0);
     setTotalDuration(total);
   }, [segments]);
@@ -61,11 +81,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     // Determine which segment we're in
     let accumulated = 0;
     for (let i = 0; i < segments.length; i++) {
-      const segmentDuration = segments[i].duration_seconds || 0;
+      const segment = segments[i];
+      if (!segment) continue;
+      const segmentDuration = getSegmentDuration(segment);
       if (value <= accumulated + segmentDuration) {
         setCurrentSegmentIndex(i);
         if (onSegmentChange) {
-          onSegmentChange(segments[i].id);
+          onSegmentChange(segment.id);
         }
         break;
       }
@@ -82,8 +104,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
   // Calculate segment boundaries for seek bar
   const segmentBoundaries = segments.reduce(
     (acc, segment, index) => {
-      const duration = segment.duration_seconds || 0;
-      const start = acc.length > 0 ? acc[acc.length - 1].end : 0;
+      if (!segment) return acc;
+      const duration = getSegmentDuration(segment);
+      const lastBoundary = acc.length > 0 ? acc[acc.length - 1] : null;
+      const start = lastBoundary ? lastBoundary.end : 0;
       acc.push({
         segmentId: segment.id,
         start,
@@ -127,18 +151,22 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         />
         {/* Segment dividers */}
         <View style={styles.segmentDividers}>
-          {segmentBoundaries.slice(1).map(boundary => (
-            <View
-              key={boundary.segmentId}
-              style={[
-                styles.segmentDivider,
-                {
-                  left: `${(boundary.start / totalDuration) * 100}%`,
-                  backgroundColor: theme.colors.border,
-                },
-              ]}
-            />
-          ))}
+          {segmentBoundaries.slice(1).map(boundary => {
+            if (!boundary || totalDuration === 0) return null;
+            const leftPercent = (boundary.start / totalDuration) * 100;
+            return (
+              <View
+                key={boundary.segmentId}
+                style={[
+                  styles.segmentDivider,
+                  {
+                    left: `${leftPercent}%`,
+                    backgroundColor: theme.colors.border,
+                  },
+                ]}
+              />
+            );
+          })}
         </View>
       </View>
 
