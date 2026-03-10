@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
+import { useLangQuestTableParams } from '@/features/langquest/hooks/useLangQuestTableParams';
 
 export interface LangQuestProject extends Record<string, unknown> {
   id: string;
@@ -10,6 +11,9 @@ export interface LangQuestProject extends Record<string, unknown> {
   target_language_id: string | null;
   private: boolean | null;
   visible: boolean | null;
+  template: string | null;
+  versification_template: string | null;
+  active: boolean | null;
   audio_files: number;
 }
 
@@ -43,9 +47,49 @@ const columns: Column<LangQuestProject>[] = [
       ),
   },
   {
+    key: 'template',
+    header: 'Template',
+    sortable: true,
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { value: 'unstructured', label: 'unstructured' },
+      { value: 'bible', label: 'bible' },
+      { value: 'fia', label: 'fia' },
+      { value: '__null__', label: '(empty)' },
+    ],
+    render: (value: unknown) =>
+      value != null && String(value) ? (
+        <span className='font-mono text-xs'>{String(value)}</span>
+      ) : (
+        <span className='text-neutral-400'>—</span>
+      ),
+  },
+  {
+    key: 'versification_template',
+    header: 'Versification template',
+    sortable: true,
+    filterable: true,
+    filterType: 'text',
+    render: (value: unknown) =>
+      value != null && String(value) ? (
+        <span className='font-mono text-xs truncate max-w-[120px] block'>
+          {String(value)}
+        </span>
+      ) : (
+        <span className='text-neutral-400'>—</span>
+      ),
+  },
+  {
     key: 'private',
     header: 'Private',
     sortable: true,
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { value: 'true', label: 'Yes' },
+      { value: 'false', label: 'No' },
+    ],
     render: (value: unknown) => (
       <span
         className={
@@ -59,6 +103,31 @@ const columns: Column<LangQuestProject>[] = [
     key: 'visible',
     header: 'Visible',
     sortable: true,
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { value: 'true', label: 'Yes' },
+      { value: 'false', label: 'No' },
+    ],
+    render: (value: unknown) => (
+      <span
+        className={
+          value ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
+        }>
+        {value ? 'Yes' : 'No'}
+      </span>
+    ),
+  },
+  {
+    key: 'active',
+    header: 'Active',
+    sortable: true,
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { value: 'true', label: 'Yes' },
+      { value: 'false', label: 'No' },
+    ],
     render: (value: unknown) => (
       <span
         className={
@@ -88,6 +157,17 @@ export function LangQuestProjectsTable({
   projects,
 }: LangQuestProjectsTableProps): React.ReactElement {
   const router = useRouter();
+  const {
+    searchTerm,
+    filters,
+    page,
+    pageSize,
+    onSearchTermChange,
+    onFilterChange,
+    onClearFilters,
+    onPageChange,
+    onPageSizeChange,
+  } = useLangQuestTableParams();
 
   return (
     <DataTable
@@ -97,7 +177,15 @@ export function LangQuestProjectsTable({
       searchPlaceholder='Search projects...'
       emptyMessage='No projects found'
       paginate
-      pageSize={25}
+      pageSize={pageSize}
+      searchTerm={searchTerm}
+      onSearchTermChange={onSearchTermChange}
+      filters={filters}
+      onFilterChange={onFilterChange}
+      onClearFilters={onClearFilters}
+      page={page}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
       onRowClick={row =>
         router.push(`/langquest/projects/${(row as LangQuestProject).id}`)
       }

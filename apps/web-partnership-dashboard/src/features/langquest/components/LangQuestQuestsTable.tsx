@@ -3,6 +3,7 @@
 import React from 'react';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import type { TagRow } from '@/features/langquest/utils/parseQuestTags';
+import { useLangQuestQuestsTableParams } from '@/features/langquest/hooks/useLangQuestQuestsTableParams';
 
 export interface LangQuestQuest extends Record<string, unknown> {
   id: string;
@@ -63,6 +64,15 @@ const columns: Column<LangQuestQuest>[] = [
 export function LangQuestQuestsTable({
   quests,
 }: LangQuestQuestsTableProps): React.ReactElement {
+  const {
+    searchTerm,
+    page,
+    pageSize,
+    onSearchTermChange,
+    onPageChange,
+    onPageSizeChange,
+  } = useLangQuestQuestsTableParams();
+
   return (
     <DataTable
       data={quests}
@@ -71,7 +81,12 @@ export function LangQuestQuestsTable({
       searchPlaceholder='Search quests...'
       emptyMessage='No quests found'
       paginate
-      pageSize={25}
+      pageSize={pageSize}
+      searchTerm={searchTerm}
+      onSearchTermChange={onSearchTermChange}
+      page={page}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
     />
   );
 }

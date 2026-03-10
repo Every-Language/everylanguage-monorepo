@@ -10,9 +10,11 @@ export const dynamic = 'force-dynamic';
 export default async function LangQuestPage(): Promise<React.ReactElement> {
   const client = createLangQuestClient();
 
-  const { data: projects, error } = await client
+  const { data: projectsRaw, error } = await client
     .from('project')
-    .select('id, name, target_language_id, private, visible')
+    .select(
+      'id, name, target_language_id, private, visible, template, versification_template, active, project_closure(total_quests)'
+    )
     .order('name');
 
   if (error) {
@@ -30,27 +32,21 @@ export default async function LangQuestPage(): Promise<React.ReactElement> {
     );
   }
 
-  // Fetch quest counts (aggregates disabled in LangQuest project)
-  const { data: quests } = await client
-    .from('quest')
-    .select('project_id')
-    .not('project_id', 'is', null);
-
-  const questCountByProjectId = (quests ?? []).reduce<Record<string, number>>(
-    (acc, row) => {
-      const pid = (row as { project_id: string }).project_id;
-      acc[pid] = (acc[pid] ?? 0) + 1;
-      return acc;
-    },
-    {}
-  );
-
-  const projectsWithCounts: LangQuestProject[] = (projects ?? []).map(
-    p =>
-      ({
-        ...p,
-        audio_files: questCountByProjectId[p.id] ?? 0,
-      }) as LangQuestProject
+  const projectsWithCounts: LangQuestProject[] = (projectsRaw ?? []).map(
+    (p: Record<string, unknown>) => {
+      const raw = p.project_closure;
+      const closure = Array.isArray(raw)
+        ? (raw[0] as { total_quests: number } | undefined)
+        : (raw as { total_quests: number } | null | undefined);
+      const { project_closure: _, ...rest } = p;
+      return {
+        ...rest,
+        audio_files:
+          closure != null && typeof closure.total_quests === 'number'
+            ? closure.total_quests
+            : 0,
+      } as LangQuestProject;
+    }
   );
 
   return (

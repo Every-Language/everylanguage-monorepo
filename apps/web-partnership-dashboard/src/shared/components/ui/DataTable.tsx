@@ -36,6 +36,18 @@ export interface DataTableProps<T> {
   paginate?: boolean;
   pageSize?: number;
   pageSizeOptions?: number[];
+  /** Controlled: search term (synced to URL when used with onSearchTermChange) */
+  searchTerm?: string;
+  onSearchTermChange?: (value: string) => void;
+  /** Controlled: filter values keyed by column key */
+  filters?: Record<string, string>;
+  onFilterChange?: (key: string, value: string) => void;
+  onClearFilters?: () => void;
+  /** Controlled: current 1-based page */
+  page?: number;
+  onPageChange?: (page: number) => void;
+  /** Controlled: page size (use with pageSize from props when controlled) */
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -53,13 +65,36 @@ export function DataTable<T extends Record<string, unknown>>({
   paginate = false,
   pageSize: initialPageSize = 25,
   pageSizeOptions = [10, 25, 50, 100],
+  searchTerm: controlledSearchTerm,
+  onSearchTermChange,
+  filters: controlledFilters,
+  onFilterChange,
+  onClearFilters,
+  page: controlledPage,
+  onPageChange,
+  onPageSizeChange,
 }: DataTableProps<T>) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [internalSearchTerm, setInternalSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
-  const [filters, setFilters] = useState<Record<string, string>>({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [internalFilters, setInternalFilters] = useState<
+    Record<string, string>
+  >({});
+  const [internalPage, setInternalPage] = useState(1);
+  const [internalPageSize, setInternalPageSize] = useState(initialPageSize);
+
+  const searchTerm =
+    controlledSearchTerm !== undefined
+      ? controlledSearchTerm
+      : internalSearchTerm;
+  const filters =
+    controlledFilters !== undefined ? controlledFilters : internalFilters;
+  const currentPage =
+    controlledPage !== undefined ? controlledPage : internalPage;
+  const effectivePageSize =
+    onPageSizeChange !== undefined ? initialPageSize : internalPageSize;
+
+  const FILTER_ALL = '__all__';
 
   // Handle sorting
   const handleSort = (key: string) => {
@@ -80,16 +115,22 @@ export function DataTable<T extends Record<string, unknown>>({
 
   // Handle filters
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-    }));
+    if (onFilterChange) {
+      onFilterChange(key, value);
+    } else {
+      setInternalFilters(prev => ({ ...prev, [key]: value }));
+    }
   };
 
   // Clear all filters
   const clearFilters = () => {
-    setFilters({});
-    setSearchTerm('');
+    if (onClearFilters) {
+      onClearFilters();
+    } else {
+      setInternalFilters({});
+      setInternalSearchTerm('');
+    }
+    if (onSearchTermChange) onSearchTermChange('');
   };
 
   // Filter and sort data
@@ -109,15 +150,17 @@ export function DataTable<T extends Record<string, unknown>>({
       );
     }
 
-    // Apply column filters
+    // Apply column filters (FILTER_ALL means "no filter" for select columns)
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
+      if (value && value !== FILTER_ALL) {
+        const valueLower = value.toLowerCase();
         filtered = filtered.filter(row => {
           const cellValue = row[key];
-          return cellValue
-            ?.toString()
-            .toLowerCase()
-            .includes(value.toLowerCase());
+          if (valueLower === '__null__') {
+            return cellValue == null;
+          }
+          const str = (cellValue?.toString() ?? '').toLowerCase();
+          return str.includes(valueLower);
         });
       }
     });
@@ -147,25 +190,27 @@ export function DataTable<T extends Record<string, unknown>>({
   // Paginate: slice to current page (reset to page 1 when filters change)
   const paginatedData = paginate
     ? processedData.slice(
-        (currentPage - 1) * pageSize,
-        (currentPage - 1) * pageSize + pageSize
+        (currentPage - 1) * effectivePageSize,
+        (currentPage - 1) * effectivePageSize + effectivePageSize
       )
     : processedData;
 
   const totalPages = paginate
-    ? Math.ceil(processedData.length / pageSize) || 1
+    ? Math.ceil(processedData.length / effectivePageSize) || 1
     : 1;
 
   // Reset to page 1 when filtered/sorted data shrinks and current page is out of range
   useEffect(() => {
     if (paginate && currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(1);
+      if (onPageChange) onPageChange(1);
+      else setInternalPage(1);
     }
-  }, [paginate, currentPage, totalPages]);
+  }, [paginate, currentPage, totalPages, onPageChange]);
 
-  // Active filters count
+  // Active filters count (exclude FILTER_ALL and empty)
   const activeFiltersCount =
-    Object.values(filters).filter(Boolean).length + (searchTerm ? 1 : 0);
+    Object.values(filters).filter(v => v && v !== FILTER_ALL).length +
+    (searchTerm ? 1 : 0);
 
   if (loading) {
     return (
@@ -184,7 +229,11 @@ export function DataTable<T extends Record<string, unknown>>({
             <MagnifyingGlassIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400' />
             <Input
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={e => {
+                const v = e.target.value;
+                if (onSearchTermChange) onSearchTermChange(v);
+                else setInternalSearchTerm(v);
+              }}
               placeholder={searchPlaceholder}
               className='pl-10'
             />
@@ -199,17 +248,23 @@ export function DataTable<T extends Record<string, unknown>>({
               <div key={column.key} className='min-w-[150px]'>
                 {column.filterType === 'select' && column.filterOptions ? (
                   <Select
-                    value={filters[column.key] || ''}
+                    value={filters[column.key] || FILTER_ALL}
                     onValueChange={value =>
                       handleFilterChange(column.key, value)
                     }
                     placeholder={`Filter ${column.header}`}>
-                    <SelectItem value=''>All {column.header}</SelectItem>
-                    {column.filterOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value={FILTER_ALL}>
+                      All {column.header}
+                    </SelectItem>
+                    {column.filterOptions
+                      .filter(
+                        opt => opt.value !== '' && opt.value !== FILTER_ALL
+                      )
+                      .map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                   </Select>
                 ) : (
                   <Input
@@ -319,7 +374,7 @@ export function DataTable<T extends Record<string, unknown>>({
         <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
           <div className='text-sm text-neutral-600 dark:text-neutral-400'>
             {paginate
-              ? `Showing ${(currentPage - 1) * pageSize + 1} to ${Math.min(currentPage * pageSize, processedData.length)} of ${processedData.length} results`
+              ? `Showing ${(currentPage - 1) * effectivePageSize + 1} to ${Math.min(currentPage * effectivePageSize, processedData.length)} of ${processedData.length} results`
               : `Showing ${processedData.length} of ${data.length} results`}
             {activeFiltersCount > 0 && ' (filtered)'}
           </div>
@@ -328,14 +383,22 @@ export function DataTable<T extends Record<string, unknown>>({
               currentPage={currentPage}
               totalPages={totalPages}
               totalItems={processedData.length}
-              itemsPerPage={pageSize}
-              onPageChange={setCurrentPage}
+              itemsPerPage={effectivePageSize}
+              onPageChange={p => {
+                if (onPageChange) onPageChange(p);
+                else setInternalPage(p);
+              }}
               showInfo={false}
               showSizeChanger
               pageSizeOptions={pageSizeOptions}
               onPageSizeChange={size => {
-                setPageSize(size);
-                setCurrentPage(1);
+                if (onPageSizeChange) {
+                  onPageSizeChange(size);
+                  onPageChange?.(1);
+                } else {
+                  setInternalPageSize(size);
+                  setInternalPage(1);
+                }
               }}
             />
           )}
