@@ -44,4 +44,7 @@ export const env = {
 // These are NOT exposed to the client and should only be accessed in server components or API routes
 export const serverEnv = {
   JOSHUA_PROJECT_API_KEY: process.env.JOSHUA_PROJECT_API_KEY || '',
+  LANGQUEST_SUPABASE_URL: process.env.LANGQUEST_SUPABASE_URL || '',
+  LANGQUEST_SUPABASE_SERVICE_ROLE_KEY:
+    process.env.LANGQUEST_SUPABASE_SERVICE_ROLE_KEY || '',
 } as const;

@@ -12,7 +12,8 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const requiresAuth = pathname !== '/dashboard';
+  const publicRoutes = ['/dashboard', '/langquest'];
+  const requiresAuth = !publicRoutes.includes(pathname ?? '');
   const isProfileRoute = pathname?.startsWith('/profile') ?? false;
 
   return (

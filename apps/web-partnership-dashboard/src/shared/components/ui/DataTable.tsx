@@ -1,7 +1,10 @@
-import React, { useState, useMemo } from 'react';
+'use client';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { Input } from './Input';
 import { Button } from './Button';
 import { Select, SelectItem } from './Select';
+import { Pagination } from './Pagination';
 import { cn } from '../../theme/utils';
 import {
   ChevronUpIcon,
@@ -30,6 +33,9 @@ export interface DataTableProps<T> {
   loading?: boolean;
   onRowClick?: (row: T) => void;
   rowClassName?: (row: T) => string;
+  paginate?: boolean;
+  pageSize?: number;
+  pageSizeOptions?: number[];
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -44,11 +50,16 @@ export function DataTable<T extends Record<string, unknown>>({
   loading = false,
   onRowClick,
   rowClassName,
+  paginate = false,
+  pageSize: initialPageSize = 25,
+  pageSizeOptions = [10, 25, 50, 100],
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialPageSize);
 
   // Handle sorting
   const handleSort = (key: string) => {
@@ -132,6 +143,25 @@ export function DataTable<T extends Record<string, unknown>>({
 
     return filtered;
   }, [data, searchTerm, sortKey, sortDirection, filters, columns, searchable]);
+
+  // Paginate: slice to current page (reset to page 1 when filters change)
+  const paginatedData = paginate
+    ? processedData.slice(
+        (currentPage - 1) * pageSize,
+        (currentPage - 1) * pageSize + pageSize
+      )
+    : processedData;
+
+  const totalPages = paginate
+    ? Math.ceil(processedData.length / pageSize) || 1
+    : 1;
+
+  // Reset to page 1 when filtered/sorted data shrinks and current page is out of range
+  useEffect(() => {
+    if (paginate && currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [paginate, currentPage, totalPages]);
 
   // Active filters count
   const activeFiltersCount =
@@ -249,7 +279,7 @@ export function DataTable<T extends Record<string, unknown>>({
               </tr>
             </thead>
             <tbody className='bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-700'>
-              {processedData.length === 0 ? (
+              {paginatedData.length === 0 ? (
                 <tr>
                   <td
                     colSpan={columns.length}
@@ -258,7 +288,7 @@ export function DataTable<T extends Record<string, unknown>>({
                   </td>
                 </tr>
               ) : (
-                processedData.map((row, index) => (
+                paginatedData.map((row, index) => (
                   <tr
                     key={index}
                     className={cn(
@@ -284,11 +314,31 @@ export function DataTable<T extends Record<string, unknown>>({
         </div>
       </div>
 
-      {/* Results info */}
+      {/* Results info and pagination */}
       {processedData.length > 0 && (
-        <div className='text-sm text-neutral-600 dark:text-neutral-400'>
-          Showing {processedData.length} of {data.length} results
-          {activeFiltersCount > 0 && ' (filtered)'}
+        <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
+          <div className='text-sm text-neutral-600 dark:text-neutral-400'>
+            {paginate
+              ? `Showing ${(currentPage - 1) * pageSize + 1} to ${Math.min(currentPage * pageSize, processedData.length)} of ${processedData.length} results`
+              : `Showing ${processedData.length} of ${data.length} results`}
+            {activeFiltersCount > 0 && ' (filtered)'}
+          </div>
+          {paginate && totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={processedData.length}
+              itemsPerPage={pageSize}
+              onPageChange={setCurrentPage}
+              showInfo={false}
+              showSizeChanger
+              pageSizeOptions={pageSizeOptions}
+              onPageSizeChange={size => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
+          )}
         </div>
       )}
     </div>
