@@ -1,7 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { createLangQuestClient } from '@/lib/supabase/langquest';
+import {
+  createLangQuestClient,
+  isLangQuestConfigured,
+} from '@/lib/supabase/langquest';
 import {
   LangQuestQuestsTable,
   type LangQuestQuest,
@@ -19,6 +22,25 @@ export default async function LangQuestProjectPage({
   params,
 }: PageProps): Promise<React.ReactElement> {
   const { id } = await params;
+
+  if (!isLangQuestConfigured()) {
+    return (
+      <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950 p-4 sm:p-6 lg:p-8'>
+        <div className='mx-auto max-w-7xl'>
+          <Link
+            href='/langquest'
+            className='inline-flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 mb-4'>
+            <ChevronLeftIcon className='h-4 w-4' />
+            Back to projects
+          </Link>
+          <div className='rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4 text-amber-800 dark:text-amber-200'>
+            LangQuest is not configured for this environment.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const client = createLangQuestClient();
 
   // Fetch project to verify it exists and get name

@@ -1,5 +1,8 @@
 import React from 'react';
-import { createLangQuestClient } from '@/lib/supabase/langquest';
+import {
+  createLangQuestClient,
+  isLangQuestConfigured,
+} from '@/lib/supabase/langquest';
 import {
   LangQuestProjectsTable,
   type LangQuestProject,
@@ -8,6 +11,21 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function LangQuestPage(): Promise<React.ReactElement> {
+  if (!isLangQuestConfigured()) {
+    return (
+      <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950 p-4 sm:p-6 lg:p-8'>
+        <div className='mx-auto max-w-7xl'>
+          <h1 className='text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-4'>
+            LangQuest Projects
+          </h1>
+          <div className='rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4 text-amber-800 dark:text-amber-200'>
+            LangQuest is not configured for this environment.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const client = createLangQuestClient();
 
   const { data: projectsRaw, error } = await client

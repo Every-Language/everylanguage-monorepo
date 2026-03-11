@@ -5,9 +5,17 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { serverEnv } from '@/lib/env';
 
-export function createLangQuestClient() {
+export function isLangQuestConfigured(): boolean {
+  return !!(
+    serverEnv.LANGQUEST_SUPABASE_URL &&
+    serverEnv.LANGQUEST_SUPABASE_SERVICE_ROLE_KEY
+  );
+}
+
+export function createLangQuestClient(): SupabaseClient {
   const url = serverEnv.LANGQUEST_SUPABASE_URL;
   const serviceRoleKey = serverEnv.LANGQUEST_SUPABASE_SERVICE_ROLE_KEY;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 const PARAM_KEYS = {
@@ -11,6 +11,8 @@ const PARAM_KEYS = {
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 25;
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function useLangQuestQuestsTableParams(): {
   searchTerm: string;
@@ -24,7 +26,40 @@ export function useLangQuestQuestsTableParams(): {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const searchTerm = searchParams.get(PARAM_KEYS.search) ?? '';
+  const urlSearchTerm = searchParams.get(PARAM_KEYS.search) ?? '';
+  const [localSearchTerm, setLocalSearchTerm] = useState(urlSearchTerm);
+  const lastWrittenSearchRef = useRef<string | null>(null);
+
+  // Sync from URL to local when URL changed externally (e.g. back button)
+  useEffect(() => {
+    if (urlSearchTerm !== lastWrittenSearchRef.current) {
+      setLocalSearchTerm(urlSearchTerm);
+      lastWrittenSearchRef.current = urlSearchTerm;
+    }
+  }, [urlSearchTerm]);
+
+  // Debounce: write local search to URL after user stops typing
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (localSearchTerm === lastWrittenSearchRef.current) return;
+      lastWrittenSearchRef.current = localSearchTerm;
+      const next = new URLSearchParams(searchParams.toString());
+      if (localSearchTerm) {
+        next.set(PARAM_KEYS.search, localSearchTerm);
+        next.delete(PARAM_KEYS.page);
+      } else {
+        next.delete(PARAM_KEYS.search);
+        next.delete(PARAM_KEYS.page);
+      }
+      const query = next.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [localSearchTerm, pathname, router, searchParams]);
+
+  const searchTerm = localSearchTerm;
   const page = Math.max(
     1,
     parseInt(searchParams.get(PARAM_KEYS.page) ?? String(DEFAULT_PAGE), 10) ||
@@ -56,15 +91,9 @@ export function useLangQuestQuestsTableParams(): {
     [pathname, router, searchParams]
   );
 
-  const onSearchTermChange = useCallback(
-    (value: string) => {
-      setParams({
-        [PARAM_KEYS.search]: value || null,
-        [PARAM_KEYS.page]: null,
-      });
-    },
-    [setParams]
-  );
+  const onSearchTermChange = useCallback((value: string) => {
+    setLocalSearchTerm(value);
+  }, []);
 
   const onPageChange = useCallback(
     (p: number) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 const FILTER_ALL = '__all__';
@@ -19,6 +19,8 @@ const PARAM_KEYS = {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 25;
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 export function useLangQuestTableParams(): {
   searchTerm: string;
   filters: Record<string, string>;
@@ -34,7 +36,40 @@ export function useLangQuestTableParams(): {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const searchTerm = searchParams.get(PARAM_KEYS.search) ?? '';
+  const urlSearchTerm = searchParams.get(PARAM_KEYS.search) ?? '';
+  const [localSearchTerm, setLocalSearchTerm] = useState(urlSearchTerm);
+  const lastWrittenSearchRef = useRef<string | null>(null);
+
+  // Sync from URL to local when URL changed externally (e.g. back button)
+  useEffect(() => {
+    if (urlSearchTerm !== lastWrittenSearchRef.current) {
+      setLocalSearchTerm(urlSearchTerm);
+      lastWrittenSearchRef.current = urlSearchTerm;
+    }
+  }, [urlSearchTerm]);
+
+  // Debounce: write local search to URL after user stops typing
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (localSearchTerm === lastWrittenSearchRef.current) return;
+      lastWrittenSearchRef.current = localSearchTerm;
+      const next = new URLSearchParams(searchParams.toString());
+      if (localSearchTerm) {
+        next.set(PARAM_KEYS.search, localSearchTerm);
+        next.delete(PARAM_KEYS.page);
+      } else {
+        next.delete(PARAM_KEYS.search);
+        next.delete(PARAM_KEYS.page);
+      }
+      const query = next.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [localSearchTerm, pathname, router, searchParams]);
+
+  const searchTerm = localSearchTerm;
   const filters = useMemo(
     () => ({
       template: searchParams.get(PARAM_KEYS.template) ?? FILTER_ALL,
@@ -77,12 +112,9 @@ export function useLangQuestTableParams(): {
     [pathname, router, searchParams]
   );
 
-  const onSearchTermChange = useCallback(
-    (value: string) => {
-      setParams({ [PARAM_KEYS.search]: value || null });
-    },
-    [setParams]
-  );
+  const onSearchTermChange = useCallback((value: string) => {
+    setLocalSearchTerm(value);
+  }, []);
 
   const onFilterChange = useCallback(
     (key: string, value: string) => {
@@ -104,6 +136,8 @@ export function useLangQuestTableParams(): {
   );
 
   const onClearFilters = useCallback(() => {
+    setLocalSearchTerm('');
+    lastWrittenSearchRef.current = '';
     setParams({
       [PARAM_KEYS.search]: null,
       [PARAM_KEYS.template]: null,
