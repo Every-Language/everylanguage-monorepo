@@ -9,6 +9,9 @@ The system provides PostgreSQL functions for fuzzy text matching:
 - `search_language_aliases` - Search for languages and dialects
 - `search_language_aliases_with_versions` - Search for languages filtered by content availability (includes actual version details)
 - `search_region_aliases` - Search for regions, countries, and locations
+- `search_projects` - Search for projects by project name or target language
+- `search_operations` - Search for operations by name or category
+- `search_partner_orgs` - Search for public partner organizations
 
 All functions use PostgreSQL's trigram similarity matching and return ranked results with configurable similarity thresholds.
 
@@ -350,18 +353,240 @@ const { data, error } = await supabase.rpc('search_region_aliases', {
 });
 ```
 
+## Function: search_projects
+
+### Purpose
+
+Searches projects by matching against project names or their target language names. This function searches both the project name and the associated target language entity name, returning the best match.
+
+### Input Parameters
+
+- `search_query` (TEXT, required) - The search term (minimum 2 characters)
+- `max_results` (INTEGER, optional, default: 50) - Maximum number of results to return
+- `min_similarity` (DOUBLE PRECISION, optional, default: 0.1) - Minimum similarity score (0.0-1.0)
+
+### Output Format
+
+Returns a table with the following columns:
+
+- `project_id` (UUID) - ID of the project
+- `project_name` (TEXT) - Name of the project
+- `target_language_entity_id` (UUID) - ID of the target language entity
+- `target_language_name` (TEXT) - Name of the target language
+- `similarity_score` (DOUBLE PRECISION) - Similarity score (0.0-1.0, higher is better). This is the maximum of the project name similarity and target language name similarity.
+
+### Calling from Frontend
+
+#### Via Supabase Client RPC (Recommended)
+
+```javascript
+const { data, error } = await supabase.rpc('search_projects', {
+  search_query: 'bible translation',
+  max_results: 20,
+  min_similarity: 0.2,
+});
+```
+
+#### TypeScript Usage Example
+
+```typescript
+interface ProjectSearchResult {
+  project_id: string;
+  project_name: string;
+  target_language_entity_id: string;
+  target_language_name: string;
+  similarity_score: number;
+}
+
+const searchProjects = async (
+  query: string,
+  maxResults: number = 50
+): Promise<ProjectSearchResult[]> => {
+  const { data, error } = await supabaseClient.rpc('search_projects', {
+    search_query: query,
+    max_results: maxResults,
+    min_similarity: 0.1,
+  });
+
+  if (error) {
+    console.error('Search error:', error);
+    throw error;
+  }
+
+  return data || [];
+};
+```
+
+### Notes
+
+- Only returns non-deleted projects
+- Only includes projects with non-deleted target language entities
+- Searches both project name and target language name
+- Results are ordered by similarity score (highest first), then by project name alphabetically
+
+## Function: search_operations
+
+### Purpose
+
+Searches operations by matching against operation names or categories. This function searches both the operation name and its category, returning operations that match either field.
+
+### Input Parameters
+
+- `search_query` (TEXT, required) - The search term (minimum 2 characters)
+- `max_results` (INTEGER, optional, default: 50) - Maximum number of results to return
+- `min_similarity` (DOUBLE PRECISION, optional, default: 0.1) - Minimum similarity score (0.0-1.0)
+
+### Output Format
+
+Returns a table with the following columns:
+
+- `operation_id` (UUID) - ID of the operation
+- `operation_name` (TEXT) - Name of the operation
+- `category` (TEXT) - Category of the operation
+- `similarity_score` (DOUBLE PRECISION) - Similarity score (0.0-1.0, higher is better). This is the maximum of the operation name similarity and category similarity.
+
+### Calling from Frontend
+
+#### Via Supabase Client RPC (Recommended)
+
+```javascript
+const { data, error } = await supabase.rpc('search_operations', {
+  search_query: 'translation',
+  max_results: 30,
+  min_similarity: 0.2,
+});
+```
+
+#### TypeScript Usage Example
+
+```typescript
+interface OperationSearchResult {
+  operation_id: string;
+  operation_name: string;
+  category: string;
+  similarity_score: number;
+}
+
+const searchOperations = async (
+  query: string,
+  maxResults: number = 50
+): Promise<OperationSearchResult[]> => {
+  const { data, error } = await supabaseClient.rpc('search_operations', {
+    search_query: query,
+    max_results: maxResults,
+    min_similarity: 0.1,
+  });
+
+  if (error) {
+    console.error('Search error:', error);
+    throw error;
+  }
+
+  return data || [];
+};
+```
+
+### Notes
+
+- Only returns non-deleted operations
+- Only returns operations with status = 'available'
+- Searches both operation name and category
+- Results are ordered by similarity score (highest first), then by operation name alphabetically
+
+## Function: search_partner_orgs
+
+### Purpose
+
+Searches public partner organizations by matching against organization names. This function only returns organizations that are marked as public (`is_public = true`).
+
+### Input Parameters
+
+- `search_query` (TEXT, required) - The search term (minimum 2 characters)
+- `max_results` (INTEGER, optional, default: 10) - Maximum number of results to return
+
+### Output Format
+
+Returns a table with the following columns:
+
+- `id` (UUID) - ID of the partner organization
+- `name` (TEXT) - Name of the organization
+- `description` (TEXT) - Description of the organization (nullable)
+- `similarity_score` (DOUBLE PRECISION) - Similarity score (0.0-1.0, higher is better)
+
+### Calling from Frontend
+
+#### Via Supabase Client RPC (Recommended)
+
+```javascript
+const { data, error } = await supabase.rpc('search_partner_orgs', {
+  search_query: 'ministry',
+  max_results: 20,
+});
+```
+
+#### TypeScript Usage Example
+
+```typescript
+interface PartnerOrgSearchResult {
+  id: string;
+  name: string;
+  description: string | null;
+  similarity_score: number;
+}
+
+const searchPartnerOrgs = async (
+  query: string,
+  maxResults: number = 10
+): Promise<PartnerOrgSearchResult[]> => {
+  const { data, error } = await supabaseClient.rpc('search_partner_orgs', {
+    search_query: query,
+    max_results: maxResults,
+  });
+
+  if (error) {
+    console.error('Search error:', error);
+    throw error;
+  }
+
+  return data || [];
+};
+```
+
+### Notes
+
+- Only returns public organizations (`is_public = true`)
+- Searches only against organization names
+- Results are ordered by similarity score (highest first), then by organization name alphabetically
+- Default `max_results` is 10 (smaller than other search functions)
+
 ## Important Implementation Notes
 
 ### Dynamic Similarity Thresholds
 
-All functions automatically adjust similarity thresholds based on query length:
+Most functions automatically adjust similarity thresholds based on query length:
+
+**Language and Region Search Functions:**
 
 - 8+ characters: minimum 0.15 threshold
 - 5-7 characters: minimum 0.25 threshold
 - 3-4 characters: minimum 0.35 threshold
 - 2 characters: minimum 0.45 threshold
 
-The actual threshold used is returned in `similarity_threshold_used`.
+**Project and Operation Search Functions:**
+
+- 8+ characters: minimum 0.15 threshold
+- 5-7 characters: minimum 0.25 threshold
+- 3-4 characters: minimum 0.35 threshold
+- 2 characters: minimum 0.45 threshold
+
+**Partner Organization Search Function:**
+
+- 8+ characters: 0.15 threshold (fixed)
+- 5-7 characters: 0.25 threshold (fixed)
+- 3-4 characters: 0.35 threshold (fixed)
+- 2 characters: 0.4 threshold (fixed)
+
+Note: Language and region search functions return the actual threshold used in `similarity_threshold_used`. Project and operation search functions do not return this metadata field.
 
 ### Performance Considerations
 
@@ -513,6 +738,46 @@ The actual threshold used is returned in `similarity_threshold_used`.
         "dominance_level": 5
       }
     ]
+  }
+]
+```
+
+#### Project Search Response
+
+```json
+[
+  {
+    "project_id": "uuid-here",
+    "project_name": "English Bible Translation Project",
+    "target_language_entity_id": "uuid-here",
+    "target_language_name": "English",
+    "similarity_score": 0.85
+  }
+]
+```
+
+#### Operation Search Response
+
+```json
+[
+  {
+    "operation_id": "uuid-here",
+    "operation_name": "Bible Translation Operation",
+    "category": "translation",
+    "similarity_score": 0.92
+  }
+]
+```
+
+#### Partner Organization Search Response
+
+```json
+[
+  {
+    "id": "uuid-here",
+    "name": "Global Bible Ministry",
+    "description": "A ministry dedicated to Bible translation",
+    "similarity_score": 0.78
   }
 ]
 ```
