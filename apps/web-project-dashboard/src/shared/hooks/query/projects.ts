@@ -136,3 +136,48 @@ export function useProjectWithMetadata(projectId: string | null) {
     error: projectError,
   };
 }
+
+// Type for project fuzzy search results from search_projects RPC
+export interface ProjectSearchResult {
+  project_id: string;
+  project_name: string;
+  target_language_entity_id: string;
+  target_language_name: string;
+  similarity_score: number;
+}
+
+// Hook for fuzzy search of projects using pg_trgm similarity
+// Works for both authenticated and anonymous users (RPC uses SECURITY DEFINER)
+export function useProjectsSearch(
+  query: string,
+  options: {
+    maxResults?: number;
+    minSimilarity?: number;
+    enabled?: boolean;
+  } = {}
+): {
+  data: ProjectSearchResult[] | undefined;
+  isLoading: boolean;
+  error: Error | null;
+  isError: boolean;
+} {
+  const { maxResults = 50, minSimilarity = 0.1, enabled = true } = options;
+
+  return useQuery({
+    queryKey: ['projects_search', query, maxResults, minSimilarity],
+    queryFn: async (): Promise<ProjectSearchResult[]> => {
+      if (!query || query.length < 2) return [];
+
+      const { data, error } = await supabase.rpc('search_projects', {
+        search_query: query,
+        max_results: maxResults,
+        min_similarity: minSimilarity,
+      });
+
+      if (error) throw transformError(error);
+      return (data || []) as ProjectSearchResult[];
+    },
+    enabled: enabled && !!query && query.length >= 2,
+    staleTime: 30_000,
+  });
+}
