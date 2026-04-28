@@ -3,8 +3,35 @@ import { useQuery } from '@tanstack/react-query';
 import type { TableRow, SupabaseError } from './base-hooks';
 import { supabase } from '../../services/supabase';
 import { useAuth } from '../../../features/auth/hooks/useAuth';
+import type { Database } from '@everylanguage/shared-types';
 
 export type Project = TableRow<'projects'>;
+
+export type ActiveProjectWithProgress =
+  Database['public']['Functions']['get_active_projects_with_progress']['Returns'][number];
+
+// Hook to fetch active projects with aggregated progress via the public RPC.
+// Uses get_active_projects_with_progress(), which:
+//   * is exposed to the anon role (works on public/unauthenticated routes),
+//   * filters to project_status = 'active' and projects with at least one
+//     audio or text version that has progress data,
+//   * returns a single row per project with language_name + progress totals,
+//     ordered by progress_percentage DESC NULLS LAST.
+export function useActiveProjectsWithProgress() {
+  return useQuery<ActiveProjectWithProgress[], SupabaseError>({
+    queryKey: ['active-projects-with-progress'],
+    queryFn: async (): Promise<ActiveProjectWithProgress[]> => {
+      const { data, error } = await supabase
+        .rpc('get_active_projects_with_progress')
+        .returns<ActiveProjectWithProgress[]>();
+
+      if (error) throw transformError(error);
+
+      return data ?? [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
 
 // Hook to fetch all projects
 export function useProjects() {

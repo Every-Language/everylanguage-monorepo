@@ -1,223 +1,69 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Globe, MapPin, FolderOpen } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Search, Globe, FolderOpen, BarChart3 } from 'lucide-react';
 import { Input } from '../../shared/design-system/components/Input';
 import { Button } from '../../shared/design-system/components/Button';
 import { LoadingSpinner } from '../../shared/design-system';
 import { LandingNavbar } from '../../features/landing-page/components/LandingNavbar';
-import { supabase } from '../../shared/services/supabase';
+import {
+  useActiveProjectsWithProgress,
+  type ActiveProjectWithProgress,
+} from '../../shared/hooks/query/projects';
 import { LandingFooter } from '@/features/landing-page';
 
-interface LanguageWithProject {
+interface LanguageRow {
   id: string;
   motherTongue: string;
-  country: string;
   projectName: string;
-  projectId: string;
-  newTestament: number;
-  oldTestament: number;
-  totalProgress: number;
+  completedChapters: number;
+  totalChapters: number;
+  progressPercentage: number;
 }
 
-// Hook to fetch ALL projects (public view) with their language entities and translation progress
-function useAllProjectsWithLanguages() {
-  return useQuery({
-    queryKey: ['all-projects-with-languages-public'],
-    queryFn: async () => {
-      // Fetch ALL projects with their target language entity and region
-      // This is a public view - fetches all projects regardless of user
-      const { data: projects, error: projectsError } = await supabase
-        .from('projects')
-        .select(
-          `
-          id,
-          name,
-          target_language_entity_id,
-          region_id,
-          publish_status,
-          target_language:language_entities!target_language_entity_id (
-            id,
-            name,
-            level
-          ),
-          region:regions!region_id (
-            id,
-            name,
-            level
-          )
-        `
-        )
-        .order('created_at', { ascending: false });
+const TOP_N = 10;
 
-      if (projectsError) throw projectsError;
-      if (!projects || projects.length === 0) return [];
-
-      // Get all project IDs
-      const projectIds = projects.map(p => p.id);
-
-      // Fetch audio versions for all projects
-      const { data: audioVersions, error: audioError } = await supabase
-        .from('audio_versions')
-        .select('id, project_id')
-        .in('project_id', projectIds);
-
-      if (audioError) throw audioError;
-
-      // Group audio versions by project
-      const audioVersionsByProject = new Map<string, string[]>();
-      audioVersions?.forEach(av => {
-        if (av.project_id) {
-          if (!audioVersionsByProject.has(av.project_id)) {
-            audioVersionsByProject.set(av.project_id, []);
-          }
-          audioVersionsByProject.get(av.project_id)!.push(av.id);
-        }
-      });
-
-      // Get all audio version IDs
-      const allAudioVersionIds = audioVersions?.map(av => av.id) || [];
-
-      // Fetch media files with their chapter and book info to calculate translation progress
-      let mediaFilesWithBooks: Array<{
-        audio_version_id: string;
-        chapter_id: string;
-        chapters: {
-          book_id: string;
-          books: {
-            id: string;
-            testament: string | null;
-          } | null;
-        } | null;
-      }> = [];
-
-      if (allAudioVersionIds.length > 0) {
-        const { data: mediaFiles, error: mediaError } = await supabase
-          .from('media_files')
-          .select(
-            `
-            audio_version_id,
-            chapter_id,
-            chapters!inner (
-              book_id,
-              books!inner (
-                id,
-                testament
-              )
-            )
-          `
-          )
-          .in('audio_version_id', allAudioVersionIds)
-          .not('chapter_id', 'is', null);
-
-        if (mediaError) throw mediaError;
-        mediaFilesWithBooks = (mediaFiles || []) as typeof mediaFilesWithBooks;
-      }
-
-      // Calculate translation progress per project
-      const progressByProject = new Map<
-        string,
-        { nt: Set<string>; ot: Set<string> }
-      >();
-
-      mediaFilesWithBooks.forEach(mf => {
-        // Find which project this audio version belongs to
-        let projectId: string | null = null;
-        for (const [pId, avIds] of audioVersionsByProject.entries()) {
-          if (avIds.includes(mf.audio_version_id)) {
-            projectId = pId;
-            break;
-          }
-        }
-
-        if (projectId && mf.chapters?.books) {
-          if (!progressByProject.has(projectId)) {
-            progressByProject.set(projectId, { nt: new Set(), ot: new Set() });
-          }
-
-          const progress = progressByProject.get(projectId)!;
-          const bookId = mf.chapters.books.id;
-          const testament = mf.chapters.books.testament;
-
-          if (testament === 'NT') {
-            progress.nt.add(bookId);
-          } else if (testament === 'OT') {
-            progress.ot.add(bookId);
-          }
-        }
-      });
-
-      // Transform projects to table rows
-      const allProjectRows = projects.map(project => {
-        const progress = progressByProject.get(project.id);
-        const targetLang = project.target_language as {
-          id: string;
-          name: string;
-          level: string;
-        } | null;
-        const region = project.region as {
-          id: string;
-          name: string;
-          level: string;
-        } | null;
-
-        return {
-          id: project.id,
-          motherTongue: targetLang?.name || 'Unknown',
-          country: region?.name || 'Unknown',
-          projectName: project.name,
-          projectId: project.id,
-          newTestament: progress?.nt.size || 0,
-          oldTestament: progress?.ot.size || 0,
-          totalProgress: (progress?.nt.size || 0) + (progress?.ot.size || 0),
-        };
-      });
-
-      // Sort by total translation progress (most progress first), then by name
-      allProjectRows.sort((a, b) => {
-        if (b.totalProgress !== a.totalProgress) {
-          return b.totalProgress - a.totalProgress;
-        }
-        return a.projectName.localeCompare(b.projectName);
-      });
-
-      return allProjectRows;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+function toLanguageRow(project: ActiveProjectWithProgress): LanguageRow {
+  return {
+    id: project.project_id,
+    motherTongue: project.language_name ?? 'Unknown',
+    projectName: project.project_name ?? 'Unknown project',
+    completedChapters: project.completed_chapters ?? 0,
+    totalChapters: project.total_chapters ?? 0,
+    progressPercentage: Number(project.progress_percentage ?? 0),
+  };
 }
 
 export const LanguagesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  // Fetch ALL projects with languages (public view)
-  const { data: allProjects = [], isLoading } = useAllProjectsWithLanguages();
+  const { data: rpcData = [], isLoading } = useActiveProjectsWithProgress();
 
-  // Filter and limit projects based on search query
-  const tableData: LanguageWithProject[] = useMemo(() => {
+  const allProjects: LanguageRow[] = useMemo(
+    () => rpcData.map(toLanguageRow),
+    [rpcData]
+  );
+
+  const tableData: LanguageRow[] = useMemo(() => {
     let filtered = allProjects;
 
-    // If there's a search query, filter by it
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = allProjects.filter(
         project =>
           project.motherTongue.toLowerCase().includes(query) ||
-          project.country.toLowerCase().includes(query) ||
           project.projectName.toLowerCase().includes(query)
       );
     }
 
-    // If not searching and not showing all, limit to top 10
     if (!searchQuery.trim() && !showAll) {
-      return filtered.slice(0, 10);
+      return filtered.slice(0, TOP_N);
     }
 
     return filtered;
   }, [allProjects, searchQuery, showAll]);
 
   const hasMoreProjects =
-    !searchQuery.trim() && !showAll && allProjects.length > 10;
+    !searchQuery.trim() && !showAll && allProjects.length > TOP_N;
 
   return (
     <div className='min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-white'>
@@ -257,7 +103,7 @@ export const LanguagesPage: React.FC = () => {
             <Input
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder='Search by language name, country, or project name...'
+              placeholder='Search by language name or project name...'
               className='pl-12 h-14 text-lg rounded-2xl border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg shadow-neutral-200/50 dark:shadow-none focus:border-accent-500 dark:focus:border-accent-400'
             />
           </div>
@@ -266,24 +112,18 @@ export const LanguagesPage: React.FC = () => {
         {/* Results Table */}
         <div className='bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl shadow-neutral-200/50 dark:shadow-none overflow-hidden'>
           {/* Table Header */}
-          <div className='grid grid-cols-5 gap-4 px-6 py-4 bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700'>
+          <div className='grid grid-cols-[1.25fr_1.75fr_1.5fr] gap-4 px-6 py-4 bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700'>
             <div className='flex items-center gap-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider'>
               <Globe className='h-4 w-4 text-accent-500' />
               Mother Tongue
             </div>
             <div className='flex items-center gap-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider'>
-              <MapPin className='h-4 w-4 text-accent-500' />
-              Country
-            </div>
-            <div className='flex items-center gap-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider'>
               <FolderOpen className='h-4 w-4 text-accent-500' />
               Project
             </div>
-            <div className='text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider text-center'>
-              New Testament
-            </div>
-            <div className='text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider text-center'>
-              Old Testament
+            <div className='flex items-center gap-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider justify-end'>
+              <BarChart3 className='h-4 w-4 text-accent-500' />
+              Progress
             </div>
           </div>
 
@@ -302,50 +142,12 @@ export const LanguagesPage: React.FC = () => {
                 <p className='text-sm'>
                   {searchQuery
                     ? 'Try a different search term or check the spelling'
-                    : 'Projects will appear here once they are created'}
+                    : 'Active projects will appear here once they have translation progress'}
                 </p>
               </div>
             ) : (
               tableData.map((row, index) => (
-                <div
-                  key={`${row.id}-${index}`}
-                  className='grid grid-cols-5 gap-4 px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors'>
-                  <div className='font-medium text-neutral-900 dark:text-white'>
-                    {row.motherTongue}
-                  </div>
-                  <div className='text-neutral-600 dark:text-neutral-400'>
-                    {row.country}
-                  </div>
-                  <div
-                    className='text-neutral-600 dark:text-neutral-400 truncate'
-                    title={row.projectName}>
-                    {row.projectName}
-                  </div>
-                  <div className='text-center'>
-                    <span
-                      className={`inline-flex items-center justify-center min-w-[3rem] px-3 py-1 rounded-full text-sm font-semibold ${
-                        row.newTestament > 0
-                          ? row.newTestament === 27
-                            ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'
-                            : 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-500'
-                      }`}>
-                      {row.newTestament}/27
-                    </span>
-                  </div>
-                  <div className='text-center'>
-                    <span
-                      className={`inline-flex items-center justify-center min-w-[3rem] px-3 py-1 rounded-full text-sm font-semibold ${
-                        row.oldTestament > 0
-                          ? row.oldTestament === 39
-                            ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400'
-                            : 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-500'
-                      }`}>
-                      {row.oldTestament}/39
-                    </span>
-                  </div>
-                </div>
+                <ProgressRow key={`${row.id}-${index}`} row={row} />
               ))
             )}
           </div>
@@ -360,8 +162,8 @@ export const LanguagesPage: React.FC = () => {
                 {searchQuery && ` matching "${searchQuery}"`}
                 {!searchQuery &&
                   !showAll &&
-                  allProjects.length > 10 &&
-                  ' (top 10 by progress)'}
+                  allProjects.length > TOP_N &&
+                  ` (top ${TOP_N} by progress)`}
               </span>
               {hasMoreProjects && (
                 <Button
@@ -372,13 +174,13 @@ export const LanguagesPage: React.FC = () => {
                   Show all {allProjects.length} projects
                 </Button>
               )}
-              {showAll && !searchQuery && allProjects.length > 10 && (
+              {showAll && !searchQuery && allProjects.length > TOP_N && (
                 <Button
                   variant='ghost'
                   size='sm'
                   onClick={() => setShowAll(false)}
                   className='text-accent-600 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300'>
-                  Show top 10 only
+                  Show top {TOP_N} only
                 </Button>
               )}
             </div>
@@ -391,10 +193,10 @@ export const LanguagesPage: React.FC = () => {
             About Translation Progress
           </h3>
           <p className='text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed'>
-            The New Testament contains 27 books, and the Old Testament contains
-            39 books. The numbers shown indicate how many books have been
-            translated into each language. A complete Bible translation includes
-            all 66 books.
+            Progress is measured at the chapter level across each project's
+            audio and text versions. The number shown is the percentage of
+            translated chapters out of the project's total chapter count, with
+            chapters completed and total displayed alongside.
           </p>
         </div>
       </main>
@@ -403,3 +205,70 @@ export const LanguagesPage: React.FC = () => {
     </div>
   );
 };
+
+interface ProgressRowProps {
+  row: LanguageRow;
+}
+
+const ProgressRow: React.FC<ProgressRowProps> = ({ row }) => {
+  const pct = clampPercentage(row.progressPercentage);
+  const tone = progressTone(pct);
+
+  return (
+    <div className='grid grid-cols-[1.25fr_1.75fr_1.5fr] gap-4 px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors items-center'>
+      <div
+        className='font-medium text-neutral-900 dark:text-white truncate'
+        title={row.motherTongue}>
+        {row.motherTongue}
+      </div>
+      <div
+        className='text-neutral-600 dark:text-neutral-400 truncate'
+        title={row.projectName}>
+        {row.projectName}
+      </div>
+      <div className='flex items-center gap-3 justify-end'>
+        <div
+          className='hidden sm:block w-24 md:w-32 h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden'
+          aria-hidden='true'>
+          <div className={`h-full ${tone.bar}`} style={{ width: `${pct}%` }} />
+        </div>
+        <span
+          className={`inline-flex items-center justify-center min-w-[3.5rem] px-3 py-1 rounded-full text-sm font-semibold ${tone.chip}`}
+          title={`${row.completedChapters} of ${row.totalChapters} chapters`}>
+          {pct.toFixed(pct >= 100 || pct === 0 ? 0 : 1)}%
+        </span>
+      </div>
+    </div>
+  );
+};
+
+function clampPercentage(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  if (value < 0) return 0;
+  if (value > 100) return 100;
+  return value;
+}
+
+interface ProgressTone {
+  bar: string;
+  chip: string;
+}
+
+function progressTone(pct: number): ProgressTone {
+  if (pct >= 100) {
+    return {
+      bar: 'bg-green-500 dark:bg-green-400',
+      chip: 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400',
+    };
+  }
+  if (pct > 0) {
+    return {
+      bar: 'bg-amber-500 dark:bg-amber-400',
+      chip: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400',
+    };
+  }
+  return {
+    bar: 'bg-neutral-300 dark:bg-neutral-700',
+    chip: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-500',
+  };
+}
