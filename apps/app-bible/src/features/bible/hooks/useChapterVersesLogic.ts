@@ -8,13 +8,21 @@ import { useChapterDownloadStatus } from '@/features/downloads/hooks';
 import { useMediaBottomInset } from '@/features/media/layout/useMediaBottomInset';
 import { useBibleNavigationV2 } from '../services/BibleNavigationServiceV2';
 import { useBibleNavigationStore } from '../store/bibleNavigationStore';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
 
 export const useChapterVersesLogic = () => {
   const { goBack } = useBibleNavigationV2();
   const bottomInset = useMediaBottomInset();
   const rootNavigation = useNavigation<RootStackNavigationProp>();
+  const route = useRoute();
+  const routeParams = route.params as
+    | {
+        bookId?: string;
+        chapterId?: string;
+        verseId?: string;
+      }
+    | undefined;
 
   // Get current navigation state from store
   const { selectedBook, selectedChapter, selectedVerseId } =
@@ -22,15 +30,22 @@ export const useChapterVersesLogic = () => {
 
   // Params extraction from store
   const incomingBook = selectedBook;
+  const incomingBookId = incomingBook?.id ?? routeParams?.bookId ?? null;
   const incomingChapter = selectedChapter;
-  const incomingChapterId = incomingChapter?.id ?? null;
-  const incomingVerseId = selectedVerseId;
+  const incomingChapterId =
+    incomingChapter?.id ?? routeParams?.chapterId ?? null;
+  const incomingVerseId = selectedVerseId ?? routeParams?.verseId ?? null;
 
-  // Add a small delay to ensure store state is fully propagated
+  // Add a small delay to ensure route/store state is fully propagated
   const [isStoreReady, setIsStoreReady] = useState(false);
 
   useEffect(() => {
-    if (selectedBook && selectedChapter) {
+    const hasStoreSelection = Boolean(selectedBook && selectedChapter);
+    const hasRouteSelection = Boolean(
+      routeParams?.chapterId || routeParams?.verseId
+    );
+
+    if (hasStoreSelection || hasRouteSelection) {
       // Small delay to ensure all components have updated
       const timer = setTimeout(() => setIsStoreReady(true), 100);
       return () => clearTimeout(timer);
@@ -38,7 +53,12 @@ export const useChapterVersesLogic = () => {
       setIsStoreReady(false);
       return undefined;
     }
-  }, [selectedBook, selectedChapter]);
+  }, [
+    selectedBook,
+    selectedChapter,
+    routeParams?.chapterId,
+    routeParams?.verseId,
+  ]);
 
   // Resolve location
   const {
@@ -48,7 +68,7 @@ export const useChapterVersesLogic = () => {
     resolvedChapterNumber,
   } = useResolvedBibleLocation({
     incomingBook: incomingBook ?? null,
-    incomingBookId: incomingBook?.id ?? null,
+    incomingBookId,
     incomingChapterId,
     incomingVerseId,
   });

@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { TopBar } from '@everylanguage/shared-native-ui';
 import { useNavigation } from '@react-navigation/native';
 import type { RootStackNavigationProp } from '@/app/navigation/RootNavigator';
-import { BibleContainer } from '../components/BibleContainer';
+import { BibleStackNavigator } from './BibleStackNavigator';
 
 export const BibleTabContainer: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -20,7 +20,7 @@ export const BibleTabContainer: React.FC = () => {
         onQuickSelectionPress={() => navigation.navigate('QuickSelectionModal')}
       />
       <View style={styles.content}>
-        <BibleContainer />
+        <BibleStackNavigator />
       </View>
     </View>
   );
