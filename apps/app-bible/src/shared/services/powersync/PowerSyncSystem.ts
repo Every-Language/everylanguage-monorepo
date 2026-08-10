@@ -97,6 +97,22 @@ class PowerSyncSystem {
   }
 
   /**
+   * Await seeding completion with a timeout. Resolves when seed completes or after timeoutMs.
+   * Use before navigating to main app so Bible structure (books/chapters) is ready.
+   */
+  public async waitUntilSeededWithTimeout(timeoutMs: number): Promise<void> {
+    if (!this._seedPromise) return;
+    try {
+      await Promise.race([
+        this._seedPromise,
+        new Promise<void>(resolve => setTimeout(() => resolve(), timeoutMs)),
+      ]);
+    } catch {
+      // best-effort only
+    }
+  }
+
+  /**
    * Set the connection method (HTTP or WebSocket)
    */
   public setConnectionMethod(method: SyncStreamConnectionMethod): void {

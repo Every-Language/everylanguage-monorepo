@@ -223,6 +223,18 @@ export function SignInForm({
     setIsPasswordValid(isValid);
   };
 
+  // Check if sign in button should be enabled
+  // For phone: phone must be valid and password must be at least 4 characters
+  // For email: email must be valid and password must be at least 4 characters
+  const isSignInEnabled = (): boolean => {
+    if (isLoading) return false;
+    if (password.length < 4) return false;
+    if (authMethod === 'phone') {
+      return isPhoneValid;
+    }
+    return isEmailValid;
+  };
+
   const handleSubmit = async () => {
     try {
       if (authMethod === 'email') {
@@ -406,7 +418,9 @@ export function SignInForm({
         <TouchableOpacity
           style={styles.forgotPasswordButton}
           onPress={handleForgotPassword}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          <Text style={styles.forgotPasswordText}>
+            {t('auth.forgotPassword')}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -414,7 +428,7 @@ export function SignInForm({
         <Button
           title={`${t('auth.signInButton')}`}
           onPress={handleSubmit}
-          disabled={isLoading}
+          disabled={!isSignInEnabled()}
           loading={isLoading}
           variant='primary'
           fullWidth

@@ -20,6 +20,9 @@ export interface SyncState {
   canContinueOffline: boolean;
   hasVersions: boolean;
   canSkipOnboarding: boolean;
+  hasUserDataFromServer?: boolean;
+  hasSavedVersions: boolean;
+  versionCheckRun?: boolean;
 }
 
 export interface SyncScreenState {
@@ -39,6 +42,9 @@ export interface SyncScreenActions {
   completeSync: (versionInfo?: {
     hasVersions: boolean;
     canSkipOnboarding: boolean;
+    hasUserDataFromServer?: boolean;
+    hasSavedVersions?: boolean;
+    versionCheckRun?: boolean;
   }) => void;
 }
 
@@ -53,6 +59,9 @@ const initialSyncState: SyncState = {
   canContinueOffline: false,
   hasVersions: false,
   canSkipOnboarding: false,
+  hasUserDataFromServer: false,
+  hasSavedVersions: false,
+  versionCheckRun: false,
 };
 
 export const useSyncScreenStore = create<SyncScreenStore>()((set, get) => ({
@@ -125,6 +134,9 @@ export const useSyncScreenStore = create<SyncScreenStore>()((set, get) => ({
           canContinueOffline: false,
           hasVersions: false,
           canSkipOnboarding: false,
+          hasUserDataFromServer: false,
+          hasSavedVersions: false,
+          versionCheckRun: false,
         },
       });
     } else {
@@ -145,6 +157,9 @@ export const useSyncScreenStore = create<SyncScreenStore>()((set, get) => ({
         canContinueOffline: false,
         hasVersions: false,
         canSkipOnboarding: false,
+        hasUserDataFromServer: false,
+        hasSavedVersions: false,
+        versionCheckRun: false,
       },
     });
   },
@@ -157,6 +172,9 @@ export const useSyncScreenStore = create<SyncScreenStore>()((set, get) => ({
   completeSync: (versionInfo?: {
     hasVersions: boolean;
     canSkipOnboarding: boolean;
+    hasUserDataFromServer?: boolean;
+    hasSavedVersions?: boolean;
+    versionCheckRun?: boolean;
   }) => {
     logger.info(ENABLE_LOGGING, 'SyncScreenStore: Sync completed successfully');
 
@@ -170,6 +188,9 @@ export const useSyncScreenStore = create<SyncScreenStore>()((set, get) => ({
         canContinueOffline: false,
         hasVersions: versionInfo?.hasVersions || false,
         canSkipOnboarding: versionInfo?.canSkipOnboarding || false,
+        hasUserDataFromServer: versionInfo?.hasUserDataFromServer ?? false,
+        hasSavedVersions: versionInfo?.hasSavedVersions ?? false,
+        versionCheckRun: versionInfo?.versionCheckRun ?? false,
       },
     });
   },

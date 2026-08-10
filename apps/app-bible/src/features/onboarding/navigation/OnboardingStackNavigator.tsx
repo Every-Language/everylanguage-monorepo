@@ -10,16 +10,25 @@ import { OfflineBibleSetupScreen } from '../screens/OfflineBibleSetupScreen';
 import { LocaleSelectionModal } from '../screens/LocaleSelectionModal';
 import { OnboardingAuthScreen } from '../screens/OnboardingAuthScreen';
 import { SignInSyncScreen } from '@/features/auth/screens/SignInSyncScreen';
+import { ForgotPasswordScreen } from '@/features/auth/screens/ForgotPasswordScreen';
 import { PermissionsScreen } from '@/features/permissions/screens/PermissionsScreen';
 import { VersionSelectionStackNavigator } from '@/features/languages/navigation/VersionSelectionStackNavigator';
 import { useOnboardingStore } from '@/features/onboarding/store/onboardingStore';
 import { useTheme } from '@/shared/hooks';
 import { i18n } from '@/shared/services';
+import { powerSyncSystem } from '@/shared/services/powersync/PowerSyncSystem';
+
+const SEED_WAIT_TIMEOUT_MS = 15000;
 
 // Type definitions for the onboarding stack
 export type OnboardingStackParamList = {
   Auth: undefined;
   SignInSync: undefined;
+  ForgotPassword: {
+    email?: string;
+    phone?: string;
+    method: 'email' | 'phone';
+  };
   OnboardingMain: undefined;
   MotherTongueSearch: undefined;
   ImportBible: undefined;
@@ -74,7 +83,24 @@ const AuthScreenWrapper: React.FC<AuthScreenProps> = ({ navigation }) => {
     navigation.navigate('OnboardingMain');
   };
 
-  return <OnboardingAuthScreen onSkipAuth={handleSkipAuth} />;
+  const handleForgotPassword = (
+    email?: string,
+    phone?: string,
+    method?: 'email' | 'phone'
+  ) => {
+    navigation.navigate('ForgotPassword', {
+      ...(email && { email }),
+      ...(phone && { phone }),
+      method: method || 'email',
+    });
+  };
+
+  return (
+    <OnboardingAuthScreen
+      onSkipAuth={handleSkipAuth}
+      onForgotPassword={handleForgotPassword}
+    />
+  );
 };
 
 const OnboardingMainScreenWrapper: React.FC<OnboardingMainScreenProps> = ({
@@ -94,10 +120,14 @@ const OnboardingMainScreenWrapper: React.FC<OnboardingMainScreenProps> = ({
 const MotherTongueSearchScreenWrapper: React.FC<
   MotherTongueSearchScreenProps
 > = ({ navigation }) => {
+  const handleComplete = async () => {
+    await powerSyncSystem.waitUntilSeededWithTimeout(SEED_WAIT_TIMEOUT_MS);
+    navigation.navigate('Permissions');
+  };
   return (
     <OnlineBibleSetupScreen
       onBack={() => navigation.goBack()}
-      onComplete={() => navigation.navigate('Permissions')}
+      onComplete={handleComplete}
       onAudioVersionPress={() =>
         navigation.navigate('VersionSelectionModal', {
           versionType: 'audio',
@@ -119,10 +149,14 @@ const MotherTongueSearchScreenWrapper: React.FC<
 const ImportBibleScreenWrapper: React.FC<ImportBibleScreenProps> = ({
   navigation,
 }) => {
+  const handleComplete = async () => {
+    await powerSyncSystem.waitUntilSeededWithTimeout(SEED_WAIT_TIMEOUT_MS);
+    navigation.navigate('Permissions');
+  };
   return (
     <OfflineBibleSetupScreen
       onBack={() => navigation.goBack()}
-      onComplete={() => navigation.navigate('Permissions')}
+      onComplete={handleComplete}
     />
   );
 };
@@ -169,6 +203,13 @@ export const OnboardingStackNavigator: React.FC = () => {
           title: i18n.t('auth.sync.title'),
           gestureEnabled: false, // Prevent back navigation during sync
           animation: 'none', // No animation for sync screen
+        }}
+      />
+      <OnboardingStack.Screen
+        name='ForgotPassword'
+        component={ForgotPasswordScreen}
+        options={{
+          title: i18n.t('auth.forgotPassword'),
         }}
       />
       <OnboardingStack.Screen

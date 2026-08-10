@@ -108,6 +108,9 @@
     "resendIn": "Resend in {{seconds}}s",
     "signUpSuccess": "Account Created!",
     "signUpSuccessMessage": "Your account has been created. Please sign in to continue.",
+    "phoneAlreadyRegistered": "Phone Number Already Registered",
+    "phoneAlreadyRegisteredMessage": "This phone number is already registered. Please sign in instead.",
+    "goToSignIn": "Go to Sign In",
     "firstName": "First Name",
     "lastName": "Last Name",
     "firstNamePlaceholder": "Enter your first name",
@@ -145,7 +148,15 @@
       "title": "Syncing Your Account",
       "getStarted": "Get Started",
       "skipOnboarding": "Skip Onboarding",
-      "continueOffline": "Continue Offline"
+      "continueOffline": "Continue Offline",
+      "hasSavedVersions": "You have saved Bible versions",
+      "currentSelections": "Current selections",
+      "savedTextVersions": "Saved text versions",
+      "savedAudioVersions": "Saved audio versions",
+      "noSelection": "None",
+      "loadingVersions": "Loading your versions...",
+      "preparingBible": "Preparing your Bible…",
+      "syncingData": "Syncing your data…"
     },
     "errors": {
       "fillAllFields": "Please fill in all fields",

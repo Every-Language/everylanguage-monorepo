@@ -175,7 +175,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
             [
               {
                 text: t('common.ok'),
-                onPress: () => navigation.navigate('SignIn'),
+                onPress: () => navigation.goBack(),
               },
             ]
           );
@@ -193,7 +193,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
           [
             {
               text: t('common.ok'),
-              onPress: () => navigation.navigate('SignIn'),
+              onPress: () => navigation.goBack(),
             },
           ]
         );
